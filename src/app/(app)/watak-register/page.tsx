@@ -20,11 +20,26 @@ import {
 import { Button } from '@/components/ui/button';
 import { wataks, type WatakEntry } from '@/lib/data';
 import { useLanguage } from '@/contexts/language-context';
-import { PlusCircle } from 'lucide-react';
+import { ChevronDown, PlusCircle } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+
+const growers = [
+    "Mohd Ayoub Khan",
+    "Firdous Ahmad Lone",
+    "Samia Ayoub",
+    "Khan Ayoub",
+];
 
 export default function WatakRegisterPage() {
   const { t } = useLanguage();
   const [isClient, setIsClient] = React.useState(false);
+  const [selectedGrower, setSelectedGrower] = React.useState(growers[0]);
 
   React.useEffect(() => {
     setIsClient(true);
@@ -43,9 +58,28 @@ export default function WatakRegisterPage() {
     <Card>
       <CardHeader>
         <div className="flex justify-between items-start">
-            <div>
+            <div className="flex items-center gap-4">
                 <CardTitle>{t('watak_register')}</CardTitle>
-                <CardDescription>{"Grower's Name: Mohd Ayoub Khan"}</CardDescription>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="flex items-center gap-2">
+                           <span>{`Grower: ${selectedGrower}`}</span>
+                           <ChevronDown className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                        {growers.map(grower => (
+                             <DropdownMenuItem key={grower} onSelect={() => setSelectedGrower(grower)}>
+                                {grower}
+                             </DropdownMenuItem>
+                        ))}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Add New Grower
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
             <Button size="sm" className="gap-1">
                 <PlusCircle className="h-3.5 w-3.5" />
@@ -99,4 +133,3 @@ export default function WatakRegisterPage() {
     </Card>
   );
 }
-
