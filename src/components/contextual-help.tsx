@@ -1,6 +1,8 @@
+
 'use client';
 
-import { useState, useActionState } from 'react';
+import { useState } from 'react';
+import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Lightbulb, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -45,7 +47,7 @@ export function ContextualHelp({ context }: { context: string }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
-          variant="primary"
+          variant="default"
           size="icon"
           className="fixed bottom-4 right-4 h-14 w-14 rounded-full shadow-lg"
         >

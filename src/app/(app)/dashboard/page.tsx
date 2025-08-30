@@ -1,3 +1,4 @@
+
 'use client'
 
 import { DollarSign, Package, Users, Activity } from 'lucide-react';
