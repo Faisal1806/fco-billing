@@ -17,7 +17,7 @@ import { useLanguage } from '@/contexts/language-context';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 
-const FormRow = ({ id, label, value, onChange }: { id: string, label: string, value: number, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
+const FormRow = ({ id, label, value, onChange, disabled = false }: { id: string, label: string, value: number, onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void, disabled?: boolean }) => (
     <div className="grid grid-cols-2 items-center gap-4">
         <Label htmlFor={id}>{label}</Label>
         <Input
@@ -26,6 +26,7 @@ const FormRow = ({ id, label, value, onChange }: { id: string, label: string, va
             placeholder="0.00"
             value={value || ''}
             onChange={onChange}
+            disabled={disabled}
         />
     </div>
 )
@@ -34,13 +35,15 @@ export function BillMakingTab() {
   const { t } = useLanguage();
   const { toast } = useToast();
 
-  const [grossSale, setGrossSale] = React.useState(0);
+  const [productQty, setProductQty] = React.useState(0);
+  const [productRate, setProductRate] = React.useState(0);
   const [freight, setFreight] = React.useState(0);
   const [postage, setPostage] = React.useState(0);
   const [labor, setLabor] = React.useState(0);
   const [security, setSecurity] = React.useState(0);
   const [otherExpenses, setOtherExpenses] = React.useState(0);
   
+  const grossSale = productQty * productRate;
   const commissionAmount = grossSale * 0.06;
   const totalExpenses = freight + postage + labor + security + otherExpenses;
   const netSale = grossSale - totalExpenses - commissionAmount;
@@ -61,7 +64,10 @@ export function BillMakingTab() {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-4">
-            <FormRow id="grossSale" label="Gross Sale" value={grossSale} onChange={(e) => setGrossSale(Number(e.target.value))} />
+            <h3 className="text-lg font-medium text-muted-foreground">Product Information</h3>
+            <FormRow id="productQty" label="Quantity" value={productQty} onChange={(e) => setProductQty(Number(e.target.value))} />
+            <FormRow id="productRate" label="Rate" value={productRate} onChange={(e) => setProductRate(Number(e.target.value))} />
+            <FormRow id="grossSale" label="Gross Sale" value={grossSale} disabled />
             <Separator />
             <h3 className="text-lg font-medium text-muted-foreground">Expenses</h3>
             <FormRow id="freight" label="Freight" value={freight} onChange={(e) => setFreight(Number(e.target.value))} />
