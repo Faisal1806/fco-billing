@@ -1,3 +1,4 @@
+
 export const translations = {
   en: {
     'app_title': 'SwiftSale',
@@ -5,6 +6,7 @@ export const translations = {
     'sales': 'Sales',
     'products': 'Products',
     'settings': 'Settings',
+    'expenses': 'Expenses',
     'total_revenue': 'Total Revenue',
     'subscriptions': 'Subscriptions',
     'this_month': 'This Month',
@@ -48,6 +50,9 @@ export const translations = {
     'advice_from_ai': 'Advice from AI',
     'getting_advice': 'Getting advice...',
     'language': 'Language',
+    'expenses_subtitle': 'Track and manage your business expenses.',
+    'add_expense': 'Add Expense',
+    'description': 'Description',
   },
   ur: {
     'app_title': 'سوئفٹ سیل',
@@ -55,6 +60,7 @@ export const translations = {
     'sales': 'سیلز',
     'products': 'مصنوعات',
     'settings': 'ترتیبات',
+    'expenses': 'اخراجات',
     'total_revenue': 'کل آمدنی',
     'subscriptions': 'سبسکرپشنز',
     'this_month': 'اس مہینے',
@@ -98,6 +104,9 @@ export const translations = {
     'advice_from_ai': 'AI سے مشورہ',
     'getting_advice': 'مشورہ حاصل کیا جا رہا ہے...',
     'language': 'زبان',
+    'expenses_subtitle': 'اپنے کاروباری اخراجات کو ٹریک اور منظم کریں۔',
+    'add_expense': 'خرچ شامل کریں',
+    'description': 'تفصیل',
   },
 };
 

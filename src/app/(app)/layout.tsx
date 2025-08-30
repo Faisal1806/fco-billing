@@ -1,8 +1,9 @@
+
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ShoppingCart, Package, Settings, Package2, Bell, Search, User } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, Settings, Package2, Bell, Search, User, Receipt } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { href: '/dashboard', icon: LayoutDashboard, label: t('dashboard') },
     { href: '/sales', icon: ShoppingCart, label: t('sales') },
     { href: '/products', icon: Package, label: t('products') },
+    { href: '/expenses', icon: Receipt, label: t('expenses') },
     { href: '/settings', icon: Settings, label: t('settings') },
   ];
 
@@ -34,6 +36,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (pathname.startsWith('/dashboard')) return 'Dashboard';
     if (pathname.startsWith('/sales')) return 'Sales Page';
     if (pathname.startsWith('/products')) return 'Product Catalog';
+    if (pathname.startsWith('/expenses')) return 'Expenses Page';
     if (pathname.startsWith('/settings')) return 'Settings Page';
     return 'General';
   }

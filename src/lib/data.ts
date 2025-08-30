@@ -1,3 +1,4 @@
+
 export type Product = {
   id: string;
   name: string;
@@ -15,6 +16,14 @@ export type Sale = {
   email: string;
   amount: number;
   timestamp: Date;
+};
+
+export type Expense = {
+  id: string;
+  category: string;
+  description: string;
+  amount: number;
+  date: Date;
 };
 
 export const products: Product[] = [
@@ -41,4 +50,12 @@ export const salesData = [
   { date: 'Fri', sales: Math.floor(Math.random() * 2000) + 1000 },
   { date: 'Sat', sales: Math.floor(Math.random() * 2000) + 1000 },
   { date: 'Sun', sales: Math.floor(Math.random() * 2000) + 1000 },
+];
+
+export const expenses: Expense[] = [
+    { id: 'EXP001', category: 'Utilities', description: 'Office electricity bill', amount: 150.00, date: new Date() },
+    { id: 'EXP002', category: 'Transport', description: 'Fuel for delivery van', amount: 75.50, date: new Date(new Date().setDate(new Date().getDate() - 1)) },
+    { id: 'EXP003', category: 'Rent', description: 'Warehouse rental for the month', amount: 1200.00, date: new Date(new Date().setDate(new Date().getDate() - 2)) },
+    { id: 'EXP004', category: 'Supplies', description: 'Packaging materials', amount: 250.75, date: new Date(new Date().setDate(new Date().getDate() - 3)) },
+    { id: 'EXP005', category: 'Utilities', description: 'Internet bill', amount: 60.00, date: new Date(new Date().setDate(new Date().getDate() - 4)) },
 ];
