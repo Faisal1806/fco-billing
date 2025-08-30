@@ -20,7 +20,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { wataks, type WatakEntry } from '@/lib/data';
 import { useLanguage } from '@/contexts/language-context';
-import { ChevronDown, PlusCircle } from 'lucide-react';
+import { ChevronDown, PlusCircle, Share2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +28,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import { useToast } from '@/hooks/use-toast';
 
 const growers = [
     "Mohd Ayoub Khan",
@@ -40,6 +41,7 @@ export default function WatakRegisterPage() {
   const { t } = useLanguage();
   const [isClient, setIsClient] = React.useState(false);
   const [selectedGrower, setSelectedGrower] = React.useState(growers[0]);
+  const { toast } = useToast();
 
   React.useEffect(() => {
     setIsClient(true);
@@ -52,6 +54,29 @@ export default function WatakRegisterPage() {
     acc.amount += watak.amount;
     return acc;
     }, { gross: 0, soporExp: 0, netSale: 0, amount: 0 });
+
+  const handleShare = async () => {
+    const shareText = `Watak Register for ${selectedGrower}`;
+     if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'Watak Register',
+                    text: shareText,
+                    url: window.location.href,
+                });
+                toast({ title: "Register Shared", description: "The register link has been shared." });
+            } catch (error) {
+                toast({ variant: "destructive", title: "Share Failed", description: "Could not share the register." });
+            }
+        } else {
+            try {
+                await navigator.clipboard.writeText(window.location.href);
+                toast({ title: "Link Copied", description: "Register link copied to clipboard." });
+            } catch (error) {
+                 toast({ variant: "destructive", title: "Copy Failed", description: "Could not copy the link." });
+            }
+        }
+  }
 
 
   return (
@@ -81,12 +106,20 @@ export default function WatakRegisterPage() {
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
-            <Button size="sm" className="gap-1">
-                <PlusCircle className="h-3.5 w-3.5" />
-                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                    {t('add_watak')}
-                </span>
-            </Button>
+            <div className="flex items-center gap-2">
+                <Button size="sm" className="gap-1" onClick={handleShare} variant="outline">
+                    <Share2 className="h-3.5 w-3.5" />
+                     <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                        Share Register
+                    </span>
+                </Button>
+                <Button size="sm" className="gap-1">
+                    <PlusCircle className="h-3.5 w-3.5" />
+                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                        {t('add_watak')}
+                    </span>
+                </Button>
+            </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -108,7 +141,7 @@ export default function WatakRegisterPage() {
           <TableBody>
             {wataks.map((watak: WatakEntry) => (
               <TableRow key={watak.id}>
-                <TableCell>{isClient ? watak.date.toLocaleDateString('en-GB') : ''}</TableCell>
+                <TableCell>{isClient ? new Date(watak.date).toLocaleDateString('en-GB') : ''}</TableCell>
                 <TableCell>{watak.chNo}</TableCell>
                 <TableCell>{watak.watakNo}</TableCell>
                 <TableCell className="font-medium">{watak.khata}</TableCell>

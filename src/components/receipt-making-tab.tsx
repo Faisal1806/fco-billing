@@ -109,7 +109,15 @@ export function ReceiptMakingTab() {
   const totalNugs = entries.reduce((acc, entry) => acc + (entry.peti || 0) + (entry.daba || 0), 0);
 
   const handleCreateReceipt = () => {
-    const receiptId = receiptDetails.no || `RCPT${Date.now()}`;
+    if (!receiptDetails.no || !receiptDetails.date || !receiptDetails.customerName) {
+        toast({
+            variant: 'destructive',
+            title: 'Missing Details',
+            description: 'Please fill in No., Date, and Customer Name before saving.',
+        });
+        return;
+    }
+    const receiptId = receiptDetails.no;
     const receiptData = {
         ...receiptDetails,
         entries,
@@ -119,8 +127,8 @@ export function ReceiptMakingTab() {
     localStorage.setItem(`receipt-${receiptId}`, JSON.stringify(receiptData));
 
     toast({
-      title: 'Receipt Created',
-      description: 'The receipt has been successfully created and saved.',
+      title: 'Receipt Saved',
+      description: 'The receipt has been successfully saved.',
     });
     router.push(`/receipt/${receiptId}`);
   };
@@ -208,7 +216,7 @@ export function ReceiptMakingTab() {
         </div>
       </CardContent>
       <CardFooter className="flex justify-center">
-        <Button onClick={handleCreateReceipt} className="w-full max-w-sm">Generate Receipt</Button>
+        <Button onClick={handleCreateReceipt} className="w-full max-w-sm">Save & View Receipt</Button>
       </CardFooter>
     </Card>
   );

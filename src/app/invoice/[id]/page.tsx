@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Printer } from "lucide-react";
+import { Printer, Share2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 
 interface BillData {
     sNo: string;
@@ -36,6 +37,7 @@ interface BillData {
 export default function InvoicePage({ params }: { params: { id: string } }) {
     const [billData, setBillData] = useState<BillData | null>(null);
     const [loading, setLoading] = useState(true);
+    const { toast } = useToast();
 
     useEffect(() => {
         const storedBill = localStorage.getItem(`invoice-${params.id}`);
@@ -46,13 +48,42 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     }, [params.id]);
 
 
-    const PrintButton = () => {
+    const handleShare = async () => {
+        if (navigator.share && billData) {
+            try {
+                await navigator.share({
+                    title: `Invoice for ${billData.customerName}`,
+                    text: `Here is the invoice #${billData.sNo} for ${billData.customerName}.`,
+                    url: window.location.href,
+                });
+                toast({ title: "Invoice Shared", description: "The invoice link has been shared." });
+            } catch (error) {
+                toast({ variant: "destructive", title: "Share Failed", description: "Could not share the invoice." });
+            }
+        } else {
+            try {
+                await navigator.clipboard.writeText(window.location.href);
+                toast({ title: "Link Copied", description: "Invoice link copied to clipboard." });
+            } catch (error) {
+                 toast({ variant: "destructive", title: "Copy Failed", description: "Could not copy the link." });
+            }
+        }
+    };
+
+
+    const Controls = () => {
         'use client'
         return (
-            <Button onClick={() => window.print()} className="gap-2 print:hidden">
-                <Printer className="h-4 w-4" />
-                Print Invoice
-            </Button>
+            <div className="flex items-center gap-2 print:hidden">
+                <Button onClick={handleShare} variant="outline" className="gap-2">
+                    <Share2 className="h-4 w-4" />
+                    Share
+                </Button>
+                <Button onClick={() => window.print()} className="gap-2">
+                    <Printer className="h-4 w-4" />
+                    Print
+                </Button>
+            </div>
         )
     }
 
@@ -191,7 +222,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 <CardFooter className="flex justify-between items-center mt-8">
                      <p className="text-xs text-gray-500">Subject to Sopore Jurisdiction Only</p>
                      <p className="font-semibold">Manager</p>
-                     <PrintButton />
+                     <Controls />
                 </CardFooter>
             </Card>
         </div>

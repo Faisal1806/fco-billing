@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Printer } from "lucide-react";
+import { Printer, Share2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 
 interface ReceiptData {
     no: string;
@@ -29,6 +30,7 @@ interface ReceiptData {
 export default function ReceiptPage({ params }: { params: { id: string } }) {
     const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
     const [loading, setLoading] = useState(true);
+    const { toast } = useToast();
 
     useEffect(() => {
         const storedReceipt = localStorage.getItem(`receipt-${params.id}`);
@@ -39,13 +41,41 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
     }, [params.id]);
 
 
-    const PrintButton = () => {
+    const handleShare = async () => {
+        if (navigator.share && receiptData) {
+            try {
+                await navigator.share({
+                    title: `Receipt for ${receiptData.customerName}`,
+                    text: `Here is the receipt #${receiptData.no} for ${receiptData.customerName}.`,
+                    url: window.location.href,
+                });
+                toast({ title: "Receipt Shared", description: "The receipt link has been shared." });
+            } catch (error) {
+                toast({ variant: "destructive", title: "Share Failed", description: "Could not share the receipt." });
+            }
+        } else {
+            try {
+                await navigator.clipboard.writeText(window.location.href);
+                toast({ title: "Link Copied", description: "Receipt link copied to clipboard." });
+            } catch (error) {
+                toast({ variant: "destructive", title: "Copy Failed", description: "Could not copy the link." });
+            }
+        }
+    };
+
+    const Controls = () => {
         'use client'
         return (
-            <Button onClick={() => window.print()} className="gap-2 print:hidden">
-                <Printer className="h-4 w-4" />
-                Print Receipt
-            </Button>
+            <div className="flex items-center gap-2 print:hidden">
+                <Button onClick={handleShare} variant="outline" className="gap-2">
+                    <Share2 className="h-4 w-4" />
+                    Share
+                </Button>
+                <Button onClick={() => window.print()} className="gap-2">
+                    <Printer className="h-4 w-4" />
+                    Print
+                </Button>
+            </div>
         )
     }
 
@@ -148,7 +178,7 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
                     </div>
                 </CardContent>
                 <CardFooter className="flex justify-between items-end p-4 mt-4">
-                     <PrintButton />
+                     <Controls />
                      <div className="flex flex-col items-center">
                         <div className="w-24 h-8 border-b border-gray-400"></div>
                         <p className="text-xs font-semibold">Signature</p>

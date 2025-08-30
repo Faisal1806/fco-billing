@@ -135,7 +135,15 @@ export function BillMakingTab() {
   const netSale = grossSale - totalExpenses;
 
   const handleCreateBill = () => {
-    const billId = billDetails.sNo || `INV${Date.now()}`;
+    if (!billDetails.sNo || !billDetails.date || !billDetails.customerName) {
+        toast({
+            variant: 'destructive',
+            title: 'Missing Details',
+            description: 'Please fill in S.No, Date, and Customer Name before saving.',
+        });
+        return;
+    }
+    const billId = billDetails.sNo;
     const billData = {
         ...billDetails,
         entries,
@@ -149,13 +157,11 @@ export function BillMakingTab() {
         netSale,
     };
     
-    // In a real app, you'd save this to a database.
-    // For now, we'll store it in localStorage to pass to the invoice page.
     localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
 
     toast({
-      title: 'Bill Created',
-      description: 'The bill has been successfully created and saved.',
+      title: 'Bill Saved',
+      description: 'The bill has been successfully saved.',
     });
     router.push(`/invoice/${billId}`);
   };
@@ -262,7 +268,7 @@ export function BillMakingTab() {
         </div>
       </CardContent>
       <CardFooter className="flex-col items-center gap-2">
-        <Button onClick={handleCreateBill} className="w-full max-w-sm">Create Bill</Button>
+        <Button onClick={handleCreateBill} className="w-full max-w-sm">Save & View Bill</Button>
         <p className="text-xs text-muted-foreground">"Your Satisfaction is Our Success"</p>
         <p className="text-xs text-muted-foreground">Subject to Sopore Jurisdiction Only</p>
       </CardFooter>

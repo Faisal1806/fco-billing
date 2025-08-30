@@ -104,7 +104,15 @@ export function PesticideBillTab() {
   }, 0);
 
   const handleCreateBill = () => {
-    const billId = billDetails.no || `PEST${Date.now()}`;
+    if (!billDetails.no || !billDetails.date || !billDetails.customerName) {
+        toast({
+            variant: 'destructive',
+            title: 'Missing Details',
+            description: 'Please fill in No., Date, and Customer Name before saving.',
+        });
+        return;
+    }
+    const billId = billDetails.no;
     const billData = {
         ...billDetails,
         entries: entries.map(entry => ({...entry, amount: (parseFloat(entry.qty) || 0) * entry.rate})),
@@ -114,8 +122,8 @@ export function PesticideBillTab() {
     localStorage.setItem(`pesticide-invoice-${billId}`, JSON.stringify(billData));
 
     toast({
-      title: 'Pesticide Bill Created',
-      description: 'The bill has been successfully created and saved.',
+      title: 'Pesticide Bill Saved',
+      description: 'The bill has been successfully saved.',
     });
     router.push(`/pesticide-invoice/${billId}`);
   };
@@ -185,7 +193,7 @@ export function PesticideBillTab() {
         </div>
       </CardContent>
       <CardFooter className="flex-col items-center gap-2">
-        <Button onClick={handleCreateBill} className="w-full max-w-sm">Generate Bill</Button>
+        <Button onClick={handleCreateBill} className="w-full max-w-sm">Save & View Bill</Button>
         <p className="text-xs text-muted-foreground">Goods once sold can not be taken back.</p>
       </CardFooter>
     </Card>
