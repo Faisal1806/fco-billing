@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useState, useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { Lightbulb, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -38,7 +38,7 @@ function SubmitButton({ gettingAdviceText }: { gettingAdviceText: string }) {
 export function ContextualHelp({ context }: { context: string }) {
   const { t } = useLanguage();
   const initialState = { advice: '', error: '' };
-  const [state, dispatch] = useFormState(getContextualHelpAction, initialState);
+  const [state, dispatch] = useActionState(getContextualHelpAction, initialState);
   const [open, setOpen] = useState(false);
 
   return (
