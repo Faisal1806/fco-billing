@@ -4,7 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { LanguageProvider } from '@/contexts/language-context';
 
 export const metadata: Metadata = {
-  title: 'SwiftSale',
+  title: 'F.Co Billing System',
   description: 'F.Co Billing System',
 };
 
