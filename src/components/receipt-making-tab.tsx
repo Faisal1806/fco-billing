@@ -13,8 +13,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2, FilePenLine, FilePlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { ScrollArea } from './ui/scroll-area';
 
 type ReceiptEntry = {
   khata: string;
@@ -69,18 +70,34 @@ export function ReceiptMakingTab() {
   const { toast } = useToast();
   const router = useRouter();
 
-  const [entries, setEntries] = React.useState<ReceiptEntry[]>([
-    { khata: '', peti: 0, daba: 0, freight: '' },
-  ]);
-  
-  const [receiptDetails, setReceiptDetails] = React.useState({
+  const initialReceiptDetails = {
     no: '',
     date: '',
     customerName: '',
     ro: '', // Residence of
     freightPaid: 0,
     wattakReadyOn: '',
-  });
+  };
+  const initialEntries: ReceiptEntry[] = [
+    { khata: '', peti: 0, daba: 0, freight: '' },
+  ];
+
+  const [entries, setEntries] = React.useState<ReceiptEntry[]>(initialEntries);
+  const [receiptDetails, setReceiptDetails] = React.useState(initialReceiptDetails);
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [savedReceipts, setSavedReceipts] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    const receipts = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('receipt-')) {
+            const receipt = JSON.parse(localStorage.getItem(key)!);
+            receipts.push(receipt);
+        }
+    }
+    setSavedReceipts(receipts.sort((a,b) => (a.no > b.no) ? 1 : -1));
+  }, []);
 
   const handleEntryUpdate = (
     index: number,
@@ -108,6 +125,12 @@ export function ReceiptMakingTab() {
 
   const totalNugs = entries.reduce((acc, entry) => acc + (entry.peti || 0) + (entry.daba || 0), 0);
 
+  const resetForm = () => {
+    setReceiptDetails(initialReceiptDetails);
+    setEntries(initialEntries);
+    setIsEditing(false);
+  };
+
   const handleCreateReceipt = () => {
     if (!receiptDetails.no || !receiptDetails.date || !receiptDetails.customerName) {
         toast({
@@ -125,99 +148,148 @@ export function ReceiptMakingTab() {
     };
     
     localStorage.setItem(`receipt-${receiptId}`, JSON.stringify(receiptData));
+    setSavedReceipts(prev => [...prev.filter(r => r.no !== receiptId), receiptData].sort((a,b) => (a.no > b.no) ? 1 : -1));
 
     toast({
-      title: 'Receipt Saved',
+      title: isEditing ? 'Receipt Updated' : 'Receipt Saved',
       description: 'The receipt has been successfully saved.',
     });
     router.push(`/receipt/${receiptId}`);
   };
 
+  const loadReceiptForEdit = (receipt: any) => {
+    setReceiptDetails({
+      no: receipt.no,
+      date: receipt.date,
+      customerName: receipt.customerName,
+      ro: receipt.ro,
+      freightPaid: receipt.freightPaid,
+      wattakReadyOn: receipt.wattakReadyOn,
+    });
+    setEntries(receipt.entries);
+    setIsEditing(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <div className="text-center">
-            <h2 className="text-2xl font-bold">FIRDOUS AHMAD & COMPANY</h2>
-            <p className="text-sm text-muted-foreground">Fruit Merchants & Commission Agents</p>
-            <p className="text-sm text-muted-foreground">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
-            <p className="text-sm text-muted-foreground">Prop: Firdous Ahmad Lone (Nadihal)</p>
-            <p className="text-sm text-muted-foreground">Cell: 7006136330, 9797002164</p>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-                <Label>No.</Label>
-                <Input value={receiptDetails.no} onChange={e => handleDetailChange('no', e.target.value)} />
-            </div>
-            <div className="space-y-2">
-                <Label>Dated</Label>
-                <Input type="date" value={receiptDetails.date} onChange={e => handleDetailChange('date', e.target.value)} />
-            </div>
-            <div className="space-y-2 col-span-2 md:col-span-1">
-                <Label>M/s</Label>
-                <Input placeholder="Customer Name" value={receiptDetails.customerName} onChange={e => handleDetailChange('customerName', e.target.value)} />
-            </div>
-             <div className="space-y-2 col-span-2">
-                <Label>R/o</Label>
-                <Input placeholder="Residence of" value={receiptDetails.ro} onChange={e => handleDetailChange('ro', e.target.value)} />
-            </div>
-        </div>
-        
-        <Separator />
-
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
-                <Label className="w-10">S.No.</Label>
-                <Label className="flex-1">KHATA</Label>
-                <Label className="w-20">PETI</Label>
-                <Label className="w-20">DABA</Label>
-                <Label className="w-28">FREIGHT</Label>
-                <div className="w-10"></div>
-            </div>
-            {entries.map((entry, index) => (
-             <div key={index} className="flex items-center gap-2">
-                <span className="w-10 text-center">{index + 1}</span>
-                <ReceiptEntryRow
-                    entry={entry}
-                    onUpdate={(field, value) => handleEntryUpdate(index, field, value)}
-                    onRemove={() => removeSlot(index)}
-                />
-             </div>
-            ))}
-            <Button variant="outline" size="sm" className="gap-1" onClick={addSlot}>
-              <PlusCircle className="h-3.5 w-3.5" />
-              Add Item
-            </Button>
-          </div>
-        </div>
-
-        <Separator />
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
-            <div className="space-y-2">
-                <div className="flex items-center gap-4">
-                    <Label>Freight Paid Rs:</Label>
-                    <Input className="text-right" type="number" value={receiptDetails.freightPaid || ''} onChange={(e) => handleDetailChange('freightPaid', Number(e.target.value))} />
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="md:col-span-2">
+            <CardHeader>
+                <div className="flex justify-between items-center">
+                    <div className="text-center flex-1">
+                        <h2 className="text-2xl font-bold">FIRDOUS AHMAD & COMPANY</h2>
+                        <p className="text-sm text-muted-foreground">Fruit Merchants & Commission Agents</p>
+                        <p className="text-sm text-muted-foreground">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
+                        <p className="text-sm text-muted-foreground">Prop: Firdous Ahmad Lone (Nadihal)</p>
+                        <p className="text-sm text-muted-foreground">Cell: 7006136330, 9797002164</p>
+                    </div>
+                     {isEditing && (
+                        <Button variant="outline" size="sm" onClick={resetForm} className="gap-2">
+                            <FilePlus className="h-4 w-4" />
+                            New Receipt
+                        </Button>
+                    )}
                 </div>
-                 <div className="flex items-center gap-4">
-                    <Label>Wattak Ready On:</Label>
-                    <Input value={receiptDetails.wattakReadyOn} onChange={(e) => handleDetailChange('wattakReadyOn', e.target.value)} />
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                        <Label>No.</Label>
+                        <Input value={receiptDetails.no} onChange={e => handleDetailChange('no', e.target.value)} disabled={isEditing} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Dated</Label>
+                        <Input type="date" value={receiptDetails.date} onChange={e => handleDetailChange('date', e.target.value)} />
+                    </div>
+                    <div className="space-y-2 col-span-2 md:col-span-1">
+                        <Label>M/s</Label>
+                        <Input placeholder="Customer Name" value={receiptDetails.customerName} onChange={e => handleDetailChange('customerName', e.target.value)} />
+                    </div>
+                    <div className="space-y-2 col-span-2">
+                        <Label>R/o</Label>
+                        <Input placeholder="Residence of" value={receiptDetails.ro} onChange={e => handleDetailChange('ro', e.target.value)} />
+                    </div>
                 </div>
-            </div>
+                
+                <Separator />
 
-            <div className="space-y-2 text-sm text-right">
-                <div className="flex justify-end gap-4 items-center">
-                    <span className="font-medium">Total Nugs:</span>
-                    <span className="font-bold text-lg">{totalNugs}</span>
+                <div className="space-y-4">
+                <div className="space-y-2">
+                    <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
+                        <Label className="w-10">S.No.</Label>
+                        <Label className="flex-1">KHATA</Label>
+                        <Label className="w-20">PETI</Label>
+                        <Label className="w-20">DABA</Label>
+                        <Label className="w-28">FREIGHT</Label>
+                        <div className="w-10"></div>
+                    </div>
+                    {entries.map((entry, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                        <span className="w-10 text-center">{index + 1}</span>
+                        <ReceiptEntryRow
+                            entry={entry}
+                            onUpdate={(field, value) => handleEntryUpdate(index, field, value)}
+                            onRemove={() => removeSlot(index)}
+                        />
+                    </div>
+                    ))}
+                    <Button variant="outline" size="sm" className="gap-1" onClick={addSlot}>
+                    <PlusCircle className="h-3.5 w-3.5" />
+                    Add Item
+                    </Button>
                 </div>
-            </div>
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-center">
-        <Button onClick={handleCreateReceipt} className="w-full max-w-sm">Save & View Receipt</Button>
-      </CardFooter>
-    </Card>
+                </div>
+
+                <Separator />
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-4">
+                            <Label>Freight Paid Rs:</Label>
+                            <Input className="text-right" type="number" value={receiptDetails.freightPaid || ''} onChange={(e) => handleDetailChange('freightPaid', Number(e.target.value))} />
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <Label>Wattak Ready On:</Label>
+                            <Input value={receiptDetails.wattakReadyOn} onChange={(e) => handleDetailChange('wattakReadyOn', e.target.value)} />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2 text-sm text-right">
+                        <div className="flex justify-end gap-4 items-center">
+                            <span className="font-medium">Total Nugs:</span>
+                            <span className="font-bold text-lg">{totalNugs}</span>
+                        </div>
+                    </div>
+                </div>
+            </CardContent>
+            <CardFooter className="flex justify-center">
+                <Button onClick={handleCreateReceipt} className="w-full max-w-sm">{isEditing ? 'Update & View Receipt' : 'Save & View Receipt'}</Button>
+            </CardFooter>
+        </Card>
+        <Card className="md:col-span-1 h-fit">
+            <CardHeader>
+                <h3 className="text-lg font-medium">Recent Receipts</h3>
+            </CardHeader>
+            <CardContent>
+                <ScrollArea className="h-96">
+                    <div className="space-y-2">
+                        {savedReceipts.map(receipt => (
+                            <div key={receipt.no} className="flex justify-between items-center p-2 border rounded-md">
+                                <div>
+                                    <p className="font-medium">Receipt #{receipt.no}</p>
+                                    <p className="text-sm text-muted-foreground">{receipt.customerName}</p>
+                                    <p className="text-sm text-muted-foreground">{new Date(receipt.date).toLocaleDateString()}</p>
+                                </div>
+                                <Button variant="ghost" size="icon" onClick={() => loadReceiptForEdit(receipt)}>
+                                    <FilePenLine className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        ))}
+                         {savedReceipts.length === 0 && <p className="text-sm text-muted-foreground text-center">No recent receipts found.</p>}
+                    </div>
+                </ScrollArea>
+            </CardContent>
+        </Card>
+    </div>
   );
 }

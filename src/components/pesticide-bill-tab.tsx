@@ -13,8 +13,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2, FilePenLine, FilePlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { ScrollArea } from './ui/scroll-area';
 
 type ItemEntry = {
   particulars: string;
@@ -64,15 +65,32 @@ export function PesticideBillTab() {
   const { toast } = useToast();
   const router = useRouter();
 
-  const [entries, setEntries] = React.useState<ItemEntry[]>([
-    { particulars: '', qty: '', rate: 0 },
-  ]);
-  
-  const [billDetails, setBillDetails] = React.useState({
+  const initialBillDetails = {
     no: '',
     date: '',
     customerName: '',
-  });
+  };
+
+  const initialEntries: ItemEntry[] = [
+    { particulars: '', qty: '', rate: 0 },
+  ];
+
+  const [entries, setEntries] = React.useState<ItemEntry[]>(initialEntries);
+  const [billDetails, setBillDetails] = React.useState(initialBillDetails);
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [savedBills, setSavedBills] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    const bills = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('pesticide-invoice-')) {
+            const bill = JSON.parse(localStorage.getItem(key)!);
+            bills.push(bill);
+        }
+    }
+    setSavedBills(bills.sort((a,b) => (a.no > b.no) ? 1 : -1));
+  }, []);
 
   const handleEntryUpdate = (
     index: number,
@@ -103,6 +121,12 @@ export function PesticideBillTab() {
     return acc + qty * entry.rate;
   }, 0);
 
+  const resetForm = () => {
+    setBillDetails(initialBillDetails);
+    setEntries(initialEntries);
+    setIsEditing(false);
+  };
+
   const handleCreateBill = () => {
     if (!billDetails.no || !billDetails.date || !billDetails.customerName) {
         toast({
@@ -120,82 +144,129 @@ export function PesticideBillTab() {
     };
     
     localStorage.setItem(`pesticide-invoice-${billId}`, JSON.stringify(billData));
+    setSavedBills(prev => [...prev.filter(b => b.no !== billId), billData].sort((a,b) => (a.no > b.no) ? 1 : -1));
+
 
     toast({
-      title: 'Pesticide Bill Saved',
+      title: isEditing ? 'Pesticide Bill Updated' : 'Pesticide Bill Saved',
       description: 'The bill has been successfully saved.',
     });
     router.push(`/pesticide-invoice/${billId}`);
   };
 
+   const loadBillForEdit = (bill: any) => {
+    setBillDetails({
+        no: bill.no,
+        date: bill.date,
+        customerName: bill.customerName,
+    });
+    setEntries(bill.entries);
+    setIsEditing(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <div className="text-center">
-            <h2 className="text-2xl font-bold">F. Co Pesticides & Fertilizers</h2>
-            <p className="text-sm text-muted-foreground">Deals in:- All kinds of Pesticides & Fertilizers</p>
-            <p className="text-sm text-muted-foreground">NEAR JAMIA MASJID NADIHAL</p>
-            <p className="text-sm text-muted-foreground">Cell: 9797002164, 7006136330</p>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-                <Label>No.</Label>
-                <Input value={billDetails.no} onChange={e => handleDetailChange('no', e.target.value)} />
-            </div>
-            <div className="space-y-2">
-                <Label>Dated</Label>
-                <Input type="date" value={billDetails.date} onChange={e => handleDetailChange('date', e.target.value)} />
-            </div>
-            <div className="space-y-2 col-span-2 md:col-span-1">
-                <Label>M/s</Label>
-                <Input placeholder="Customer Name" value={billDetails.customerName} onChange={e => handleDetailChange('customerName', e.target.value)} />
-            </div>
-        </div>
-        
-        <Separator />
-
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
-                <Label className="w-8">S.No.</Label>
-                <Label className="flex-1">PARTICULARS</Label>
-                <Label className="w-24">QTY</Label>
-                <Label className="w-28">RATE</Label>
-                <div className="w-10"></div>
-            </div>
-            {entries.map((entry, index) => (
-              <ItemEntryRow
-                key={index}
-                index={index}
-                entry={entry}
-                onUpdate={(field, value) => handleEntryUpdate(index, field, value)}
-                onRemove={() => removeSlot(index)}
-              />
-            ))}
-            <Button variant="outline" size="sm" className="gap-1" onClick={addSlot}>
-              <PlusCircle className="h-3.5 w-3.5" />
-              Add Item
-            </Button>
-          </div>
-        </div>
-
-        <Separator />
-        
-        <div className="flex justify-end">
-            <div className="w-full max-w-xs space-y-2">
-                <div className="flex justify-between font-bold text-lg">
-                    <span>G. Total</span>
-                    <span>₹{grandTotal.toFixed(2)}</span>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="md:col-span-2">
+            <CardHeader>
+                 <div className="flex justify-between items-center">
+                    <div className="text-center flex-1">
+                        <h2 className="text-2xl font-bold">F. Co Pesticides & Fertilizers</h2>
+                        <p className="text-sm text-muted-foreground">Deals in:- All kinds of Pesticides & Fertilizers</p>
+                        <p className="text-sm text-muted-foreground">NEAR JAMIA MASJID NADIHAL</p>
+                        <p className="text-sm text-muted-foreground">Cell: 9797002164, 7006136330</p>
+                    </div>
+                     {isEditing && (
+                        <Button variant="outline" size="sm" onClick={resetForm} className="gap-2">
+                            <FilePlus className="h-4 w-4" />
+                            New Bill
+                        </Button>
+                    )}
+                 </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                        <Label>No.</Label>
+                        <Input value={billDetails.no} onChange={e => handleDetailChange('no', e.target.value)} disabled={isEditing} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Dated</Label>
+                        <Input type="date" value={billDetails.date} onChange={e => handleDetailChange('date', e.target.value)} />
+                    </div>
+                    <div className="space-y-2 col-span-2 md:col-span-1">
+                        <Label>M/s</Label>
+                        <Input placeholder="Customer Name" value={billDetails.customerName} onChange={e => handleDetailChange('customerName', e.target.value)} />
+                    </div>
                 </div>
-            </div>
-        </div>
-      </CardContent>
-      <CardFooter className="flex-col items-center gap-2">
-        <Button onClick={handleCreateBill} className="w-full max-w-sm">Save & View Bill</Button>
-        <p className="text-xs text-muted-foreground">Goods once sold can not be taken back.</p>
-      </CardFooter>
-    </Card>
+                
+                <Separator />
+
+                <div className="space-y-4">
+                <div className="space-y-2">
+                    <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
+                        <Label className="w-8">S.No.</Label>
+                        <Label className="flex-1">PARTICULARS</Label>
+                        <Label className="w-24">QTY</Label>
+                        <Label className="w-28">RATE</Label>
+                        <div className="w-10"></div>
+                    </div>
+                    {entries.map((entry, index) => (
+                    <ItemEntryRow
+                        key={index}
+                        index={index}
+                        entry={entry}
+                        onUpdate={(field, value) => handleEntryUpdate(index, field, value)}
+                        onRemove={() => removeSlot(index)}
+                    />
+                    ))}
+                    <Button variant="outline" size="sm" className="gap-1" onClick={addSlot}>
+                    <PlusCircle className="h-3.5 w-3.5" />
+                    Add Item
+                    </Button>
+                </div>
+                </div>
+
+                <Separator />
+                
+                <div className="flex justify-end">
+                    <div className="w-full max-w-xs space-y-2">
+                        <div className="flex justify-between font-bold text-lg">
+                            <span>G. Total</span>
+                            <span>₹{grandTotal.toFixed(2)}</span>
+                        </div>
+                    </div>
+                </div>
+            </CardContent>
+            <CardFooter className="flex-col items-center gap-2">
+                <Button onClick={handleCreateBill} className="w-full max-w-sm">{isEditing ? 'Update & View Bill' : 'Save & View Bill'}</Button>
+                <p className="text-xs text-muted-foreground">Goods once sold can not be taken back.</p>
+            </CardFooter>
+        </Card>
+         <Card className="md:col-span-1 h-fit">
+            <CardHeader>
+                <h3 className="text-lg font-medium">Recent Pesticide Bills</h3>
+            </CardHeader>
+            <CardContent>
+                <ScrollArea className="h-96">
+                    <div className="space-y-2">
+                        {savedBills.map(bill => (
+                            <div key={bill.no} className="flex justify-between items-center p-2 border rounded-md">
+                                <div>
+                                    <p className="font-medium">Bill #{bill.no}</p>
+                                    <p className="text-sm text-muted-foreground">{bill.customerName}</p>
+                                    <p className="text-sm text-muted-foreground">{new Date(bill.date).toLocaleDateString()}</p>
+                                </div>
+                                <Button variant="ghost" size="icon" onClick={() => loadBillForEdit(bill)}>
+                                    <FilePenLine className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        ))}
+                         {savedBills.length === 0 && <p className="text-sm text-muted-foreground text-center">No recent bills found.</p>}
+                    </div>
+                </ScrollArea>
+            </CardContent>
+        </Card>
+    </div>
   );
 }
