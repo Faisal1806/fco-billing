@@ -1,9 +1,8 @@
 'use client'
 
 import { LanguageSwitcher } from "@/components/language-switcher";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { ProfileForm } from "@/components/profile-form";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLanguage } from "@/contexts/language-context";
 
 export default function SettingsPage() {
@@ -28,29 +27,7 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Profile</CardTitle>
-                    <CardDescription>
-                        Update your personal information.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <form className="space-y-4">
-                        <div className="space-y-2">
-                            <label htmlFor="name">Name</label>
-                            <Input id="name" defaultValue="Admin User" />
-                        </div>
-                        <div className="space-y-2">
-                            <label htmlFor="email">Email</label>
-                            <Input id="email" type="email" defaultValue="admin@swiftsale.com" />
-                        </div>
-                    </form>
-                </CardContent>
-                <CardFooter className="border-t px-6 py-4">
-                    <Button>Save</Button>
-                </CardFooter>
-            </Card>
+            <ProfileForm />
         </div>
     )
 }
