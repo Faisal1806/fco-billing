@@ -17,13 +17,13 @@ import { useLanguage } from '@/contexts/language-context';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 
-const FormRow = ({ id, label, value, onChange, disabled = false }: { id: string, label: string, value: number, onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void, disabled?: boolean }) => (
+const FormRow = ({ id, label, value, onChange, disabled = false, placeholder = "0" }: { id: string, label: string, value: number, onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void, disabled?: boolean, placeholder?: string }) => (
     <div className="grid grid-cols-2 items-center gap-4">
         <Label htmlFor={id}>{label}</Label>
         <Input
             id={id}
             type="number"
-            placeholder="0.00"
+            placeholder={placeholder}
             value={value || ''}
             onChange={onChange}
             disabled={disabled}
@@ -35,15 +35,18 @@ export function BillMakingTab() {
   const { t } = useLanguage();
   const { toast } = useToast();
 
-  const [productQty, setProductQty] = React.useState(0);
-  const [productRate, setProductRate] = React.useState(0);
+  const [dabbaQty, setDabbaQty] = React.useState(0);
+  const [pattiQty, setPattiQty] = React.useState(0);
+  const [msQty, setMsQty] = React.useState(0);
+  const [khataQty, setKhataQty] = React.useState(0);
+  
   const [freight, setFreight] = React.useState(0);
   const [postage, setPostage] = React.useState(0);
   const [labor, setLabor] = React.useState(0);
   const [security, setSecurity] = React.useState(0);
   const [otherExpenses, setOtherExpenses] = React.useState(0);
   
-  const grossSale = productQty * productRate;
+  const grossSale = (dabbaQty * 800) + (pattiQty * 220) + (msQty * 850);
   const commissionAmount = grossSale * 0.06;
   const totalExpenses = freight + postage + labor + security + otherExpenses;
   const netSale = grossSale - totalExpenses - commissionAmount;
@@ -65,9 +68,11 @@ export function BillMakingTab() {
       <CardContent className="space-y-6">
         <div className="space-y-4">
             <h3 className="text-lg font-medium text-muted-foreground">Product Information</h3>
-            <FormRow id="productQty" label="Quantity" value={productQty} onChange={(e) => setProductQty(Number(e.target.value))} />
-            <FormRow id="productRate" label="Rate" value={productRate} onChange={(e) => setProductRate(Number(e.target.value))} />
-            <FormRow id="grossSale" label="Gross Sale" value={grossSale} disabled />
+            <FormRow id="dabbaQty" label="Dabba Quantity" value={dabbaQty} onChange={(e) => setDabbaQty(Number(e.target.value))} />
+            <FormRow id="pattiQty" label="Patti Quantity" value={pattiQty} onChange={(e) => setPattiQty(Number(e.target.value))} />
+            <FormRow id="msQty" label="M/S (Customer) Quantity" value={msQty} onChange={(e) => setMsQty(Number(e.target.value))} />
+            <FormRow id="khataQty" label="Khata (Account) Quantity" value={khataQty} onChange={(e) => setKhataQty(Number(e.target.value))} />
+            <FormRow id="grossSale" label="Gross Sale" value={grossSale} disabled placeholder="0.00" />
             <Separator />
             <h3 className="text-lg font-medium text-muted-foreground">Expenses</h3>
             <FormRow id="freight" label="Freight" value={freight} onChange={(e) => setFreight(Number(e.target.value))} />
