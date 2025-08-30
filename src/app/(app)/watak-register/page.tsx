@@ -58,7 +58,7 @@ export default function WatakRegisterPage() {
                 <TableCell>
                     <Badge variant={watak.paymentStatus === 'Paid' ? 'secondary' : 'outline'}>{watak.paymentStatus}</Badge>
                 </TableCell>
-                <TableCell className="text-right">${watak.amount.toFixed(2)}</TableCell>
+                <TableCell className="text-right">₹{watak.amount.toFixed(2)}</TableCell>
               </TableRow>
             ))}
           </TableBody>

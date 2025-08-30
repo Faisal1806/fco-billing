@@ -131,7 +131,7 @@ export default function SalesPage() {
                                 <TableRow key={product.id}>
                                     <TableCell>{product.name}</TableCell>
                                     <TableCell>1</TableCell>
-                                    <TableCell className="text-right">${product.price.toFixed(2)}</TableCell>
+                                    <TableCell className="text-right">₹{product.price.toFixed(2)}</TableCell>
                                 </TableRow>
                             ))}
                              {cart.length === 0 && (
@@ -155,15 +155,15 @@ export default function SalesPage() {
                 <div className="grid gap-4">
                     <div className="flex items-center justify-between">
                         <span>{t('subtotal')}</span>
-                        <span>${subtotal.toFixed(2)}</span>
+                        <span>₹{subtotal.toFixed(2)}</span>
                     </div>
                     <div className="flex items-center justify-between">
                         <span>{t('tax')} (5%)</span>
-                        <span>${tax.toFixed(2)}</span>
+                        <span>₹{tax.toFixed(2)}</span>
                     </div>
                     <div className="flex items-center justify-between font-semibold text-lg">
                         <span>{t('total')}</span>
-                        <span>${total.toFixed(2)}</span>
+                        <span>₹{total.toFixed(2)}</span>
                     </div>
                     </div>
                 </CardContent>

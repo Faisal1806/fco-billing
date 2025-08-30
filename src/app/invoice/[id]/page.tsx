@@ -60,19 +60,19 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                             <TableRow>
                                 <TableCell>Wireless Bluetooth Headphones</TableCell>
                                 <TableCell className="text-center">1</TableCell>
-                                <TableCell className="text-right">$89.99</TableCell>
-                                <TableCell className="text-right">$89.99</TableCell>
+                                <TableCell className="text-right">₹89.99</TableCell>
+                                <TableCell className="text-right">₹89.99</TableCell>
                             </TableRow>
                         </TableBody>
                     </Table>
                     <Separator className="my-8" />
                     <div className="grid grid-cols-2 gap-4 ms-auto max-w-sm">
                         <div className="text-muted-foreground">{t('subtotal')}</div>
-                        <div className="text-right font-medium">${subtotal.toFixed(2)}</div>
+                        <div className="text-right font-medium">₹{subtotal.toFixed(2)}</div>
                         <div className="text-muted-foreground">{t('tax')} (5%)</div>
-                        <div className="text-right font-medium">${tax.toFixed(2)}</div>
+                        <div className="text-right font-medium">₹{tax.toFixed(2)}</div>
                         <div className="font-semibold text-lg">{t('total')}</div>
-                        <div className="text-right font-semibold text-lg">${total.toFixed(2)}</div>
+                        <div className="text-right font-semibold text-lg">₹{total.toFixed(2)}</div>
                     </div>
                 </CardContent>
                 <CardFooter className="justify-between items-center">

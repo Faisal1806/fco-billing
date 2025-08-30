@@ -58,7 +58,7 @@ export default function ExpensesPage() {
                 <TableCell>
                     <Badge variant="outline">{expense.category}</Badge>
                 </TableCell>
-                <TableCell className="text-right">${expense.amount.toFixed(2)}</TableCell>
+                <TableCell className="text-right">₹{expense.amount.toFixed(2)}</TableCell>
               </TableRow>
             ))}
           </TableBody>

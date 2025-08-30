@@ -54,7 +54,7 @@ export default function ProductsPage() {
                 <TableCell className="font-medium">{product.name}</TableCell>
                 <TableCell>{product.category}</TableCell>
                 <TableCell className="text-right">{product.stock}</TableCell>
-                <TableCell className="text-right">${product.price.toFixed(2)}</TableCell>
+                <TableCell className="text-right">₹{product.price.toFixed(2)}</TableCell>
               </TableRow>
             ))}
           </TableBody>
