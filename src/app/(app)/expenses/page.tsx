@@ -1,6 +1,7 @@
 
 'use client'
 
+import * as React from 'react';
 import {
   Card,
   CardContent,
@@ -24,6 +25,12 @@ import { Badge } from '@/components/ui/badge';
 
 export default function ExpensesPage() {
   const { t } = useLanguage();
+  const [isClient, setIsClient] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   return (
     <Card>
       <CardHeader>
@@ -53,7 +60,7 @@ export default function ExpensesPage() {
           <TableBody>
             {expenses.map((expense: Expense) => (
               <TableRow key={expense.id}>
-                <TableCell>{expense.date.toLocaleDateString()}</TableCell>
+                <TableCell>{isClient ? expense.date.toLocaleDateString() : ''}</TableCell>
                 <TableCell className="font-medium">{expense.description}</TableCell>
                 <TableCell>
                     <Badge variant="outline">{expense.category}</Badge>

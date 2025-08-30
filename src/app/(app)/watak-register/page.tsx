@@ -1,6 +1,7 @@
 
 'use client'
 
+import * as React from 'react';
 import {
   Card,
   CardContent,
@@ -24,6 +25,12 @@ import { Badge } from '@/components/ui/badge';
 
 export default function WatakRegisterPage() {
   const { t } = useLanguage();
+  const [isClient, setIsClient] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   return (
     <Card>
       <CardHeader>
@@ -53,7 +60,7 @@ export default function WatakRegisterPage() {
           <TableBody>
             {wataks.map((watak: Watak) => (
               <TableRow key={watak.id}>
-                <TableCell>{watak.date.toLocaleDateString()}</TableCell>
+                <TableCell>{isClient ? watak.date.toLocaleDateString() : ''}</TableCell>
                 <TableCell className="font-medium">{watak.customerName}</TableCell>
                 <TableCell>
                     <Badge variant={watak.paymentStatus === 'Paid' ? 'secondary' : 'outline'}>{watak.paymentStatus}</Badge>
