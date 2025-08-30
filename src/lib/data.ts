@@ -26,6 +26,15 @@ export type Expense = {
   date: Date;
 };
 
+export type Watak = {
+  id: string;
+  customerName: string;
+  amount: number;
+  paymentStatus: 'Pending' | 'Paid';
+  date: Date;
+};
+
+
 export const products: Product[] = [
   { id: 'PROD001', name: 'Classic White T-Shirt', category: 'Apparel', stock: 150, price: 15.99 },
   { id: 'PROD002', name: 'Organic Blend Coffee', category: 'Groceries', stock: 80, price: 12.50 },
@@ -58,4 +67,10 @@ export const expenses: Expense[] = [
     { id: 'EXP003', category: 'Rent', description: 'Warehouse rental for the month', amount: 1200.00, date: new Date(new Date().setDate(new Date().getDate() - 2)) },
     { id: 'EXP004', category: 'Supplies', description: 'Packaging materials', amount: 250.75, date: new Date(new Date().setDate(new Date().getDate() - 3)) },
     { id: 'EXP005', category: 'Utilities', description: 'Internet bill', amount: 60.00, date: new Date(new Date().setDate(new Date().getDate() - 4)) },
+];
+
+export const wataks: Watak[] = [
+  { id: 'WAT001', customerName: 'Ali', amount: 500, paymentStatus: 'Pending', date: new Date() },
+  { id: 'WAT002', customerName: 'Khan', amount: 300, paymentStatus: 'Paid', date: new Date(new Date().setDate(new Date().getDate() - 1)) },
+  { id: 'WAT003', customerName: 'Zubair', amount: 1250, paymentStatus: 'Pending', date: new Date(new Date().setDate(new Date().getDate() - 2)) },
 ];

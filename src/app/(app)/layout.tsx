@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ShoppingCart, Package, Settings, Package2, Bell, Search, User, Receipt } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, Settings, Package2, Bell, Search, User, Receipt, BookUser } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { href: '/sales', icon: ShoppingCart, label: t('sales') },
     { href: '/products', icon: Package, label: t('products') },
     { href: '/expenses', icon: Receipt, label: t('expenses') },
+    { href: '/watak-register', icon: BookUser, label: t('watak_register') },
     { href: '/settings', icon: Settings, label: t('settings') },
   ];
 
@@ -37,6 +38,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (pathname.startsWith('/sales')) return 'Sales Page';
     if (pathname.startsWith('/products')) return 'Product Catalog';
     if (pathname.startsWith('/expenses')) return 'Expenses Page';
+    if (pathname.startsWith('/watak-register')) return 'Watak Register Page';
     if (pathname.startsWith('/settings')) return 'Settings Page';
     return 'General';
   }
