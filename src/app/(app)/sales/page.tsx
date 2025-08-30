@@ -14,23 +14,30 @@ export default function SalesPage() {
 
   return (
     <Tabs defaultValue="bill-making" className="w-full">
-      <TabsList className="grid w-full grid-cols-4">
+      <TabsList className="grid w-full grid-cols-2">
         <TabsTrigger value="bill-making">Bill Making</TabsTrigger>
         <TabsTrigger value="receipt-making">Receipt Making</TabsTrigger>
-        <TabsTrigger value="pesticide-bill">Pesticide Bill</TabsTrigger>
-        <TabsTrigger value="challan">Challan</TabsTrigger>
       </TabsList>
       <TabsContent value="bill-making">
-        <BillMakingTab />
+        <Tabs defaultValue="sale-slip" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="sale-slip">Sale Slip</TabsTrigger>
+                <TabsTrigger value="challan">Challan</TabsTrigger>
+                <TabsTrigger value="pesticide-bill">Pesticide Bill</TabsTrigger>
+            </TabsList>
+            <TabsContent value="sale-slip">
+                <BillMakingTab />
+            </TabsContent>
+            <TabsContent value="challan">
+                <ChallanMakingTab />
+            </TabsContent>
+            <TabsContent value="pesticide-bill">
+                <PesticideBillTab />
+            </TabsContent>
+        </Tabs>
       </TabsContent>
       <TabsContent value="receipt-making">
         <ReceiptMakingTab />
-      </TabsContent>
-      <TabsContent value="pesticide-bill">
-        <PesticideBillTab />
-      </TabsContent>
-       <TabsContent value="challan">
-        <ChallanMakingTab />
       </TabsContent>
     </Tabs>
   );

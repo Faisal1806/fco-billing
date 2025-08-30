@@ -85,6 +85,8 @@ export function BillMakingTab() {
     customerName: '',
     challanNo: '',
     onAcOf: '',
+    watakNo: '',
+    rokatNo: '',
   };
 
   const initialEntries: ProductEntry[] = [
@@ -148,7 +150,7 @@ export function BillMakingTab() {
   };
   
   const grossSale = calculateGrossSale();
-  const commissionAmount = grossSale * 0.06;
+  const commissionAmount = grossSale * 0.12; // Updated to 12%
   const totalExpenses = freight + labour + security + otherExpenses + commissionAmount;
   const netSale = grossSale - totalExpenses;
 
@@ -202,6 +204,8 @@ export function BillMakingTab() {
         customerName: bill.customerName,
         challanNo: bill.challanNo,
         onAcOf: bill.onAcOf,
+        watakNo: bill.watakNo || '',
+        rokatNo: bill.rokatNo || '',
     });
     setEntries(bill.entries);
     setFreight(bill.freight);
@@ -232,7 +236,7 @@ export function BillMakingTab() {
                 </div>
             </CardHeader>
             <CardContent className="space-y-6">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="space-y-2">
                         <Label>S.No</Label>
                         <Input value={billDetails.sNo} onChange={e => handleBillDetailChange('sNo', e.target.value)} disabled={isEditing} />
@@ -241,7 +245,15 @@ export function BillMakingTab() {
                         <Label>Date</Label>
                         <Input type="date" value={billDetails.date} onChange={e => handleBillDetailChange('date', e.target.value)} />
                     </div>
-                    <div className="space-y-2 col-span-2 md:col-span-1">
+                     <div className="space-y-2">
+                        <Label>Watak No.</Label>
+                        <Input value={billDetails.watakNo} onChange={e => handleBillDetailChange('watakNo', e.target.value)} />
+                    </div>
+                     <div className="space-y-2">
+                        <Label>Rokat No.</Label>
+                        <Input value={billDetails.rokatNo} onChange={e => handleBillDetailChange('rokatNo', e.target.value)} />
+                    </div>
+                    <div className="space-y-2 col-span-2">
                         <Label>M/s</Label>
                         <Input placeholder="Customer Name" value={billDetails.customerName} onChange={e => handleBillDetailChange('customerName', e.target.value)} />
                     </div>
@@ -307,7 +319,7 @@ export function BillMakingTab() {
                             <span className="font-medium">₹{grossSale.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-muted-foreground">Commission (6%)</span>
+                            <span className="text-muted-foreground">Commission (12%)</span>
                             <span className="font-medium">₹{commissionAmount.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between">

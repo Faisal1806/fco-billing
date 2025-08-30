@@ -1,7 +1,7 @@
 
 'use client'
 
-import { DollarSign, Package, Users, Activity } from 'lucide-react';
+import { DollarSign, Package, Users, Activity, FileText, IndianRupee } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -98,10 +98,10 @@ export default function DashboardPage() {
     <>
       <div className="flex-1 space-y-4">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <StatsCard title={t('total_revenue')} value="₹45,231.89" subtitle="+20.1% from last month" icon={DollarSign} />
-          <StatsCard title={t('total_sales')} value="+2350" subtitle="+180.1% from last month" icon={Users} />
-          <StatsCard title={t('products')} value="573" subtitle="+19% from last month" icon={Package} />
-          <StatsCard title={t('active_now')} value="+573" subtitle="+201 since last hour" icon={Activity} />
+          <StatsCard title="Today's Sale" value="₹12,245.50" subtitle="Total of all bills today" icon={IndianRupee} />
+          <StatsCard title="Monthly Sale" value="₹1,45,231.89" subtitle="Total sales this month" icon={DollarSign} />
+          <StatsCard title="Wataks Generated" value="8" subtitle="This month" icon={FileText} />
+          <StatsCard title="Challans Generated" value="12" subtitle="This month" icon={Package} />
         </div>
         <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-3">
             <SalesChart />
