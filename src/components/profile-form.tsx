@@ -34,7 +34,7 @@ export function ProfileForm() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: 'Admin User',
-      email: 'admin@swiftsale.com',
+      email: 'lone07936@gmail.com',
     },
   });
 
