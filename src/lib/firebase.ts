@@ -4,12 +4,12 @@ import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  apiKey: "AlZaSyDrev3-idwKsbpZI8UL9MT-GHssblaEuo4",
+  authDomain: "myf.cobillingsystemapp.firebaseapp.com",
+  projectId: "myf.cobillingsystemapp",
+  storageBucket: "myf.cobillingsystemapp.appspot.com",
+  messagingSenderId: "693507183352",
+  appId: "swiftsale-ewd70",
 };
 
 // Initialize Firebase
