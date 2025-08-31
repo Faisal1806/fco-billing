@@ -71,7 +71,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 if(data) {
                      data.entries = data.entries.map(e => ({...e, qty: e.qty || e.peti || e.dabba || 0}))
                     setBillData(data);
-                    localStorage.setItem(`invoice-${data.id}`, JSON.stringify(data));
+                    localStorage.setItem(`invoice-${data.sNo}`, JSON.stringify(data));
                 } else {
                      toast({
                         variant: "destructive",
