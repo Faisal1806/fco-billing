@@ -22,10 +22,15 @@ let auth: Auth;
 let messaging: Messaging | null;
 
 function getClientDb() {
-    if (!db) {
-      db = getFirestore(app);
+    if (typeof window !== 'undefined') {
+        if (!db) {
+            db = getFirestore(app);
+        }
+        return db;
     }
-    return db;
+    // This is a placeholder for server-side rendering, it should not be used to actually query.
+    // The components using this should be client components.
+    return {} as Firestore;
 }
 
 function getClientAuth() {
