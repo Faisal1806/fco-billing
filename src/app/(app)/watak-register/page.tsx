@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/language-context';
-import { ChevronDown, PlusCircle, Share2, Loader2, FilePenLine, Trash2 } from 'lucide-react';
+import { ChevronDown, PlusCircle, Share2, Loader2, FilePenLine, Trash2, List, LayoutGrid } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +31,7 @@ import { useToast } from '@/hooks/use-toast';
 import { collection, onSnapshot, query, orderBy, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
+import WatakCard from '@/components/WatakCard';
 
 export interface WatakEntry {
     id: string;
@@ -53,6 +54,8 @@ export default function WatakRegisterPage() {
   const [growers, setGrowers] = React.useState<string[]>([]);
   const [selectedGrower, setSelectedGrower] = React.useState('All Growers');
   const [isLoading, setIsLoading] = React.useState(true);
+  const [viewMode, setViewMode] = React.useState<'table' | 'grid'>('table');
+
 
   React.useEffect(() => {
     const q = query(collection(db, "wataks"), orderBy("sNo", "desc"));
@@ -149,6 +152,14 @@ export default function WatakRegisterPage() {
                 </DropdownMenu>
             </div>
             <div className="flex items-center gap-2">
+                 <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setViewMode(viewMode === 'table' ? 'grid' : 'table')}
+                    title={viewMode === 'table' ? 'Grid View' : 'Table View'}
+                    >
+                    {viewMode === 'table' ? <LayoutGrid className="h-4 w-4" /> : <List className="h-4 w-4" />}
+                </Button>
                 <Button size="sm" className="gap-1" onClick={handleShare} variant="outline">
                     <Share2 className="h-3.5 w-3.5" />
                      <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
@@ -169,6 +180,14 @@ export default function WatakRegisterPage() {
         {isLoading ? (
             <div className="flex justify-center items-center h-64">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        ) : viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {filteredWataks.map((watak) => (
+                     <div key={watak.id} onClick={() => navigateToBill(watak.sNo)} className="cursor-pointer">
+                        <WatakCard data={watak} />
+                    </div>
+                ))}
             </div>
         ) : (
         <Table>
