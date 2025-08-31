@@ -20,6 +20,7 @@ import { LanguageSwitcher } from '@/components/language-switcher';
 import { ContextualHelp } from '@/components/contextual-help';
 import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/logo';
+import { ThemeSwitcher } from '@/components/theme-switcher';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -50,10 +51,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <div className="hidden border-r bg-black md:block">
+      <div className="hidden border-r bg-background md:block">
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <Link href="/" className="flex items-center gap-2 font-semibold text-white">
+            <Link href="/" className="flex items-center gap-2 font-semibold text-foreground">
               <Logo className="h-8 w-8" />
               <span className="">{t('app_title')}</span>
             </Link>
@@ -65,8 +66,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   key={item.label}
                   href={item.href}
                   className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2 text-gray-400 transition-all hover:text-white',
-                    pathname.startsWith(item.href) && 'bg-gray-800 text-white'
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-foreground',
+                    pathname.startsWith(item.href) && 'bg-muted text-foreground'
                   )}
                 >
                   <item.icon className="h-4 w-4" />
@@ -77,16 +78,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </div>
-      <div className="flex flex-col bg-gradient-to-br from-black via-red-900 to-green-800">
-        <header className="flex h-14 items-center gap-4 border-b bg-black/50 px-4 lg:h-[60px] lg:px-6">
+      <div className="flex flex-col bg-muted/40">
+        <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="shrink-0 md:hidden bg-transparent text-white hover:bg-gray-800">
+              <Button variant="outline" size="icon" className="shrink-0 md:hidden">
                 <ShoppingCart className="h-5 w-5" />
                 <span className="sr-only">Toggle navigation menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="flex flex-col bg-black text-white border-r-gray-800">
+            <SheetContent side="left" className="flex flex-col">
               <nav className="grid gap-2 text-lg font-medium">
                 <Link
                   href="#"
@@ -100,8 +101,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     key={item.label}
                     href={item.href}
                     className={cn(
-                      'flex items-center gap-4 rounded-xl px-3 py-2 text-gray-400 hover:text-white',
-                      pathname.startsWith(item.href) && 'bg-gray-800 text-white'
+                      'flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground',
+                      pathname.startsWith(item.href) && 'bg-muted text-foreground'
                     )}
                   >
                     <item.icon className="h-5 w-5" />
@@ -115,6 +116,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {/* Can add search here if needed */}
           </div>
           <LanguageSwitcher />
+          <ThemeSwitcher />
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
           {children}

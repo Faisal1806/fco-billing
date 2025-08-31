@@ -6,6 +6,7 @@ import './globals.css';
 import './print.css'; // Import print styles
 import { Toaster } from '@/components/ui/toaster';
 import { LanguageProvider } from '@/contexts/language-context';
+import { ThemeProvider } from '@/components/theme-provider';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const urdu = Noto_Nastaliq_Urdu({
@@ -28,10 +29,17 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${urdu.variable} font-body antialiased`}
       >
-        <LanguageProvider>
-          {children}
-          <Toaster />
-        </LanguageProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <LanguageProvider>
+            {children}
+            <Toaster />
+          </LanguageProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
