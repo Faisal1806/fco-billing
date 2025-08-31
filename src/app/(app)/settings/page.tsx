@@ -19,7 +19,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
-import { Factory } from 'lucide-react';
+import { Factory, BellRing } from 'lucide-react';
+import { messaging } from '@/lib/firebase';
+import { getToken } from 'firebase/messaging';
 
 
 export default function SettingsPage() {
@@ -44,6 +46,58 @@ export default function SettingsPage() {
         }
     }
 
+    const handleEnableNotifications = async () => {
+        if (!messaging) {
+            toast({
+                variant: 'destructive',
+                title: 'Unsupported Browser',
+                description: 'Push notifications are not supported on this browser.',
+            });
+            return;
+        }
+
+        try {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                const fcmToken = await getToken(messaging, { vapidKey: 'YOUR_VAPID_KEY_HERE' }); // IMPORTANT: Replace with your actual VAPID key
+                
+                if (fcmToken) {
+                    console.log('FCM Token:', fcmToken);
+                    // TODO: Send this token to your server to store it
+                    toast({
+                        title: 'Notifications Enabled',
+                        description: 'You will now receive push notifications.',
+                    });
+                } else {
+                     toast({
+                        variant: 'destructive',
+                        title: 'Token Error',
+                        description: 'Could not get the notification token. Please try again.',
+                    });
+                }
+
+            } else if (permission === 'denied') {
+                 toast({
+                    variant: 'destructive',
+                    title: 'Permission Denied',
+                    description: 'You have blocked notifications. Please enable them in your browser settings.',
+                });
+            } else {
+                toast({
+                    title: 'Permission Ignored',
+                    description: 'Notification permission request was dismissed.',
+                });
+            }
+        } catch (error) {
+            console.error('Error getting FCM token:', error);
+            toast({
+                variant: 'destructive',
+                title: 'Notification Error',
+                description: 'An error occurred while enabling notifications.',
+            });
+        }
+    };
+
 
     return (
         <div className="grid gap-6">
@@ -65,6 +119,21 @@ export default function SettingsPage() {
             </Card>
 
             <ProfileForm />
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Notifications</CardTitle>
+                    <CardDescription>
+                        Enable push notifications to receive real-time updates about your business.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button onClick={handleEnableNotifications} className="gap-2">
+                        <BellRing className="h-4 w-4" />
+                        Enable Notifications
+                    </Button>
+                </CardContent>
+            </Card>
 
             <Card>
                 <CardHeader>
