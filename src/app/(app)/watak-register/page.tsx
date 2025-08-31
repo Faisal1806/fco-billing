@@ -28,29 +28,30 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
-import { collection, onSnapshot, query, orderBy, getDocs, doc, deleteDoc } from 'firebase/firestore';
-import { getClientDb } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import DocumentCard from '@/components/DocumentCard';
 
 export interface WatakEntry {
     id: string;
-    date: string;
     sNo: string;
+    date: string;
     watakNo: string;
     customerName: string;
-    customerUrdu?: string; // Add this for Urdu name
+    customerUrdu?: string;
     entries: { peti: number, daba: number }[];
-    grossSale: number;
-    totalExpenses: number;
-    netSale: number;
+    totals: {
+        grossSale: number;
+        totalExpenses: number;
+        netSale: number;
+    }
 }
 
 export default function WatakRegisterPage() {
   const { t } = useLanguage();
   const router = useRouter();
   const { toast } = useToast();
-  const db = getClientDb();
+  const [isClient, setIsClient] = React.useState(false);
+
 
   const [wataks, setWataks] = React.useState<WatakEntry[]>([]);
   const [growers, setGrowers] = React.useState<string[]>([]);
@@ -60,36 +61,33 @@ export default function WatakRegisterPage() {
 
 
   React.useEffect(() => {
-    const q = query(collection(db, "wataks"), orderBy("sNo", "desc"));
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-        const fetchedWataks = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WatakEntry));
-        setWataks(fetchedWataks);
-
-        const uniqueGrowers = ['All Growers', ...new Set(fetchedWataks.map(w => w.customerName))];
-        setGrowers(uniqueGrowers);
-
-        setIsLoading(false);
-    }, (error) => {
-        console.error("Error fetching wataks:", error);
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Could not fetch watak register from Firestore."
-        });
-        setIsLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [db, toast]);
+    setIsClient(true);
+    const savedWataks: WatakEntry[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('invoice-')) {
+            try {
+                const watak = JSON.parse(localStorage.getItem(key)!);
+                savedWataks.push({ id: watak.sNo, ...watak});
+            } catch(e) {
+                console.error("Could not parse watak from local storage", e);
+            }
+        }
+    }
+    setWataks(savedWataks);
+    const uniqueGrowers = ['All Growers', ...new Set(savedWataks.map(w => w.customerName))];
+    setGrowers(uniqueGrowers);
+    setIsLoading(false);
+  }, []);
 
   const filteredWataks = selectedGrower === 'All Growers'
     ? wataks
     : wataks.filter(w => w.customerName === selectedGrower);
 
   const footerTotals = filteredWataks.reduce((acc, watak) => {
-    acc.grossSale += watak.grossSale || 0;
-    acc.totalExpenses += watak.totalExpenses || 0;
-    acc.netSale += watak.netSale || 0;
+    acc.grossSale += watak.totals.grossSale || 0;
+    acc.totalExpenses += watak.totals.totalExpenses || 0;
+    acc.netSale += watak.totals.netSale || 0;
     return acc;
   }, { grossSale: 0, totalExpenses: 0, netSale: 0 });
 
@@ -123,8 +121,8 @@ export default function WatakRegisterPage() {
   const handleDelete = async (id: string, sNo: string) => {
     if(!window.confirm(`Are you sure you want to delete Bill #${sNo}? This cannot be undone.`)) return;
     try {
-      await deleteDoc(doc(db, "wataks", id));
       localStorage.removeItem(`invoice-${sNo}`);
+      setWataks(prev => prev.filter(w => w.sNo !== sNo));
       toast({ title: "Bill Deleted", description: `Bill #${sNo} has been deleted.`});
     } catch(e) {
       toast({ variant: "destructive", title: "Delete failed", description: "Could not delete bill."});
@@ -187,11 +185,11 @@ export default function WatakRegisterPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {filteredWataks.map((watak) => (
                      <div key={watak.id} onClick={() => navigateToBill(watak.sNo)} className="cursor-pointer">
-                        <DocumentCard type="watak" title={`Watak #${watak.watakNo}`}>
+                        <DocumentCard type="watak" title={`Watak #${watak.watakNo || watak.sNo}`}>
                             <p className="text-lg font-semibold">{watak.customerName}</p>
                             {watak.customerUrdu && <p className="font-urdu text-xl mt-1">{watak.customerUrdu}</p>}
                             <p className="text-sm mt-2">Date: {new Date(watak.date).toLocaleDateString()}</p>
-                            <p className="text-2xl font-bold mt-4">₹{watak.netSale.toFixed(2)}</p>
+                            <p className="text-2xl font-bold mt-4">₹{watak.totals.netSale.toFixed(2)}</p>
                         </DocumentCard>
                     </div>
                 ))}
@@ -221,9 +219,9 @@ export default function WatakRegisterPage() {
                 <TableCell className="font-medium">{watak.customerName}</TableCell>
                 <TableCell>{watak.entries.reduce((acc, e) => acc + (e.peti || 0), 0)}</TableCell>
                 <TableCell>{watak.entries.reduce((acc, e) => acc + (e.daba || 0), 0)}</TableCell>
-                <TableCell className="text-right">₹{watak.grossSale.toFixed(2)}</TableCell>
-                <TableCell className="text-right">₹{watak.totalExpenses.toFixed(2)}</TableCell>
-                <TableCell className="text-right">₹{watak.netSale.toFixed(2)}</TableCell>
+                <TableCell className="text-right">₹{watak.totals.grossSale.toFixed(2)}</TableCell>
+                <TableCell className="text-right">₹{watak.totals.totalExpenses.toFixed(2)}</TableCell>
+                <TableCell className="text-right">₹{watak.totals.netSale.toFixed(2)}</TableCell>
                 <TableCell className="text-right">
                   <Button variant="ghost" size="icon" onClick={() => navigateToBill(watak.sNo)}>
                     <FilePenLine className="h-4 w-4" />

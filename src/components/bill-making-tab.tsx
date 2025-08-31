@@ -2,8 +2,6 @@
 'use client';
 
 import { useMemo, useRef, useState, useEffect } from 'react';
-import { getClientDb } from '@/lib/firebase';
-import { addDoc, collection, serverTimestamp, doc, setDoc, getDoc, onSnapshot, query, orderBy, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
@@ -38,10 +36,11 @@ export function BillMakingTab() {
   const [date, setDate] = useState('');
   const [freight, setFreight] = useState<number>(0);
   const [rows, setRows] = useState<Row[]>(initialRows);
+  const [isClient, setIsClient] = React.useState(false);
+
 
   const { toast } = useToast();
   const router = useRouter();
-  const db = getClientDb();
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,23 +49,19 @@ export function BillMakingTab() {
 
 
   useEffect(() => {
-    const q = query(collection(db, "wataks"), orderBy("createdAt", "desc"));
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-        const bills = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setSavedBills(bills);
-        setIsLoading(false);
-    }, (error) => {
-        console.error("Error fetching bills:", error);
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Could not fetch recent bills from Firestore."
-        });
-        setIsLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [toast, db]);
+    setIsClient(true);
+    setIsLoading(true);
+    const bills = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('invoice-')) {
+            const bill = JSON.parse(localStorage.getItem(key)!);
+            bills.push(bill);
+        }
+    }
+    setSavedBills(bills.sort((a,b) => (a.sNo > b.sNo) ? 1 : -1));
+    setIsLoading(false);
+  }, []);
 
 
   // --- Calculations (ALL from your spec) ---
@@ -130,7 +125,7 @@ export function BillMakingTab() {
     };
 
 
-  const saveToFirestore = async () => {
+  const saveToLocalStorage = async () => {
      if (!sNo || !date || !ms) {
         toast({
             variant: 'destructive',
@@ -162,17 +157,15 @@ export function BillMakingTab() {
         totalExpenses: Number(totals.totalExp.toFixed(2)),
         netSale: Number(totals.netSale.toFixed(2)),
       },
-      createdAt: serverTimestamp(),
     };
     
     try {
-        await setDoc(doc(db, "wataks", billId), billData, { merge: true });
-        
         localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
+        setSavedBills(prev => [...prev.filter(b => b.sNo !== billId), billData].sort((a,b) => (a.sNo > b.sNo) ? 1 : -1));
 
         toast({
           title: isEditing ? 'Bill Updated' : 'Bill Saved',
-          description: `The bill has been successfully ${isEditing ? 'updated' : 'saved'} to Firestore.`,
+          description: `The bill has been successfully ${isEditing ? 'updated' : 'saved'}.`,
         });
         router.push(`/invoice/${billId}`);
     } catch (error) {
@@ -180,7 +173,7 @@ export function BillMakingTab() {
         toast({
             variant: 'destructive',
             title: 'Save Failed',
-            description: 'Could not save the bill to Firestore.',
+            description: 'Could not save the bill.',
         });
     } finally {
         setIsSubmitting(false);
@@ -205,19 +198,21 @@ export function BillMakingTab() {
         }
 
         try {
-            await deleteDoc(doc(db, "wataks", billId));
             localStorage.removeItem(`invoice-${billId}`);
-             setSavedBills(prev => prev.filter(b => b.id !== billId));
+            setSavedBills(prev => prev.filter(b => b.sNo !== billId));
             toast({
                 title: "Bill Deleted",
                 description: `Bill #${billId} has been successfully deleted.`
             })
+            if (sNo === billId) {
+                resetForm();
+            }
         } catch (error) {
             console.error("Error deleting bill:", error);
             toast({
                 variant: "destructive",
                 title: "Delete Failed",
-                description: "Could not delete the bill from Firestore."
+                description: "Could not delete the bill."
             })
         }
     }
@@ -509,7 +504,7 @@ export function BillMakingTab() {
             </CardContent>
             <CardFooter>
                 <div className="flex w-full justify-center flex-wrap gap-3">
-                    <Button onClick={saveToFirestore} className="flex-1 min-w-[150px]" disabled={isSubmitting}>
+                    <Button onClick={saveToLocalStorage} className="flex-1 min-w-[150px]" disabled={isSubmitting}>
                         {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                         {isEditing ? 'Update Watak' : 'Save Watak'}
                     </Button>
@@ -538,7 +533,7 @@ export function BillMakingTab() {
                              </div>
                         ) : savedBills.length > 0 ? (
                             savedBills.map(bill => (
-                            <div key={bill.id} className="flex justify-between items-center p-2 border rounded-md">
+                            <div key={bill.sNo} className="flex justify-between items-center p-2 border rounded-md">
                                 <div>
                                     <p className="font-medium">Bill #{bill.sNo}</p>
                                     <p className="text-sm text-muted-foreground">{bill.customerName}</p>
@@ -548,7 +543,7 @@ export function BillMakingTab() {
                                     <Button variant="ghost" size="icon" onClick={() => loadBillForEdit(bill)}>
                                         <FilePenLine className="h-4 w-4" />
                                     </Button>
-                                     <Button variant="ghost" size="icon" onClick={() => handleDeleteBill(bill.id)}>
+                                     <Button variant="ghost" size="icon" onClick={() => handleDeleteBill(bill.sNo)}>
                                         <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
                                 </div>

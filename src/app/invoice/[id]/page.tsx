@@ -8,8 +8,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Printer, Share2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { doc, getDoc } from "firebase/firestore";
-import { getClientDb } from "@/lib/firebase";
 import DocumentLayout from "@/components/DocumentLayout";
 
 interface BillData {
@@ -48,30 +46,21 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     const [billData, setBillData] = useState<BillData | null>(null);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
-    const db = getClientDb();
 
     useEffect(() => {
         const fetchBill = async () => {
             if (!params.id) return;
             setLoading(true);
             try {
-                const docRef = doc(db, "wataks", params.id);
-                const docSnap = await getDoc(docRef);
-                
+                const storedBill = localStorage.getItem(`invoice-${params.id}`);
                 let data: BillData | null = null;
-                if (docSnap.exists()) {
-                    data = { id: docSnap.id, ...docSnap.data() } as BillData;
-                } else {
-                    const storedBill = localStorage.getItem(`invoice-${params.id}`);
-                    if (storedBill) {
-                        data = JSON.parse(storedBill);
-                    }
+                if (storedBill) {
+                    data = JSON.parse(storedBill);
                 }
 
                 if(data) {
                      data.entries = data.entries.map(e => ({...e, qty: e.qty || e.peti || e.dabba || 0}))
                     setBillData(data);
-                    localStorage.setItem(`invoice-${data.sNo}`, JSON.stringify(data));
                 } else {
                      toast({
                         variant: "destructive",
@@ -82,22 +71,17 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
             } catch (error) {
                  console.error("Error fetching bill:", error);
-                 const storedBill = localStorage.getItem(`invoice-${params.id}`);
-                  if (storedBill) {
-                        setBillData(JSON.parse(storedBill));
-                  } else {
-                    toast({
-                        variant: "destructive",
-                        title: "Error",
-                        description: "Could not fetch the bill data."
-                    })
-                  }
+                  toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: "Could not fetch the bill data."
+                })
             } finally {
                 setLoading(false);
             }
         };
         fetchBill();
-    }, [params.id, toast, db]);
+    }, [params.id, toast]);
 
 
     const handleShare = async () => {

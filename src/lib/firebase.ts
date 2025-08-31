@@ -26,13 +26,8 @@ let messaging: Messaging | null = null;
  * On the server, it returns a mock object to prevent crashes during SSR.
  */
 export function getClientDb(): Firestore {
-  if (typeof window !== 'undefined') {
-    if (!db) {
-      db = getFirestore(app);
-    }
-    return db;
-  }
-  // Return a mock/dummy object for server-side rendering
+  // This function is now a no-op but is kept for potential future use
+  // to avoid breaking imports throughout the app.
   return {} as Firestore;
 }
 
