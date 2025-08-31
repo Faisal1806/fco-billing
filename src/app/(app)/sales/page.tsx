@@ -19,13 +19,13 @@ export default function SalesPage() {
         <TabsTrigger value="receipt-making">Receipt Making</TabsTrigger>
       </TabsList>
       <TabsContent value="bill-making">
-        <Tabs defaultValue="sale-slip" className="w-full">
+        <Tabs defaultValue="wataks" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="sale-slip">Sale Slip</TabsTrigger>
+                <TabsTrigger value="wataks">Wataks</TabsTrigger>
                 <TabsTrigger value="challan">Challan</TabsTrigger>
                 <TabsTrigger value="pesticide-bill">Pesticide Bill</TabsTrigger>
             </TabsList>
-            <TabsContent value="sale-slip">
+            <TabsContent value="wataks">
                 <BillMakingTab />
             </TabsContent>
             <TabsContent value="challan">
