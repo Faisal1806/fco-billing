@@ -9,7 +9,7 @@ import { Printer, Share2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getClientDb } from "@/lib/firebase";
 import DocumentLayout from "@/components/DocumentLayout";
 
 interface BillData {
@@ -48,6 +48,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     const [billData, setBillData] = useState<BillData | null>(null);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
+    const db = getClientDb();
 
     useEffect(() => {
         const fetchBill = async () => {
@@ -96,7 +97,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             }
         };
         fetchBill();
-    }, [params.id, toast]);
+    }, [params.id, toast, db]);
 
 
     const handleShare = async () => {

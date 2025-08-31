@@ -1,7 +1,7 @@
 
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, Auth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, Firestore } from "firebase/firestore";
 import { getMessaging, Messaging } from "firebase/messaging";
 
 const firebaseConfig = {
@@ -16,11 +16,17 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-const db = getFirestore(app);
-
-// Lazy initialization for client-side services
+// Lazy initialization for all services
+let db: Firestore;
 let auth: Auth;
 let messaging: Messaging | null;
+
+function getClientDb() {
+    if (!db) {
+      db = getFirestore(app);
+    }
+    return db;
+}
 
 function getClientAuth() {
   if (typeof window !== 'undefined') {
@@ -43,4 +49,4 @@ function getClientMessaging() {
 }
 
 
-export { app, db, getClientAuth, getClientMessaging };
+export { app, getClientDb, getClientAuth, getClientMessaging };

@@ -29,7 +29,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { collection, onSnapshot, query, orderBy, getDocs, doc, deleteDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { getClientDb } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import DocumentCard from '@/components/DocumentCard';
 
@@ -50,6 +50,7 @@ export default function WatakRegisterPage() {
   const { t } = useLanguage();
   const router = useRouter();
   const { toast } = useToast();
+  const db = getClientDb();
 
   const [wataks, setWataks] = React.useState<WatakEntry[]>([]);
   const [growers, setGrowers] = React.useState<string[]>([]);
@@ -79,7 +80,7 @@ export default function WatakRegisterPage() {
     });
 
     return () => unsubscribe();
-  }, [toast]);
+  }, [db, toast]);
 
   const filteredWataks = selectedGrower === 'All Growers'
     ? wataks

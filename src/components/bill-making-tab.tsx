@@ -2,7 +2,7 @@
 'use client';
 
 import { useMemo, useRef, useState, useEffect } from 'react';
-import { db } from '@/lib/firebase';
+import { getClientDb } from '@/lib/firebase';
 import { addDoc, collection, serverTimestamp, doc, setDoc, getDoc, onSnapshot, query, orderBy, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -41,6 +41,7 @@ export function BillMakingTab() {
 
   const { toast } = useToast();
   const router = useRouter();
+  const db = getClientDb();
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -65,7 +66,7 @@ export function BillMakingTab() {
     });
 
     return () => unsubscribe();
-  }, [toast]);
+  }, [toast, db]);
 
 
   // --- Calculations (ALL from your spec) ---
