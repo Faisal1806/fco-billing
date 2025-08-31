@@ -8,7 +8,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z} from 'zod';
 
 const ContextualHelpInputSchema = z.object({
   context: z.string().describe('The current context or situation within the app.'),
