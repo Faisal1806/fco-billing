@@ -3,7 +3,6 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Printer, Share2 } from "lucide-react";
@@ -11,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import DocumentLayout from "@/components/DocumentLayout";
 
 interface BillData {
     id: string;
@@ -54,7 +54,6 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             if (!params.id) return;
             setLoading(true);
             try {
-                // Try fetching from Firestore first
                 const docRef = doc(db, "wataks", params.id);
                 const docSnap = await getDoc(docRef);
                 
@@ -62,7 +61,6 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 if (docSnap.exists()) {
                     data = { id: docSnap.id, ...docSnap.data() } as BillData;
                 } else {
-                    // Fallback to localStorage if offline or not found
                     const storedBill = localStorage.getItem(`invoice-${params.id}`);
                     if (storedBill) {
                         data = JSON.parse(storedBill);
@@ -70,10 +68,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 }
 
                 if(data) {
-                    // This is to fix old records that may not have qty
                      data.entries = data.entries.map(e => ({...e, qty: e.qty || e.peti || e.dabba || 0}))
                     setBillData(data);
-                    // Also cache it in localStorage, using the Firestore ID if available
                     localStorage.setItem(`invoice-${data.id}`, JSON.stringify(data));
                 } else {
                      toast({
@@ -144,33 +140,26 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
     if (loading) {
         return (
-            <div className="bg-muted min-h-screen p-8 flex items-center justify-center">
-                 <div className="a5-page mx-auto p-6 flex flex-col bg-white">
-                    <CardHeader>
-                        <Skeleton className="h-8 w-3/4" />
-                        <Skeleton className="h-4 w-1/2" />
-                    </CardHeader>
-                    <CardContent className="flex-grow">
-                        <Skeleton className="h-full w-full" />
-                    </CardContent>
-                    <CardFooter>
-                        <Skeleton className="h-10 w-32" />
-                    </CardFooter>
+            <DocumentLayout type="bill">
+                 <div className="p-6 flex flex-col">
+                    <Skeleton className="h-8 w-3/4 self-center mb-4" />
+                    <Skeleton className="h-4 w-1/2 self-center" />
+                    <div className="flex-grow mt-8">
+                        <Skeleton className="h-64 w-full" />
+                    </div>
                  </div>
-            </div>
+            </DocumentLayout>
         )
     }
 
     if (!billData) {
         return (
-            <div className="bg-background min-h-screen flex items-center justify-center p-4">
-                <Card className="w-full max-w-md mx-auto text-center">
-                    <CardHeader>
-                        <CardTitle>Invoice Not Found</CardTitle>
-                        <CardDescription>The invoice you are looking for does not exist or has been deleted.</CardDescription>
-                    </CardHeader>
-                </Card>
-            </div>
+             <DocumentLayout type="bill">
+                <div className="text-center py-12">
+                    <h2 className="text-xl font-semibold">Invoice Not Found</h2>
+                    <p className="text-muted-foreground mt-2">The invoice you are looking for does not exist or has been deleted.</p>
+                </div>
+            </DocumentLayout>
         );
     }
 
@@ -180,11 +169,11 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
 
     return (
-        <div className="bg-muted min-h-screen py-8 print:bg-white print:py-0">
-            <div className="a5-page mx-auto bg-white shadow-lg print:shadow-none flex flex-col text-sm">
+        <DocumentLayout type="bill">
+            <div className="text-sm">
                 <header className="p-6 border-b">
                     <div className="text-center mb-4">
-                        <h1 className="text-xl font-bold text-gray-800">FIRDOUS AHMAD & COMPANY</h1>
+                        <h2 className="text-xl font-bold text-gray-800">FIRDOUS AHMAD & COMPANY</h2>
                         <p className="text-xs text-gray-600">Fruit Merchants & Commission Agents</p>
                         <p className="text-xs text-gray-600">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
                         <p className="text-xs text-gray-600">Cell: 7006136330, 9797002164, 9906740921 | Email: lone07936@gmail.com</p>
@@ -277,12 +266,11 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 </main>
                 <footer className="flex justify-between items-center p-4 border-t mt-auto">
                      <div className="text-[10px] text-gray-500 space-y-2">
-                        <p>Subject to Sopore Jurisdiction Only</p>
                         <Controls />
                      </div>
                      <p className="font-semibold text-xs">Manager</p>
                 </footer>
             </div>
-        </div>
+        </DocumentLayout>
     );
 }
