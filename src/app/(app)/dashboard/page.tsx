@@ -1,7 +1,7 @@
 
 'use client'
 
-import { DollarSign, Package, Users, Activity, FileText, IndianRupee } from 'lucide-react';
+import { DollarSign, Package, Users, Activity, FileText, IndianRupee, BookUser, AlertTriangle } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -14,7 +14,7 @@ import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recha
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
 
-const StatsCard = ({ title, value, icon: Icon, subtitle }: { title: string; value: string; icon: React.ElementType; subtitle: string; }) => (
+const StatsCard = ({ title, value, icon: Icon }: { title: string; value: string; icon: React.ElementType; }) => (
   <Card>
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
       <CardTitle className="text-sm font-medium">{title}</CardTitle>
@@ -22,7 +22,6 @@ const StatsCard = ({ title, value, icon: Icon, subtitle }: { title: string; valu
     </CardHeader>
     <CardContent>
       <div className="text-2xl font-bold">{value}</div>
-      <p className="text-xs text-muted-foreground">{subtitle}</p>
     </CardContent>
   </Card>
 );
@@ -86,6 +85,9 @@ const RecentSales = () => {
                 <div className="ms-auto font-medium text-end">+₹{sale.amount.toFixed(2)}</div>
             </div>
             ))}
+             {recentSales.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center col-span-full">No recent sales.</p>
+            )}
         </CardContent>
         </Card>
     );
@@ -98,10 +100,10 @@ export default function DashboardPage() {
     <>
       <div className="flex-1 space-y-4">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <StatsCard title="Today's Sale" value="₹12,245.50" subtitle="Total of all bills today" icon={IndianRupee} />
-          <StatsCard title="Monthly Sale" value="₹1,45,231.89" subtitle="Total sales this month" icon={DollarSign} />
-          <StatsCard title="Wataks Generated" value="8" subtitle="This month" icon={FileText} />
-          <StatsCard title="Challans Generated" value="12" subtitle="This month" icon={Package} />
+            <StatsCard title="Today's Sale" value="₹12,500" icon={IndianRupee} />
+            <StatsCard title="Monthly Total" value="₹2,40,000" icon={DollarSign} />
+            <StatsCard title="Wataks Issued" value="15" icon={FileText} />
+            <StatsCard title="Outstanding Khata" value="₹35,000" icon={AlertTriangle} />
         </div>
         <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-3">
             <SalesChart />
