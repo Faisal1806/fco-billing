@@ -27,6 +27,7 @@ export type Expense = {
   date: Date;
 };
 
+// This type is kept for historical reference if needed, but new data comes from Firestore
 export type WatakEntry = {
     id: string;
     date: Date;
@@ -51,4 +52,5 @@ export const salesData: { date: string; sales: number }[] = [];
 
 export const expenses: Expense[] = [];
 
+// This is no longer used, as data is fetched directly from Firestore.
 export const wataks: WatakEntry[] = [];
