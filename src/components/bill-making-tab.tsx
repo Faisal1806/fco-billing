@@ -207,6 +207,7 @@ export function BillMakingTab() {
         try {
             await deleteDoc(doc(db, "wataks", billId));
             localStorage.removeItem(`invoice-${billId}`);
+             setSavedBills(prev => prev.filter(b => b.id !== billId));
             toast({
                 title: "Bill Deleted",
                 description: `Bill #${billId} has been successfully deleted.`

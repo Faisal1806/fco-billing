@@ -69,6 +69,12 @@ const ReceiptEntryRow = ({
 export function ReceiptMakingTab() {
   const { toast } = useToast();
   const router = useRouter();
+  const [isClient, setIsClient] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
+
 
   const initialReceiptDetails = {
     no: '',
@@ -88,16 +94,18 @@ export function ReceiptMakingTab() {
   const [savedReceipts, setSavedReceipts] = React.useState<any[]>([]);
 
   React.useEffect(() => {
-    const receipts = [];
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('receipt-')) {
-            const receipt = JSON.parse(localStorage.getItem(key)!);
-            receipts.push(receipt);
+    if (isClient) {
+        const receipts = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('receipt-')) {
+                const receipt = JSON.parse(localStorage.getItem(key)!);
+                receipts.push(receipt);
+            }
         }
+        setSavedReceipts(receipts.sort((a,b) => (a.no > b.no) ? 1 : -1));
     }
-    setSavedReceipts(receipts.sort((a,b) => (a.no > b.no) ? 1 : -1));
-  }, []);
+  }, [isClient]);
 
   const handleEntryUpdate = (
     index: number,

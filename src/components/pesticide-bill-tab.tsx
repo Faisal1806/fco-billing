@@ -64,6 +64,11 @@ const ItemEntryRow = ({
 export function PesticideBillTab() {
   const { toast } = useToast();
   const router = useRouter();
+  const [isClient, setIsClient] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const initialBillDetails = {
     no: '',
@@ -81,16 +86,18 @@ export function PesticideBillTab() {
   const [savedBills, setSavedBills] = React.useState<any[]>([]);
 
   React.useEffect(() => {
-    const bills = [];
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('pesticide-invoice-')) {
-            const bill = JSON.parse(localStorage.getItem(key)!);
-            bills.push(bill);
-        }
+    if (isClient) {
+      const bills = [];
+      for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('pesticide-invoice-')) {
+              const bill = JSON.parse(localStorage.getItem(key)!);
+              bills.push(bill);
+          }
+      }
+      setSavedBills(bills.sort((a,b) => (a.no > b.no) ? 1 : -1));
     }
-    setSavedBills(bills.sort((a,b) => (a.no > b.no) ? 1 : -1));
-  }, []);
+  }, [isClient]);
 
   const handleEntryUpdate = (
     index: number,

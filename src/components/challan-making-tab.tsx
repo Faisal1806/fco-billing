@@ -57,6 +57,11 @@ const ChallanEntryRow = ({
 export function ChallanMakingTab() {
   const { toast } = useToast();
   const router = useRouter();
+  const [isClient, setIsClient] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const initialDetails = {
     challanNo: '',
@@ -78,16 +83,18 @@ export function ChallanMakingTab() {
   const [savedChallans, setSavedChallans] = React.useState<any[]>([]);
 
   React.useEffect(() => {
-    const challans = [];
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('challan-')) {
-            const challan = JSON.parse(localStorage.getItem(key)!);
-            challans.push(challan);
-        }
+    if (isClient) {
+      const challans = [];
+      for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('challan-')) {
+              const challan = JSON.parse(localStorage.getItem(key)!);
+              challans.push(challan);
+          }
+      }
+      setSavedChallans(challans.sort((a,b) => (a.challanNo > b.challanNo) ? 1 : -1));
     }
-    setSavedChallans(challans.sort((a,b) => (a.challanNo > b.challanNo) ? 1 : -1));
-  }, []);
+  }, [isClient]);
 
   const handleEntryUpdate = (
     index: number,

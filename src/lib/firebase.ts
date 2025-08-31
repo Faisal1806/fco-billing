@@ -17,9 +17,9 @@ const firebaseConfig = {
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 // Lazy initialization for all services
-let db: Firestore;
-let auth: Auth;
-let messaging: Messaging | null;
+let db: Firestore | null = null;
+let auth: Auth | null = null;
+let messaging: Messaging | null = null;
 
 function getClientDb() {
     if (typeof window !== 'undefined') {
