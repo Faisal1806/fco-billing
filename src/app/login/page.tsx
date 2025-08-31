@@ -8,27 +8,34 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Package2 } from 'lucide-react';
+import { Package2, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const allowedEmail = 'lone07936@gmail.com';
+  const [showPassword, setShowPassword] = useState(false);
+  const allowedPassword = 'Faisal@1806';
 
   const handleLogin = () => {
-    if (email.toLowerCase() === allowedEmail) {
+    if (password === allowedPassword) {
       router.push('/dashboard');
     } else {
-      setError('Invalid email address. Please try again.');
+      setError('Invalid password. Please try again.');
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: 'Please enter the correct email address.',
+        description: 'Please enter the correct password.',
       });
     }
   };
+
+  const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+        handleLogin();
+    }
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
@@ -38,23 +45,36 @@ export default function LoginPage() {
                 <Package2 className="h-10 w-10 text-primary" />
             </div>
           <CardTitle className="text-2xl">Welcome Back</CardTitle>
-          <CardDescription>Enter your email to access the dashboard.</CardDescription>
+          <CardDescription>Enter your password to access the dashboard.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="m@example.com"
-                required
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setError('');
-                }}
-              />
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter your password"
+                  required
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setError('');
+                  }}
+                  onKeyPress={handleKeyPress}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute inset-y-0 right-0 h-full px-3"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
+                </Button>
+              </div>
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button onClick={handleLogin} className="w-full">
