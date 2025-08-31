@@ -30,7 +30,16 @@ function getClientDb() {
     }
     // This is a placeholder for server-side rendering, it should not be used to actually query.
     // The components using this should be client components.
-    return {} as Firestore;
+    return {
+        // Provide a dummy implementation that does nothing on the server
+        collection: () => ({
+            // Add any methods you use on collections here, returning dummy values
+            // For example, if you use .where, .orderBy, .limit, etc.
+        }),
+        doc: () => ({
+            // Add any methods you use on docs here
+        }),
+    } as unknown as Firestore;
 }
 
 function getClientAuth() {
@@ -45,10 +54,16 @@ function getClientAuth() {
 
 function getClientMessaging() {
     if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-        if (!messaging) {
-            messaging = getMessaging(app);
+        try {
+             if (!messaging) {
+                messaging = getMessaging(app);
+            }
+            return messaging;
+        } catch (e) {
+            console.error("Firebase Messaging not supported in this browser:", e)
+            messaging = null;
+            return null;
         }
-        return messaging;
     }
     return null;
 }
