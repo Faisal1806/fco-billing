@@ -17,22 +17,28 @@ interface BillData {
     date: string;
     customerName: string;
     challanNo: string;
-    onAcOf: string;
+    khata: string;
     entries: {
         peti: number;
         dabba: number;
         variety: string;
-        noAndTeh: string;
         rate: number;
+        type: 'Patti' | 'Dabba';
+        total: number;
     }[];
-    grossSale: number;
-    commissionAmount: number;
+    totals: {
+      pattiQty: number;
+      dabbaQty: number;
+      totalQty: number;
+      grossSale: number;
+      commissionAmount: number;
+      labour: number;
+      association: number;
+      security: number;
+      totalExpenses: number;
+      netSale: number;
+    }
     freight: number;
-    labour: number;
-    security: number;
-    otherExpenses: number;
-    totalExpenses: number;
-    netSale: number;
 }
 
 
@@ -46,24 +52,24 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             if (!params.id) return;
             setLoading(true);
             try {
-                // First, try fetching from localStorage for immediate display of just-created bills
-                const storedBill = localStorage.getItem(`invoice-${params.id}`);
-                if (storedBill) {
-                    setBillData(JSON.parse(storedBill));
+                // Try fetching from Firestore first
+                const docRef = doc(db, "wataks", params.id);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data() as BillData;
+                    setBillData(data);
+                    // Also cache it in localStorage
+                    localStorage.setItem(`invoice-${params.id}`, JSON.stringify(data));
                 } else {
-                    // If not in localStorage, fetch from Firestore
-                    const docRef = doc(db, "wataks", params.id);
-                    const docSnap = await getDoc(docRef);
-                    if (docSnap.exists()) {
-                        const data = docSnap.data() as BillData;
-                        setBillData(data);
-                        // Also cache it in localStorage
-                        localStorage.setItem(`invoice-${params.id}`, JSON.stringify(data));
+                    // Fallback to localStorage if offline or not found
+                    const storedBill = localStorage.getItem(`invoice-${params.id}`);
+                    if (storedBill) {
+                        setBillData(JSON.parse(storedBill));
                     } else {
                         toast({
                             variant: "destructive",
                             title: "Not Found",
-                            description: "The requested bill was not found in Firestore."
+                            description: "The requested bill was not found."
                         })
                     }
                 }
@@ -154,11 +160,9 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     }
 
     const {
-        sNo, date, customerName, challanNo, onAcOf, entries,
-        grossSale, commissionAmount, freight, labour, security, otherExpenses, totalExpenses, netSale
+        sNo, date, customerName, challanNo, khata, entries, totals, freight
     } = billData;
 
-    const totalQty = entries.reduce((acc, entry) => acc + entry.peti + entry.dabba, 0);
 
     return (
         <div className="bg-white min-h-screen p-4 sm:p-8 md:p-12 print:bg-white">
@@ -172,9 +176,9 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                     </div>
                      <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                            <p><strong>S.No:</strong> {sNo}</p>
+                            <p><strong>Bill No:</strong> {sNo}</p>
                             <p><strong>M/s:</strong> {customerName}</p>
-                            <p><strong>On A/c of:</strong> {onAcOf}</p>
+                            <p><strong>Khata No:</strong> {khata}</p>
                         </div>
                         <div className="text-right">
                              <p><strong>Date:</strong> {new Date(date).toLocaleDateString()}</p>
@@ -188,9 +192,9 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Peti</TableHead>
-                                        <TableHead>Dabba</TableHead>
+                                        <TableHead>Type</TableHead>
                                         <TableHead>Variety</TableHead>
+                                        <TableHead>Qty</TableHead>
                                         <TableHead>Rate</TableHead>
                                         <TableHead className="text-right">Gross Sale</TableHead>
                                     </TableRow>
@@ -198,11 +202,11 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                                 <TableBody>
                                     {entries.map((entry, index) => (
                                         <TableRow key={index}>
-                                            <TableCell>{entry.peti}</TableCell>
-                                            <TableCell>{entry.dabba}</TableCell>
+                                            <TableCell>{entry.type}</TableCell>
                                             <TableCell>{entry.variety}</TableCell>
+                                            <TableCell>{entry.qty}</TableCell>
                                             <TableCell>{entry.rate.toFixed(2)}</TableCell>
-                                            <TableCell className="text-right">₹{((entry.peti + entry.dabba) * entry.rate).toFixed(2)}</TableCell>
+                                            <TableCell className="text-right">₹{((entry.qty) * entry.rate).toFixed(2)}</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
@@ -218,10 +222,10 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                                 </TableHeader>
                                 <TableBody>
                                     <TableRow><TableCell>Freight</TableCell><TableCell className="text-right">₹{freight.toFixed(2)}</TableCell></TableRow>
-                                    <TableRow><TableCell>Labour</TableCell><TableCell className="text-right">₹{labour.toFixed(2)}</TableCell></TableRow>
-                                    <TableRow><TableCell>Commission</TableCell><TableCell className="text-right">₹{commissionAmount.toFixed(2)}</TableCell></TableRow>
-                                    <TableRow><TableCell>Security</TableCell><TableCell className="text-right">₹{security.toFixed(2)}</TableCell></TableRow>
-                                    <TableRow><TableCell>Other</TableCell><TableCell className="text-right">₹{otherExpenses.toFixed(2)}</TableCell></TableRow>
+                                    <TableRow><TableCell>Labour</TableCell><TableCell className="text-right">₹{totals.labour.toFixed(2)}</TableCell></TableRow>
+                                    <TableRow><TableCell>Association</TableCell><TableCell className="text-right">₹{totals.association.toFixed(2)}</TableCell></TableRow>
+                                    <TableRow><TableCell>Security</TableCell><TableCell className="text-right">₹{totals.security.toFixed(2)}</TableCell></TableRow>
+                                    <TableRow><TableCell>Commission</TableCell><TableCell className="text-right">₹{totals.commissionAmount.toFixed(2)}</TableCell></TableRow>
                                 </TableBody>
                             </Table>
                         </div>
@@ -231,15 +235,15 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
                     <div className="grid grid-cols-3 gap-4 text-sm font-medium">
                         <div className="flex items-center">
-                            <p>Total Qty: {totalQty}</p>
+                            <p>Total Qty: {totals.totalQty} (Patti: {totals.pattiQty}, Dabba: {totals.dabbaQty})</p>
                         </div>
                         <div className="flex justify-between items-center px-4 py-2 bg-gray-100 rounded-md">
                            <p>Total Gross Sale:</p>
-                           <p>₹{grossSale.toFixed(2)}</p>
+                           <p>₹{totals.grossSale.toFixed(2)}</p>
                         </div>
                         <div className="flex justify-between items-center px-4 py-2 bg-gray-100 rounded-md">
                            <p>Total Exp.:</p>
-                           <p>₹{totalExpenses.toFixed(2)}</p>
+                           <p>₹{totals.totalExpenses.toFixed(2)}</p>
                         </div>
                     </div>
                      <div className="grid grid-cols-3 gap-4 mt-4">
@@ -249,7 +253,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                         </div>
                         <div className="col-span-2 flex justify-between items-center px-4 py-2 bg-gray-200 rounded-md">
                             <p className="text-lg font-bold">Net Sale:</p>
-                            <p className="text-lg font-bold">₹{netSale.toFixed(2)}</p>
+                            <p className="text-lg font-bold">₹{totals.netSale.toFixed(2)}</p>
                         </div>
                      </div>
                 </CardContent>
@@ -262,3 +266,5 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         </div>
     );
 }
+
+    
