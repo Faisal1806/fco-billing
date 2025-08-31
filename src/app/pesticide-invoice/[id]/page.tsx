@@ -119,7 +119,7 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
                         <h1 className="text-2xl font-bold text-gray-800">F. Co Pesticides & Fertilizers</h1>
                         <p className="text-sm text-gray-600">Deals in:- All kinds of Pesticides & Fertilizers</p>
                         <p className="text-sm text-gray-600">NEAR JAMIA MASJID NADIHAL</p>
-                        <p className="text-sm text-gray-600">Cell: 9797002164, 7006136330</p>
+                        <p className="text-sm text-gray-600">Cell: 9797002164, 7006136330, 9906740921 | Email: lone07936@gmail.com</p>
                     </div>
                      <div className="grid grid-cols-2 gap-2 text-sm">
                         <div>

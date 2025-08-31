@@ -174,7 +174,7 @@ export function PesticideBillTab() {
                         <h2 className="text-2xl font-bold">F. Co Pesticides & Fertilizers</h2>
                         <p className="text-sm text-muted-foreground">Deals in:- All kinds of Pesticides & Fertilizers</p>
                         <p className="text-sm text-muted-foreground">NEAR JAMIA MASJID NADIHAL</p>
-                        <p className="text-sm text-muted-foreground">Cell: 9797002164, 7006136330</p>
+                        <p className="text-sm text-muted-foreground">Cell: 9797002164, 7006136330, 9906740921 | Email: lone07936@gmail.com</p>
                     </div>
                      {isEditing && (
                         <Button variant="outline" size="sm" onClick={resetForm} className="gap-2">

@@ -187,7 +187,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                         <h1 className="text-xl font-bold text-gray-800">FIRDOUS AHMAD & COMPANY</h1>
                         <p className="text-xs text-gray-600">Fruit Merchants & Commission Agents</p>
                         <p className="text-xs text-gray-600">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
-                        <p className="text-xs text-gray-600">Cell: 7006136330, 9797002164</p>
+                        <p className="text-xs text-gray-600">Cell: 7006136330, 9797002164, 9906740921 | Email: lone07936@gmail.com</p>
                     </div>
                      <div className="grid grid-cols-2 gap-2 text-xs">
                         <div>
