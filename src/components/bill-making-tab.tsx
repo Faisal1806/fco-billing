@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo, useRef, useState, useEffect } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
