@@ -24,6 +24,7 @@ interface BillData {
         variety: string;
         rate: number;
         type: 'Patti' | 'Dabba';
+        qty: number;
         total: number;
     }[];
     totals: {
@@ -55,31 +56,44 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 // Try fetching from Firestore first
                 const docRef = doc(db, "wataks", params.id);
                 const docSnap = await getDoc(docRef);
+                
+                let data: BillData | null = null;
                 if (docSnap.exists()) {
-                    const data = docSnap.data() as BillData;
-                    setBillData(data);
-                    // Also cache it in localStorage
-                    localStorage.setItem(`invoice-${params.id}`, JSON.stringify(data));
+                    data = docSnap.data() as BillData;
                 } else {
                     // Fallback to localStorage if offline or not found
                     const storedBill = localStorage.getItem(`invoice-${params.id}`);
                     if (storedBill) {
-                        setBillData(JSON.parse(storedBill));
-                    } else {
-                        toast({
-                            variant: "destructive",
-                            title: "Not Found",
-                            description: "The requested bill was not found."
-                        })
+                        data = JSON.parse(storedBill);
                     }
                 }
+
+                if(data) {
+                    // This is to fix old records that may not have qty
+                     data.entries = data.entries.map(e => ({...e, qty: e.qty || e.peti || e.dabba || 0}))
+                    setBillData(data);
+                    // Also cache it in localStorage
+                    localStorage.setItem(`invoice-${params.id}`, JSON.stringify(data));
+                } else {
+                     toast({
+                        variant: "destructive",
+                        title: "Not Found",
+                        description: "The requested bill was not found."
+                    })
+                }
+
             } catch (error) {
                  console.error("Error fetching bill:", error);
-                 toast({
-                    variant: "destructive",
-                    title: "Error",
-                    description: "Could not fetch the bill data."
-                })
+                 const storedBill = localStorage.getItem(`invoice-${params.id}`);
+                  if (storedBill) {
+                        setBillData(JSON.parse(storedBill));
+                  } else {
+                    toast({
+                        variant: "destructive",
+                        title: "Error",
+                        description: "Could not fetch the bill data."
+                    })
+                  }
             } finally {
                 setLoading(false);
             }
@@ -115,11 +129,11 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         'use client'
         return (
             <div className="flex items-center gap-2 print:hidden">
-                <Button onClick={handleShare} variant="outline" className="gap-2">
+                <Button onClick={handleShare} variant="outline" size="sm" className="gap-2">
                     <Share2 className="h-4 w-4" />
                     Share
                 </Button>
-                <Button onClick={() => window.print()} className="gap-2">
+                <Button onClick={() => window.print()} size="sm" className="gap-2">
                     <Printer className="h-4 w-4" />
                     Print
                 </Button>
@@ -129,14 +143,14 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
     if (loading) {
         return (
-            <div className="bg-background min-h-screen p-4 sm:p-8 md:p-12">
-                 <Card className="w-full max-w-4xl mx-auto">
+            <div className="bg-muted min-h-screen p-8 flex items-center justify-center">
+                 <Card className="w-[148mm] h-[210mm] mx-auto p-6 flex flex-col">
                     <CardHeader>
-                        <Skeleton className="h-8 w-1/2" />
-                        <Skeleton className="h-4 w-1/4" />
+                        <Skeleton className="h-8 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
                     </CardHeader>
-                    <CardContent>
-                        <Skeleton className="h-48 w-full" />
+                    <CardContent className="flex-grow">
+                        <Skeleton className="h-full w-full" />
                     </CardContent>
                     <CardFooter>
                         <Skeleton className="h-10 w-32" />
@@ -165,16 +179,28 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
 
     return (
-        <div className="bg-white min-h-screen p-4 sm:p-8 md:p-12 print:bg-white">
-            <Card className="w-full max-w-4xl mx-auto shadow-none border-none print:shadow-none print:border-none">
-                <CardHeader>
+        <div className="bg-muted min-h-screen py-8 print:bg-white print:py-0">
+            <style jsx global>{`
+                @media print {
+                    @page {
+                        size: A5;
+                        margin: 0;
+                    }
+                    body {
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                }
+            `}</style>
+            <div className="w-[148mm] min-h-[200mm] mx-auto bg-white shadow-lg print:shadow-none flex flex-col text-sm">
+                <header className="p-6 border-b">
                     <div className="text-center mb-4">
-                        <h1 className="text-3xl font-bold text-gray-800">FIRDOUS AHMAD & COMPANY</h1>
-                        <p className="text-sm text-gray-600">Fruit Merchants & Commission Agents</p>
-                        <p className="text-sm text-gray-600">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
-                        <p className="text-sm text-gray-600">Cell: 7006136330, 9797002164</p>
+                        <h1 className="text-xl font-bold text-gray-800">FIRDOUS AHMAD & COMPANY</h1>
+                        <p className="text-xs text-gray-600">Fruit Merchants & Commission Agents</p>
+                        <p className="text-xs text-gray-600">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
+                        <p className="text-xs text-gray-600">Cell: 7006136330, 9797002164</p>
                     </div>
-                     <div className="grid grid-cols-2 gap-4 text-sm">
+                     <div className="grid grid-cols-2 gap-2 text-xs">
                         <div>
                             <p><strong>Bill No:</strong> {sNo}</p>
                             <p><strong>M/s:</strong> {customerName}</p>
@@ -185,29 +211,32 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                              <p><strong>Challan No:</strong> {challanNo}</p>
                         </div>
                     </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-[2fr_1fr] gap-4">
+                </header>
+                <main className="flex-grow p-4">
+                    <div className="grid grid-cols-[60%_40%] gap-4">
                         <div>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Type</TableHead>
-                                        <TableHead>Variety</TableHead>
-                                        <TableHead>Qty</TableHead>
-                                        <TableHead>Rate</TableHead>
-                                        <TableHead className="text-right">Gross Sale</TableHead>
+                                        <TableHead className="h-8">Type</TableHead>
+                                        <TableHead className="h-8">Variety</TableHead>
+                                        <TableHead className="h-8">Qty</TableHead>
+                                        <TableHead className="h-8">Rate</TableHead>
+                                        <TableHead className="h-8 text-right">Gross Sale</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {entries.map((entry, index) => (
-                                        <TableRow key={index}>
-                                            <TableCell>{entry.type}</TableCell>
-                                            <TableCell>{entry.variety}</TableCell>
-                                            <TableCell>{entry.qty}</TableCell>
-                                            <TableCell>{entry.rate.toFixed(2)}</TableCell>
-                                            <TableCell className="text-right">₹{((entry.qty) * entry.rate).toFixed(2)}</TableCell>
+                                        <TableRow key={index} className="h-8">
+                                            <TableCell className="py-1">{entry.type}</TableCell>
+                                            <TableCell className="py-1">{entry.variety}</TableCell>
+                                            <TableCell className="py-1">{entry.qty}</TableCell>
+                                            <TableCell className="py-1">{entry.rate.toFixed(2)}</TableCell>
+                                            <TableCell className="py-1 text-right">₹{((entry.qty) * entry.rate).toFixed(2)}</TableCell>
                                         </TableRow>
+                                    ))}
+                                    {Array.from({ length: Math.max(0, 10 - entries.length) }).map((_, index) => (
+                                        <TableRow key={`empty-${index}`} className="h-8"><TableCell colSpan={5}>&nbsp;</TableCell></TableRow>
                                     ))}
                                 </TableBody>
                             </Table>
@@ -216,53 +245,55 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                              <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Details of Exp.</TableHead>
-                                        <TableHead className="text-right">Amount</TableHead>
+                                        <TableHead className="h-8">Details of Exp.</TableHead>
+                                        <TableHead className="h-8 text-right">Amount</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    <TableRow><TableCell>Freight</TableCell><TableCell className="text-right">₹{freight.toFixed(2)}</TableCell></TableRow>
-                                    <TableRow><TableCell>Labour</TableCell><TableCell className="text-right">₹{totals.labour.toFixed(2)}</TableCell></TableRow>
-                                    <TableRow><TableCell>Association</TableCell><TableCell className="text-right">₹{totals.association.toFixed(2)}</TableCell></TableRow>
-                                    <TableRow><TableCell>Security</TableCell><TableCell className="text-right">₹{totals.security.toFixed(2)}</TableCell></TableRow>
-                                    <TableRow><TableCell>Commission</TableCell><TableCell className="text-right">₹{totals.commissionAmount.toFixed(2)}</TableCell></TableRow>
+                                    <TableRow className="h-8"><TableCell className="py-1">Freight</TableCell><TableCell className="py-1 text-right">₹{freight.toFixed(2)}</TableCell></TableRow>
+                                    <TableRow className="h-8"><TableCell className="py-1">Labour</TableCell><TableCell className="py-1 text-right">₹{totals.labour.toFixed(2)}</TableCell></TableRow>
+                                    <TableRow className="h-8"><TableCell className="py-1">Association</TableCell><TableCell className="py-1 text-right">₹{totals.association.toFixed(2)}</TableCell></TableRow>
+                                    <TableRow className="h-8"><TableCell className="py-1">Security</TableCell><TableCell className="py-1 text-right">₹{totals.security.toFixed(2)}</TableCell></TableRow>
+                                    <TableRow className="h-8"><TableCell className="py-1">Commission</TableCell><TableCell className="py-1 text-right">₹{totals.commissionAmount.toFixed(2)}</TableCell></TableRow>
                                 </TableBody>
                             </Table>
                         </div>
                     </div>
 
-                    <Separator className="my-4" />
+                    <Separator className="my-2" />
 
-                    <div className="grid grid-cols-3 gap-4 text-sm font-medium">
+                    <div className="grid grid-cols-3 gap-4 text-xs font-medium">
                         <div className="flex items-center">
-                            <p>Total Qty: {totals.totalQty} (Patti: {totals.pattiQty}, Dabba: {totals.dabbaQty})</p>
+                            <p>Qty: {totals.totalQty} (Patti: {totals.pattiQty}, Dabba: {totals.dabbaQty})</p>
                         </div>
-                        <div className="flex justify-between items-center px-4 py-2 bg-gray-100 rounded-md">
-                           <p>Total Gross Sale:</p>
+                        <div className="flex justify-between items-center px-2 py-1 bg-gray-100 rounded-sm">
+                           <p>Gross Sale:</p>
                            <p>₹{totals.grossSale.toFixed(2)}</p>
                         </div>
-                        <div className="flex justify-between items-center px-4 py-2 bg-gray-100 rounded-md">
+                        <div className="flex justify-between items-center px-2 py-1 bg-gray-100 rounded-sm">
                            <p>Total Exp.:</p>
                            <p>₹{totals.totalExpenses.toFixed(2)}</p>
                         </div>
                     </div>
-                     <div className="grid grid-cols-3 gap-4 mt-4">
+                     <div className="grid grid-cols-3 gap-4 mt-2">
                         <div>
-                            <p className="font-semibold">Debit Our A/C</p>
-                            <p className="text-xs text-gray-500">"Your Satisfaction is Our Success"</p>
+                            <p className="font-semibold text-xs">Debit Our A/C</p>
+                            <p className="text-[10px] text-gray-500">"Your Satisfaction is Our Success"</p>
                         </div>
-                        <div className="col-span-2 flex justify-between items-center px-4 py-2 bg-gray-200 rounded-md">
-                            <p className="text-lg font-bold">Net Sale:</p>
-                            <p className="text-lg font-bold">₹{totals.netSale.toFixed(2)}</p>
+                        <div className="col-span-2 flex justify-between items-center px-3 py-1 bg-gray-200 rounded-sm">
+                            <p className="font-bold">Net Sale:</p>
+                            <p className="font-bold">₹{totals.netSale.toFixed(2)}</p>
                         </div>
                      </div>
-                </CardContent>
-                <CardFooter className="flex justify-between items-center mt-8">
-                     <p className="text-xs text-gray-500">Subject to Sopore Jurisdiction Only</p>
-                     <p className="font-semibold">Manager</p>
-                     <Controls />
-                </CardFooter>
-            </Card>
+                </main>
+                <footer className="flex justify-between items-center p-4 border-t mt-auto">
+                     <div className="text-[10px] text-gray-500 space-y-2">
+                        <p>Subject to Sopore Jurisdiction Only</p>
+                        <Controls />
+                     </div>
+                     <p className="font-semibold text-xs">Manager</p>
+                </footer>
+            </div>
         </div>
     );
 }
