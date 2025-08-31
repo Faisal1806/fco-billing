@@ -20,6 +20,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { ContextualHelp } from '@/components/contextual-help';
 import { useToast } from '@/hooks/use-toast';
+import { Logo } from '@/components/logo';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -50,11 +51,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <div className="hidden border-r bg-card md:block">
+      <div className="hidden border-r bg-black md:block">
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <Link href="/" className="flex items-center gap-2 font-semibold">
-              <Package2 className="h-6 w-6 text-primary" />
+            <Link href="/" className="flex items-center gap-2 font-semibold text-white">
+              <Logo className="h-8 w-8" />
               <span className="">{t('app_title')}</span>
             </Link>
           </div>
@@ -65,8 +66,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   key={item.label}
                   href={item.href}
                   className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-                    pathname.startsWith(item.href) && 'bg-muted text-primary'
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-gray-400 transition-all hover:text-white',
+                    pathname.startsWith(item.href) && 'bg-gray-800 text-white'
                   )}
                 >
                   <item.icon className="h-4 w-4" />
@@ -77,22 +78,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </div>
-      <div className="flex flex-col">
-        <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
+      <div className="flex flex-col bg-gradient-to-br from-black via-red-900 to-green-800">
+        <header className="flex h-14 items-center gap-4 border-b bg-black/50 px-4 lg:h-[60px] lg:px-6">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="shrink-0 md:hidden">
+              <Button variant="outline" size="icon" className="shrink-0 md:hidden bg-transparent text-white hover:bg-gray-800">
                 <ShoppingCart className="h-5 w-5" />
                 <span className="sr-only">Toggle navigation menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="flex flex-col">
+            <SheetContent side="left" className="flex flex-col bg-black text-white border-r-gray-800">
               <nav className="grid gap-2 text-lg font-medium">
                 <Link
                   href="#"
                   className="flex items-center gap-2 text-lg font-semibold mb-4"
                 >
-                  <Package2 className="h-6 w-6 text-primary" />
+                  <Logo className="h-8 w-8" />
                   <span className="sr-only">{t('app_title')}</span>
                 </Link>
                 {navItems.map((item) => (
@@ -100,8 +101,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     key={item.label}
                     href={item.href}
                     className={cn(
-                      'flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground',
-                      pathname.startsWith(item.href) && 'bg-muted text-foreground'
+                      'flex items-center gap-4 rounded-xl px-3 py-2 text-gray-400 hover:text-white',
+                      pathname.startsWith(item.href) && 'bg-gray-800 text-white'
                     )}
                   >
                     <item.icon className="h-5 w-5" />
