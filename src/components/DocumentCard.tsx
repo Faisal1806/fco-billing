@@ -1,18 +1,21 @@
-// components/WatakCard.tsx
+// components/DocumentCard.tsx
 import { Logo } from "./logo";
-import { WatakEntry } from "@/app/(app)/watak-register/page";
+
+type Props = {
+  type: "watak" | "bill" | "challan" | "receipt" | 'pesticide-bill';
+  title: string;
+  children: React.ReactNode;
+};
 
 const gradients: Record<string, string> = {
   watak: "bg-gradient-to-r from-green-400 via-emerald-500 to-teal-600",
   bill: "bg-gradient-to-r from-red-400 via-pink-500 to-rose-600",
   challan: "bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-600",
   receipt: "bg-gradient-to-r from-yellow-400 via-orange-500 to-amber-600",
+  "pesticide-bill": "bg-gradient-to-r from-cyan-400 via-sky-500 to-blue-600",
 };
 
-export default function WatakCard({ data }: { data: WatakEntry }) {
-  const type = "watak";
-  const title = `Watak #${data.watakNo}`;
-
+export default function DocumentCard({ type, title, children }: Props) {
   return (
     <div
       className={`rounded-2xl shadow-xl p-6 text-white ${gradients[type]} print:bg-white print:text-black print:shadow-none h-full flex flex-col`}
@@ -25,10 +28,7 @@ export default function WatakCard({ data }: { data: WatakEntry }) {
       </div>
 
       <div className="bg-white/10 backdrop-blur-sm p-4 rounded-lg shadow-inner flex-grow">
-        <p className="text-lg font-semibold">{data.customerName}</p>
-        {data.customerUrdu && <p className="font-urdu text-xl mt-1">{data.customerUrdu}</p>}
-        <p className="text-sm mt-2">Date: {new Date(data.date).toLocaleDate_String()}</p>
-        <p className="text-2xl font-bold mt-4">₹{data.netSale.toFixed(2)}</p>
+        {children}
       </div>
     </div>
   );

@@ -1,115 +1,39 @@
 
 'use client'
 
-import { DollarSign, Package, Users, Activity, FileText, IndianRupee, BookUser, AlertTriangle } from 'lucide-react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { recentSales, salesData } from '@/lib/data';
-import { useLanguage } from '@/contexts/language-context';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import Image from 'next/image';
-
-const StatsCard = ({ title, value, icon: Icon }: { title: string; value: string; icon: React.ElementType; }) => (
-  <Card>
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-sm font-medium">{title}</CardTitle>
-      <Icon className="h-4 w-4 text-muted-foreground" />
-    </CardHeader>
-    <CardContent>
-      <div className="text-2xl font-bold">{value}</div>
-    </CardContent>
-  </Card>
-);
-
-const SalesChart = () => {
-    const { t } = useLanguage();
-    return (
-        <Card className="col-span-1 lg:col-span-2">
-        <CardHeader>
-            <CardTitle>{t('sales_overview')}</CardTitle>
-        </CardHeader>
-        <CardContent className="pl-2">
-            <ResponsiveContainer width="100%" height={350}>
-            <BarChart data={salesData}>
-                <XAxis
-                dataKey="date"
-                stroke="#888888"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-                />
-                <YAxis
-                stroke="#888888"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(value) => `₹${value}`}
-                />
-                <Tooltip
-                    contentStyle={{
-                        backgroundColor: 'hsl(var(--background))',
-                        borderColor: 'hsl(var(--border))',
-                    }}
-                />
-                <Bar dataKey="sales" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-            </BarChart>
-            </ResponsiveContainer>
-        </CardContent>
-        </Card>
-    );
-};
-
-const RecentSales = () => {
-    const { t } = useLanguage();
-    return (
-        <Card className="col-span-1">
-        <CardHeader>
-            <CardTitle>{t('recent_sales')}</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-8">
-            {recentSales.map((sale) => (
-            <div key={sale.id} className="flex items-center gap-4">
-                <Avatar className="hidden h-9 w-9 sm:flex">
-                    <Image src={`https://picsum.photos/seed/${sale.customer.name}/40/40`} alt="Avatar" width={40} height={40} data-ai-hint="people avatar" />
-                    <AvatarFallback>{sale.customer.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div className="grid gap-1">
-                <p className="text-sm font-medium leading-none">{sale.customer.name}</p>
-                <p className="text-sm text-muted-foreground">{sale.email}</p>
-                </div>
-                <div className="ms-auto font-medium text-end">+₹{sale.amount.toFixed(2)}</div>
-            </div>
-            ))}
-             {recentSales.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center col-span-full">No recent sales.</p>
-            )}
-        </CardContent>
-        </Card>
-    );
-}
+import DocumentCard from "@/components/DocumentCard";
 
 export default function DashboardPage() {
-  const { t } = useLanguage();
-
   return (
-    <>
-      <div className="flex-1 space-y-4">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <StatsCard title="Today's Sale" value="₹12,500" icon={IndianRupee} />
-            <StatsCard title="Monthly Total" value="₹2,40,000" icon={DollarSign} />
-            <StatsCard title="Wataks Issued" value="15" icon={FileText} />
-            <StatsCard title="Outstanding Khata" value="₹35,000" icon={AlertTriangle} />
-        </div>
-        <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-3">
-            <SalesChart />
-            <RecentSales />
-        </div>
-      </div>
-    </>
+    <div className="grid gap-6 p-2 md:grid-cols-2 lg:grid-cols-3">
+      <DocumentCard type="watak" title="Watak">
+        <p className="font-semibold">Grower: XYZ</p>
+        <p>Quantity: 120 boxes</p>
+        <p>Rate: ₹500</p>
+      </DocumentCard>
+
+      <DocumentCard type="bill" title="Bill">
+        <p className="font-semibold">To: M/S Ahmad Traders</p>
+        <p>Total Sale: ₹60,000</p>
+        <p>Commission (12%): ₹7,200</p>
+      </DocumentCard>
+
+      <DocumentCard type="challan" title="Challan">
+        <p className="font-semibold">Challan No: 1023</p>
+        <p>Truck No: JK05 1234</p>
+        <p>Freight: ₹4,500</p>
+      </DocumentCard>
+
+      <DocumentCard type="receipt" title="Receipt">
+        <p className="font-semibold">Received from: Firdous Ahmad</p>
+        <p>Amount: ₹25,000</p>
+        <p>Balance: ₹12,000</p>
+      </DocumentCard>
+       <DocumentCard type="pesticide-bill" title="Pesticide Bill">
+        <p className="font-semibold">Customer: Apple Orchards Inc.</p>
+        <p>Items: 3</p>
+        <p>Total: ₹1,800</p>
+      </DocumentCard>
+    </div>
   );
 }

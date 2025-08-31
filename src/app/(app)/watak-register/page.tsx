@@ -31,7 +31,7 @@ import { useToast } from '@/hooks/use-toast';
 import { collection, onSnapshot, query, orderBy, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import WatakCard from '@/components/WatakCard';
+import DocumentCard from '@/components/DocumentCard';
 
 export interface WatakEntry {
     id: string;
@@ -186,7 +186,12 @@ export default function WatakRegisterPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {filteredWataks.map((watak) => (
                      <div key={watak.id} onClick={() => navigateToBill(watak.sNo)} className="cursor-pointer">
-                        <WatakCard data={watak} />
+                        <DocumentCard type="watak" title={`Watak #${watak.watakNo}`}>
+                            <p className="text-lg font-semibold">{watak.customerName}</p>
+                            {watak.customerUrdu && <p className="font-urdu text-xl mt-1">{watak.customerUrdu}</p>}
+                            <p className="text-sm mt-2">Date: {new Date(watak.date).toLocaleDateString()}</p>
+                            <p className="text-2xl font-bold mt-4">₹{watak.netSale.toFixed(2)}</p>
+                        </DocumentCard>
                     </div>
                 ))}
             </div>
