@@ -2,30 +2,17 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, ShoppingCart, Package, Settings, Package2, Bell, Search, User, Receipt, BookUser, BarChart3, Factory } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, Settings, Package2, Receipt, BookUser, BarChart3, Factory } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { LanguageSwitcher } from '@/components/language-switcher';
 import { ContextualHelp } from '@/components/contextual-help';
-import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/logo';
-import { ThemeSwitcher } from '@/components/theme-switcher';
+import { Header } from '@/components/Header';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const { toast } = useToast();
   const { t } = useLanguage();
 
   const navItems = [
@@ -37,6 +24,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { href: '/watak-register', icon: BookUser, label: t('watak_register') },
     { href: '/settings', icon: Settings, label: t('settings') },
   ];
+
+  const getPageTitle = () => {
+    const item = navItems.find(item => pathname.startsWith(item.href));
+    return item ? item.label : 'SwiftSale';
+  }
 
   const getPageContext = () => {
     if (pathname.startsWith('/dashboard')) return 'Dashboard';
@@ -78,48 +70,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </div>
-      <div className="flex flex-col bg-muted/40">
-        <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="shrink-0 md:hidden">
-                <ShoppingCart className="h-5 w-5" />
-                <span className="sr-only">Toggle navigation menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="flex flex-col">
-              <nav className="grid gap-2 text-lg font-medium">
-                <Link
-                  href="#"
-                  className="flex items-center gap-2 text-lg font-semibold mb-4"
-                >
-                  <Logo className="h-8 w-8" />
-                  <span className="sr-only">{t('app_title')}</span>
-                </Link>
-                {navItems.map((item) => (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    className={cn(
-                      'flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground',
-                      pathname.startsWith(item.href) && 'bg-muted text-foreground'
-                    )}
-                  >
-                    <item.icon className="h-5 w-5" />
-                    {item.label}
-                  </Link>
-                ))}
-              </nav>
-            </SheetContent>
-          </Sheet>
-          <div className="w-full flex-1">
-            {/* Can add search here if needed */}
+      <div className="flex flex-col">
+        <Header title={getPageTitle()} />
+        <main className="flex-1 p-6 bg-gradient-to-r from-green-100 via-green-200 to-green-300 dark:from-green-900 dark:via-green-800 dark:to-green-700">
+          <div className="max-w-7xl mx-auto bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6">
+            {children}
           </div>
-          <LanguageSwitcher />
-          <ThemeSwitcher />
-        </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-          {children}
         </main>
         <ContextualHelp context={getPageContext()} />
       </div>
