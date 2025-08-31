@@ -10,11 +10,11 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['var(--font-inter)', 'sans-serif'],
-        headline: ['var(--font-inter)', 'sans-serif'],
+        body: ['Poppins', 'sans-serif'],
+        headline: ['Poppins', 'sans-serif'],
         code: ['monospace'],
-        urdu: ['var(--font-urdu)', 'Noto Nastaliq Urdu', 'serif'],
-        sans: ['var(--font-inter)', 'sans-serif'],
+        urdu: ['Noto Nastaliq Urdu', 'serif'],
+        sans: ['Poppins', 'sans-serif'],
       },
       colors: {
         background: 'hsl(var(--background))',

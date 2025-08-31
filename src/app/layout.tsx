@@ -1,18 +1,10 @@
 
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import { Noto_Nastaliq_Urdu } from 'next/font/google';
 import './globals.css';
 import './print.css'; // Import print styles
 import { Toaster } from '@/components/ui/toaster';
 import { LanguageProvider } from '@/contexts/language-context';
 import { ThemeProvider } from '@/components/theme-provider';
-
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
-const urdu = Noto_Nastaliq_Urdu({
-  subsets: ['arabic'],
-  variable: '--font-urdu',
-});
 
 export const metadata: Metadata = {
   title: 'F.Co Billing System',
@@ -26,9 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${inter.variable} ${urdu.variable} font-body antialiased`}
-      >
+      <body className={`font-body antialiased`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
