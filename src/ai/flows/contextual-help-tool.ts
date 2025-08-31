@@ -25,20 +25,6 @@ export async function getContextualHelp(input: ContextualHelpInput): Promise<Con
   return contextualHelpFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'contextualHelpPrompt',
-  input: {schema: ContextualHelpInputSchema},
-  output: {schema: ContextualHelpOutputSchema},
-  prompt: `You are a helpful assistant providing guidance to users of the SwiftSale application.
-
-  Based on the current context and the user's query, provide relevant advice and instructions to help them effectively use the system.
-
-  Context: {{{context}}}
-  User Query: {{{userQuery}}}
-
-  Advice:`, // Note the trailing colon.
-});
-
 const contextualHelpFlow = ai.defineFlow(
   {
     name: 'contextualHelpFlow',
@@ -46,7 +32,21 @@ const contextualHelpFlow = ai.defineFlow(
     outputSchema: ContextualHelpOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const { output } = await ai.generate({
+      model: 'googleai/gemini-pro',
+      prompt: `You are a helpful assistant providing guidance to users of the SwiftSale application.
+
+      Based on the current context and the user's query, provide relevant advice and instructions to help them effectively use the system.
+    
+      Context: ${input.context}
+      User Query: ${input.userQuery}
+    
+      Advice:`,
+      output: {
+        schema: ContextualHelpOutputSchema,
+      }
+    });
+
     return output!;
   }
 );
