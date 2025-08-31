@@ -13,6 +13,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 interface BillData {
+    id: string;
     sNo: string;
     date: string;
     customerName: string;
@@ -59,7 +60,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 
                 let data: BillData | null = null;
                 if (docSnap.exists()) {
-                    data = docSnap.data() as BillData;
+                    data = { id: docSnap.id, ...docSnap.data() } as BillData;
                 } else {
                     // Fallback to localStorage if offline or not found
                     const storedBill = localStorage.getItem(`invoice-${params.id}`);
@@ -72,8 +73,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                     // This is to fix old records that may not have qty
                      data.entries = data.entries.map(e => ({...e, qty: e.qty || e.peti || e.dabba || 0}))
                     setBillData(data);
-                    // Also cache it in localStorage
-                    localStorage.setItem(`invoice-${params.id}`, JSON.stringify(data));
+                    // Also cache it in localStorage, using the Firestore ID if available
+                    localStorage.setItem(`invoice-${data.id}`, JSON.stringify(data));
                 } else {
                      toast({
                         variant: "destructive",
@@ -297,5 +298,3 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         </div>
     );
 }
-
-    

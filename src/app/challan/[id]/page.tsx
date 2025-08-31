@@ -75,11 +75,11 @@ export default function ChallanPage({ params }: { params: { id: string } }) {
         'use client'
         return (
              <div className="flex items-center gap-2 print:hidden">
-                <Button onClick={handleShare} variant="outline" className="gap-2">
+                <Button onClick={handleShare} variant="outline" size="sm" className="gap-2">
                     <Share2 className="h-4 w-4" />
                     Share
                 </Button>
-                <Button onClick={() => window.print()} className="gap-2">
+                <Button onClick={() => window.print()} size="sm" className="gap-2">
                     <Printer className="h-4 w-4" />
                     Print
                 </Button>
@@ -89,14 +89,14 @@ export default function ChallanPage({ params }: { params: { id: string } }) {
 
     if (loading) {
         return (
-            <div className="bg-background min-h-screen p-4 sm:p-8 md:p-12">
-                 <Card className="w-full max-w-4xl mx-auto">
+            <div className="bg-muted min-h-screen p-8 flex items-center justify-center">
+                 <Card className="w-[148mm] h-[210mm] mx-auto p-6 flex flex-col">
                     <CardHeader>
-                        <Skeleton className="h-8 w-1/2" />
-                        <Skeleton className="h-4 w-1/4" />
+                        <Skeleton className="h-8 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
                     </CardHeader>
-                    <CardContent>
-                        <Skeleton className="h-48 w-full" />
+                    <CardContent className="flex-grow">
+                        <Skeleton className="h-full w-full" />
                     </CardContent>
                     <CardFooter>
                         <Skeleton className="h-10 w-32" />
@@ -125,11 +125,23 @@ export default function ChallanPage({ params }: { params: { id: string } }) {
     } = challanData;
 
     return (
-        <div className="bg-white min-h-screen p-4 sm:p-6 md:p-8 print:bg-white font-sans">
-            <Card className="w-full max-w-4xl mx-auto shadow-none border print:shadow-none print:border">
-                <CardHeader className="p-4 relative">
+        <div className="bg-muted min-h-screen py-8 print:bg-white print:py-0">
+             <style jsx global>{`
+                @media print {
+                    @page {
+                        size: A5 landscape;
+                        margin: 0;
+                    }
+                    body {
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                }
+            `}</style>
+            <div className="w-[210mm] min-h-[148mm] mx-auto bg-white shadow-lg print:shadow-none flex flex-col text-sm">
+                <header className="p-4 border-b">
                     <div className="text-center mb-4">
-                        <h1 className="text-2xl font-bold text-gray-800">FIRDOUS AHMAD & COMPANY</h1>
+                        <h1 className="text-xl font-bold text-gray-800">FIRDOUS AHMAD & COMPANY</h1>
                         <p className="text-xs text-gray-600">Fruit Merchants & Commission Agents</p>
                         <p className="text-xs text-gray-600">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
                         <p className="text-xs text-gray-600">Prop: Firdous Ahmad Lone (Nadihal)</p>
@@ -147,69 +159,69 @@ export default function ChallanPage({ params }: { params: { id: string } }) {
                              <p><strong>Dated:</strong> {new Date(date).toLocaleDateString()}</p>
                         </div>
                     </div>
-                </CardHeader>
-                <CardContent className="p-2">
+                </header>
+                <main className="flex-grow p-2">
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-[5%]">PETI</TableHead>
-                                <TableHead className="w-[5%]">DABA</TableHead>
-                                <TableHead>KIND</TableHead>
-                                <TableHead>KHATA</TableHead>
-                                <TableHead className="w-[8%]">RATE</TableHead>
-                                <TableHead className="w-[8%]">TOTAL FREIGHT</TableHead>
-                                <TableHead className="w-[8%]">ADVANCE</TableHead>
-                                <TableHead className="w-[8%]">BALANCE</TableHead>
-                                <TableHead className="w-[8%]">EXPENDITURE</TableHead>
+                                <TableHead className="w-[5%] px-1 py-1 h-auto">PETI</TableHead>
+                                <TableHead className="w-[5%] px-1 py-1 h-auto">DABA</TableHead>
+                                <TableHead className="px-1 py-1 h-auto">KIND</TableHead>
+                                <TableHead className="px-1 py-1 h-auto">KHATA</TableHead>
+                                <TableHead className="w-[8%] px-1 py-1 h-auto">RATE</TableHead>
+                                <TableHead className="w-[10%] px-1 py-1 h-auto">TOTAL FREIGHT</TableHead>
+                                <TableHead className="w-[8%] px-1 py-1 h-auto">ADVANCE</TableHead>
+                                <TableHead className="w-[8%] px-1 py-1 h-auto">BALANCE</TableHead>
+                                <TableHead className="w-[8%] px-1 py-1 h-auto">EXPENDITURE</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {Array.from({ length: 15 }).map((_, index) => {
                                 const entry = entries[index];
                                 return (
-                                <TableRow key={index} className="h-8">
-                                    <TableCell>{entry?.peti || ''}</TableCell>
-                                    <TableCell>{entry?.daba || ''}</TableCell>
-                                    <TableCell>{entry?.kind || ''}</TableCell>
-                                    <TableCell>{entry?.khata || ''}</TableCell>
-                                    <TableCell>{entry?.rate || ''}</TableCell>
-                                    <TableCell>{entry?.totalFreight || ''}</TableCell>
-                                    <TableCell>{entry?.advance || ''}</TableCell>
-                                    <TableCell>{entry?.balance || ''}</TableCell>
-                                    <TableCell>{entry?.expenditure || ''}</TableCell>
+                                <TableRow key={index} className="h-6">
+                                    <TableCell className="px-1 py-0">{entry?.peti || ''}</TableCell>
+                                    <TableCell className="px-1 py-0">{entry?.daba || ''}</TableCell>
+                                    <TableCell className="px-1 py-0">{entry?.kind || ''}</TableCell>
+                                    <TableCell className="px-1 py-0">{entry?.khata || ''}</TableCell>
+                                    <TableCell className="px-1 py-0 text-right">{entry?.rate || ''}</TableCell>
+                                    <TableCell className="px-1 py-0 text-right">{entry?.totalFreight || ''}</TableCell>
+                                    <TableCell className="px-1 py-0 text-right">{entry?.advance || ''}</TableCell>
+                                    <TableCell className="px-1 py-0 text-right">{entry?.balance || ''}</TableCell>
+                                    <TableCell className="px-1 py-0 text-right">{entry?.expenditure || ''}</TableCell>
                                 </TableRow>
                                 )
                             })}
                         </TableBody>
                     </Table>
 
-                    <Separator className="my-2" />
+                    <Separator className="my-1" />
 
-                    <div className="grid grid-cols-3 gap-4 text-xs mt-2 px-2 font-medium">
+                    <div className="grid grid-cols-3 gap-4 text-[10px] mt-1 px-2 font-medium">
                         <p>Total Petti: {totalPetti}</p>
                         <p>Total Dabba: {totalDabba}</p>
                         <p>Total Nugs: {totalNugs}</p>
                     </div>
 
-                     <div className="text-xs mt-4 px-2">
+                     <div className="text-[10px] mt-2 px-2">
                         <p>All toll tax paid in cash Rs: {tollTax > 0 ? tollTax.toFixed(2) : '__________'}</p>
                         <p>Pay only Freight Rs: {payOnlyFreight > 0 ? payOnlyFreight.toFixed(2) : '__________'}</p>
-                        <p className="mt-2">in good condition and driver will be responsible for any damage, delay of goods</p>
+                        <p className="mt-1">in good condition and driver will be responsible for any damage, delay of goods</p>
                     </div>
-                </CardContent>
-                <CardFooter className="flex justify-between items-end p-4 mt-8">
+                </main>
+                <footer className="flex justify-between items-end p-2 mt-auto">
                      <Controls />
                      <div className="flex flex-col items-center">
-                        <div className="w-32 h-8 border-t border-gray-400"></div>
-                        <p className="text-xs font-semibold">Signature of Driver</p>
+                        <div className="w-24 h-6 border-t border-gray-400"></div>
+                        <p className="text-[10px] font-semibold">Signature of Driver</p>
                      </div>
-                     <div className="flex flex-col items-center">
+                     <div className="flex flex-col items-center text-[10px]">
                         <p>Received all goods</p>
-                        <div className="w-32 h-8 border-t border-gray-400 mt-1"></div>
-                        <p className="text-xs font-semibold">Signature of Manager</p>
+                        <div className="w-24 h-6 border-t border-gray-400 mt-1"></div>
+                        <p className="font-semibold">Signature of Manager</p>
                      </div>
-                </CardFooter>
-            </Card>
+                </footer>
+            </div>
         </div>
     );
 }
