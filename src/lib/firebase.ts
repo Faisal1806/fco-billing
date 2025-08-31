@@ -2,7 +2,7 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, Auth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { getMessaging } from "firebase/messaging";
+import { getMessaging, Messaging } from "firebase/messaging";
 
 const firebaseConfig = {
   apiKey: "AlZaSyDrev3-idwKsbpZI8UL9MT-GHssblaEuo4",
@@ -16,11 +16,31 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-const auth = typeof window !== 'undefined' ? getAuth(app) : ({} as Auth);
 const db = getFirestore(app);
 
-// Initialize Firebase Cloud Messaging and get a reference to the service
-const messaging = typeof window !== 'undefined' && typeof document !== 'undefined' ? getMessaging(app) : null;
+// Lazy initialization for client-side services
+let auth: Auth;
+let messaging: Messaging | null;
+
+function getClientAuth() {
+  if (typeof window !== 'undefined') {
+    if (!auth) {
+      auth = getAuth(app);
+    }
+    return auth;
+  }
+  return {} as Auth; // Return a dummy object for server-side
+}
+
+function getClientMessaging() {
+    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+        if (!messaging) {
+            messaging = getMessaging(app);
+        }
+        return messaging;
+    }
+    return null;
+}
 
 
-export { auth, db, messaging };
+export { app, db, getClientAuth, getClientMessaging };

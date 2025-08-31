@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
 import { Factory, BellRing } from 'lucide-react';
-import { messaging } from '@/lib/firebase';
+import { getClientMessaging } from '@/lib/firebase';
 import { getToken } from 'firebase/messaging';
 
 
@@ -47,6 +47,7 @@ export default function SettingsPage() {
     }
 
     const handleEnableNotifications = async () => {
+        const messaging = getClientMessaging();
         if (!messaging) {
             toast({
                 variant: 'destructive',
