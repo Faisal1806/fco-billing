@@ -16,11 +16,7 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-let auth: Auth;
-if (typeof window !== 'undefined') {
-    auth = getAuth(app);
-}
-
+const auth = getAuth(app);
 const db = getFirestore(app);
 
 // Initialize Firebase Cloud Messaging and get a reference to the service
