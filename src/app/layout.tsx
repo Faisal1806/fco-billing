@@ -1,12 +1,21 @@
+
 import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import { Noto_Nastaliq_Urdu } from 'next/font/google';
 import './globals.css';
 import './print.css'; // Import print styles
 import { Toaster } from '@/components/ui/toaster';
 import { LanguageProvider } from '@/contexts/language-context';
 
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const urdu = Noto_Nastaliq_Urdu({
+  subsets: ['arabic'],
+  variable: '--font-urdu',
+});
+
 export const metadata: Metadata = {
   title: 'F.Co Billing System',
-  description: 'F.Co Billing System',
+  description: 'Bills, Wataks, Challans, Receipts with export + backup',
 };
 
 export default function RootLayout({
@@ -16,18 +25,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;700&family=Noto+Nastaliq+Urdu:wght@400;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body className="font-body antialiased">
+      <body
+        className={`${inter.variable} ${urdu.variable} font-body antialiased`}
+      >
         <LanguageProvider>
-            {children}
-            <Toaster />
+          {children}
+          <Toaster />
         </LanguageProvider>
       </body>
     </html>
