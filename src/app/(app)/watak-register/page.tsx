@@ -39,6 +39,7 @@ export interface WatakEntry {
     sNo: string;
     watakNo: string;
     customerName: string;
+    customerUrdu?: string; // Add this for Urdu name
     entries: { peti: number, daba: number }[];
     grossSale: number;
     totalExpenses: number;
