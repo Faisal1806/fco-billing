@@ -13,8 +13,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Separator } from './ui/separator';
-import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Share } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 type Row = {
   type: 'Patti' | 'Dabba';
@@ -38,7 +41,6 @@ export function BillMakingTab() {
 
   const { toast } = useToast();
   const router = useRouter();
-  const printRef = useRef<HTMLDivElement>(null);
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -146,7 +148,7 @@ export function BillMakingTab() {
       khata,
       challanNo,
       freight: Number(freight) || 0,
-      entries: rows.map(r => ({...r, total: r.qty * r.rate})),
+      entries: rows.filter(r => r.qty > 0).map(r => ({...r, total: r.qty * r.rate})),
       totals: {
         pattiQty: totals.pattiQty,
         dabbaQty: totals.dabbaQty,
@@ -218,12 +220,132 @@ export function BillMakingTab() {
         }
     }
 
-  const printNow = () => {
+  const viewInPrintFormat = () => {
     if (!sNo) {
-        toast({ variant: 'destructive', title: 'Cannot Print', description: 'Please save the bill first to generate a printable version.'});
+        toast({ variant: 'destructive', title: 'Cannot View', description: 'Please save the bill first to generate a printable version.'});
         return;
     }
     router.push(`/invoice/${sNo}`);
+  };
+
+  const exportPDF = () => {
+    if (!sNo) {
+        toast({ variant: 'destructive', title: 'Cannot Export', description: 'Please enter a Bill No. before exporting.'});
+        return;
+    }
+    const doc = new jsPDF({ unit: 'mm', format: 'a5' });
+
+    // Header
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('FIRDOUS AHMAD & COMPANY', doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Fruit Merchants & Commission Agents', doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+    doc.text('SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.', doc.internal.pageSize.getWidth() / 2, 24, { align: 'center' });
+    doc.text('Cell: 7006136330, 9797002164', doc.internal.pageSize.getWidth() / 2, 28, { align: 'center' });
+    
+    // Bill details
+    autoTable(doc, {
+        body: [
+            [{ content: `Bill No: ${sNo}`, styles: { halign: 'left' } }, { content: `Date: ${new Date(date).toLocaleDateString()}`, styles: { halign: 'right' }}],
+            [{ content: `M/s: ${ms}`, styles: { halign: 'left' } }, { content: `Challan No: ${challanNo}`, styles: { halign: 'right' }}],
+            [{ content: `Khata No: ${khata}`, styles: { halign: 'left' } }, ''],
+        ],
+        theme: 'plain',
+        startY: 32,
+        styles: { fontSize: 9 }
+    });
+
+    const finalY = (doc as any).lastAutoTable.finalY;
+
+    // Body tables
+    const itemsBody = rows.filter(r => r.qty > 0).map(r => [r.type, r.variety, r.qty, r.rate.toFixed(2), (r.qty * r.rate).toFixed(2)]);
+    const expensesBody = [
+      ['Freight', `₹${(Number(freight) || 0).toFixed(2)}`],
+      ['Labour', `₹${totals.labour.toFixed(2)}`],
+      ['Association', `₹${totals.association.toFixed(2)}`],
+      ['Security', `₹${totals.security.toFixed(2)}`],
+      ['Commission', `₹${totals.commission.toFixed(2)}`],
+    ];
+
+    autoTable(doc, {
+        head: [['Type', 'Variety', 'Qty', 'Rate', 'Gross Sale']],
+        body: itemsBody,
+        startY: finalY + 2,
+        theme: 'grid',
+        headStyles: { fillColor: [230, 230, 230], textColor: 20 },
+        styles: { fontSize: 8, cellPadding: 1.5 },
+        columnStyles: { 4: { halign: 'right' }},
+        didDrawPage: (data) => {
+            // Expenses table on the right
+            autoTable(doc, {
+                head: [['Details of Exp.', 'Amount']],
+                body: expensesBody,
+                startY: data.cursor?.y ?? finalY + 2,
+                theme: 'grid',
+                headStyles: { fillColor: [230, 230, 230], textColor: 20 },
+                styles: { fontSize: 8, cellPadding: 1.5 },
+                columnStyles: { 1: { halign: 'right' }},
+                margin: { left: doc.internal.pageSize.getWidth() / 2 + 5 },
+            });
+        },
+    });
+
+    const itemsFinalY = (doc as any).lastAutoTable.finalY;
+    
+    // Footer totals
+    autoTable(doc, {
+        body: [
+            [`Qty: ${totals.totalQty} (Patti: ${totals.pattiQty}, Dabba: ${totals.dabbaQty})`],
+            [`Gross Sale: ₹${totals.totalGrossSale.toFixed(2)}`],
+            [`Total Exp.: ₹${totals.totalExp.toFixed(2)}`],
+            [`Net Sale: ₹${totals.netSale.toFixed(2)}`],
+        ],
+        startY: itemsFinalY + 5,
+        theme: 'grid',
+        styles: { fontSize: 9, fontStyle: 'bold' }
+    });
+
+    doc.save(`Watak-${sNo}.pdf`);
+  };
+
+  const exportXLSX = () => {
+    if (!sNo) {
+        toast({ variant: 'destructive', title: 'Cannot Export', description: 'Please enter a Bill No. before exporting.'});
+        return;
+    }
+
+    const items = rows.filter(r => r.qty > 0).map(r => ({
+      Type: r.type,
+      Variety: r.variety,
+      Quantity: r.qty,
+      Rate: r.rate,
+      'Gross Sale': r.qty * r.rate,
+    }));
+    
+    const summary = [
+      { Category: 'Total Patti', Value: totals.pattiQty },
+      { Category: 'Total Dabba', Value: totals.dabbaQty },
+      { Category: 'Total Quantity', Value: totals.totalQty },
+      { Category: 'Gross Sale', Value: totals.totalGrossSale },
+      { Category: 'Labour', Value: totals.labour },
+      { Category: 'Association', Value: totals.association },
+      { Category: 'Security', Value: totals.security },
+      { Category: 'Freight', Value: freight },
+      { Category: 'Commission (12%)', Value: totals.commission },
+      { Category: 'Total Expenses', Value: totals.totalExp },
+      { Category: 'Net Sale', Value: totals.netSale },
+    ];
+
+    const ws_items = XLSX.utils.json_to_sheet(items);
+    const ws_summary = XLSX.utils.json_to_sheet(summary);
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws_items, 'Items');
+    XLSX.utils.book_append_sheet(wb, ws_summary, 'Summary');
+
+    XLSX.writeFile(wb, `Watak-${sNo}.xlsx`);
   };
 
   return (
@@ -273,7 +395,7 @@ export function BillMakingTab() {
                 <Separator />
                 
                 {/* Table */}
-                <div ref={printRef}>
+                <div>
                     <Table>
                         <TableHeader>
                         <TableRow>
@@ -384,13 +506,19 @@ export function BillMakingTab() {
 
             </CardContent>
             <CardFooter>
-                <div className="flex w-full justify-center gap-3">
-                    <Button onClick={saveToFirestore} className="w-full max-w-xs" disabled={isSubmitting}>
+                <div className="flex w-full justify-center flex-wrap gap-3">
+                    <Button onClick={saveToFirestore} className="flex-1 min-w-[150px]" disabled={isSubmitting}>
                         {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                         {isEditing ? 'Update Watak' : 'Save Watak'}
                     </Button>
-                    <Button onClick={printNow} variant="secondary" className="w-full max-w-xs">
-                        Print / PDF
+                    <Button onClick={viewInPrintFormat} variant="secondary" className="flex-1 min-w-[150px]">
+                        Print / View
+                    </Button>
+                    <Button onClick={exportPDF} variant="outline" className="flex-1 min-w-[150px] gap-2">
+                        <Share className="h-4 w-4" /> Export PDF
+                    </Button>
+                    <Button onClick={exportXLSX} variant="outline" className="flex-1 min-w-[150px] gap-2">
+                       <Share className="h-4 w-4" /> Export Excel
                     </Button>
                 </div>
             </CardFooter>
