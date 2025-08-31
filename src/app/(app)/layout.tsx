@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -7,7 +8,6 @@ import { useLanguage } from '@/contexts/language-context';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { ContextualHelp } from '@/components/contextual-help';
 import { Logo } from '@/components/logo';
 import { Header } from '@/components/Header';
 
@@ -28,17 +28,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const getPageTitle = () => {
     const item = navItems.find(item => pathname.startsWith(item.href));
     return item ? item.label : 'SwiftSale';
-  }
-
-  const getPageContext = () => {
-    if (pathname.startsWith('/dashboard')) return 'Dashboard';
-    if (pathname.startsWith('/sales')) return 'Sales Page';
-    if (pathname.startsWith('/sales-overview')) return 'Sales Overview Page';
-    if (pathname.startsWith('/products')) return 'Product Catalog';
-    if (pathname.startsWith('/expenses')) return 'Expenses Page';
-    if (pathname.startsWith('/watak-register')) return 'Watak Register Page';
-    if (pathname.startsWith('/settings')) return 'Settings Page';
-    return 'General';
   }
 
   return (
@@ -77,7 +66,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {children}
           </div>
         </main>
-        <ContextualHelp context={getPageContext()} />
       </div>
     </div>
   );
