@@ -20,7 +20,7 @@ const auth = typeof window !== 'undefined' ? getAuth(app) : ({} as Auth);
 const db = getFirestore(app);
 
 // Initialize Firebase Cloud Messaging and get a reference to the service
-const messaging = typeof window !== 'undefined' ? getMessaging(app) : null;
+const messaging = typeof window !== 'undefined' && typeof document !== 'undefined' ? getMessaging(app) : null;
 
 
 export { auth, db, messaging };
