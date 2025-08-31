@@ -145,7 +145,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     if (loading) {
         return (
             <div className="bg-muted min-h-screen p-8 flex items-center justify-center">
-                 <Card className="w-[148mm] h-[210mm] mx-auto p-6 flex flex-col">
+                 <div className="a5-page mx-auto p-6 flex flex-col bg-white">
                     <CardHeader>
                         <Skeleton className="h-8 w-3/4" />
                         <Skeleton className="h-4 w-1/2" />
@@ -156,7 +156,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                     <CardFooter>
                         <Skeleton className="h-10 w-32" />
                     </CardFooter>
-                 </Card>
+                 </div>
             </div>
         )
     }
@@ -181,19 +181,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
     return (
         <div className="bg-muted min-h-screen py-8 print:bg-white print:py-0">
-            <style jsx global>{`
-                @media print {
-                    @page {
-                        size: A5;
-                        margin: 0;
-                    }
-                    body {
-                        -webkit-print-color-adjust: exact;
-                        print-color-adjust: exact;
-                    }
-                }
-            `}</style>
-            <div className="w-[148mm] min-h-[200mm] mx-auto bg-white shadow-lg print:shadow-none flex flex-col text-sm">
+            <div className="a5-page mx-auto bg-white shadow-lg print:shadow-none flex flex-col text-sm">
                 <header className="p-6 border-b">
                     <div className="text-center mb-4">
                         <h1 className="text-xl font-bold text-gray-800">FIRDOUS AHMAD & COMPANY</h1>
