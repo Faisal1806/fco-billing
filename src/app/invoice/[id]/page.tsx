@@ -9,6 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Printer, Share2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 interface BillData {
     sNo: string;
@@ -40,12 +42,44 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     const { toast } = useToast();
 
     useEffect(() => {
-        const storedBill = localStorage.getItem(`invoice-${params.id}`);
-        if (storedBill) {
-            setBillData(JSON.parse(storedBill));
-        }
-        setLoading(false);
-    }, [params.id]);
+        const fetchBill = async () => {
+            if (!params.id) return;
+            setLoading(true);
+            try {
+                // First, try fetching from localStorage for immediate display of just-created bills
+                const storedBill = localStorage.getItem(`invoice-${params.id}`);
+                if (storedBill) {
+                    setBillData(JSON.parse(storedBill));
+                } else {
+                    // If not in localStorage, fetch from Firestore
+                    const docRef = doc(db, "wataks", params.id);
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        const data = docSnap.data() as BillData;
+                        setBillData(data);
+                        // Also cache it in localStorage
+                        localStorage.setItem(`invoice-${params.id}`, JSON.stringify(data));
+                    } else {
+                        toast({
+                            variant: "destructive",
+                            title: "Not Found",
+                            description: "The requested bill was not found in Firestore."
+                        })
+                    }
+                }
+            } catch (error) {
+                 console.error("Error fetching bill:", error);
+                 toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: "Could not fetch the bill data."
+                })
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchBill();
+    }, [params.id, toast]);
 
 
     const handleShare = async () => {

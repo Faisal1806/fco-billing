@@ -13,9 +13,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
-import { PlusCircle, Trash2, FilePenLine, FilePlus } from 'lucide-react';
+import { PlusCircle, Trash2, FilePenLine, FilePlus, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
+import { db } from '@/lib/firebase';
+import { collection, doc, setDoc, onSnapshot, query, orderBy, deleteDoc } from 'firebase/firestore';
 
 type ProductEntry = {
   peti: number;
@@ -102,20 +104,29 @@ export function BillMakingTab() {
   const [security, setSecurity] = React.useState(0);
   const [otherExpenses, setOtherExpenses] = React.useState(0);
   const [isEditing, setIsEditing] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   const [savedBills, setSavedBills] = React.useState<any[]>([]);
 
   React.useEffect(() => {
-    const bills = [];
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('invoice-')) {
-            const bill = JSON.parse(localStorage.getItem(key)!);
-            bills.push(bill);
-        }
-    }
-    setSavedBills(bills.sort((a,b) => (a.sNo > b.sNo) ? 1 : -1));
-  }, []);
+    const q = query(collection(db, "wataks"), orderBy("sNo", "desc"));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const bills = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setSavedBills(bills);
+        setIsLoading(false);
+    }, (error) => {
+        console.error("Error fetching bills:", error);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not fetch recent bills from Firestore."
+        });
+        setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [toast]);
 
   const handleEntryUpdate = (
     index: number,
@@ -150,7 +161,7 @@ export function BillMakingTab() {
   };
   
   const grossSale = calculateGrossSale();
-  const commissionAmount = grossSale * 0.12; // Updated to 12%
+  const commissionAmount = grossSale * 0.12; // 12% commission
   const totalExpenses = freight + labour + security + otherExpenses + commissionAmount;
   const netSale = grossSale - totalExpenses;
 
@@ -164,7 +175,7 @@ export function BillMakingTab() {
     setIsEditing(false);
   }
 
-  const handleCreateBill = () => {
+  const handleCreateBill = async () => {
     if (!billDetails.sNo || !billDetails.date || !billDetails.customerName) {
         toast({
             variant: 'destructive',
@@ -173,6 +184,8 @@ export function BillMakingTab() {
         });
         return;
     }
+    
+    setIsSubmitting(true);
     const billId = billDetails.sNo;
     const billData = {
         ...billDetails,
@@ -187,14 +200,27 @@ export function BillMakingTab() {
         netSale,
     };
     
-    localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
-    setSavedBills(prev => [...prev.filter(b => b.sNo !== billId), billData].sort((a,b) => (a.sNo > b.sNo) ? 1 : -1));
+    try {
+        await setDoc(doc(db, "wataks", billId), billData);
+        
+        // Save to localStorage for printable page
+        localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
 
-    toast({
-      title: isEditing ? 'Bill Updated' : 'Bill Saved',
-      description: `The bill has been successfully ${isEditing ? 'updated' : 'saved'}.`,
-    });
-    router.push(`/invoice/${billId}`);
+        toast({
+          title: isEditing ? 'Bill Updated' : 'Bill Saved',
+          description: `The bill has been successfully ${isEditing ? 'updated' : 'saved'} to Firestore.`,
+        });
+        router.push(`/invoice/${billId}`);
+    } catch (error) {
+        console.error("Error saving bill:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Save Failed',
+            description: 'Could not save the bill to Firestore.',
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
   const loadBillForEdit = (bill: any) => {
@@ -215,6 +241,29 @@ export function BillMakingTab() {
     setIsEditing(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  const handleDeleteBill = async (billId: string) => {
+    if(!window.confirm(`Are you sure you want to delete Bill #${billId}? This action cannot be undone.`)) {
+        return;
+    }
+
+    try {
+        await deleteDoc(doc(db, "wataks", billId));
+        localStorage.removeItem(`invoice-${billId}`);
+        toast({
+            title: "Bill Deleted",
+            description: `Bill #${billId} has been successfully deleted.`
+        })
+    } catch (error) {
+        console.error("Error deleting bill:", error);
+        toast({
+            variant: "destructive",
+            title: "Delete Failed",
+            description: "Could not delete the bill from Firestore."
+        })
+    }
+  }
+
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -335,31 +384,46 @@ export function BillMakingTab() {
                 </div>
             </CardContent>
             <CardFooter className="flex-col items-center gap-2">
-                <Button onClick={handleCreateBill} className="w-full max-w-sm">{isEditing ? 'Update & View Bill' : 'Save & View Bill'}</Button>
+                <Button onClick={handleCreateBill} className="w-full max-w-sm" disabled={isSubmitting}>
+                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {isEditing ? 'Update & View Bill' : 'Save & View Bill'}
+                </Button>
                 <p className="text-xs text-muted-foreground">"Your Satisfaction is Our Success"</p>
                 <p className="text-xs text-muted-foreground">Subject to Sopore Jurisdiction Only</p>
             </CardFooter>
         </Card>
         <Card className="md:col-span-1 h-fit">
             <CardHeader>
-                <h3 className="text-lg font-medium">Recent Bills</h3>
+                <h3 className="text-lg font-medium">Recent Bills (from Firestore)</h3>
             </CardHeader>
             <CardContent>
                 <ScrollArea className="h-96">
                     <div className="space-y-2">
-                        {savedBills.map(bill => (
-                            <div key={bill.sNo} className="flex justify-between items-center p-2 border rounded-md">
+                        {isLoading ? (
+                             <div className="flex items-center justify-center p-4">
+                                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                             </div>
+                        ) : savedBills.length > 0 ? (
+                            savedBills.map(bill => (
+                            <div key={bill.id} className="flex justify-between items-center p-2 border rounded-md">
                                 <div>
                                     <p className="font-medium">Bill #{bill.sNo}</p>
                                     <p className="text-sm text-muted-foreground">{bill.customerName}</p>
                                     <p className="text-sm text-muted-foreground">{new Date(bill.date).toLocaleDateString()}</p>
                                 </div>
-                                <Button variant="ghost" size="icon" onClick={() => loadBillForEdit(bill)}>
-                                    <FilePenLine className="h-4 w-4" />
-                                </Button>
+                                <div className="flex items-center">
+                                    <Button variant="ghost" size="icon" onClick={() => loadBillForEdit(bill)}>
+                                        <FilePenLine className="h-4 w-4" />
+                                    </Button>
+                                     <Button variant="ghost" size="icon" onClick={() => handleDeleteBill(bill.id)}>
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                </div>
                             </div>
-                        ))}
-                         {savedBills.length === 0 && <p className="text-sm text-muted-foreground text-center">No recent bills found.</p>}
+                            ))
+                        ) : (
+                           <p className="text-sm text-muted-foreground text-center">No recent bills found.</p>
+                        )}
                     </div>
                 </ScrollArea>
             </CardContent>

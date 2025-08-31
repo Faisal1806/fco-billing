@@ -9,7 +9,7 @@ const firebaseConfig = {
   projectId: "myf.cobillingsystemapp",
   storageBucket: "myf.cobillingsystemapp.appspot.com",
   messagingSenderId: "693507183352",
-  appId: "swiftsale-ewd70",
+  appId: "1:693507183352:web:7a8b3e8d0e9c6a4f5d6e7f",
 };
 
 // Initialize Firebase
