@@ -2,7 +2,7 @@
 "use client";
 import Image from "next/image";
 import { useTheme } from "next-themes";
-import { Sun, Moon, ShoppingCart, Tags, Truck, BookCopy } from "lucide-react";
+import { Sun, Moon, ShoppingCart, Tags, Truck, BookCopy, ScrollText } from "lucide-react";
 import { ThemeSwitcher } from "./theme-switcher";
 import { LanguageSwitcher } from "./language-switcher";
 import { Button } from "./ui/button";
@@ -24,6 +24,7 @@ export function Header({ title }: { title: string }) {
         { href: '/sales', icon: ShoppingCart, label: t('sales') },
         { href: '/sales-overview', icon: BarChart3, label: 'Sales Overview' },
         { href: '/purchases', icon: Truck, label: 'Purchases' },
+        { href: '/purchase-register', icon: ScrollText, label: 'Purchase Register' },
         { href: '/products', icon: Package, label: t('products') },
         { href: '/expenses', icon: Receipt, label: t('expenses') },
         { href: '/watak-register', icon: BookUser, label: t('watak_register') },

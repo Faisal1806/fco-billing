@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, ShoppingCart, Package, Settings, Package2, Receipt, BookUser, BarChart3, Factory, Tags, Truck, BookCopy } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, Settings, Package2, Receipt, BookUser, BarChart3, Factory, Tags, Truck, BookCopy, ScrollText } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { href: '/sales', icon: ShoppingCart, label: t('sales') },
     { href: '/sales-overview', icon: BarChart3, label: 'Sales Overview' },
     { href: '/purchases', icon: Truck, label: 'Purchases' },
+    { href: '/purchase-register', icon: ScrollText, label: 'Purchase Register' },
     { href: '/products', icon: Package, label: t('products') },
     { href: '/expenses', icon: Receipt, label: t('expenses') },
     { href: '/watak-register', icon: BookUser, label: t('watak_register') },
