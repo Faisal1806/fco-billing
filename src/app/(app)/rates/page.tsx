@@ -1,10 +1,10 @@
 
 'use client';
 
-import RateList from "@/components/RateList";
+import EditableRateList from "@/components/EditableRateList";
 
 export default function RatesPage() {
   return (
-      <RateList />
+      <EditableRateList />
   );
 }
