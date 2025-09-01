@@ -19,7 +19,7 @@ import {
   TableFooter
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, Loader2, FileDown, Factory, User, Users } from 'lucide-react';
+import { Loader2, FileDown, User, Users, Factory, Plus, ChevronDown } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,13 +31,17 @@ import { useRouter } from 'next/navigation';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
+type TransactionType = 'Sale' | 'Purchase';
 
 type Transaction = {
     id: string;
     date: string;
-    type: 'Sale' | 'Purchase';
-    amount: number;
+    type: TransactionType;
+    amount: number; // For purchase this is grandTotal, for sale this is netSale
+    grossAmount: number; // For sale this is grossSale
+    expenses: number; // For sale this is totalExpenses
     party: string;
     docId: string;
 };
@@ -47,23 +51,26 @@ type PartyType = 'customer' | 'supplier' | 'both';
 type Ledger = {
     [partyName: string]: {
         transactions: Transaction[];
-        balance: number; // positive means we are owed, negative means we owe
+        balance: number; // positive means we are owed (receivable), negative means we owe (payable)
         partyType: PartyType;
     }
 }
 
+type LedgerEntryWithRunningBalance = Transaction & { runningBalance: number };
+
 export default function KhataLedgerPage() {
     const router = useRouter();
     const [ledgers, setLedgers] = React.useState<Ledger>({});
-    const [parties, setParties] = React.useState<string[]>([]);
+    const [allParties, setAllParties] = React.useState<string[]>([]);
+    const [filteredParties, setFilteredParties] = React.useState<string[]>([]);
     const [selectedParty, setSelectedParty] = React.useState<string | null>(null);
+    const [activeTab, setActiveTab] = React.useState('customers');
     const [isLoading, setIsLoading] = React.useState(true);
 
     React.useEffect(() => {
         setIsLoading(true);
         const allTransactions: Transaction[] = [];
 
-        // Fetch sales (wataks) and purchases
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             if (!key) continue;
@@ -76,6 +83,8 @@ export default function KhataLedgerPage() {
                         date: sale.date,
                         type: 'Sale',
                         amount: sale.totals.netSale,
+                        grossAmount: sale.totals.grossSale,
+                        expenses: sale.totals.totalExpenses,
                         party: sale.customerName,
                         docId: sale.sNo,
                     });
@@ -86,6 +95,8 @@ export default function KhataLedgerPage() {
                         date: purchase.date,
                         type: 'Purchase',
                         amount: purchase.totals.grandTotal,
+                        grossAmount: purchase.totals.grandTotal, // In purchases, gross is the grand total
+                        expenses: 0, // No separate expenses recorded this way for purchases
                         party: purchase.growerName,
                         docId: purchase.billNo,
                     });
@@ -105,49 +116,71 @@ export default function KhataLedgerPage() {
             }
             
             const ledger = calculatedLedgers[trans.party];
-            const existingType = ledger.partyType;
+            ledger.transactions.push(trans);
+            
             const newType = trans.type === 'Sale' ? 'customer' : 'supplier';
-            if(existingType !== newType && existingType !== 'both') {
+            if(ledger.partyType !== 'both' && ledger.partyType !== newType) {
                 ledger.partyType = 'both';
             }
-            ledger.transactions.push(trans);
         }
         
-        // Recalculate balances after all transactions are sorted and grouped
         Object.keys(calculatedLedgers).forEach(party => {
             let runningBalance = 0;
-            const partyLedger = calculatedLedgers[party];
-            partyLedger.transactions.forEach(trans => {
+            calculatedLedgers[party].transactions.forEach(trans => {
                  if (trans.type === 'Sale') {
                     runningBalance += trans.amount;
                 } else {
                     runningBalance -= trans.amount;
                 }
             });
-            partyLedger.balance = runningBalance;
+            calculatedLedgers[party].balance = runningBalance;
         });
 
         const sortedParties = Object.keys(calculatedLedgers).sort((a, b) => a.localeCompare(b));
-
+        
         setLedgers(calculatedLedgers);
-        setParties(sortedParties);
-        if (sortedParties.length > 0) {
-            setSelectedParty(sortedParties[0]);
-        }
+        setAllParties(sortedParties);
         setIsLoading(false);
     }, []);
 
+    React.useEffect(() => {
+        const filterAndSetParties = (type: PartyType | 'all') => {
+            const parties = allParties.filter(p => {
+                if (type === 'all') return true;
+                const ledger = ledgers[p];
+                return ledger.partyType === type || ledger.partyType === 'both';
+            });
+            setFilteredParties(parties);
+            if(parties.length > 0) {
+                setSelectedParty(parties[0]);
+            } else {
+                setSelectedParty(null);
+            }
+        };
+        
+        if (activeTab === 'customers') filterAndSetParties('customer');
+        else if (activeTab === 'growers') filterAndSetParties('supplier');
+        else if (activeTab === 'all') {
+            setFilteredParties(allParties);
+             if(allParties.length > 0) {
+                setSelectedParty(allParties[0]);
+            } else {
+                setSelectedParty(null);
+            }
+        }
+    }, [activeTab, allParties, ledgers]);
+
     const selectedLedger = selectedParty ? ledgers[selectedParty] : null;
 
-    const navigateToDoc = (type: 'Sale' | 'Purchase', docId: string) => {
+    const navigateToDoc = (type: TransactionType, docId: string) => {
         if (type === 'Sale') {
             router.push(`/invoice/${docId}`);
         } else {
             router.push(`/purchase-bill/${docId}`);
         }
-    }
+    };
 
-    const getLedgerWithRunningBalance = () => {
+    const getLedgerWithRunningBalance = (): LedgerEntryWithRunningBalance[] => {
         if (!selectedLedger) return [];
         let runningBalance = 0;
         return selectedLedger.transactions.map(tx => {
@@ -157,189 +190,250 @@ export default function KhataLedgerPage() {
                 runningBalance -= tx.amount;
             }
             return {...tx, runningBalance};
-        })
-    }
+        });
+    };
+
+    const ledgerForExport = getLedgerWithRunningBalance();
     
     const exportToPDF = () => {
         if (!selectedParty || !selectedLedger) return;
         
         const doc = new jsPDF();
-        const ledgerData = getLedgerWithRunningBalance();
-
+        
+        // Header
         doc.setFontSize(18);
         doc.text(`Ledger Statement for ${selectedParty}`, 14, 22);
         doc.setFontSize(11);
         doc.setTextColor(100);
         doc.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, 14, 28);
         
+        // F.Co Header
+        doc.setFontSize(10);
+        doc.text("F.Co - FIRDOUS AHMAD & COMPANY", doc.internal.pageSize.width - 14, 22, { align: 'right'});
+
         autoTable(doc, {
             startY: 35,
-            head: [['Date', 'Document', 'Type', 'Debit', 'Credit', 'Balance']],
-            body: ledgerData.map(tx => [
+            head: [['Date', 'Doc ID', 'Type', 'Gross', 'Expenses', 'Net', 'Balance']],
+            body: ledgerForExport.map(tx => [
                 new Date(tx.date).toLocaleDateString('en-GB'),
                 `#${tx.docId}`,
                 tx.type,
-                tx.type === 'Sale' ? `₹${tx.amount.toFixed(2)}` : '',
-                tx.type === 'Purchase' ? `₹${tx.amount.toFixed(2)}` : '',
+                `₹${tx.grossAmount.toFixed(2)}`,
+                tx.type === 'Sale' ? `₹${tx.expenses.toFixed(2)}` : '-',
+                tx.type === 'Sale' ? `₹${tx.amount.toFixed(2)}` : `₹${-tx.amount.toFixed(2)}`,
                 `₹${tx.runningBalance.toFixed(2)}`
             ]),
             foot: [
-                [{ content: 'Final Balance', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, 
+                [{ content: 'Final Balance', colSpan: 6, styles: { halign: 'right', fontStyle: 'bold' } }, 
                  { content: `₹${selectedLedger.balance.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold' } }]
             ],
             theme: 'striped',
             headStyles: { fillColor: [22, 163, 74] }
         });
+
+        // Footer
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.text('Your Satisfaction is Our Success – Subject to Sopore Jurisdiction Only', doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center'});
+        }
         
         doc.save(`Ledger-${selectedParty}.pdf`);
     };
 
     const exportToExcel = () => {
-         if (!selectedParty || !selectedLedger) return;
+        if (!selectedParty || !selectedLedger) return;
 
-        const ledgerData = getLedgerWithRunningBalance();
-
-        const worksheetData = ledgerData.map(tx => ({
+        const worksheetData = ledgerForExport.map(tx => ({
             Date: new Date(tx.date).toLocaleDateString('en-GB'),
-            Document: `#${tx.docId}`,
+            'Document ID': `#${tx.docId}`,
             Type: tx.type,
-            Debit: tx.type === 'Sale' ? tx.amount : '',
-            Credit: tx.type === 'Purchase' ? tx.amount : '',
-            Balance: tx.runningBalance,
+            'Gross Amount': tx.grossAmount,
+            'Expenses': tx.type === 'Sale' ? tx.expenses : 0,
+            'Net Amount': tx.type === 'Sale' ? tx.amount : -tx.amount,
+            'Running Balance': tx.runningBalance,
         }));
         
         const worksheet = XLSX.utils.json_to_sheet(worksheetData);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Ledger');
         
-        // Add final balance row
         XLSX.utils.sheet_add_aoa(worksheet, [
-            ["", "", "", "", "Final Balance", selectedLedger.balance]
+            ["", "", "", "", "", "Final Balance", selectedLedger.balance]
         ], { origin: -1 });
-
-        // Style the currency columns
-        const currencyFormat = '"₹"#,##0.00';
-        worksheet['!cols'] = [
-            { wch: 12 }, { wch: 12 }, { wch: 10 }, 
-            { wch: 15 }, { wch: 15 }, { wch: 18 }
-        ];
-
-        for (let i = 2; i <= worksheetData.length + 2; i++) {
-             if(worksheet[`D${i}`]) worksheet[`D${i}`].z = currencyFormat;
-             if(worksheet[`E${i}`]) worksheet[`E${i}`].z = currencyFormat;
-             if(worksheet[`F${i}`]) worksheet[`F${i}`].z = currencyFormat;
-        }
 
         XLSX.writeFile(workbook, `Ledger-${selectedParty}.xlsx`);
     };
-    
+
     const PartyIcon = ({ type }: { type: PartyType }) => {
         if (type === 'supplier') return <Factory className="h-4 w-4 mr-2 text-blue-500" />;
         if (type === 'customer') return <User className="h-4 w-4 mr-2 text-green-500" />;
         return <Users className="h-4 w-4 mr-2 text-purple-500" />;
     };
+    
+    const totals = React.useMemo(() => {
+        if (!selectedLedger) return { debit: 0, credit: 0 };
+        return selectedLedger.transactions.reduce((acc, tx) => {
+            if (tx.type === 'Sale') {
+                acc.debit += tx.amount;
+            } else {
+                acc.credit += tx.amount;
+            }
+            return acc;
+        }, { debit: 0, credit: 0 });
+    }, [selectedLedger]);
 
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-start">
-            <div className="flex flex-wrap items-center gap-4">
-                <CardTitle>Khata Ledger</CardTitle>
-                 {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
-                    <>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" className="flex items-center gap-2 min-w-[250px]">
-                                {selectedParty && ledgers[selectedParty] && <PartyIcon type={ledgers[selectedParty].partyType} />}
-                                <span className="flex-1 text-left">{selectedParty || 'Select a Party'}</span>
-                                <ChevronDown className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start" className="max-h-96 overflow-y-auto">
-                                {parties.map(party => (
-                                    <DropdownMenuItem key={party} onSelect={() => setSelectedParty(party)}>
-                                        <PartyIcon type={ledgers[party].partyType} />
-                                        {party}
-                                    </DropdownMenuItem>
-                                ))}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+    const AddNewFab = () => (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                 <Button className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg" size="icon">
+                    <Plus className="h-8 w-8" />
+                 </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" side="top" className="mb-2">
+                <DropdownMenuItem onSelect={() => router.push('/sales')}>
+                    New Sale
+                </DropdownMenuItem>
+                 <DropdownMenuItem onSelect={() => router.push('/purchases')}>
+                    New Purchase
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
 
+    return (
+    <>
+        <Card>
+            <CardHeader>
+                <div className="flex justify-between items-start">
+                    <div>
+                        <CardTitle>Khata Ledger</CardTitle>
+                        <CardDescription>View detailed transaction history and balances for all parties.</CardDescription>
+                    </div>
+                     <div className="flex items-center gap-2">
                          {selectedParty && (
-                            <div className="flex items-center gap-2">
+                            <>
                                 <Button onClick={exportToPDF} variant="outline" size="sm" className="gap-1">
                                     <FileDown className="h-3.5 w-3.5" /> PDF
                                 </Button>
                                 <Button onClick={exportToExcel} variant="outline" size="sm" className="gap-1">
                                     <FileDown className="h-3.5 w-3.5" /> Excel
                                 </Button>
-                            </div>
+                            </>
                         )}
-                    </>
-                 )}
-            </div>
-        </div>
-        <CardDescription>View the detailed transaction history and balance for each party.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-             <div className="flex justify-center items-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-             </div>
-        ) : selectedLedger ? (
-            <>
-                <Table>
-                <TableHeader>
-                    <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Document ID</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="text-right">Debit (Sale)</TableHead>
-                    <TableHead className="text-right">Credit (Purchase)</TableHead>
-                    <TableHead className="text-right">Running Balance</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {getLedgerWithRunningBalance().map((tx) => (
-                    <TableRow key={tx.id}>
-                        <TableCell>{new Date(tx.date).toLocaleDateString('en-GB')}</TableCell>
-                        <TableCell>
-                            <Button variant="link" className="p-0 h-auto" onClick={() => navigateToDoc(tx.type, tx.docId)}>
-                                #{tx.docId}
-                            </Button>
-                        </TableCell>
-                        <TableCell>
-                           <Badge variant={tx.type === 'Sale' ? 'default' : 'secondary'}>{tx.type}</Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-green-600">
-                            {tx.type === 'Sale' ? `₹${tx.amount.toFixed(2)}` : '-'}
-                        </TableCell>
-                         <TableCell className="text-right font-mono text-red-600">
-                             {tx.type === 'Purchase' ? `₹${tx.amount.toFixed(2)}` : '-'}
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                           ₹{tx.runningBalance.toFixed(2)}
-                        </TableCell>
-                    </TableRow>
-                    ))}
-                </TableBody>
-                <TableFooter>
-                    <TableRow className="font-bold text-lg">
-                        <TableCell colSpan={5} className="text-right">Final Balance</TableCell>
-                        <TableCell className={`text-right ${selectedLedger.balance >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                            ₹{Math.abs(selectedLedger.balance).toFixed(2)}
-                            <span className="text-xs text-muted-foreground ml-1">
-                                {selectedLedger.balance >= 0 ? '(Receivable)' : '(Payable)'}
-                            </span>
-                        </TableCell>
-                    </TableRow>
-                </TableFooter>
-                </Table>
-            </>
-        ) : (
-             <p className="text-center text-muted-foreground py-12">No transactions found. Start by creating sales or purchases.</p>
-        )}
-      </CardContent>
-    </Card>
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                    <div className="flex justify-between items-center mb-4">
+                        <TabsList>
+                            <TabsTrigger value="customers"><User className="h-4 w-4 mr-2"/>Customers</TabsTrigger>
+                            <TabsTrigger value="growers"><Factory className="h-4 w-4 mr-2"/>Growers</TabsTrigger>
+                            <TabsTrigger value="all"><Users className="h-4 w-4 mr-2"/>All Parties</TabsTrigger>
+                        </TabsList>
+                        
+                         {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" className="flex items-center gap-2 min-w-[250px]">
+                                    {selectedParty && ledgers[selectedParty] && <PartyIcon type={ledgers[selectedParty].partyType} />}
+                                    <span className="flex-1 text-left">{selectedParty || 'Select a Party'}</span>
+                                    <ChevronDown className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start" className="max-h-96 overflow-y-auto">
+                                    {filteredParties.map(party => (
+                                        <DropdownMenuItem key={party} onSelect={() => setSelectedParty(party)}>
+                                            <PartyIcon type={ledgers[party].partyType} />
+                                            {party}
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                         )}
+                    </div>
+                    
+                    <TabsContent value="customers">
+                       {/* Content is rendered outside based on selectedParty */}
+                    </TabsContent>
+                    <TabsContent value="growers">
+                        {/* Content is rendered outside based on selectedParty */}
+                    </TabsContent>
+                    <TabsContent value="all">
+                        {/* Content is rendered outside based on selectedParty */}
+                    </TabsContent>
+                </Tabs>
+
+                {isLoading ? (
+                    <div className="flex justify-center items-center h-64">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    </div>
+                ) : selectedLedger ? (
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Doc ID</TableHead>
+                                <TableHead>Type</TableHead>
+                                <TableHead className="text-right">Gross</TableHead>
+                                <TableHead className="text-right">Expenses</TableHead>
+                                <TableHead className="text-right">Net</TableHead>
+                                <TableHead className="text-right">Balance</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {getLedgerWithRunningBalance().map((tx) => (
+                            <TableRow key={tx.id}>
+                                <TableCell>{new Date(tx.date).toLocaleDateString('en-GB')}</TableCell>
+                                <TableCell>
+                                    <Button variant="link" className="p-0 h-auto" onClick={() => navigateToDoc(tx.type, tx.docId)}>
+                                        #{tx.docId}
+                                    </Button>
+                                </TableCell>
+                                <TableCell>
+                                   <Badge variant={tx.type === 'Sale' ? 'default' : 'secondary'}>{tx.type}</Badge>
+                                </TableCell>
+                                <TableCell className="text-right font-mono">₹{tx.grossAmount.toFixed(2)}</TableCell>
+                                <TableCell className="text-right font-mono text-red-500">{tx.type === 'Sale' ? `₹${tx.expenses.toFixed(2)}` : '-'}</TableCell>
+                                <TableCell className={`text-right font-mono ${tx.type === 'Sale' ? 'text-green-600' : 'text-red-600'}`}>
+                                    {tx.type === 'Sale' ? `₹${tx.amount.toFixed(2)}` : `(₹${tx.amount.toFixed(2)})`}
+                                </TableCell>
+                                <TableCell className="text-right font-mono">₹{tx.runningBalance.toFixed(2)}</TableCell>
+                            </TableRow>
+                            ))}
+                        </TableBody>
+                        <TableFooter>
+                            <TableRow className="font-bold">
+                                <TableCell colSpan={3} className="text-right">Totals</TableCell>
+                                <TableCell className="text-right text-green-600">₹{totals.debit.toFixed(2)}</TableCell>
+                                <TableCell colSpan={1}></TableCell>
+                                <TableCell className="text-right text-red-600">(₹{totals.credit.toFixed(2)})</TableCell>
+                                <TableCell></TableCell>
+                            </TableRow>
+                             <TableRow className="font-bold text-lg bg-muted">
+                                <TableCell colSpan={6} className="text-right">Final Balance</TableCell>
+                                <TableCell className={`text-right ${selectedLedger.balance >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                                    ₹{Math.abs(selectedLedger.balance).toFixed(2)}
+                                    <span className="text-xs text-muted-foreground ml-1">
+                                        {selectedLedger.balance >= 0 ? '(Receivable)' : '(Payable)'}
+                                    </span>
+                                </TableCell>
+                            </TableRow>
+                        </TableFooter>
+                    </Table>
+                ) : (
+                    <div className="text-center text-muted-foreground py-12">
+                        <p>No transactions found for the selected category.</p>
+                        <p className="text-sm">Start by creating sales or purchases, or select a different category.</p>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+        <AddNewFab />
+    </>
   );
 }
+
+    
