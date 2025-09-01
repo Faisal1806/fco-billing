@@ -27,7 +27,7 @@ const initialRows: PurchaseRow[] = Array.from({ length: 3 }, () => ({ ...emptyRo
 
 export default function PurchasesPage() {
   const [billNo, setBillNo] = useState('');
-  const [growerName, setGrowerName] = useState('');
+  const [companyName, setCompanyName] = useState('');
   const [date, setDate] = useState('');
   const [rows, setRows] = useState<PurchaseRow[]>(initialRows);
 
@@ -81,7 +81,7 @@ export default function PurchasesPage() {
 
     const resetForm = () => {
         setBillNo('');
-        setGrowerName('');
+        setCompanyName('');
         setDate('');
         setRows(initialRows);
         setIsEditing(false);
@@ -89,7 +89,7 @@ export default function PurchasesPage() {
 
 
   const saveToLocalStorage = async () => {
-     if (!billNo || !date || !growerName) {
+     if (!billNo || !date || !companyName) {
         toast({
             variant: 'destructive',
             title: 'Missing Details',
@@ -103,7 +103,7 @@ export default function PurchasesPage() {
     const purchaseData = {
       billNo,
       date,
-      growerName,
+      growerName: companyName,
       entries: rows.filter(r => r.qty > 0 && r.rate > 0).map(r => ({...r, total: r.qty * r.rate})),
       totals: {
         totalQty: totals.totalQty,
@@ -134,7 +134,7 @@ export default function PurchasesPage() {
 
   const loadPurchaseForEdit = (purchase: any) => {
     setBillNo(purchase.billNo);
-    setGrowerName(purchase.growerName);
+    setCompanyName(purchase.growerName);
     setDate(purchase.date);
     setRows(purchase.entries.length > 0 ? purchase.entries : initialRows);
     setIsEditing(true);
@@ -192,8 +192,8 @@ export default function PurchasesPage() {
                         <Input id="date" type="date" value={date} onChange={e => setDate(e.target.value)} />
                     </div>
                     <div>
-                        <Label htmlFor="growerName">Company Name</Label>
-                        <Input id="growerName" value={growerName} onChange={e => setGrowerName(e.target.value)} placeholder="e.g., Ahmad Traders" />
+                        <Label htmlFor="companyName">Company Name</Label>
+                        <Input id="companyName" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="e.g., Ahmad Traders" />
                     </div>
                 </div>
 
@@ -333,5 +333,4 @@ export default function PurchasesPage() {
         </Card>
     </div>
   );
-
-    
+}
