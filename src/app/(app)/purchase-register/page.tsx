@@ -52,6 +52,13 @@ export default function PurchaseRegisterPage() {
   const [selectedGrower, setSelectedGrower] = React.useState('All Growers');
   const [isLoading, setIsLoading] = React.useState(true);
   const [viewMode, setViewMode] = React.useState<'table' | 'grid'>('grid');
+  const [userRole, setUserRole] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setUserRole(localStorage.getItem('userRole'));
+    }
+  }, []);
 
 
   React.useEffect(() => {
@@ -96,6 +103,10 @@ export default function PurchaseRegisterPage() {
   }
 
   const handleDelete = async (billNo: string) => {
+    if (userRole !== 'admin') {
+      toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to delete purchase bills.' });
+      return;
+    }
     if(!window.confirm(`Are you sure you want to delete Purchase Bill #${billNo}? This cannot be undone.`)) return;
     try {
       localStorage.removeItem(`purchase-${billNo}`);
@@ -190,9 +201,11 @@ export default function PurchaseRegisterPage() {
                   <Button variant="ghost" size="icon" onClick={() => navigateToBill(purchase.billNo)}>
                     <FilePenLine className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(purchase.billNo)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+                  {userRole === 'admin' && (
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(purchase.billNo)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

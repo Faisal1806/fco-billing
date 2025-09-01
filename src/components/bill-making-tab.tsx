@@ -46,7 +46,13 @@ export function BillMakingTab() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [savedBills, setSavedBills] = useState<any[]>([]);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setUserRole(localStorage.getItem('userRole'));
+    }
+  }, []);
 
   useEffect(() => {
     setIsClient(true);
@@ -193,6 +199,10 @@ export function BillMakingTab() {
   };
 
     const handleDeleteBill = async (billId: string) => {
+        if(userRole !== 'admin') {
+            toast({ variant: "destructive", title: "Permission Denied", description: "You do not have permission to delete bills."});
+            return;
+        }
         if(!window.confirm(`Are you sure you want to delete Bill #${billId}? This action cannot be undone.`)) {
             return;
         }
@@ -543,9 +553,11 @@ export function BillMakingTab() {
                                     <Button variant="ghost" size="icon" onClick={() => loadBillForEdit(bill)}>
                                         <FilePenLine className="h-4 w-4" />
                                     </Button>
+                                    {userRole === 'admin' && (
                                      <Button variant="ghost" size="icon" onClick={() => handleDeleteBill(bill.sNo)}>
                                         <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
+                                    )}
                                 </div>
                             </div>
                             ))

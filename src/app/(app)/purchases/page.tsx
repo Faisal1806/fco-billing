@@ -38,6 +38,13 @@ export default function PurchasesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [savedPurchases, setSavedPurchases] = useState<any[]>([]);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setUserRole(localStorage.getItem('userRole'));
+    }
+  }, []);
 
 
   useEffect(() => {
@@ -142,6 +149,10 @@ export default function PurchasesPage() {
   };
 
     const handleDeletePurchase = async (billId: string) => {
+        if(userRole !== 'admin') {
+            toast({ variant: "destructive", title: "Permission Denied", description: "You do not have permission to delete purchases."});
+            return;
+        }
         if(!window.confirm(`Are you sure you want to delete Purchase Bill #${billId}? This action cannot be undone.`)) {
             return;
         }
@@ -318,9 +329,11 @@ export default function PurchasesPage() {
                                     <Button variant="ghost" size="icon" onClick={() => loadPurchaseForEdit(purchase)}>
                                         <FilePenLine className="h-4 w-4" />
                                     </Button>
+                                    {userRole === 'admin' && (
                                      <Button variant="ghost" size="icon" onClick={() => handleDeletePurchase(purchase.billNo)}>
                                         <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
+                                    )}
                                 </div>
                             </div>
                             ))

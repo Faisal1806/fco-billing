@@ -84,6 +84,13 @@ export function PesticideBillTab() {
   const [billDetails, setBillDetails] = React.useState(initialBillDetails);
   const [isEditing, setIsEditing] = React.useState(false);
   const [savedBills, setSavedBills] = React.useState<any[]>([]);
+  const [userRole, setUserRole] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setUserRole(localStorage.getItem('userRole'));
+    }
+  }, []);
 
   React.useEffect(() => {
     if (isClient) {
@@ -173,6 +180,10 @@ export function PesticideBillTab() {
   };
 
   const handleDeleteBill = async (billId: string) => {
+    if(userRole !== 'admin') {
+        toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to delete bills.' });
+        return;
+    }
     if(!window.confirm(`Are you sure you want to delete Pesticide Bill #${billId}? This action cannot be undone.`)) {
         return;
     }
@@ -292,9 +303,11 @@ export function PesticideBillTab() {
                                     <Button variant="ghost" size="icon" onClick={() => loadBillForEdit(bill)}>
                                         <FilePenLine className="h-4 w-4" />
                                     </Button>
+                                    {userRole === 'admin' && (
                                     <Button variant="ghost" size="icon" onClick={() => handleDeleteBill(bill.no)}>
                                         <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
+                                    )}
                                 </div>
                             </div>
                         ))}

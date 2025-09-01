@@ -57,6 +57,13 @@ export default function WatakRegisterPage() {
   const [selectedGrower, setSelectedGrower] = React.useState('All Growers');
   const [isLoading, setIsLoading] = React.useState(true);
   const [viewMode, setViewMode] = React.useState<'table' | 'grid'>('grid');
+  const [userRole, setUserRole] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setUserRole(localStorage.getItem('userRole'));
+    }
+  }, []);
 
 
   React.useEffect(() => {
@@ -117,6 +124,10 @@ export default function WatakRegisterPage() {
   }
 
   const handleDelete = async (sNo: string) => {
+    if(userRole !== 'admin') {
+      toast({ variant: "destructive", title: "Permission Denied", description: "You do not have permission to delete bills."});
+      return;
+    }
     if(!window.confirm(`Are you sure you want to delete Bill #${sNo}? This cannot be undone.`)) return;
     try {
       await deleteDocument('invoices', sNo);
@@ -224,9 +235,11 @@ export default function WatakRegisterPage() {
                   <Button variant="ghost" size="icon" onClick={() => navigateToBill(watak.sNo)}>
                     <FilePenLine className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(watak.sNo)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+                  {userRole === 'admin' && (
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(watak.sNo)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

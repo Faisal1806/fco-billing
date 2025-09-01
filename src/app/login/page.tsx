@@ -16,10 +16,21 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const allowedPassword = 'Faisal@1806';
+  const allowedAdminPassword = 'Faisal@1806';
+  const allowedStaffPassword = 'staff123'; // New staff password
 
   const handleLogin = () => {
-    if (password === allowedPassword) {
+    let role = null;
+    if (password === allowedAdminPassword) {
+      role = 'admin';
+    } else if (password === allowedStaffPassword) {
+      role = 'staff';
+    }
+
+    if (role) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('userRole', role);
+      }
       router.push('/dashboard');
     } else {
       setError('Invalid password. Please try again.');

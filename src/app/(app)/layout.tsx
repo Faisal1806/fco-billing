@@ -10,24 +10,34 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Logo } from '@/components/logo';
 import { Header } from '@/components/Header';
+import React from 'react';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { t } = useLanguage();
+  const [userRole, setUserRole] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setUserRole(localStorage.getItem('userRole'));
+    }
+  }, []);
 
   const navItems = [
-    { href: '/dashboard', icon: LayoutDashboard, label: t('dashboard') },
-    { href: '/sales', icon: ShoppingCart, label: t('sales') },
-    { href: '/sales-overview', icon: BarChart3, label: 'Sales Overview' },
-    { href: '/purchases', icon: Truck, label: 'Purchases' },
-    { href: '/purchase-register', icon: ScrollText, label: 'Purchase Register' },
-    { href: '/products', icon: Package, label: t('products') },
-    { href: '/expenses', icon: Receipt, label: t('expenses') },
-    { href: '/watak-register', icon: BookUser, label: t('watak_register') },
-    { href: '/khata', icon: BookCopy, label: 'Khata Ledger' },
-    { href: '/rates', icon: Tags, label: 'Rates' },
-    { href: '/settings', icon: Settings, label: t('settings') },
+    { href: '/dashboard', icon: LayoutDashboard, label: t('dashboard'), role: ['admin', 'staff'] },
+    { href: '/sales', icon: ShoppingCart, label: t('sales'), role: ['admin', 'staff'] },
+    { href: '/sales-overview', icon: BarChart3, label: 'Sales Overview', role: ['admin', 'staff'] },
+    { href: '/purchases', icon: Truck, label: 'Purchases', role: ['admin', 'staff'] },
+    { href: '/purchase-register', icon: ScrollText, label: 'Purchase Register', role: ['admin', 'staff'] },
+    { href: '/products', icon: Package, label: t('products'), role: ['admin', 'staff'] },
+    { href: '/expenses', icon: Receipt, label: t('expenses'), role: ['admin', 'staff'] },
+    { href: '/watak-register', icon: BookUser, label: t('watak_register'), role: ['admin', 'staff'] },
+    { href: '/khata', icon: BookCopy, label: 'Khata Ledger', role: ['admin', 'staff'] },
+    { href: '/rates', icon: Tags, label: 'Rates', role: ['admin', 'staff'] },
+    { href: '/settings', icon: Settings, label: t('settings'), role: ['admin'] },
   ];
+
+  const filteredNavItems = navItems.filter(item => userRole && item.role.includes(userRole));
 
   const getPageTitle = () => {
     const item = navItems.find(item => pathname.startsWith(item.href));
@@ -46,7 +56,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
           <div className="flex-1">
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-              {navItems.map((item) => (
+              {filteredNavItems.map((item) => (
                 <Link
                   key={item.label}
                   href={item.href}
