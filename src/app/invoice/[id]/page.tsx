@@ -10,6 +10,7 @@ import { FaWhatsapp } from 'react-icons/fa';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/logo";
+import BusinessCardQR from "@/components/BusinessCardQR";
 
 interface BillData {
     id: string;
@@ -249,7 +250,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                                  <div className="flex justify-between items-center text-2xl font-bold text-green-600">
                                     <span >Net Sale / <span className="font-urdu">خالص فروخت</span>:</span>
                                     <span>₹{totals.netSale.toFixed(2)}</span>
-                                </div>
+                                 </div>
                             </div>
                         </div>
                     </div>
@@ -257,6 +258,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
                 <footer className="flex justify-between items-center mt-auto pt-4 border-t">
                      <Controls />
+                     <BusinessCardQR />
                      <div className="text-right text-xs">
                         <p className="font-bold">Manager</p>
                         <p>For Firdous Ahmad & Company</p>
