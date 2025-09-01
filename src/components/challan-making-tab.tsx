@@ -174,6 +174,30 @@ export function ChallanMakingTab() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  const handleDeleteChallan = async (challanId: string) => {
+    if(!window.confirm(`Are you sure you want to delete Challan #${challanId}? This action cannot be undone.`)) {
+        return;
+    }
+    try {
+        localStorage.removeItem(`challan-${challanId}`);
+        setSavedChallans(prev => prev.filter(c => c.challanNo !== challanId));
+        toast({
+            title: "Challan Deleted",
+            description: `Challan #${challanId} has been successfully deleted.`
+        });
+        if (details.challanNo === challanId) {
+            resetForm();
+        }
+    } catch (error) {
+        console.error("Error deleting challan:", error);
+        toast({
+            variant: "destructive",
+            title: "Delete Failed",
+            description: "Could not delete the challan."
+        });
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="md:col-span-2">
@@ -290,9 +314,14 @@ export function ChallanMakingTab() {
                                     <p className="text-sm text-muted-foreground">{challan.toMs}</p>
                                     <p className="text-sm text-muted-foreground">{new Date(challan.date).toLocaleDateString()}</p>
                                 </div>
-                                <Button variant="ghost" size="icon" onClick={() => loadChallanForEdit(challan)}>
-                                    <FilePenLine className="h-4 w-4" />
-                                </Button>
+                                <div className="flex items-center">
+                                    <Button variant="ghost" size="icon" onClick={() => loadChallanForEdit(challan)}>
+                                        <FilePenLine className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteChallan(challan.challanNo)}>
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                </div>
                             </div>
                         ))}
                          {savedChallans.length === 0 && <p className="text-sm text-muted-foreground text-center">No recent challans found.</p>}

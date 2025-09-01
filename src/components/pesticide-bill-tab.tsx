@@ -172,6 +172,30 @@ export function PesticideBillTab() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleDeleteBill = async (billId: string) => {
+    if(!window.confirm(`Are you sure you want to delete Pesticide Bill #${billId}? This action cannot be undone.`)) {
+        return;
+    }
+    try {
+        localStorage.removeItem(`pesticide-invoice-${billId}`);
+        setSavedBills(prev => prev.filter(b => b.no !== billId));
+        toast({
+            title: "Pesticide Bill Deleted",
+            description: `Bill #${billId} has been successfully deleted.`
+        });
+        if (billDetails.no === billId) {
+            resetForm();
+        }
+    } catch (error) {
+        console.error("Error deleting bill:", error);
+        toast({
+            variant: "destructive",
+            title: "Delete Failed",
+            description: "Could not delete the pesticide bill."
+        });
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="md:col-span-2">
@@ -264,9 +288,14 @@ export function PesticideBillTab() {
                                     <p className="text-sm text-muted-foreground">{bill.customerName}</p>
                                     <p className="text-sm text-muted-foreground">{new Date(bill.date).toLocaleDateString()}</p>
                                 </div>
-                                <Button variant="ghost" size="icon" onClick={() => loadBillForEdit(bill)}>
-                                    <FilePenLine className="h-4 w-4" />
-                                </Button>
+                                <div className="flex items-center">
+                                    <Button variant="ghost" size="icon" onClick={() => loadBillForEdit(bill)}>
+                                        <FilePenLine className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteBill(bill.no)}>
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                </div>
                             </div>
                         ))}
                          {savedBills.length === 0 && <p className="text-sm text-muted-foreground text-center">No recent bills found.</p>}

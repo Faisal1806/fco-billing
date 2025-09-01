@@ -177,7 +177,31 @@ export function ReceiptMakingTab() {
     setEntries(receipt.entries);
     setIsEditing(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+  };
+
+  const handleDeleteReceipt = async (receiptId: string) => {
+    if(!window.confirm(`Are you sure you want to delete Receipt #${receiptId}? This action cannot be undone.`)) {
+        return;
+    }
+    try {
+        localStorage.removeItem(`receipt-${receiptId}`);
+        setSavedReceipts(prev => prev.filter(r => r.no !== receiptId));
+        toast({
+            title: "Receipt Deleted",
+            description: `Receipt #${receiptId} has been successfully deleted.`
+        });
+        if (receiptDetails.no === receiptId) {
+            resetForm();
+        }
+    } catch (error) {
+        console.error("Error deleting receipt:", error);
+        toast({
+            variant: "destructive",
+            title: "Delete Failed",
+            description: "Could not delete the receipt."
+        });
+    }
+  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -288,9 +312,14 @@ export function ReceiptMakingTab() {
                                     <p className="text-sm text-muted-foreground">{receipt.customerName}</p>
                                     <p className="text-sm text-muted-foreground">{new Date(receipt.date).toLocaleDateString()}</p>
                                 </div>
-                                <Button variant="ghost" size="icon" onClick={() => loadReceiptForEdit(receipt)}>
-                                    <FilePenLine className="h-4 w-4" />
-                                </Button>
+                                <div className="flex items-center">
+                                    <Button variant="ghost" size="icon" onClick={() => loadReceiptForEdit(receipt)}>
+                                        <FilePenLine className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteReceipt(receipt.no)}>
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                </div>
                             </div>
                         ))}
                          {savedReceipts.length === 0 && <p className="text-sm text-muted-foreground text-center">No recent receipts found.</p>}
