@@ -2,40 +2,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getClientDb } from "@/lib/firebase";
-import { collection, getDocs, query } from "firebase/firestore";
+import { dailyRates, type DailyRates } from "@/lib/data";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 
 
-interface Rate {
-  id: string;
-  fruit: string;
-  category: string;
-  rateRange: string;
-}
-
 export default function RateList() {
-  const [rates, setRates] = useState<Rate[]>([]);
+  const [rates, setRates] = useState<DailyRates | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchRates = async () => {
-        const db = getClientDb();
-        if (!db) {
-            console.error("Firestore is not available");
-            setLoading(false);
-            return;
-        }
-      const querySnapshot = await getDocs(query(collection(db, "rates")));
-      const fetchedRates: Rate[] = [];
-      querySnapshot.forEach((doc) => {
-        fetchedRates.push({ id: doc.id, ...doc.data() } as Rate);
-      });
-      setRates(fetchedRates);
-      setLoading(false);
-    };
-    fetchRates();
+    // Simulate fetching data
+    setRates(dailyRates);
+    setLoading(false);
   }, []);
 
   if (loading) {
@@ -58,21 +37,19 @@ export default function RateList() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-          {rates.length > 0 ? (
+          {rates && Object.keys(rates).length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {rates.map((rate) => (
+                {Object.entries(rates).map(([fruit, rate]) => (
                 <Card
-                    key={rate.id}
+                    key={fruit}
                     className="shadow-lg rounded-2xl border hover:shadow-xl transition-shadow duration-300"
                 >
                     <CardContent className="p-6">
                     <h3 className="text-xl font-semibold text-foreground">
-                        {rate.fruit}
+                        {fruit}
                     </h3>
-                    <p className="text-muted-foreground">Category: {rate.category}</p>
-                    <p className="text-2xl font-bold text-primary mt-2">
-                        ₹{rate.rateRange}
-                    </p>
+                    <p className="text-muted-foreground">Normal: ₹{rate.normal}</p>
+                    {rate.extraordinary && <p className="text-primary font-semibold">Extraordinary: ₹{rate.extraordinary}</p>}
                     </CardContent>
                 </Card>
                 ))}
