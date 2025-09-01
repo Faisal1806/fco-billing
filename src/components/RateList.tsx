@@ -1,14 +1,58 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { dailyRates, type DailyRates } from "@/lib/data";
+import { WatakEntry } from "@/app/(app)/watak-register/page";
+import { Loader2 } from "lucide-react";
+
+interface DailyRate {
+    variety: string;
+    rates: number[];
+}
 
 export default function RateList() {
-  const [rates, setRates] = useState<DailyRates>(dailyRates);
+  const [dailyRates, setDailyRates] = useState<DailyRate[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAndProcessWataks = () => {
+        setIsLoading(true);
+        const today = new Date().toDateString();
+        const todaysRates: { [key: string]: Set<number> } = {};
+
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('invoice-')) {
+                try {
+                    const watak: WatakEntry = JSON.parse(localStorage.getItem(key)!);
+                    if (new Date(watak.date).toDateString() === today) {
+                        watak.entries.forEach(entry => {
+                            if (entry.variety && entry.rate > 0) {
+                                if (!todaysRates[entry.variety]) {
+                                    todaysRates[entry.variety] = new Set();
+                                }
+                                todaysRates[entry.variety].add(entry.rate);
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.error("Could not parse watak from local storage", e);
+                }
+            }
+        }
+
+        const processedRates: DailyRate[] = Object.entries(todaysRates).map(([variety, ratesSet]) => ({
+            variety,
+            rates: Array.from(ratesSet).sort((a, b) => a - b)
+        }));
+
+        setDailyRates(processedRates);
+        setIsLoading(false);
+    };
+
+    fetchAndProcessWataks();
+  }, []);
 
   return (
     <Card>
@@ -17,46 +61,37 @@ export default function RateList() {
             📊 Daily Rate List
         </CardTitle>
         <CardDescription>
-            Current market rates for different fruit varieties.
+            Automatically updated rates based on today's wataks.
         </CardDescription>
       </CardHeader>
       <CardContent>
-          {Object.keys(rates).length > 0 ? (
+          {isLoading ? (
+             <div className="flex justify-center items-center h-48">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <p className="ml-4">Loading today's rates...</p>
+            </div>
+          ) : dailyRates.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {Object.entries(rates).map(([fruit, rate]) => (
+                {dailyRates.map(({ variety, rates }) => (
                 <Card
-                    key={fruit}
+                    key={variety}
                     className="shadow-lg rounded-2xl border hover:shadow-xl transition-shadow duration-300"
                 >
-                    <CardHeader className="flex flex-row items-center justify-between pb-4">
-                        <CardTitle className="text-xl">{fruit}</CardTitle>
+                    <CardHeader>
+                        <CardTitle className="text-xl">{variety}</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div>
-                            <Label htmlFor={`${fruit}-normal`}>Normal Rate</Label>
-                            <Input
-                                id={`${fruit}-normal`}
-                                value={rate.normal || ''}
-                                readOnly
-                                className="border-none bg-transparent px-1 h-auto font-semibold"
-                            />
-                        </div>
-                         <div>
-                            <Label htmlFor={`${fruit}-extraordinary`}>Extraordinary Rate</Label>
-                            <Input
-                                id={`${fruit}-extraordinary`}
-                                value={rate.extraordinary || ''}
-                                readOnly
-                                className="border-none bg-transparent px-1 h-auto font-semibold"
-                            />
-                        </div>
+                    <CardContent>
+                        <p className="font-semibold text-lg">
+                           ₹{rates.join(' / ')}
+                        </p>
                     </CardContent>
                 </Card>
                 ))}
             </div>
           ) : (
             <div className="text-center text-muted-foreground mt-6 py-12 border-2 border-dashed rounded-lg">
-                <p>No rates available for today.</p>
+                <p>No wataks have been created today.</p>
+                <p className="text-sm">Rates will appear here as you create new wataks.</p>
             </div>
           )}
       </CardContent>
