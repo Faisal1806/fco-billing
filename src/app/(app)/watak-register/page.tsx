@@ -57,7 +57,7 @@ export default function WatakRegisterPage() {
   const [growers, setGrowers] = React.useState<string[]>([]);
   const [selectedGrower, setSelectedGrower] = React.useState('All Growers');
   const [isLoading, setIsLoading] = React.useState(true);
-  const [viewMode, setViewMode] = React.useState<'table' | 'grid'>('table');
+  const [viewMode, setViewMode] = React.useState<'table' | 'grid'>('grid');
 
 
   React.useEffect(() => {
