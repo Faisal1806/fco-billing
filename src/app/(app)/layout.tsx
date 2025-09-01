@@ -74,8 +74,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
       <div className="flex flex-col">
         <Header title={getPageTitle()} />
-        <main className="flex-1 p-6 bg-gradient-to-r from-green-100 via-green-200 to-green-300 dark:from-green-900 dark:via-green-800 dark:to-green-700">
-          <div className="max-w-7xl mx-auto bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6">
+        <main className="flex-1 bg-muted/40 p-4 md:p-6">
+          <div className="max-w-7xl mx-auto">
             {children}
           </div>
         </main>
