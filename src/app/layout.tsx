@@ -4,6 +4,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { LanguageProvider } from '@/contexts/language-context';
 import { ThemeProvider } from '@/components/theme-provider';
+import './print.css';
 
 export const metadata: Metadata = {
   title: 'F.Co Billing System',

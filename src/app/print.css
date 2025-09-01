@@ -1,13 +1,8 @@
 
 @media print {
   body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     font-family: "Poppins", "Noto Nastaliq Urdu", serif;
-    margin: 0; /* Let the page component control margins */
-  }
-  .a5-page {
-    width: 148mm;
-    min-height: 200mm; /* Use min-height to avoid cutting content */
-    margin: auto;
-    page-break-after: always;
   }
 }

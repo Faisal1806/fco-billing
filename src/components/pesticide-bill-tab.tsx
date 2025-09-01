@@ -153,7 +153,7 @@ export function PesticideBillTab() {
     const billId = billDetails.no;
     const billData = {
         ...billDetails,
-        entries: entries.map(entry => ({...entry, amount: (parseFloat(entry.qty) || 0) * entry.rate})),
+        entries: entries.map(entry => ({...entry, amount: (parseFloat(entry.qty) || 0) * entry.rate})).filter(e => e.particulars && e.qty),
         grandTotal,
     };
     
@@ -174,7 +174,7 @@ export function PesticideBillTab() {
         date: bill.date,
         customerName: bill.customerName,
     });
-    setEntries(bill.entries);
+    setEntries(bill.entries.length > 0 ? bill.entries : initialEntries);
     setIsEditing(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -216,7 +216,6 @@ export function PesticideBillTab() {
                         <h2 className="text-2xl font-bold">F. Co Pesticides & Fertilizers</h2>
                         <p className="text-sm text-muted-foreground">Deals in:- All kinds of Pesticides & Fertilizers</p>
                         <p className="text-xs text-muted-foreground">NEAR JAMIA MASJID NADIHAL</p>
-                        <p className="text-xs text-muted-foreground">Prop: Firdous Ahmad Lone (Nadihal) | Cell: 7006136330, 9797002164, 9906740921 | Email: lone07936@gmail.com</p>
                     </div>
                      {isEditing && (
                         <Button variant="outline" size="sm" onClick={resetForm} className="gap-2">

@@ -92,6 +92,13 @@ export function ReceiptMakingTab() {
   const [receiptDetails, setReceiptDetails] = React.useState(initialReceiptDetails);
   const [isEditing, setIsEditing] = React.useState(false);
   const [savedReceipts, setSavedReceipts] = React.useState<any[]>([]);
+  const [userRole, setUserRole] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+        setUserRole(localStorage.getItem('userRole'));
+    }
+  }, []);
 
   React.useEffect(() => {
     if (isClient) {
@@ -151,7 +158,7 @@ export function ReceiptMakingTab() {
     const receiptId = receiptDetails.no;
     const receiptData = {
         ...receiptDetails,
-        entries,
+        entries: entries.filter(e => e.khata || e.peti > 0 || e.daba > 0),
         totalNugs,
     };
     
@@ -174,12 +181,17 @@ export function ReceiptMakingTab() {
       freightPaid: receipt.freightPaid,
       wattakReadyOn: receipt.wattakReadyOn,
     });
-    setEntries(receipt.entries);
+    setEntries(receipt.entries.length > 0 ? receipt.entries : initialEntries);
     setIsEditing(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDeleteReceipt = async (receiptId: string) => {
+    if(userRole !== 'admin') {
+        toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to delete receipts.' });
+        return;
+    }
+
     if(!window.confirm(`Are you sure you want to delete Receipt #${receiptId}? This action cannot be undone.`)) {
         return;
     }
@@ -210,9 +222,7 @@ export function ReceiptMakingTab() {
                 <div className="flex justify-between items-center">
                     <div className="text-center flex-1">
                         <h2 className="text-2xl font-bold">F.Co - FIRDOUS AHMAD & COMPANY</h2>
-                        <p className="text-sm text-muted-foreground">Fruit Merchants & Commission Agents</p>
-                        <p className="text-xs text-muted-foreground">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
-                        <p className="text-xs text-muted-foreground">Prop: Firdous Ahmad Lone (Nadihal) | Cell: 7006136330, 9797002164, 9906740921 | Email: lone07936@gmail.com</p>
+                        <p className="text-sm text-muted-foreground">Goods Receipt</p>
                     </div>
                      {isEditing && (
                         <Button variant="outline" size="sm" onClick={resetForm} className="gap-2">
@@ -315,9 +325,11 @@ export function ReceiptMakingTab() {
                                     <Button variant="ghost" size="icon" onClick={() => loadReceiptForEdit(receipt)}>
                                         <FilePenLine className="h-4 w-4" />
                                     </Button>
+                                    {userRole === 'admin' && (
                                     <Button variant="ghost" size="icon" onClick={() => handleDeleteReceipt(receipt.no)}>
                                         <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
+                                    )}
                                 </div>
                             </div>
                         ))}

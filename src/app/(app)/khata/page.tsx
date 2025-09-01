@@ -148,7 +148,9 @@ export default function KhataLedgerPage() {
             const parties = allParties.filter(p => {
                 if (type === 'all') return true;
                 const ledger = ledgers[p];
-                return ledger.partyType === type || ledger.partyType === 'both';
+                if (type === 'customer') return ledger.partyType === 'customer' || ledger.partyType === 'both';
+                if (type === 'supplier') return ledger.partyType === 'supplier' || ledger.partyType === 'both';
+                return false;
             });
             setFilteredParties(parties);
             if(parties.length > 0) {
@@ -435,5 +437,3 @@ export default function KhataLedgerPage() {
     </>
   );
 }
-
-    

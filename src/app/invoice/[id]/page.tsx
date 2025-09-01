@@ -144,7 +144,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
              <style jsx global>{`
                 @media print {
                     @page {
-                        size: A4 portrait;
+                        size: A4;
                         margin: 0;
                     }
                     body {
