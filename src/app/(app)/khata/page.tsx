@@ -19,7 +19,7 @@ import {
   TableFooter
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, FileDown, User, Users, Factory, Plus, ChevronDown } from 'lucide-react';
+import { Loader2, FileDown, User, Users, Plus, ChevronDown, Leaf } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -267,8 +267,8 @@ export default function KhataLedgerPage() {
     };
 
     const PartyIcon = ({ type }: { type: PartyType }) => {
-        if (type === 'supplier') return <Factory className="h-4 w-4 mr-2 text-blue-500" />;
-        if (type === 'customer') return <User className="h-4 w-4 mr-2 text-green-500" />;
+        if (type === 'supplier') return <Leaf className="h-4 w-4 mr-2 text-green-500" />;
+        if (type === 'customer') return <User className="h-4 w-4 mr-2 text-blue-500" />;
         return <Users className="h-4 w-4 mr-2 text-purple-500" />;
     };
     
@@ -330,7 +330,7 @@ export default function KhataLedgerPage() {
                     <div className="flex justify-between items-center mb-4">
                         <TabsList>
                             <TabsTrigger value="customers"><User className="h-4 w-4 mr-2"/>Customers</TabsTrigger>
-                            <TabsTrigger value="growers"><Factory className="h-4 w-4 mr-2"/>Growers</TabsTrigger>
+                            <TabsTrigger value="growers"><Leaf className="h-4 w-4 mr-2"/>Growers</TabsTrigger>
                             <TabsTrigger value="all"><Users className="h-4 w-4 mr-2"/>All Parties</TabsTrigger>
                         </TabsList>
                         
