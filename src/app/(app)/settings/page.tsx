@@ -60,14 +60,15 @@ export default function SettingsPage() {
         try {
             const permission = await Notification.requestPermission();
             if (permission === 'granted') {
-                const fcmToken = await getToken(messaging, { vapidKey: 'YOUR_VAPID_KEY_HERE' }); // IMPORTANT: Replace with your actual VAPID key
+                // IMPORTANT: Replace with your actual VAPID key from your Firebase project settings
+                const fcmToken = await getToken(messaging, { vapidKey: 'YOUR_VAPID_KEY_HERE' }); 
                 
                 if (fcmToken) {
                     console.log('FCM Token:', fcmToken);
-                    // TODO: Send this token to your server to store it
+                    // TODO: Send this token to your server to store it for sending notifications
                     toast({
                         title: 'Notifications Enabled',
-                        description: 'You will now receive push notifications.',
+                        description: 'You will now receive push notifications once setup is complete.',
                     });
                 } else {
                      toast({
