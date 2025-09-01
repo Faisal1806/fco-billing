@@ -1,12 +1,13 @@
 
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
+import { getMessaging } from 'firebase/messaging';
 
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  authDomain: "swiftsale-ewd7o.firebaseapp.com",
+  projectId: "swiftsale-ewd7o",
+  storageBucket: "swiftsale-ewd7o.appspot.com",
   messagingSenderId: "YOUR_SENDER_ID",
   appId: "YOUR_APP_ID",
 };
@@ -25,5 +26,13 @@ export function getClientDb(): Firestore | null {
   }
   return null;
 }
+
+export const getClientMessaging = () => {
+    if (typeof window !== 'undefined' && typeof self.indexedDB !== 'undefined') {
+        return getMessaging(app);
+    }
+    return null;
+}
+
 
 export { app };
