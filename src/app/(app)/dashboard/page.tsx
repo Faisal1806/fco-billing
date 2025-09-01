@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, ArrowUpCircle, ArrowDownCircle, Box, Package, IndianRupee } from 'lucide-react';
+import { Loader2, ArrowUpCircle, ArrowDownCircle, Package, IndianRupee } from 'lucide-react';
 
 interface TodayStats {
   purchasedPatti: number;
@@ -34,6 +34,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // We need to ensure this runs only on the client
     const today = new Date().toISOString().split('T')[0];
     let purchasedPatti = 0;
     let purchasedDabba = 0;
@@ -49,10 +50,11 @@ export default function DashboardPage() {
         try {
             if (key.startsWith('purchase-')) {
                 const purchase = JSON.parse(localStorage.getItem(key)!);
+                // Check if the date is today. Note: The date format from input type="date" is YYYY-MM-DD
                 if (purchase.date === today) {
                     purchase.entries.forEach((entry: any) => {
-                        if(entry.type === 'Patti') purchasedPatti += entry.qty;
-                        if(entry.type === 'Dabba') purchasedDabba += entry.qty;
+                        if(entry.type === 'Patti') purchasedPatti += Number(entry.qty) || 0;
+                        if(entry.type === 'Dabba') purchasedDabba += Number(entry.qty) || 0;
                     });
                     totalPurchaseAmount += purchase.totals.grandTotal;
                 }
@@ -60,8 +62,8 @@ export default function DashboardPage() {
                 const sale = JSON.parse(localStorage.getItem(key)!);
                  if (sale.date === today) {
                     sale.entries.forEach((entry: any) => {
-                        if(entry.type === 'Patti') soldPatti += entry.qty;
-                        if(entry.type === 'Dabba') soldDabba += entry.qty;
+                        if(entry.type === 'Patti') soldPatti += Number(entry.qty) || 0;
+                        if(entry.type === 'Dabba') soldDabba += Number(entry.qty) || 0;
                     });
                     totalSaleAmount += sale.totals.netSale;
                  }
