@@ -71,14 +71,21 @@ export default function WatakRegisterPage() {
     const fetchWataks = async () => {
         setIsLoading(true);
         try {
-            const savedWataks = await getDocuments('invoices');
+            const savedWataks = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('invoice-')) {
+                    savedWataks.push(JSON.parse(localStorage.getItem(key)!));
+                }
+            }
+            
             const formattedWataks = savedWataks.map(w => ({...w, id: w.sNo})) as WatakEntry[];
             setWataks(formattedWataks);
             const uniqueGrowers = ['All Growers', ...new Set(formattedWataks.map(w => w.customerName))];
             setGrowers(uniqueGrowers);
         } catch (e) {
-            console.error("Could not fetch wataks from Firestore", e);
-            toast({ variant: "destructive", title: "Error", description: "Failed to load wataks from the cloud."})
+            console.error("Could not fetch wataks from LocalStorage", e);
+            toast({ variant: "destructive", title: "Error", description: "Failed to load wataks."})
         } finally {
             setIsLoading(false);
         }
@@ -125,11 +132,11 @@ export default function WatakRegisterPage() {
     }
     if(!window.confirm(`Are you sure you want to delete Bill #${sNo}? This cannot be undone.`)) return;
     try {
-      await deleteDocument('invoices', sNo);
+      localStorage.removeItem(`invoice-${sNo}`);
       setWataks(prev => prev.filter(w => w.sNo !== sNo));
       toast({ title: "Bill Deleted", description: `Bill #${sNo} has been deleted.`});
     } catch(e) {
-      toast({ variant: "destructive", title: "Delete failed", description: "Could not delete bill from the cloud."});
+      toast({ variant: "destructive", title: "Delete failed", description: "Could not delete bill."});
     }
   }
 
