@@ -3,7 +3,8 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, PackagePlus, PackageMinus, Package, IndianRupee } from 'lucide-react';
+import { Loader2, PackagePlus, PackageMinus, Package, IndianRupee, UserCheck, UserX } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface DailyStats {
   pattiPurchased: number;
@@ -14,6 +15,11 @@ interface DailyStats {
   totalSaleValue: number;
   currentPattiStock: number;
   currentDabbaStock: number;
+}
+
+type LedgerEntry = {
+    party: string;
+    balance: number;
 }
 
 const StatCard = ({ title, value, icon: Icon, note }: { title: string, value: string, icon: React.ElementType, note?: string }) => (
@@ -30,7 +36,9 @@ const StatCard = ({ title, value, icon: Icon, note }: { title: string, value: st
 );
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [stats, setStats] = useState<DailyStats | null>(null);
+  const [ledgerSummary, setLedgerSummary] = useState<LedgerEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -54,6 +62,8 @@ export default function DashboardPage() {
     let totalPattiSold = 0;
     let totalDabbaSold = 0;
 
+    const ledgers: {[party: string]: number} = {};
+
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (!key) continue;
@@ -73,10 +83,14 @@ export default function DashboardPage() {
                         if (isToday) dabbaSoldToday += qty;
                     }
                 });
+                
+                if (isToday) totalSaleValueToday += sale.totals.netSale || 0;
+                
+                // Update ledger
+                const party = sale.customerName;
+                if (!ledgers[party]) ledgers[party] = 0;
+                ledgers[party] += sale.totals.netSale || 0;
 
-                if (isToday) {
-                    totalSaleValueToday += sale.totals.netSale || 0;
-                }
 
             } else if (key.startsWith('purchase-')) {
                 const purchase = JSON.parse(localStorage.getItem(key)!);
@@ -93,9 +107,12 @@ export default function DashboardPage() {
                     }
                 });
                 
-                if (isToday) {
-                    totalPurchaseValueToday += purchase.totals.grandTotal || 0;
-                }
+                if (isToday) totalPurchaseValueToday += purchase.totals.grandTotal || 0;
+
+                // Update ledger
+                const party = purchase.growerName;
+                if (!ledgers[party]) ledgers[party] = 0;
+                ledgers[party] -= purchase.totals.grandTotal || 0;
             }
         } catch (error) {
             console.error(`Failed to parse item from local storage: ${key}`, error);
@@ -113,6 +130,12 @@ export default function DashboardPage() {
       currentDabbaStock: totalDabbaPurchased - totalDabbaSold,
     });
 
+    const summary = Object.entries(ledgers)
+        .map(([party, balance]) => ({ party, balance }))
+        .sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance)) // Sort by absolute balance
+        .slice(0, 5); // Take top 5
+    setLedgerSummary(summary);
+
     setIsLoading(false);
   }, []);
 
@@ -120,7 +143,7 @@ export default function DashboardPage() {
     return (
         <div className="flex justify-center items-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <p className="ml-4 text-muted-foreground">Calculating today's summary...</p>
+            <p className="ml-4 text-muted-foreground">Calculating summary...</p>
         </div>
     )
   }
@@ -129,10 +152,9 @@ export default function DashboardPage() {
     return <p>Could not load dashboard statistics.</p>
   }
   
-
   return (
-    <div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div className="space-y-8">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
              <StatCard 
                 title="Total Purchased Today"
                 value={`₹${stats.totalPurchaseValue.toLocaleString('en-IN')}`}
@@ -151,6 +173,29 @@ export default function DashboardPage() {
                 icon={Package}
                 note={`${stats.currentPattiStock} Patti / ${stats.currentDabbaStock} Dabba`}
              />
+            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Khata Ledger Summary</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {ledgerSummary.length > 0 ? (
+                        <ul className="space-y-2">
+                            {ledgerSummary.map(item => (
+                                <li key={item.party} className="flex justify-between items-center text-sm">
+                                    <span className="font-medium">{item.party}</span>
+                                    <span className={`font-bold ${item.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        ₹{Math.abs(item.balance).toLocaleString('en-IN')}
+                                        {item.balance >= 0 ? <UserCheck className="h-4 w-4 inline ml-1" /> : <UserX className="h-4 w-4 inline ml-1" />}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : <p className="text-xs text-muted-foreground">No account balances to show.</p>}
+                     <button onClick={() => router.push('/khata')} className="text-sm text-primary hover:underline mt-4">
+                        View Full Ledger &rarr;
+                    </button>
+                </CardContent>
+            </Card>
         </div>
         <div className="mt-8 text-center text-muted-foreground">
             <p>This summary is automatically calculated based on the sales and purchases you record.</p>

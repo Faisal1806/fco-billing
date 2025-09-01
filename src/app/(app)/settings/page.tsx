@@ -60,7 +60,7 @@ export default function SettingsPage() {
         try {
             const permission = await Notification.requestPermission();
             if (permission === 'granted') {
-                // IMPORTANT: Replace with your actual VAPID key from your Firebase project settings
+                // IMPORTANT: Replace 'YOUR_VAPID_KEY_HERE' with your actual VAPID key from your Firebase project settings
                 const fcmToken = await getToken(messaging, { vapidKey: 'YOUR_VAPID_KEY_HERE' }); 
                 
                 if (fcmToken) {

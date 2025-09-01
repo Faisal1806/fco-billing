@@ -8,8 +8,8 @@ const firebaseConfig = {
   authDomain: "swiftsale-ewd7o.firebaseapp.com",
   projectId: "swiftsale-ewd7o",
   storageBucket: "swiftsale-ewd7o.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID",
+  messagingSenderId: "596325992913",
+  appId: "1:596325992913:web:e37529452a3637a898b31d",
 };
 
 
