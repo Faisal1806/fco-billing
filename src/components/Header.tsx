@@ -22,7 +22,6 @@ export function Header({ title }: { title: string }) {
     const navItems = [
         { href: '/dashboard', icon: LayoutDashboard, label: t('dashboard') },
         { href: '/sales', icon: ShoppingCart, label: t('sales') },
-        { href: '/sales-overview', icon: BarChart3, label: 'Sales Overview' },
         { href: '/purchases', icon: Truck, label: 'Purchases' },
         { href: '/purchase-register', icon: ScrollText, label: 'Purchase Register' },
         { href: '/products', icon: Package, label: t('products') },

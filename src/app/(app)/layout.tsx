@@ -26,7 +26,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { href: '/dashboard', icon: LayoutDashboard, label: t('dashboard'), role: ['admin', 'staff'] },
     { href: '/sales', icon: ShoppingCart, label: t('sales'), role: ['admin', 'staff'] },
-    { href: '/sales-overview', icon: BarChart3, label: 'Sales Overview', role: ['admin', 'staff'] },
     { href: '/purchases', icon: Truck, label: 'Purchases', role: ['admin', 'staff'] },
     { href: '/purchase-register', icon: ScrollText, label: 'Purchase Register', role: ['admin', 'staff'] },
     { href: '/products', icon: Package, label: t('products'), role: ['admin', 'staff'] },
