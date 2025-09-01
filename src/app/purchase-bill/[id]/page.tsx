@@ -102,10 +102,10 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
     if (loading) {
         return (
             <div className="bg-gray-50 min-h-screen p-8 flex items-center justify-center">
-                 <div className="w-[210mm] min-h-[297mm] mx-auto bg-white p-8">
-                    <Skeleton className="h-16 w-3/4 self-center mb-8" />
-                    <div className="flex-grow mt-8">
-                        <Skeleton className="h-96 w-full" />
+                 <div className="w-[105mm] min-h-[148mm] mx-auto bg-white p-4 border">
+                    <Skeleton className="h-16 w-full mb-4" />
+                    <div className="flex-grow mt-4">
+                        <Skeleton className="h-48 w-full" />
                     </div>
                  </div>
             </div>
@@ -127,105 +127,107 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
 
 
     return (
-        <div className="bg-gray-100 dark:bg-gray-900 font-sans print:bg-white">
+        <div className="bg-gray-200 dark:bg-gray-900 font-sans print:bg-white flex justify-center py-8">
             <style jsx global>{`
                 @media print {
                     @page {
-                        size: A4;
+                        size: A5 portrait;
                         margin: 0;
                     }
                     body {
+                        background-color: white !important;
                         -webkit-print-color-adjust: exact;
                         print-color-adjust: exact;
                     }
                 }
             `}</style>
-            <div className="w-[210mm] min-h-[297mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-8">
-                <header className="flex justify-between items-start pb-6 border-b-2 border-blue-600">
-                    <div className="text-blue-600 dark:text-blue-400">
-                        <Logo className="h-20 w-20" />
-                        <h1 className="text-4xl font-bold mt-2">Purchase Bill</h1>
-                        <p className="text-lg">From Grower/Company</p>
+            <div className="w-[148mm] min-h-[210mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-4 border-2 border-green-700 flex flex-col">
+                {/* Header */}
+                <header className="text-center border-b-2 border-green-700 pb-2">
+                    <div className="text-xs">
+                        Trade Mark: FCO <span className="mx-2">|</span> Cell: 9797002164, 7006136330
                     </div>
-                    <div className="text-right">
-                        <h2 className="text-2xl font-semibold">FIRDOUS AHMAD & COMPANY</h2>
-                        <p className="text-sm">Fruit Merchants & Commission Agents</p>
-                        <p className="text-sm">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
-                        <p className="text-sm">Cell: 7006136330, 9797002164, 9906740921</p>
-                    </div>
+                    <h1 className="text-2xl font-bold text-green-800">FIRDOUS Ahmad Lone</h1>
+                    <p className="text-xs font-semibold">Fruit Merchants And Forwarding Agents</p>
+                    <p className="text-xs">Shed No. 13, Fud No. 12-A</p>
+                    <p className="text-xs font-bold">FRUIT MANDI APPLE TOWN - SOPORE</p>
+                    <p className="text-xs">Prop: Firdous Ahmad</p>
                 </header>
                 
-                <section className="grid grid-cols-2 gap-8 my-6 text-sm">
-                     <div>
-                        <p className="text-muted-foreground mb-1">Billed To:</p>
-                        <p className="font-bold text-lg">Firdous Ahmad & Company</p>
-                     </div>
-                     <div className="text-right space-y-1">
-                        <p><span className="font-semibold">Bill No:</span> {billNo}</p>
-                        <p><span className="font-semibold">Date:</span> {new Date(date).toLocaleDateString()}</p>
-                        <p><span className="font-semibold">From:</span> {growerName}</p>
-                     </div>
+                {/* Bill Info */}
+                <section className="flex justify-between items-end my-2 text-sm">
+                    <div className="flex-1">
+                        <p><strong>No:</strong> {billNo}</p>
+                        <p><strong>M/s:</strong> {growerName}</p>
+                    </div>
+                    <div className="text-right">
+                        <p><strong>Dated:</strong> {new Date(date).toLocaleDateString('en-GB')}</p>
+                    </div>
                 </section>
 
-                <main>
-                    <Table>
-                        <TableHeader>
-                            <TableRow className="bg-blue-50 dark:bg-blue-900/50">
-                                <TableHead className="w-16">S.No.</TableHead>
-                                <TableHead>Variety</TableHead>
-                                <TableHead>Type</TableHead>
-                                <TableHead className="text-right">Quantity</TableHead>
-                                <TableHead className="text-right">Rate</TableHead>
-                                <TableHead className="text-right">Total Amount</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {entries.map((entry, index) => (
-                                <TableRow key={index}>
-                                    <TableCell>{index + 1}</TableCell>
-                                    <TableCell className="font-medium">{entry.variety}</TableCell>
-                                    <TableCell>{entry.type}</TableCell>
-                                    <TableCell className="text-right">{entry.qty}</TableCell>
-                                    <TableCell className="text-right">₹{entry.rate.toFixed(2)}</TableCell>
-                                    <TableCell className="text-right font-semibold">₹{entry.total.toFixed(2)}</TableCell>
-                                </TableRow>
-                            ))}
-                            {/* Add empty rows to fill space */}
-                            {Array.from({ length: Math.max(0, 12 - entries.length) }).map((_, index) => (
-                                <TableRow key={`empty-${index}`} className="h-10 border-b-0">
-                                    <TableCell></TableCell>
-                                    <TableCell></TableCell>
-                                    <TableCell></TableCell>
-                                    <TableCell></TableCell>
-                                    <TableCell></TableCell>
-                                    <TableCell></TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                        <TableFooter>
-                            <TableRow className="bg-muted dark:bg-gray-700">
-                                <TableCell colSpan={4}></TableCell>
-                                <TableCell className="text-right text-base font-bold">Total Qty</TableCell>
-                                <TableCell className="text-right text-base font-bold">{totals.totalQty}</TableCell>
-                            </TableRow>
-                             <TableRow className="bg-muted dark:bg-gray-700">
-                                <TableCell colSpan={4}></TableCell>
-                                <TableCell className="text-right text-xl font-bold">Grand Total</TableCell>
-                                <TableCell className="text-right text-xl font-bold">₹{totals.grandTotal.toFixed(2)}</TableCell>
-                            </TableRow>
-                        </TableFooter>
-                    </Table>
+                {/* Table */}
+                <main className="flex-grow relative">
+                    <div className="absolute inset-0 flex items-center justify-center z-0">
+                       <Logo className="w-48 h-48 opacity-10" />
+                    </div>
+                    <div className="relative z-10">
+                        <table className="w-full text-sm border-collapse">
+                            <thead>
+                                <tr className="border-y-2 border-green-700">
+                                    <th className="p-1 border-x border-green-600 w-[15%]">Petti</th>
+                                    <th className="p-1 border-x border-green-600 w-[15%]">Dabba</th>
+                                    <th className="p-1 border-x border-green-600">VARIETY</th>
+                                    <th className="p-1 border-x border-green-600 w-[20%]">RATE</th>
+                                    <th className="p-1 border-x border-green-600 w-[25%]">AMOUNT</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {entries.map((entry, index) => (
+                                    <tr key={index} className="border-b border-green-600/50 h-8">
+                                        <td className="p-1 border-x border-green-600 text-center">{entry.type === 'Patti' ? entry.qty : ''}</td>
+                                        <td className="p-1 border-x border-green-600 text-center">{entry.type === 'Dabba' ? entry.qty : ''}</td>
+                                        <td className="p-1 border-x border-green-600">{entry.variety}</td>
+                                        <td className="p-1 border-x border-green-600 text-right">₹{entry.rate.toFixed(2)}</td>
+                                        <td className="p-1 border-x border-green-600 text-right font-semibold">₹{entry.total.toFixed(2)}</td>
+                                    </tr>
+                                ))}
+                                {Array.from({ length: Math.max(0, 15 - entries.length) }).map((_, index) => (
+                                     <tr key={`empty-${index}`} className="border-b border-green-600/50 h-8">
+                                        <td className="p-1 border-x border-green-600"></td>
+                                        <td className="p-1 border-x border-green-600"></td>
+                                        <td className="p-1 border-x border-green-600"></td>
+                                        <td className="p-1 border-x border-green-600"></td>
+                                        <td className="p-1 border-x border-green-600"></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </main>
 
-                <footer className="mt-12 pt-6 border-t-2 border-blue-600 flex justify-between items-center">
-                    <Controls />
-                    <div className="text-center">
-                        <p className="font-semibold">Manager's Signature</p>
-                        <div className="w-48 h-12 mt-2 border-b-2 border-dotted border-gray-400"></div>
+                {/* Footer */}
+                <footer className="mt-auto pt-2 text-sm">
+                    <div className="flex justify-end">
+                       <div className="w-2/5 p-1 border-2 border-green-700">
+                          <div className="flex justify-between font-bold">
+                            <span>G. Total</span>
+                            <span>₹{totals.grandTotal.toFixed(2)}</span>
+                          </div>
+                       </div>
+                    </div>
+                    <div className="text-center text-xs mt-2">
+                        <p>Your Satisfaction is our Success</p>
+                        <p className="italic">If the bill is not paid within 15 days interest @ 5% will be Charged extra</p>
+                    </div>
+                    <div className="flex justify-between mt-4">
+                        <Controls />
+                        <div className="text-center">
+                            <p className="border-t border-dotted border-black w-32 mt-8"></p>
+                            <p className="font-semibold">Signature</p>
+                        </div>
                     </div>
                 </footer>
             </div>
         </div>
     );
 }
-
