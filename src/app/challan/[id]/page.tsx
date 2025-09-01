@@ -129,7 +129,7 @@ export default function ChallanPage({ params }: { params: { id: string } }) {
                 <header className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white p-4 rounded-t-xl">
                     <div className="flex justify-between items-center">
                         <div>
-                            <h1 className="text-xl font-bold">F.Co - FIRDOUS AHMAD & COMPANY</h1>
+                            <h1 className="text-xl font-bold">(F.Co) FIRDOUS AHMAD & COMPANY</h1>
                             <p className="text-xs">Fruit Merchants & Commission Agents, Sopore</p>
                         </div>
                         <h2 className="text-2xl font-bold">CHALLAN</h2>
@@ -210,3 +210,5 @@ export default function ChallanPage({ params }: { params: { id: string } }) {
         </div>
     );
 }
+
+    

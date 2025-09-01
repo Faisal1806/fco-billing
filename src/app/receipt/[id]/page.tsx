@@ -122,7 +122,7 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
             `}</style>
             <div className="w-[148mm] min-h-[210mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-6 flex flex-col">
                 <header className="bg-gradient-to-r from-yellow-400 via-orange-500 to-amber-600 text-white p-4 rounded-t-xl text-center">
-                    <h1 className="text-2xl font-bold">GOODS RECEIPT</h1>
+                    <h1 className="text-2xl font-bold">GOODS RECEIPT (F.Co)</h1>
                     <p className="text-xs">F.Co - FIRDOUS AHMAD & COMPANY</p>
                 </header>
                 <main className="flex-grow bg-white dark:bg-gray-800 p-4 -mt-2 rounded-b-xl shadow-lg">
@@ -180,3 +180,5 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
         </div>
     );
 }
+
+    

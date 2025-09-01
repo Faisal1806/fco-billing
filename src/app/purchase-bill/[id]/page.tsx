@@ -141,35 +141,38 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
                     }
                 }
             `}</style>
-            <div className="w-[148mm] min-h-[210mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-4 border-2 border-green-700 flex flex-col">
-                {/* Header */}
-                <header className="text-center border-b-2 border-green-700 pb-2">
-                    <div className="text-xs">
-                        Trade Mark: FCO <span className="mx-2">|</span> Cell: 9797002164, 7006136330
-                    </div>
-                    <h1 className="text-2xl font-bold text-green-800">F.Co - FIRDOUS AHMAD & COMPANY</h1>
-                    <p className="text-xs font-semibold">Fruit Merchants & Commission Agents</p>
-                    <p className="text-xs">Shed No. 13, Fud No. 12-A, Fruit Mandi Sopore, Kashmir</p>
-                    <p className="text-xs font-bold">Prop: Firdous Ahmad</p>
-                </header>
+            <div className="w-[148mm] min-h-[210mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-4 border-2 border-green-700 flex flex-col relative">
+                {/* Watermark */}
+                <div className="absolute inset-0 flex items-center justify-center z-0">
+                   <Logo className="w-48 h-48 opacity-10" />
+                </div>
                 
-                {/* Bill Info */}
-                <section className="flex justify-between items-end my-2 text-sm">
-                    <div className="flex-1">
-                        <p><strong>No:</strong> {billNo}</p>
-                        <p><strong>M/s:</strong> {growerName}</p>
-                    </div>
-                    <div className="text-right">
-                        <p><strong>Dated:</strong> {new Date(date).toLocaleDateString('en-GB')}</p>
-                    </div>
-                </section>
+                <div className="relative z-10 flex flex-col flex-grow">
 
-                {/* Table */}
-                <main className="flex-grow relative">
-                    <div className="absolute inset-0 flex items-center justify-center z-0">
-                       <Logo className="w-48 h-48 opacity-10" />
-                    </div>
-                    <div className="relative z-10">
+                    {/* Header */}
+                    <header className="text-center border-b-2 border-green-700 pb-2">
+                        <div className="text-xs">
+                            Trade Mark: FCO <span className="mx-2">|</span> Cell: 9797002164, 7006136330
+                        </div>
+                        <h1 className="text-2xl font-bold text-green-800">F.Co - FIRDOUS AHMAD & COMPANY</h1>
+                        <p className="text-xs font-semibold">Fruit Merchants & Commission Agents</p>
+                        <p className="text-xs">Shed No. 13, Fud No. 12-A, Fruit Mandi Sopore, Kashmir</p>
+                        <p className="text-xs font-bold">Prop: Firdous Ahmad</p>
+                    </header>
+                    
+                    {/* Bill Info */}
+                    <section className="flex justify-between items-end my-2 text-sm">
+                        <div className="flex-1">
+                            <p><strong>No:</strong> {billNo}</p>
+                            <p><strong>M/s:</strong> {growerName}</p>
+                        </div>
+                        <div className="text-right">
+                            <p><strong>Dated:</strong> {new Date(date).toLocaleDateString('en-GB')}</p>
+                        </div>
+                    </section>
+
+                    {/* Table */}
+                    <main className="flex-grow">
                         <table className="w-full text-sm border-collapse">
                             <thead>
                                 <tr className="border-y-2 border-green-700">
@@ -201,32 +204,34 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
                                 ))}
                             </tbody>
                         </table>
-                    </div>
-                </main>
+                    </main>
 
-                {/* Footer */}
-                <footer className="mt-auto pt-2 text-sm">
-                    <div className="flex justify-end">
-                       <div className="w-2/5 p-1 border-2 border-green-700">
-                          <div className="flex justify-between font-bold">
-                            <span>G. Total</span>
-                            <span>₹{totals.grandTotal.toFixed(2)}</span>
-                          </div>
-                       </div>
-                    </div>
-                    <div className="text-center text-xs mt-2">
-                        <p>Your Satisfaction is our Success</p>
-                        <p className="italic">If the bill is not paid within 15 days interest @ 5% will be Charged extra</p>
-                    </div>
-                    <div className="flex justify-between mt-4">
-                        <Controls />
-                        <div className="text-center">
-                            <p className="border-t border-dotted border-black w-32 mt-8"></p>
-                            <p className="font-semibold">Signature</p>
+                    {/* Footer */}
+                    <footer className="mt-auto pt-2 text-sm">
+                        <div className="flex justify-end">
+                           <div className="w-2/5 p-1 border-2 border-green-700">
+                              <div className="flex justify-between font-bold">
+                                <span>G. Total</span>
+                                <span>₹{totals.grandTotal.toFixed(2)}</span>
+                              </div>
+                           </div>
                         </div>
-                    </div>
-                </footer>
+                        <div className="text-center text-xs mt-2">
+                            <p>Your Satisfaction is our Success</p>
+                            <p className="italic">If the bill is not paid within 15 days interest @ 5% will be Charged extra</p>
+                        </div>
+                        <div className="flex justify-between mt-4">
+                            <Controls />
+                            <div className="text-center">
+                                <p className="border-t border-dotted border-black w-32 mt-8"></p>
+                                <p className="font-semibold">Signature</p>
+                            </div>
+                        </div>
+                    </footer>
+                </div>
             </div>
         </div>
     );
 }
+
+    
