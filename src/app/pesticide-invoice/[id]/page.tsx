@@ -3,12 +3,12 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Printer, Share2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { Logo } from "@/components/logo";
 
 interface BillData {
     no: string;
@@ -59,37 +59,26 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
         }
     };
 
-    const Controls = () => {
-        'use client'
-        return (
-             <div className="flex items-center gap-2 print:hidden">
-                <Button onClick={handleShare} variant="outline" className="gap-2">
-                    <Share2 className="h-4 w-4" />
-                    Share
-                </Button>
-                <Button onClick={() => window.print()} className="gap-2">
-                    <Printer className="h-4 w-4" />
-                    Print
-                </Button>
-            </div>
-        )
-    }
+    const Controls = () => (
+         <div className="flex items-center gap-2 print:hidden">
+            <Button onClick={handleShare} variant="outline" size="sm" className="gap-2">
+                <Share2 className="h-4 w-4" />
+                Share
+            </Button>
+            <Button onClick={() => window.print()} size="sm" className="gap-2">
+                <Printer className="h-4 w-4" />
+                Print
+            </Button>
+        </div>
+    )
 
     if (loading) {
         return (
-            <div className="bg-background min-h-screen p-4 sm:p-8 md:p-12">
-                 <Card className="w-full max-w-2xl mx-auto">
-                    <CardHeader>
-                        <Skeleton className="h-8 w-1/2" />
-                        <Skeleton className="h-4 w-1/4" />
-                    </CardHeader>
-                    <CardContent>
-                        <Skeleton className="h-48 w-full" />
-                    </CardContent>
-                    <CardFooter>
-                        <Skeleton className="h-10 w-32" />
-                    </CardFooter>
-                 </Card>
+            <div className="bg-gray-50 min-h-screen p-8 flex items-center justify-center">
+                 <div className="w-full max-w-3xl mx-auto bg-white p-8">
+                    <Skeleton className="h-24 w-full mb-4" />
+                    <Skeleton className="h-48 w-full" />
+                 </div>
             </div>
         )
     }
@@ -97,12 +86,10 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
     if (!billData) {
         return (
             <div className="bg-background min-h-screen flex items-center justify-center p-4">
-                <Card className="w-full max-w-md mx-auto text-center">
-                    <CardHeader>
-                        <CardTitle>Bill Not Found</CardTitle>
-                        <CardDescription>The bill you are looking for does not exist or has been deleted.</CardDescription>
-                    </CardHeader>
-                </Card>
+                 <div className="text-center p-8 border rounded-lg shadow-md">
+                    <h2 className="text-xl font-bold">Bill Not Found</h2>
+                    <p className="text-muted-foreground">The bill you are looking for does not exist.</p>
+                </div>
             </div>
         );
     }
@@ -112,16 +99,30 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
     } = billData;
 
     return (
-        <div className="bg-white min-h-screen p-4 sm:p-6 md:p-8 print:bg-white font-sans">
-            <Card className="w-full max-w-2xl mx-auto shadow-none border print:shadow-none print:border">
-                <CardHeader className="p-4">
-                    <div className="text-center mb-4">
-                        <h1 className="text-2xl font-bold text-gray-800">F. Co Pesticides & Fertilizers</h1>
-                        <p className="text-sm text-gray-600">Deals in:- All kinds of Pesticides & Fertilizers</p>
-                        <p className="text-sm text-gray-600">NEAR JAMIA MASJID NADIHAL</p>
-                        <p className="text-sm text-gray-600">Cell: 9797002164, 7006136330, 9906740921 | Email: lone07936@gmail.com</p>
+        <div className="bg-gray-100 dark:bg-gray-900 font-sans print:bg-white">
+            <style jsx global>{`
+                @media print {
+                    @page {
+                        size: A4 portrait;
+                        margin: 0;
+                    }
+                    body {
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                }
+            `}</style>
+            <div className="w-full max-w-3xl mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-8 my-8 print:my-0">
+                <header className="bg-gradient-to-r from-cyan-400 via-sky-500 to-blue-600 text-white p-6 rounded-t-xl shadow-lg">
+                    <div className="text-center">
+                        <h1 className="text-3xl font-bold">F. Co Pesticides & Fertilizers</h1>
+                        <p className="mt-1 text-sm">Deals in:- All kinds of Pesticides & Fertilizers</p>
+                        <p className="text-xs">NEAR JAMIA MASJID NADIHAL, SOPORE</p>
                     </div>
-                     <div className="grid grid-cols-2 gap-2 text-sm">
+                </header>
+                
+                <main className="bg-white dark:bg-gray-800 p-6 rounded-b-xl shadow-lg -mt-4">
+                     <div className="grid grid-cols-2 gap-4 text-sm border-b pb-4 mb-4">
                         <div>
                             <p><strong>No:</strong> {no}</p>
                             <p><strong>M/s:</strong> {customerName}</p>
@@ -130,16 +131,15 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
                              <p><strong>Dated:</strong> {new Date(date).toLocaleDateString()}</p>
                         </div>
                     </div>
-                </CardHeader>
-                <CardContent className="p-2">
+                    
                     <Table>
                         <TableHeader>
-                            <TableRow>
+                            <TableRow className="bg-gray-100 dark:bg-gray-700">
                                 <TableHead className="w-[10%]">S.NO.</TableHead>
                                 <TableHead>PARTICULARS</TableHead>
-                                <TableHead className="w-[15%] text-right">QTY</TableHead>
-                                <TableHead className="w-[15%] text-right">RATE</TableHead>
-                                <TableHead className="w-[20%] text-right">AMOUNT</TableHead>
+                                <TableHead className="text-right">QTY</TableHead>
+                                <TableHead className="text-right">RATE</TableHead>
+                                <TableHead className="text-right">AMOUNT</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -148,45 +148,37 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
                                     <TableCell>{index + 1}</TableCell>
                                     <TableCell>{entry.particulars}</TableCell>
                                     <TableCell className="text-right">{entry.qty}</TableCell>
-                                    <TableCell className="text-right">{entry.rate.toFixed(2)}</TableCell>
-                                    <TableCell className="text-right">₹{entry.amount.toFixed(2)}</TableCell>
-                                </TableRow>
-                            ))}
-                             {/* Add empty rows to fill space */}
-                             {Array.from({ length: Math.max(0, 10 - entries.length) }).map((_, index) => (
-                                <TableRow key={`empty-${index}`} className="h-10">
-                                    <TableCell>{entries.length + index + 1}</TableCell>
-                                    <TableCell></TableCell>
-                                    <TableCell></TableCell>
-                                    <TableCell></TableCell>
-                                    <TableCell></TableCell>
+                                    <TableCell className="text-right">₹{entry.rate.toFixed(2)}</TableCell>
+                                    <TableCell className="text-right font-medium">₹{entry.amount.toFixed(2)}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
                     </Table>
 
-                    <Separator className="my-2" />
+                    <Separator className="my-4" />
 
-                    <div className="flex justify-end text-sm mt-2 px-4">
-                        <div className="w-full max-w-xs">
-                           <div className="flex justify-between font-bold text-lg border-t pt-2">
-                             <span>G. Total</span>
+                    <div className="flex justify-end text-sm mt-2">
+                        <div className="w-full max-w-sm">
+                           <div className="flex justify-between font-bold text-2xl border-t-2 pt-2">
+                             <span>Grand Total:</span>
                              <span>₹{grandTotal.toFixed(2)}</span>
                            </div>
                         </div>
                     </div>
-                </CardContent>
-                <CardFooter className="flex justify-between items-end p-4 mt-8">
+                </main>
+                <footer className="flex justify-between items-end p-4 mt-8 text-xs">
                      <div>
-                        <p className="text-xs">Goods once sold can not be taken back.</p>
+                        <p className="italic text-gray-500">Goods once sold can not be taken back.</p>
                         <Controls />
                      </div>
-                     <div className="flex flex-col items-center">
-                        <div className="w-32 h-8 border-b border-gray-400"></div>
-                        <p className="text-xs font-semibold">Signature</p>
+                     <div className="text-center">
+                        <div className="w-40 h-12 border-b border-gray-400 border-dotted"></div>
+                        <p className="font-semibold">Authorized Signature</p>
                      </div>
-                </CardFooter>
-            </Card>
+                </footer>
+            </div>
         </div>
     );
 }
+
+    

@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Printer, Share2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import DocumentLayout from "@/components/DocumentLayout";
+import { Logo } from "@/components/logo";
 
 interface BillData {
     id: string;
@@ -107,44 +107,40 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     };
 
 
-    const Controls = () => {
-        'use client'
-        return (
-            <div className="flex items-center gap-2 print:hidden">
-                <Button onClick={handleShare} variant="outline" size="sm" className="gap-2">
-                    <Share2 className="h-4 w-4" />
-                    Share
-                </Button>
-                <Button onClick={() => window.print()} size="sm" className="gap-2">
-                    <Printer className="h-4 w-4" />
-                    Print
-                </Button>
-            </div>
-        )
-    }
+    const Controls = () => (
+        <div className="flex items-center gap-2 print:hidden">
+            <Button onClick={handleShare} variant="outline" size="sm" className="gap-2">
+                <Share2 className="h-4 w-4" />
+                Share
+            </Button>
+            <Button onClick={() => window.print()} size="sm" className="gap-2">
+                <Printer className="h-4 w-4" />
+                Print
+            </Button>
+        </div>
+    )
 
     if (loading) {
         return (
-            <DocumentLayout type="bill">
-                 <div className="p-6 flex flex-col">
-                    <Skeleton className="h-8 w-3/4 self-center mb-4" />
-                    <Skeleton className="h-4 w-1/2 self-center" />
+            <div className="bg-gray-50 min-h-screen p-8 flex items-center justify-center">
+                 <div className="w-[210mm] min-h-[297mm] mx-auto bg-white p-8">
+                    <Skeleton className="h-16 w-3/4 self-center mb-8" />
                     <div className="flex-grow mt-8">
-                        <Skeleton className="h-64 w-full" />
+                        <Skeleton className="h-96 w-full" />
                     </div>
                  </div>
-            </DocumentLayout>
+            </div>
         )
     }
 
     if (!billData) {
         return (
-             <DocumentLayout type="bill">
-                <div className="text-center py-12">
+            <div className="bg-gray-50 min-h-screen p-8 flex items-center justify-center">
+                <div className="text-center">
                     <h2 className="text-xl font-semibold">Invoice Not Found</h2>
                     <p className="text-muted-foreground mt-2">The invoice you are looking for does not exist or has been deleted.</p>
                 </div>
-            </DocumentLayout>
+            </div>
         );
     }
 
@@ -154,108 +150,124 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
 
     return (
-        <DocumentLayout type="bill">
-            <div className="text-sm">
-                <header className="p-6 border-b">
-                    <div className="text-center mb-4">
-                        <h2 className="text-xl font-bold text-gray-800">FIRDOUS AHMAD & COMPANY</h2>
-                        <p className="text-xs text-gray-600">Fruit Merchants & Commission Agents</p>
-                        <p className="text-xs text-gray-600">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
-                        <p className="text-xs text-gray-600">Cell: 7006136330, 9797002164, 9906740921 | Email: lone07936@gmail.com</p>
-                    </div>
-                     <div className="grid grid-cols-2 gap-2 text-xs">
+        <div className="bg-gray-100 dark:bg-gray-900 font-sans print:bg-white">
+             <style jsx global>{`
+                @media print {
+                    @page {
+                        size: A4 portrait;
+                        margin: 0;
+                    }
+                    body {
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                }
+            `}</style>
+            <div className="w-[210mm] min-h-[297mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-8">
+                <header className="bg-gradient-to-r from-red-500 via-green-400 to-black text-white p-6 rounded-t-xl shadow-lg">
+                    <div className="flex justify-between items-center">
                         <div>
-                            <p><strong>Bill No:</strong> {sNo}</p>
-                            <p><strong>M/s:</strong> {customerName}</p>
-                            <p><strong>Khata No:</strong> {khata}</p>
+                            <h1 className="text-3xl font-bold">F.Co - FIRDOUS AHMAD & COMPANY</h1>
+                            <p className="mt-1">Fruit Merchants & Commission Agents</p>
+                            <p className="text-xs">Shed No. 13, Fud No. 12A - Fruit Mandi Sopore, Kashmir</p>
+                        </div>
+                        <Logo className="w-20 h-20" />
+                    </div>
+                </header>
+
+                <main className="bg-white dark:bg-gray-800 p-6 rounded-b-xl shadow-lg -mt-4">
+                    <div className="grid grid-cols-2 gap-4 border-b pb-4 mb-4">
+                        <div>
+                            <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Bill To:</h2>
+                            <p className="font-bold text-xl">{customerName}</p>
+                            <p>Khata No: {khata}</p>
                         </div>
                         <div className="text-right">
+                             <p><strong>Bill No:</strong> {sNo}</p>
                              <p><strong>Date:</strong> {new Date(date).toLocaleDateString()}</p>
                              <p><strong>Challan No:</strong> {challanNo}</p>
                         </div>
                     </div>
-                </header>
-                <main className="flex-grow p-4">
-                    <div className="grid grid-cols-[60%_40%] gap-4">
-                        <div>
+
+                    <div className="grid grid-cols-5 gap-4">
+                        <div className="col-span-3">
                             <Table>
                                 <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="h-8">Type</TableHead>
-                                        <TableHead className="h-8">Variety</TableHead>
-                                        <TableHead className="h-8">Qty</TableHead>
-                                        <TableHead className="h-8">Rate</TableHead>
-                                        <TableHead className="h-8 text-right">Gross Sale</TableHead>
+                                    <TableRow className="bg-gray-100 dark:bg-gray-700">
+                                        <TableHead>Type</TableHead>
+                                        <TableHead>Variety</TableHead>
+                                        <TableHead>Qty</TableHead>
+                                        <TableHead>Rate</TableHead>
+                                        <TableHead className="text-right">Gross</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {entries.map((entry, index) => (
-                                        <TableRow key={index} className="h-8">
-                                            <TableCell className="py-1">{entry.type}</TableCell>
-                                            <TableCell className="py-1">{entry.variety}</TableCell>
-                                            <TableCell className="py-1">{entry.qty}</TableCell>
-                                            <TableCell className="py-1">{entry.rate.toFixed(2)}</TableCell>
-                                            <TableCell className="py-1 text-right">₹{((entry.qty) * entry.rate).toFixed(2)}</TableCell>
+                                        <TableRow key={index}>
+                                            <TableCell>{entry.type}</TableCell>
+                                            <TableCell>{entry.variety}</TableCell>
+                                            <TableCell>{entry.qty}</TableCell>
+                                            <TableCell>₹{entry.rate.toFixed(2)}</TableCell>
+                                            <TableCell className="text-right font-medium">₹{((entry.qty) * entry.rate).toFixed(2)}</TableCell>
                                         </TableRow>
-                                    ))}
-                                    {Array.from({ length: Math.max(0, 10 - entries.length) }).map((_, index) => (
-                                        <TableRow key={`empty-${index}`} className="h-8"><TableCell colSpan={5}>&nbsp;</TableCell></TableRow>
                                     ))}
                                 </TableBody>
                             </Table>
                         </div>
-                        <div>
+
+                        <div className="col-span-2">
                              <Table>
                                 <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="h-8">Details of Exp.</TableHead>
-                                        <TableHead className="h-8 text-right">Amount</TableHead>
+                                    <TableRow className="bg-gray-100 dark:bg-gray-700">
+                                        <TableHead>Expenses</TableHead>
+                                        <TableHead className="text-right">Amount</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    <TableRow className="h-8"><TableCell className="py-1">Freight</TableCell><TableCell className="py-1 text-right">₹{freight.toFixed(2)}</TableCell></TableRow>
-                                    <TableRow className="h-8"><TableCell className="py-1">Labour</TableCell><TableCell className="py-1 text-right">₹{totals.labour.toFixed(2)}</TableCell></TableRow>
-                                    <TableRow className="h-8"><TableCell className="py-1">Association</TableCell><TableCell className="py-1 text-right">₹{totals.association.toFixed(2)}</TableCell></TableRow>
-                                    <TableRow className="h-8"><TableCell className="py-1">Security</TableCell><TableCell className="py-1 text-right">₹{totals.security.toFixed(2)}</TableCell></TableRow>
-                                    <TableRow className="h-8"><TableCell className="py-1">Commission</TableCell><TableCell className="py-1 text-right">₹{totals.commissionAmount.toFixed(2)}</TableCell></TableRow>
+                                    <TableRow><TableCell>Freight</TableCell><TableCell className="text-right">₹{freight.toFixed(2)}</TableCell></TableRow>
+                                    <TableRow><TableCell>Labour</TableCell><TableCell className="text-right">₹{totals.labour.toFixed(2)}</TableCell></TableRow>
+                                    <TableRow><TableCell>Association</TableCell><TableCell className="text-right">₹{totals.association.toFixed(2)}</TableCell></TableRow>
+                                    <TableRow><TableCell>Security</TableCell><TableCell className="text-right">₹{totals.security.toFixed(2)}</TableCell></TableRow>
+                                    <TableRow className="font-semibold border-t-2"><TableCell>Commission</TableCell><TableCell className="text-right">₹{totals.commissionAmount.toFixed(2)}</TableCell></TableRow>
                                 </TableBody>
                             </Table>
                         </div>
                     </div>
 
-                    <Separator className="my-2" />
+                    <Separator className="my-6" />
 
-                    <div className="grid grid-cols-3 gap-4 text-xs font-medium">
-                        <div className="flex items-center">
-                            <p>Qty: {totals.totalQty} (Patti: {totals.pattiQty}, Dabba: {totals.dabbaQty})</p>
+                    <div className="grid grid-cols-2 gap-8">
+                        <div>
+                             <p><strong>Total Quantity:</strong> {totals.totalQty} (Patti: {totals.pattiQty}, Dabba: {totals.dabbaQty})</p>
                         </div>
-                        <div className="flex justify-between items-center px-2 py-1 bg-gray-100 rounded-sm">
-                           <p>Gross Sale:</p>
-                           <p>₹{totals.grossSale.toFixed(2)}</p>
-                        </div>
-                        <div className="flex justify-between items-center px-2 py-1 bg-gray-100 rounded-sm">
-                           <p>Total Exp.:</p>
-                           <p>₹{totals.totalExpenses.toFixed(2)}</p>
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-center text-lg">
+                                <span className="font-semibold">Gross Sale:</span>
+                                <span>₹{totals.grossSale.toFixed(2)}</span>
+                            </div>
+                             <div className="flex justify-between items-center text-lg">
+                                <span className="font-semibold">Total Expenses:</span>
+                                <span>- ₹{totals.totalExpenses.toFixed(2)}</span>
+                            </div>
+                            <Separator />
+                             <div className="flex justify-between items-center text-2xl font-bold text-green-600">
+                                <span >Net Sale:</span>
+                                <span>₹{totals.netSale.toFixed(2)}</span>
+                            </div>
                         </div>
                     </div>
-                     <div className="grid grid-cols-3 gap-4 mt-2">
-                        <div>
-                            <p className="font-semibold text-xs">Debit Our A/C</p>
-                            <p className="text-[10px] text-gray-500">"Your Satisfaction is Our Success"</p>
-                        </div>
-                        <div className="col-span-2 flex justify-between items-center px-3 py-1 bg-gray-200 rounded-sm">
-                            <p className="font-bold">Net Sale:</p>
-                            <p className="font-bold">₹{totals.netSale.toFixed(2)}</p>
-                        </div>
-                     </div>
                 </main>
-                <footer className="flex justify-between items-center p-4 border-t mt-auto">
-                     <div className="text-[10px] text-gray-500 space-y-2">
-                        <Controls />
+
+                <footer className="flex justify-between items-center mt-8 pt-4 border-t">
+                     <Controls />
+                     <div className="text-right text-xs">
+                        <p className="font-bold">Manager</p>
+                        <p>For Firdous Ahmad & Company</p>
                      </div>
-                     <p className="font-semibold text-xs">Manager</p>
                 </footer>
             </div>
-        </DocumentLayout>
+        </div>
     );
 }
+
+    
