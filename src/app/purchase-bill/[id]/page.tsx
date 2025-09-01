@@ -164,6 +164,7 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
                                 <p className="text-xs">Shed No. 13, Fud No. 12-A, Fruit Mandi Sopore, Kashmir</p>
                                 <p className="text-xs font-bold">Prop: Firdous Ahmad</p>
                              </div>
+                             <Logo className="w-16 h-16 opacity-50" />
                         </div>
                     </header>
                     
@@ -240,5 +241,3 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
         </div>
     );
 }
-
-    

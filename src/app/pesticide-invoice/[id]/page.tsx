@@ -114,10 +114,14 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
             `}</style>
             <div className="w-full max-w-3xl mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-8 my-8 print:my-0">
                 <header className="bg-gradient-to-r from-cyan-400 via-sky-500 to-blue-600 text-white p-6 rounded-t-xl shadow-lg">
-                    <div className="text-center">
-                        <h1 className="text-3xl font-bold">F. Co Pesticides & Fertilizers</h1>
-                        <p className="mt-1 text-sm">Deals in:- All kinds of Pesticides & Fertilizers</p>
-                        <p className="text-xs">NEAR JAMIA MASJID NADIHAL, SOPORE</p>
+                    <div className="flex justify-between items-center">
+                        <Logo className="w-20 h-20" />
+                        <div className="text-center">
+                            <h1 className="text-3xl font-bold">F. Co Pesticides & Fertilizers</h1>
+                            <p className="mt-1 text-sm">Deals in:- All kinds of Pesticides & Fertilizers</p>
+                            <p className="text-xs">NEAR JAMIA MASJID NADIHAL, SOPORE</p>
+                        </div>
+                        <div className="w-20"></div>
                     </div>
                 </header>
                 
@@ -128,7 +132,7 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
                             <p><strong>M/s:</strong> {customerName}</p>
                         </div>
                         <div className="text-right">
-                             <p><strong>Dated:</strong> {new Date(date).toLocaleDateString()}</p>
+                             <p><strong>Dated:</strong> {new Date(date).toLocaleDateString('en-GB')}</p>
                         </div>
                     </div>
                     
@@ -180,5 +184,3 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
         </div>
     );
 }
-
-    

@@ -149,7 +149,7 @@ export default function ChallanPage({ params }: { params: { id: string } }) {
                         </div>
                         <div className="text-right space-y-1">
                              <p><strong>Challan No:</strong> {challanNo}</p>
-                             <p><strong>Dated:</strong> {new Date(date).toLocaleDateString()}</p>
+                             <p><strong>Dated:</strong> {new Date(date).toLocaleDateString('en-GB')}</p>
                         </div>
                     </div>
                     
@@ -213,5 +213,3 @@ export default function ChallanPage({ params }: { params: { id: string } }) {
         </div>
     );
 }
-
-    

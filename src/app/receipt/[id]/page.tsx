@@ -133,7 +133,7 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
                             <p><strong>R/o:</strong> {ro}</p>
                         </div>
                         <div className="text-right">
-                             <p><strong>Dated:</strong> {new Date(date).toLocaleDateString()}</p>
+                             <p><strong>Dated:</strong> {new Date(date).toLocaleDateString('en-GB')}</p>
                         </div>
                     </div>
                     <Table>
@@ -180,5 +180,3 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
         </div>
     );
 }
-
-    
