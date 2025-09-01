@@ -102,14 +102,14 @@ export default function KhataLedgerPage() {
         for (const trans of allTransactions) {
             if (!calculatedLedgers[trans.party]) {
                 calculatedLedgers[trans.party] = { transactions: [], balance: 0, partyType: trans.type === 'Sale' ? 'customer' : 'supplier' };
-            } else {
-                const existingType = calculatedLedgers[trans.party].partyType;
-                const newType = trans.type === 'Sale' ? 'customer' : 'supplier';
-                if(existingType !== newType && existingType !== 'both') {
-                    calculatedLedgers[trans.party].partyType = 'both';
-                }
             }
+            
             const ledger = calculatedLedgers[trans.party];
+            const existingType = ledger.partyType;
+            const newType = trans.type === 'Sale' ? 'customer' : 'supplier';
+            if(existingType !== newType && existingType !== 'both') {
+                ledger.partyType = 'both';
+            }
             ledger.transactions.push(trans);
         }
         
@@ -326,7 +326,7 @@ export default function KhataLedgerPage() {
                 <TableFooter>
                     <TableRow className="font-bold text-lg">
                         <TableCell colSpan={5} className="text-right">Final Balance</TableCell>
-                        <TableCell className={`text-right ${selectedLedger.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        <TableCell className={`text-right ${selectedLedger.balance >= 0 ? 'text-green-700' : 'text-red-700'}`}>
                             ₹{Math.abs(selectedLedger.balance).toFixed(2)}
                             <span className="text-xs text-muted-foreground ml-1">
                                 {selectedLedger.balance >= 0 ? '(Receivable)' : '(Payable)'}
@@ -343,3 +343,5 @@ export default function KhataLedgerPage() {
     </Card>
   );
 }
+
+    
