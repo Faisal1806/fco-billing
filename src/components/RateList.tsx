@@ -2,13 +2,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, deleteField } from "firebase/firestore";
 import { getClientDb } from "@/lib/firebase";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Pencil, Save } from "lucide-react";
+import { Loader2, Pencil, Save, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type Rate = {
@@ -47,10 +47,6 @@ export default function RateList() {
         } else {
           setRates({});
           setEditableRates({});
-           toast({
-            title: "No rates found for today",
-            description: "You can add new rates by entering edit mode.",
-          });
         }
       } catch (error) {
         console.error("Error fetching rates:", error);
@@ -83,6 +79,28 @@ export default function RateList() {
         }
     }))
   }
+  
+  const handleAddFruit = () => {
+    const newFruitInput = document.getElementById('new-fruit-name') as HTMLInputElement;
+    const newFruitName = newFruitInput?.value.trim();
+    if (newFruitName && !editableRates[newFruitName]) {
+        setEditableRates(prev => ({...prev, [newFruitName]: {normal: '', extraordinary: ''}}))
+        newFruitInput.value = '';
+    } else {
+        toast({variant: 'destructive', title: 'Invalid Name', description: 'Fruit name cannot be empty or a duplicate.'})
+    }
+  };
+
+  const handleDeleteFruit = (fruit: string) => {
+    if (window.confirm(`Are you sure you want to delete "${fruit}"?`)) {
+        setEditableRates(prev => {
+            const newRates = {...prev};
+            delete newRates[fruit];
+            return newRates;
+        });
+    }
+  }
+
 
   const handleSaveChanges = async () => {
     if (!db) {
@@ -92,7 +110,21 @@ export default function RateList() {
     setIsSaving(true);
     try {
         const docRef = doc(db, "rates", "today");
-        await setDoc(docRef, editableRates);
+        
+        // To handle deletions, we can't just set the whole object.
+        // We need to compare keys and delete fields that are no longer present.
+        const originalKeys = Object.keys(rates || {});
+        const newKeys = Object.keys(editableRates);
+
+        const updates: { [key: string]: any } = { ...editableRates };
+
+        for (const key of originalKeys) {
+            if (!newKeys.includes(key)) {
+                updates[key] = deleteField();
+            }
+        }
+        
+        await setDoc(docRef, updates, { merge: true });
         setRates(editableRates);
         setIsEditing(false);
         toast({
@@ -153,15 +185,20 @@ export default function RateList() {
         </div>
       </CardHeader>
       <CardContent>
-          {rates && Object.keys(editableRates).length > 0 ? (
+          {Object.keys(editableRates).length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {Object.entries(editableRates).map(([fruit, rate]) => (
                 <Card
                     key={fruit}
                     className="shadow-lg rounded-2xl border hover:shadow-xl transition-shadow duration-300"
                 >
-                    <CardHeader>
+                    <CardHeader className="flex flex-row items-center justify-between">
                         <CardTitle className="text-xl">{fruit}</CardTitle>
+                         {isEditing && (
+                            <Button variant="ghost" size="icon" onClick={() => handleDeleteFruit(fruit)}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                         )}
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div>
@@ -195,20 +232,11 @@ export default function RateList() {
             </div>
           )}
           {isEditing && (
-            <div className="mt-4 p-4 border-dashed border-2 rounded-lg">
-                <h3 className="font-semibold mb-2">Add New Fruit</h3>
+            <div className="mt-6 p-4 border-dashed border-2 rounded-lg bg-muted/50">
+                <h3 className="font-semibold mb-2">Add New Variety</h3>
                  <div className="flex gap-2">
-                    <Input placeholder="Fruit Name (e.g., Delicious)" id="new-fruit-name" />
-                    <Button onClick={() => {
-                        const newFruitInput = document.getElementById('new-fruit-name') as HTMLInputElement;
-                        const newFruitName = newFruitInput?.value.trim();
-                        if (newFruitName && !editableRates[newFruitName]) {
-                            setEditableRates(prev => ({...prev, [newFruitName]: {normal: '', extraordinary: ''}}))
-                            newFruitInput.value = '';
-                        } else {
-                            toast({variant: 'destructive', title: 'Invalid Name', description: 'Fruit name cannot be empty or a duplicate.'})
-                        }
-                    }}>Add Fruit</Button>
+                    <Input placeholder="e.g., Delicious" id="new-fruit-name" />
+                    <Button onClick={handleAddFruit}>Add Variety</Button>
                  </div>
             </div>
           )}
