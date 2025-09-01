@@ -165,9 +165,12 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             `}</style>
             <div className="w-[210mm] min-h-[297mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-8">
                 <header className="bg-gradient-to-r from-green-400 via-emerald-500 to-teal-600 text-white p-6 rounded-t-xl shadow-lg">
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <h1 className="text-3xl font-bold">(F.Co) FIRDOUS AHMAD & COMPANY</h1>
+                    <div className="flex justify-between items-start">
+                        <div className="text-left">
+                           <h1 className="text-3xl font-bold">(F.Co)</h1>
+                        </div>
+                        <div className="text-center -mt-2">
+                            <h2 className="text-3xl font-bold">FIRDOUS AHMAD & COMPANY</h2>
                             <p className="mt-1">Fruit Merchants & Commission Agents</p>
                             <p className="text-xs">Shed No. 13, Fud No. 12A - Fruit Mandi Sopore, Kashmir</p>
                         </div>

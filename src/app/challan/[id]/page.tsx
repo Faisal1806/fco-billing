@@ -127,10 +127,13 @@ export default function ChallanPage({ params }: { params: { id: string } }) {
             `}</style>
             <div className="w-[210mm] min-h-[148mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-6 flex flex-col">
                 <header className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white p-4 rounded-t-xl">
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <h1 className="text-xl font-bold">(F.Co) FIRDOUS AHMAD & COMPANY</h1>
-                            <p className="text-xs">Fruit Merchants & Commission Agents, Sopore</p>
+                    <div className="flex justify-between items-start">
+                        <div className="text-left">
+                            <h1 className="text-xl font-bold">(F.Co)</h1>
+                        </div>
+                        <div className="text-center -mt-2">
+                             <h2 className="text-xl font-bold">FIRDOUS AHMAD & COMPANY</h2>
+                             <p className="text-xs">Fruit Merchants & Commission Agents, Sopore</p>
                         </div>
                         <h2 className="text-2xl font-bold">CHALLAN</h2>
                     </div>
