@@ -235,7 +235,7 @@ export function BillMakingTab() {
     // Header
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('FIRDOUS AHMAD & COMPANY', doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
+    doc.text('F.Co - FIRDOUS AHMAD & COMPANY', doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.text('Fruit Merchants & Commission Agents', doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
@@ -351,7 +351,7 @@ export function BillMakingTab() {
             <CardHeader>
                 <div className="flex justify-between items-center">
                     <div className="text-center flex-1">
-                        <h2 className="text-2xl font-bold">FIRDOUS AHMAD & COMPANY</h2>
+                        <h2 className="text-2xl font-bold">F.Co - FIRDOUS AHMAD & COMPANY</h2>
                         <p className="text-sm text-muted-foreground">Fruit Merchants & Commission Agents</p>
                         <p className="text-xs text-muted-foreground">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
                         <p className="text-xs text-muted-foreground">Prop: Firdous Ahmad Lone (Nadihal) | Cell: 7006136330, 9797002164, 9906740921 | Email: lone07936@gmail.com</p>
