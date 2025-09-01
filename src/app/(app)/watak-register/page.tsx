@@ -30,7 +30,6 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import DocumentCard from '@/components/DocumentCard';
-import { getDocuments, deleteDocument } from '@/lib/actions';
 
 
 export interface WatakEntry {
@@ -40,7 +39,7 @@ export interface WatakEntry {
     watakNo: string;
     customerName: string;
     customerUrdu?: string;
-    entries: { peti: number, daba: number }[];
+    entries: { peti: number, daba: number, variety: string, rate: number }[];
     totals: {
         grossSale: number;
         totalExpenses: number;

@@ -222,7 +222,7 @@ export default function KhataLedgerPage() {
                 tx.type,
                 `₹${tx.grossAmount.toFixed(2)}`,
                 tx.type === 'Sale' ? `₹${tx.expenses.toFixed(2)}` : '-',
-                tx.type === 'Sale' ? `₹${tx.amount.toFixed(2)}` : `₹${-tx.amount.toFixed(2)}`,
+                tx.type === 'Sale' ? `₹${tx.amount.toFixed(2)}` : `(₹${tx.amount.toFixed(2)})`,
                 `₹${tx.runningBalance.toFixed(2)}`
             ]),
             foot: [
