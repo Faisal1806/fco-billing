@@ -231,3 +231,5 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
         </div>
     );
 }
+
+    

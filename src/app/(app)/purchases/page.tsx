@@ -93,7 +93,7 @@ export default function PurchasesPage() {
         toast({
             variant: 'destructive',
             title: 'Missing Details',
-            description: 'Please fill in Bill No, Date, and Grower Name before saving.',
+            description: 'Please fill in Bill No, Date, and Company Name before saving.',
         });
         return;
     }
@@ -192,7 +192,7 @@ export default function PurchasesPage() {
                         <Input id="date" type="date" value={date} onChange={e => setDate(e.target.value)} />
                     </div>
                     <div>
-                        <Label htmlFor="growerName">Grower Name</Label>
+                        <Label htmlFor="growerName">Company Name</Label>
                         <Input id="growerName" value={growerName} onChange={e => setGrowerName(e.target.value)} placeholder="e.g., Ahmad Traders" />
                     </div>
                 </div>
@@ -333,4 +333,5 @@ export default function PurchasesPage() {
         </Card>
     </div>
   );
-}
+
+    
