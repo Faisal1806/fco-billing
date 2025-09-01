@@ -25,17 +25,22 @@ let messaging: Messaging | null = null;
  * Gets the Firestore instance, initializing it only on the client-side.
  * On the server, it returns a mock object to prevent crashes during SSR.
  */
-export function getClientDb(): Firestore {
-  // This function is now a no-op but is kept for potential future use
-  // to avoid breaking imports throughout the app.
-  return {} as Firestore;
+export function getClientDb(): Firestore | null {
+  if (typeof window !== 'undefined') {
+    if (!db) {
+      db = getFirestore(app);
+    }
+    return db;
+  }
+  return null;
 }
+
 
 /**
  * Gets the Auth instance, initializing it only on the client-side.
  * On the server, it returns a mock object to prevent crashes during SSR.
  */
-export function getClientAuth(): Auth {
+export function getClientAuth(): Auth | null {
   if (typeof window !== 'undefined') {
     if (!auth) {
       auth = getAuth(app);
@@ -43,7 +48,7 @@ export function getClientAuth(): Auth {
     return auth;
   }
   // Return a mock/dummy object for server-side rendering
-  return {} as Auth;
+  return null;
 }
 
 /**
