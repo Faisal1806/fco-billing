@@ -43,7 +43,7 @@ export default function RateList() {
         if (docSnap.exists()) {
           const data = docSnap.data() as DailyRates;
           setRates(data);
-          setEditableRates(data);
+          setEditableRates(JSON.parse(JSON.stringify(data))); // Deep copy for editing
         } else {
           setRates({});
           setEditableRates({});
@@ -65,7 +65,7 @@ export default function RateList() {
   const handleEditToggle = () => {
     if (isEditing) {
         // If canceling, revert to original rates
-        setEditableRates(rates || {});
+        setEditableRates(JSON.parse(JSON.stringify(rates || {})));
     }
     setIsEditing(!isEditing);
   }
@@ -92,7 +92,7 @@ export default function RateList() {
   };
 
   const handleDeleteFruit = (fruit: string) => {
-    if (window.confirm(`Are you sure you want to delete "${fruit}"?`)) {
+    if (window.confirm(`Are you sure you want to delete "${fruit}"? This will be saved permanently when you click "Save Changes".`)) {
         setEditableRates(prev => {
             const newRates = {...prev};
             delete newRates[fruit];
@@ -111,20 +111,19 @@ export default function RateList() {
     try {
         const docRef = doc(db, "rates", "today");
         
-        // To handle deletions, we can't just set the whole object.
-        // We need to compare keys and delete fields that are no longer present.
         const originalKeys = Object.keys(rates || {});
         const newKeys = Object.keys(editableRates);
 
         const updates: { [key: string]: any } = { ...editableRates };
 
+        // Find keys that were in original rates but not in new rates and mark them for deletion
         for (const key of originalKeys) {
             if (!newKeys.includes(key)) {
                 updates[key] = deleteField();
             }
         }
         
-        await setDoc(docRef, updates, { merge: true });
+        await setDoc(docRef, updates, { merge: true }); // Use merge:true to update/add/delete fields
         setRates(editableRates);
         setIsEditing(false);
         toast({
@@ -160,7 +159,7 @@ export default function RateList() {
            <CardTitle>Database Not Available</CardTitle>
          </CardHeader>
          <CardContent>
-            <p className="text-muted-foreground">Please configure your Firebase credentials to manage rates.</p>
+            <p className="text-muted-foreground">Please enable Firestore in your Firebase project to manage rates.</p>
          </CardContent>
        </Card>
     )
@@ -192,7 +191,7 @@ export default function RateList() {
                     key={fruit}
                     className="shadow-lg rounded-2xl border hover:shadow-xl transition-shadow duration-300"
                 >
-                    <CardHeader className="flex flex-row items-center justify-between">
+                    <CardHeader className="flex flex-row items-center justify-between pb-4">
                         <CardTitle className="text-xl">{fruit}</CardTitle>
                          {isEditing && (
                             <Button variant="ghost" size="icon" onClick={() => handleDeleteFruit(fruit)}>
@@ -208,7 +207,7 @@ export default function RateList() {
                                 value={rate.normal || ''}
                                 readOnly={!isEditing}
                                 onChange={(e) => handleRateChange(fruit, 'normal', e.target.value)}
-                                className={!isEditing ? "border-none bg-transparent p-0" : ""}
+                                className={!isEditing ? "border-none bg-transparent px-1 h-auto" : ""}
                             />
                         </div>
                          <div>
@@ -218,7 +217,7 @@ export default function RateList() {
                                 value={rate.extraordinary || ''}
                                 readOnly={!isEditing}
                                 onChange={(e) => handleRateChange(fruit, 'extraordinary', e.target.value)}
-                                className={!isEditing ? "border-none bg-transparent p-0" : ""}
+                                className={!isEditing ? "border-none bg-transparent px-1 h-auto" : ""}
                             />
                         </div>
                     </CardContent>
@@ -228,21 +227,21 @@ export default function RateList() {
           ) : (
             <div className="text-center text-muted-foreground mt-6 py-12 border-2 border-dashed rounded-lg">
                 <p>No rates available for today.</p>
-                {!isEditing && <p className="text-sm">Click "Edit Rates" to add the first entry.</p>}
+                {!isEditing && <p className="text-sm mt-2">Click "Edit Rates" to add the first variety.</p>}
             </div>
           )}
           {isEditing && (
-            <div className="mt-6 p-4 border-dashed border-2 rounded-lg bg-muted/50">
-                <h3 className="font-semibold mb-2">Add New Variety</h3>
-                 <div className="flex gap-2">
-                    <Input placeholder="e.g., Delicious" id="new-fruit-name" />
+            <div className="mt-8 p-4 border-dashed border-2 rounded-lg bg-muted/50">
+                <h3 className="font-semibold mb-2 text-lg">Add New Variety</h3>
+                 <div className="flex flex-col sm:flex-row gap-2">
+                    <Input placeholder="e.g., Delicious" id="new-fruit-name" className="flex-grow" />
                     <Button onClick={handleAddFruit}>Add Variety</Button>
                  </div>
             </div>
           )}
       </CardContent>
       {isEditing && (
-        <CardFooter className="border-t pt-6">
+        <CardFooter className="border-t pt-6 mt-6">
             <Button onClick={handleSaveChanges} disabled={isSaving} className="w-full sm:w-auto gap-2">
                 {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 {isSaving ? "Saving..." : "Save Changes"}
