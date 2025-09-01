@@ -19,7 +19,8 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/language-context';
-import { ChevronDown, PlusCircle, Share2, Loader2, FilePenLine, Trash2, List, LayoutGrid } from 'lucide-react';
+import { ChevronDown, PlusCircle, Loader2, FilePenLine, Trash2, List, LayoutGrid } from 'lucide-react';
+import { FaWhatsapp } from 'react-icons/fa';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -96,28 +97,22 @@ export default function WatakRegisterPage() {
     return acc;
   }, { grossSale: 0, totalExpenses: 0, netSale: 0 });
 
-  const handleShare = async () => {
-    const shareText = `Watak Register for ${selectedGrower}`;
-     if (navigator.share) {
-        try {
-            await navigator.share({
-                title: 'Watak Register',
-                text: shareText,
-                url: window.location.href,
-            });
-            toast({ title: "Register Shared", description: "The register link has been shared." });
-        } catch (error) {
-            toast({ variant: "destructive", title: "Share Failed", description: "Could not share the register." });
-        }
-    } else {
-        try {
-            await navigator.clipboard.writeText(window.location.href);
-            toast({ title: "Link Copied", description: "Register link copied to clipboard." });
-        } catch (error) {
-             toast({ variant: "destructive", title: "Copy Failed", description: "Could not copy the link." });
-        }
-    }
-  }
+  const handleShare = () => {
+    const date = new Date().toLocaleDateString('en-GB');
+    let reportText = `*Watak Register for ${selectedGrower} on ${date}*\n\n`;
+    reportText += `*FIRDOUS AHMAD & COMPANY*\n\n`;
+    reportText += `| Date | Bill | Watak | Net Sale |\n`;
+    reportText += `|---|---|---|---|\n`;
+
+    filteredWataks.forEach(w => {
+      reportText += `| ${new Date(w.date).toLocaleDateString('en-GB')} | ${w.sNo} | ${w.watakNo} | ₹${w.totals.netSale.toFixed(2)} |\n`;
+    });
+
+    reportText += `\n*Total Net Sale: ₹${footerTotals.netSale.toFixed(2)}*`;
+
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(reportText)}`;
+    window.open(whatsappUrl, '_blank');
+  };
 
   const navigateToBill = (id: string) => {
     router.push(`/invoice/${id}`);
@@ -170,7 +165,7 @@ export default function WatakRegisterPage() {
                     {viewMode === 'table' ? <LayoutGrid className="h-4 w-4" /> : <List className="h-4 w-4" />}
                 </Button>
                 <Button size="sm" className="gap-1" onClick={handleShare} variant="outline">
-                    <Share2 className="h-3.5 w-3.5" />
+                    <FaWhatsapp className="h-4 w-4 text-green-500" />
                      <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                         Share Register
                     </span>

@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, Trash2, Share2, ChevronLeft, ChevronRight, Save } from 'lucide-react';
+import { PlusCircle, Trash2, ChevronLeft, ChevronRight, Save } from 'lucide-react';
+import { FaWhatsapp } from 'react-icons/fa';
 import { useToast } from '@/hooks/use-toast';
 
 interface Rate {
@@ -78,7 +79,7 @@ export default function EditableRateList() {
         });
     };
 
-    const handleShare = async () => {
+    const handleShare = () => {
         const dateString = currentDate.toLocaleDateString('en-GB', {
             day: 'numeric', month: 'long', year: 'numeric'
         });
@@ -96,33 +97,15 @@ export default function EditableRateList() {
         for (const category in groupedRates) {
             shareText += `*${category.toUpperCase()}*\n`;
             groupedRates[category].forEach(rate => {
-                shareText += `- ${rate.variety}: *₹${rate.rate}*\n`;
+                if (rate.variety && rate.rate) {
+                   shareText += `- ${rate.variety}: *₹${rate.rate}*\n`;
+                }
             });
             shareText += '\n';
         }
-
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: `Rate List for ${dateString}`,
-                    text: shareText,
-                });
-            } catch (error) {
-                console.error('Error sharing:', error);
-                toast({
-                    variant: 'destructive',
-                    title: 'Share Failed',
-                    description: 'Could not share the rate list.',
-                });
-            }
-        } else {
-             try {
-                await navigator.clipboard.writeText(shareText);
-                toast({ title: "Copied to Clipboard", description: "Rate list copied. You can now paste it." });
-            } catch (error) {
-                 toast({ variant: "destructive", title: "Copy Failed", description: "Could not copy the text." });
-            }
-        }
+        
+        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+        window.open(whatsappUrl, '_blank');
     };
     
     return (
@@ -202,7 +185,7 @@ export default function EditableRateList() {
                             Save
                         </Button>
                         <Button variant="secondary" onClick={handleShare} className="gap-2">
-                            <Share2 className="h-4 w-4" />
+                            <FaWhatsapp className="h-4 w-4 text-green-500" />
                             Share List
                         </Button>
                     </div>

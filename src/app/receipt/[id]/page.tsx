@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Printer, Share2 } from "lucide-react";
+import { Printer } from "lucide-react";
+import { FaWhatsapp } from 'react-icons/fa';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/logo";
@@ -42,32 +43,20 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
     }, [params.id]);
 
 
-    const handleShare = async () => {
-        if (navigator.share && receiptData) {
-            try {
-                await navigator.share({
-                    title: `Receipt for ${receiptData.customerName}`,
-                    text: `Here is the receipt #${receiptData.no} for ${receiptData.customerName}.`,
-                    url: window.location.href,
-                });
-                toast({ title: "Receipt Shared", description: "The receipt link has been shared." });
-            } catch (error) {
-                toast({ variant: "destructive", title: "Share Failed", description: "Could not share the receipt." });
-            }
+    const handleShare = () => {
+        if (receiptData) {
+            const message = `Check out this Receipt (#${receiptData.no}) for ${receiptData.customerName}: ${window.location.href}`;
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
         } else {
-            try {
-                await navigator.clipboard.writeText(window.location.href);
-                toast({ title: "Link Copied", description: "Receipt link copied to clipboard." });
-            } catch (error) {
-                toast({ variant: "destructive", title: "Copy Failed", description: "Could not copy the link." });
-            }
+            toast({ variant: "destructive", title: "Share Failed", description: "Could not share the receipt." });
         }
     };
 
     const Controls = () => (
         <div className="flex items-center gap-2 print:hidden">
             <Button onClick={handleShare} variant="outline" size="sm" className="gap-2">
-                <Share2 className="h-4 w-4" />
+                <FaWhatsapp className="h-4 w-4 text-green-500" />
                 Share
             </Button>
             <Button onClick={() => window.print()} size="sm" className="gap-2">
