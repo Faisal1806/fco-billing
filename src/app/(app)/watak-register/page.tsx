@@ -25,11 +25,12 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import DocumentCard from '@/components/DocumentCard';
+import { getDocuments, deleteDocument } from '@/lib/actions';
+
 
 export interface WatakEntry {
     id: string;
@@ -50,8 +51,6 @@ export default function WatakRegisterPage() {
   const { t } = useLanguage();
   const router = useRouter();
   const { toast } = useToast();
-  const [isClient, setIsClient] = React.useState(false);
-
 
   const [wataks, setWataks] = React.useState<WatakEntry[]>([]);
   const [growers, setGrowers] = React.useState<string[]>([]);
@@ -61,24 +60,23 @@ export default function WatakRegisterPage() {
 
 
   React.useEffect(() => {
-    setIsClient(true);
-    const savedWataks: WatakEntry[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('invoice-')) {
-            try {
-                const watak = JSON.parse(localStorage.getItem(key)!);
-                savedWataks.push({ id: watak.sNo, ...watak});
-            } catch(e) {
-                console.error("Could not parse watak from local storage", e);
-            }
+    const fetchWataks = async () => {
+        setIsLoading(true);
+        try {
+            const savedWataks = await getDocuments('invoices');
+            const formattedWataks = savedWataks.map(w => ({...w, id: w.sNo})) as WatakEntry[];
+            setWataks(formattedWataks);
+            const uniqueGrowers = ['All Growers', ...new Set(formattedWataks.map(w => w.customerName))];
+            setGrowers(uniqueGrowers);
+        } catch (e) {
+            console.error("Could not fetch wataks from Firestore", e);
+            toast({ variant: "destructive", title: "Error", description: "Failed to load wataks from the cloud."})
+        } finally {
+            setIsLoading(false);
         }
     }
-    setWataks(savedWataks);
-    const uniqueGrowers = ['All Growers', ...new Set(savedWataks.map(w => w.customerName))];
-    setGrowers(uniqueGrowers);
-    setIsLoading(false);
-  }, []);
+    fetchWataks();
+  }, [toast]);
 
   const filteredWataks = selectedGrower === 'All Growers'
     ? wataks
@@ -118,14 +116,14 @@ export default function WatakRegisterPage() {
     router.push(`/invoice/${id}`);
   }
 
-  const handleDelete = async (id: string, sNo: string) => {
+  const handleDelete = async (sNo: string) => {
     if(!window.confirm(`Are you sure you want to delete Bill #${sNo}? This cannot be undone.`)) return;
     try {
-      localStorage.removeItem(`invoice-${sNo}`);
+      await deleteDocument('invoices', sNo);
       setWataks(prev => prev.filter(w => w.sNo !== sNo));
       toast({ title: "Bill Deleted", description: `Bill #${sNo} has been deleted.`});
     } catch(e) {
-      toast({ variant: "destructive", title: "Delete failed", description: "Could not delete bill."});
+      toast({ variant: "destructive", title: "Delete failed", description: "Could not delete bill from the cloud."});
     }
   }
 
@@ -226,7 +224,7 @@ export default function WatakRegisterPage() {
                   <Button variant="ghost" size="icon" onClick={() => navigateToBill(watak.sNo)}>
                     <FilePenLine className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(watak.id, watak.sNo)}>
+                  <Button variant="ghost" size="icon" onClick={() => handleDelete(watak.sNo)}>
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </TableCell>

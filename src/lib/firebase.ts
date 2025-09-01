@@ -17,14 +17,11 @@ const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseCon
 
 let db: Firestore | null = null;
 
-export function getClientDb(): Firestore | null {
-  if (typeof window !== 'undefined') {
+export function getClientDb(): Firestore {
     if (!db) {
       db = getFirestore(app);
     }
     return db;
-  }
-  return null;
 }
 
 export const getClientMessaging = () => {
