@@ -1,8 +1,7 @@
 
 "use client";
-import Image from "next/image";
+
 import { useTheme } from "next-themes";
-import { Sun, Moon, ShoppingCart, Tags, Truck, BookCopy, ScrollText } from "lucide-react";
 import { ThemeSwitcher } from "./theme-switcher";
 import { LanguageSwitcher } from "./language-switcher";
 import { Button } from "./ui/button";
@@ -11,26 +10,36 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/language-context";
-import { LayoutDashboard, Package, Settings, Receipt, BookUser, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Package, Settings, Receipt, BookUser, Menu, ShoppingCart, Truck, BookCopy, ScrollText, Tags } from 'lucide-react';
 import { Logo } from "./logo";
+import React from "react";
 
 
 export function Header({ title }: { title: string }) {
     const pathname = usePathname();
     const { t } = useLanguage();
+    const [userRole, setUserRole] = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+        if (typeof window !== 'undefined') {
+        setUserRole(localStorage.getItem('userRole'));
+        }
+    }, []);
 
     const navItems = [
-        { href: '/dashboard', icon: LayoutDashboard, label: t('dashboard') },
-        { href: '/sales', icon: ShoppingCart, label: t('sales') },
-        { href: '/purchases', icon: Truck, label: 'Purchases' },
-        { href: '/purchase-register', icon: ScrollText, label: 'Purchase Register' },
-        { href: '/products', icon: Package, label: t('products') },
-        { href: '/expenses', icon: Receipt, label: t('expenses') },
-        { href: '/watak-register', icon: BookUser, label: t('watak_register') },
-        { href: '/khata', icon: BookCopy, label: 'Khata Ledger' },
-        { href: '/rates', icon: Tags, label: 'Rates' },
-        { href: '/settings', icon: Settings, label: t('settings') },
+      { href: '/dashboard', icon: LayoutDashboard, label: t('dashboard'), role: ['admin', 'staff'] },
+      { href: '/sales', icon: ShoppingCart, label: t('sales'), role: ['admin', 'staff'] },
+      { href: '/purchases', icon: Truck, label: 'Purchases', role: ['admin', 'staff'] },
+      { href: '/purchase-register', icon: ScrollText, label: 'Purchase Register', role: ['admin', 'staff'] },
+      { href: '/products', icon: Package, label: t('products'), role: ['admin'] },
+      { href: '/expenses', icon: Receipt, label: 'Expenses', role: ['admin'] },
+      { href: '/watak-register', icon: BookUser, label: t('watak_register'), role: ['admin', 'staff'] },
+      { href: '/khata', icon: BookCopy, label: 'Khata Ledger', role: ['admin', 'staff'] },
+      { href: '/rates', icon: Tags, label: 'Rates', role: ['admin', 'staff'] },
+      { href: '/settings', icon: Settings, label: t('settings'), role: ['admin'] },
     ];
+
+    const filteredNavItems = navItems.filter(item => userRole && item.role.includes(userRole));
 
 
   return (
@@ -38,7 +47,7 @@ export function Header({ title }: { title: string }) {
        <Sheet>
             <SheetTrigger asChild>
               <Button variant="outline" size="icon" className="shrink-0 md:hidden">
-                <ShoppingCart className="h-5 w-5" />
+                <Menu className="h-5 w-5" />
                 <span className="sr-only">Toggle navigation menu</span>
               </Button>
             </SheetTrigger>
@@ -49,15 +58,15 @@ export function Header({ title }: { title: string }) {
                   className="flex items-center gap-2 text-lg font-semibold mb-4"
                 >
                   <Logo className="h-8 w-8" />
-                  <span className="sr-only">{t('app_title')}</span>
+                  <span className="">{t('app_title')}</span>
                 </Link>
-                {navItems.map((item) => (
+                {filteredNavItems.map((item) => (
                   <Link
                     key={item.label}
                     href={item.href}
                     className={cn(
-                      'flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground',
-                      pathname.startsWith(item.href) && 'bg-muted text-foreground'
+                      'flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-primary',
+                       pathname.startsWith(item.href) && 'bg-primary text-primary-foreground hover:text-primary-foreground'
                     )}
                   >
                     <item.icon className="h-5 w-5" />

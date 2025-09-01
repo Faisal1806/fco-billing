@@ -3,14 +3,12 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, ShoppingCart, Package, Settings, Package2, Receipt, BookUser, BarChart3, Factory, Tags, Truck, BookCopy, ScrollText } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, Settings, Receipt, BookUser, Truck, BookCopy, ScrollText, Tags } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Logo } from '@/components/logo';
 import { Header } from '@/components/Header';
 import React from 'react';
+import { Logo } from '@/components/logo';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -28,8 +26,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { href: '/sales', icon: ShoppingCart, label: t('sales'), role: ['admin', 'staff'] },
     { href: '/purchases', icon: Truck, label: 'Purchases', role: ['admin', 'staff'] },
     { href: '/purchase-register', icon: ScrollText, label: 'Purchase Register', role: ['admin', 'staff'] },
-    { href: '/products', icon: Package, label: t('products'), role: ['admin', 'staff'] },
-    { href: '/expenses', icon: Receipt, label: t('expenses'), role: ['admin', 'staff'] },
+    { href: '/products', icon: Package, label: t('products'), role: ['admin'] },
+    { href: '/expenses', icon: Receipt, label: 'Expenses', role: ['admin'] },
     { href: '/watak-register', icon: BookUser, label: t('watak_register'), role: ['admin', 'staff'] },
     { href: '/khata', icon: BookCopy, label: 'Khata Ledger', role: ['admin', 'staff'] },
     { href: '/rates', icon: Tags, label: 'Rates', role: ['admin', 'staff'] },
@@ -45,7 +43,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <div className="hidden border-r bg-background md:block">
+      <div className="hidden border-r bg-muted/40 md:block">
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link href="/" className="flex items-center gap-2 font-semibold text-foreground">
@@ -60,8 +58,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   key={item.label}
                   href={item.href}
                   className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-foreground',
-                    pathname.startsWith(item.href) && 'bg-muted text-foreground'
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
+                    pathname.startsWith(item.href) && 'bg-primary text-primary-foreground hover:text-primary-foreground'
                   )}
                 >
                   <item.icon className="h-4 w-4" />
@@ -74,7 +72,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
       <div className="flex flex-col">
         <Header title={getPageTitle()} />
-        <main className="flex-1 bg-muted/40 p-4 md:p-6">
+        <main className="flex-1 bg-background p-4 md:p-6">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

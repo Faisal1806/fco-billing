@@ -1,7 +1,7 @@
 
 import type {Config} from 'tailwindcss';
 
-export default {
+const config: Config = {
   darkMode: ['class'],
   content: [
     "./src/app/**/*.{ts,tsx,js,jsx}",
@@ -17,8 +17,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['var(--font-sans)', 'Poppins', 'sans-serif'],
-        urdu: ['var(--font-urdu)', 'Noto Nastaliq Urdu', 'serif'],
+        sans: ['Poppins', 'sans-serif'],
+        urdu: ['Noto Nastaliq Urdu', 'serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -85,4 +85,6 @@ export default {
     },
   },
   plugins: [require('tailwindcss-animate')],
-} satisfies Config;
+};
+
+export default config;

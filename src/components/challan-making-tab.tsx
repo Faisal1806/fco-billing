@@ -38,16 +38,16 @@ const ChallanEntryRow = ({
   onUpdate: (field: keyof ChallanEntry, value: string | number) => void;
   onRemove: () => void;
 }) => (
-  <div className="flex items-center gap-2">
-    <Input type="number" placeholder="Peti" value={entry.peti || ''} onChange={(e) => onUpdate('peti', Number(e.target.value))} className="w-20" />
-    <Input type="number" placeholder="Daba" value={entry.daba || ''} onChange={(e) => onUpdate('daba', Number(e.target.value))} className="w-20" />
-    <Input placeholder="Kind" value={entry.kind} onChange={(e) => onUpdate('kind', e.target.value)} className="flex-1" />
-    <Input placeholder="Khata" value={entry.khata} onChange={(e) => onUpdate('khata', e.target.value)} className="flex-1" />
-    <Input type="number" placeholder="Rate" value={entry.rate || ''} onChange={(e) => onUpdate('rate', Number(e.target.value))} className="w-24" />
-    <Input type="number" placeholder="Freight" value={entry.totalFreight || ''} onChange={(e) => onUpdate('totalFreight', Number(e.target.value))} className="w-24" />
-    <Input type="number" placeholder="Advance" value={entry.advance || ''} onChange={(e) => onUpdate('advance', Number(e.target.value))} className="w-24" />
-    <Input type="number" placeholder="Balance" value={entry.balance || ''} onChange={(e) => onUpdate('balance', Number(e.target.value))} className="w-24" />
-    <Input type="number" placeholder="Exp." value={entry.expenditure || ''} onChange={(e) => onUpdate('expenditure', Number(e.target.value))} className="w-24" />
+  <div className="grid grid-cols-1 md:grid-cols-10 gap-2 items-center">
+    <Input type="number" placeholder="Peti" value={entry.peti || ''} onChange={(e) => onUpdate('peti', Number(e.target.value))} className="md:col-span-1" />
+    <Input type="number" placeholder="Daba" value={entry.daba || ''} onChange={(e) => onUpdate('daba', Number(e.target.value))} className="md:col-span-1" />
+    <Input placeholder="Kind" value={entry.kind} onChange={(e) => onUpdate('kind', e.target.value)} className="md:col-span-2" />
+    <Input placeholder="Khata" value={entry.khata} onChange={(e) => onUpdate('khata', e.target.value)} className="md:col-span-1" />
+    <Input type="number" placeholder="Rate" value={entry.rate || ''} onChange={(e) => onUpdate('rate', Number(e.target.value))} className="md:col-span-1" />
+    <Input type="number" placeholder="Freight" value={entry.totalFreight || ''} onChange={(e) => onUpdate('totalFreight', Number(e.target.value))} className="md:col-span-1" />
+    <Input type="number" placeholder="Advance" value={entry.advance || ''} onChange={(e) => onUpdate('advance', Number(e.target.value))} className="md:col-span-1" />
+    <Input type="number" placeholder="Balance" value={entry.balance || ''} onChange={(e) => onUpdate('balance', Number(e.target.value))} className="md:col-span-1" />
+    <Input type="number" placeholder="Exp." value={entry.expenditure || ''} onChange={(e) => onUpdate('expenditure', Number(e.target.value))} className="md:col-span-1" />
     <Button variant="ghost" size="icon" onClick={onRemove}>
       <Trash2 className="h-4 w-4 text-destructive" />
     </Button>
@@ -73,14 +73,21 @@ export function ChallanMakingTab() {
     tollTax: 0,
     payOnlyFreight: 0,
   };
-  const initialEntries: ChallanEntry[] = [
-    { peti: 0, daba: 0, kind: '', khata: '', rate: 0, totalFreight: 0, advance: 0, balance: 0, expenditure: 0 },
-  ];
+  const initialEntries: ChallanEntry[] = Array.from({length: 5}, () => (
+    { peti: 0, daba: 0, kind: '', khata: '', rate: 0, totalFreight: 0, advance: 0, balance: 0, expenditure: 0 }
+  ));
 
   const [entries, setEntries] = React.useState<ChallanEntry[]>(initialEntries);
   const [details, setDetails] = React.useState(initialDetails);
   const [isEditing, setIsEditing] = React.useState(false);
   const [savedChallans, setSavedChallans] = React.useState<any[]>([]);
+  const [userRole, setUserRole] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setUserRole(localStorage.getItem('userRole'));
+    }
+  }, []);
 
   React.useEffect(() => {
     if (isClient) {
@@ -142,7 +149,7 @@ export function ChallanMakingTab() {
     const challanId = details.challanNo;
     const challanData = {
         ...details,
-        entries,
+        entries: entries.filter(e => e.kind || e.khata || e.peti > 0 || e.daba > 0),
         totalPetti,
         totalDabba,
         totalNugs
@@ -175,6 +182,10 @@ export function ChallanMakingTab() {
   }
 
   const handleDeleteChallan = async (challanId: string) => {
+    if(userRole !== 'admin') {
+      toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to delete challans.' });
+      return;
+    }
     if(!window.confirm(`Are you sure you want to delete Challan #${challanId}? This action cannot be undone.`)) {
         return;
     }
@@ -199,8 +210,8 @@ export function ChallanMakingTab() {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-2">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2">
             <CardHeader>
                 <div className="flex justify-between items-center">
                     <div className="text-center flex-1">
@@ -249,16 +260,16 @@ export function ChallanMakingTab() {
 
                 <div className="space-y-4">
                 <div className="space-y-2">
-                    <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
-                        <Label className="w-20">Peti</Label>
-                        <Label className="w-20">Daba</Label>
-                        <Label className="flex-1">Kind</Label>
-                        <Label className="flex-1">Khata</Label>
-                        <Label className="w-24">Rate</Label>
-                        <Label className="w-24">Freight</Label>
-                        <Label className="w-24">Advance</Label>
-                        <Label className="w-24">Balance</Label>
-                        <Label className="w-24">Exp.</Label>
+                    <div className="hidden md:grid grid-cols-10 items-center gap-2 text-sm text-muted-foreground">
+                        <Label className="md:col-span-1">Peti</Label>
+                        <Label className="md:col-span-1">Daba</Label>
+                        <Label className="md:col-span-2">Kind</Label>
+                        <Label className="md:col-span-1">Khata</Label>
+                        <Label className="md:col-span-1">Rate</Label>
+                        <Label className="md:col-span-1">Freight</Label>
+                        <Label className="md:col-span-1">Advance</Label>
+                        <Label className="md:col-span-1">Balance</Label>
+                        <Label className="md:col-span-1">Exp.</Label>
                         <div className="w-10"></div>
                     </div>
                     {entries.map((entry, index) => (
@@ -269,7 +280,7 @@ export function ChallanMakingTab() {
                         onRemove={() => removeSlot(index)}
                     />
                     ))}
-                    <Button variant="outline" size="sm" className="gap-1" onClick={addSlot}>
+                    <Button variant="outline" size="sm" className="gap-1 mt-2" onClick={addSlot}>
                     <PlusCircle className="h-3.5 w-3.5" />
                     Add Item
                     </Button>
@@ -300,14 +311,14 @@ export function ChallanMakingTab() {
                 <Button onClick={handleCreateChallan} className="w-full max-w-sm">{isEditing ? 'Update & View Challan' : 'Save & View Challan'}</Button>
             </CardFooter>
         </Card>
-        <Card className="md:col-span-1 h-fit">
+        <Card className="lg:col-span-1 h-fit">
             <CardHeader>
                 <h3 className="text-lg font-medium">Recent Challans</h3>
             </CardHeader>
             <CardContent>
                 <ScrollArea className="h-96">
                     <div className="space-y-2">
-                        {savedChallans.map(challan => (
+                        {savedChallans.length > 0 ? savedChallans.map(challan => (
                             <div key={challan.challanNo} className="flex justify-between items-center p-2 border rounded-md">
                                 <div>
                                     <p className="font-medium">Challan #{challan.challanNo}</p>
@@ -318,13 +329,14 @@ export function ChallanMakingTab() {
                                     <Button variant="ghost" size="icon" onClick={() => loadChallanForEdit(challan)}>
                                         <FilePenLine className="h-4 w-4" />
                                     </Button>
+                                    {userRole === 'admin' && (
                                     <Button variant="ghost" size="icon" onClick={() => handleDeleteChallan(challan.challanNo)}>
                                         <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
+                                    )}
                                 </div>
                             </div>
-                        ))}
-                         {savedChallans.length === 0 && <p className="text-sm text-muted-foreground text-center">No recent challans found.</p>}
+                        )) : <p className="text-sm text-muted-foreground text-center">No recent challans found.</p>}
                     </div>
                 </ScrollArea>
             </CardContent>

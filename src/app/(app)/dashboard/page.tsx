@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, PackagePlus, PackageMinus, Package, IndianRupee, UserCheck, UserX } from 'lucide-react';
+import { Loader2, PackagePlus, PackageMinus, Package, UserCheck, UserX } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface DailyStats {
