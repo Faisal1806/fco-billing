@@ -5,13 +5,14 @@ import { getFirestore, Firestore } from "firebase/firestore";
 import { getMessaging, Messaging } from "firebase/messaging";
 
 const firebaseConfig = {
-  apiKey: "AlZaSyDrev3-idwKsbpZI8UL9MT-GHssblaEuo4",
-  authDomain: "myf.cobillingsystemapp.firebaseapp.com",
-  projectId: "myf.cobillingsystemapp",
-  storageBucket: "myf.cobillingsystemapp.appspot.com",
-  messagingSenderId: "693507183352",
-  appId: "1:693507183352:web:7a8b3e8d0e9c6a4f5d6e7f",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
+
 
 // Initialize Firebase app
 const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
@@ -23,7 +24,7 @@ let messaging: Messaging | null = null;
 
 /**
  * Gets the Firestore instance, initializing it only on the client-side.
- * On the server, it returns a mock object to prevent crashes during SSR.
+ * On the server, it returns null to prevent crashes during SSR.
  */
 export function getClientDb(): Firestore | null {
   if (typeof window !== 'undefined') {
@@ -38,7 +39,7 @@ export function getClientDb(): Firestore | null {
 
 /**
  * Gets the Auth instance, initializing it only on the client-side.
- * On the server, it returns a mock object to prevent crashes during SSR.
+ * On the server, it returns null to prevent crashes during SSR.
  */
 export function getClientAuth(): Auth | null {
   if (typeof window !== 'undefined') {
@@ -47,7 +48,6 @@ export function getClientAuth(): Auth | null {
     }
     return auth;
   }
-  // Return a mock/dummy object for server-side rendering
   return null;
 }
 
