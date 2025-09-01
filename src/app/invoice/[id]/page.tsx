@@ -164,7 +164,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 }
             `}</style>
             <div className="w-[210mm] min-h-[297mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-8">
-                <header className="bg-gradient-to-r from-red-500 via-green-400 to-black text-white p-6 rounded-t-xl shadow-lg">
+                <header className="bg-gradient-to-r from-green-400 via-emerald-500 to-teal-600 text-white p-6 rounded-t-xl shadow-lg">
                     <div className="flex justify-between items-center">
                         <div>
                             <h1 className="text-3xl font-bold">F.Co - FIRDOUS AHMAD & COMPANY</h1>
@@ -178,7 +178,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 <main className="bg-white dark:bg-gray-800 p-6 rounded-b-xl shadow-lg -mt-4">
                     <div className="grid grid-cols-2 gap-4 border-b pb-4 mb-4">
                         <div>
-                            <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Bill To:</h2>
+                            <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Bill To: / <span className="font-urdu">بل بنام</span></h2>
                             <p className="font-bold text-xl">{customerName}</p>
                             <p>Khata No: {khata}</p>
                         </div>
@@ -194,11 +194,11 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                             <Table>
                                 <TableHeader>
                                     <TableRow className="bg-gray-100 dark:bg-gray-700">
-                                        <TableHead>Type</TableHead>
-                                        <TableHead>Variety</TableHead>
-                                        <TableHead>Qty</TableHead>
-                                        <TableHead>Rate</TableHead>
-                                        <TableHead className="text-right">Gross</TableHead>
+                                        <TableHead>Type / <span className="font-urdu">قسم</span></TableHead>
+                                        <TableHead>Variety / <span className="font-urdu">ورائٹی</span></TableHead>
+                                        <TableHead>Qty / <span className="font-urdu">مقدار</span></TableHead>
+                                        <TableHead>Rate / <span className="font-urdu">ریٹ</span></TableHead>
+                                        <TableHead className="text-right">Gross / <span className="font-urdu">مجموعی</span></TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -219,16 +219,16 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                              <Table>
                                 <TableHeader>
                                     <TableRow className="bg-gray-100 dark:bg-gray-700">
-                                        <TableHead>Expenses</TableHead>
-                                        <TableHead className="text-right">Amount</TableHead>
+                                        <TableHead>Expenses / <span className="font-urdu">اخراجات</span></TableHead>
+                                        <TableHead className="text-right">Amount / <span className="font-urdu">رقم</span></TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    <TableRow><TableCell>Freight</TableCell><TableCell className="text-right">₹{freight.toFixed(2)}</TableCell></TableRow>
-                                    <TableRow><TableCell>Labour</TableCell><TableCell className="text-right">₹{totals.labour.toFixed(2)}</TableCell></TableRow>
-                                    <TableRow><TableCell>Association</TableCell><TableCell className="text-right">₹{totals.association.toFixed(2)}</TableCell></TableRow>
-                                    <TableRow><TableCell>Security</TableCell><TableCell className="text-right">₹{totals.security.toFixed(2)}</TableCell></TableRow>
-                                    <TableRow className="font-semibold border-t-2"><TableCell>Commission</TableCell><TableCell className="text-right">₹{totals.commissionAmount.toFixed(2)}</TableCell></TableRow>
+                                    <TableRow><TableCell>Freight / <span className="font-urdu">فریٹ</span></TableCell><TableCell className="text-right">₹{freight.toFixed(2)}</TableCell></TableRow>
+                                    <TableRow><TableCell>Labour / <span className="font-urdu">مزدوری</span></TableCell><TableCell className="text-right">₹{totals.labour.toFixed(2)}</TableCell></TableRow>
+                                    <TableRow><TableCell>Association / <span className="font-urdu">انجمن</span></TableCell><TableCell className="text-right">₹{totals.association.toFixed(2)}</TableCell></TableRow>
+                                    <TableRow><TableCell>Security / <span className="font-urdu">سیکیورٹی</span></TableCell><TableCell className="text-right">₹{totals.security.toFixed(2)}</TableCell></TableRow>
+                                    <TableRow className="font-semibold border-t-2"><TableCell>Commission / <span className="font-urdu">کمیشن</span></TableCell><TableCell className="text-right">₹{totals.commissionAmount.toFixed(2)}</TableCell></TableRow>
                                 </TableBody>
                             </Table>
                         </div>
@@ -238,20 +238,20 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
                     <div className="grid grid-cols-2 gap-8">
                         <div>
-                             <p><strong>Total Quantity:</strong> {totals.totalQty} (Patti: {totals.pattiQty}, Dabba: {totals.dabbaQty})</p>
+                             <p><strong>Total Quantity / <span className="font-urdu">کل مقدار</span>:</strong> {totals.totalQty} (Patti: {totals.pattiQty}, Dabba: {totals.dabbaQty})</p>
                         </div>
                         <div className="space-y-2">
                             <div className="flex justify-between items-center text-lg">
-                                <span className="font-semibold">Gross Sale:</span>
+                                <span className="font-semibold">Gross Sale / <span className="font-urdu">مجموعی فروخت</span>:</span>
                                 <span>₹{totals.grossSale.toFixed(2)}</span>
                             </div>
                              <div className="flex justify-between items-center text-lg">
-                                <span className="font-semibold">Total Expenses:</span>
+                                <span className="font-semibold">Total Expenses / <span className="font-urdu">کل اخراجات</span>:</span>
                                 <span>- ₹{totals.totalExpenses.toFixed(2)}</span>
                             </div>
                             <Separator />
                              <div className="flex justify-between items-center text-2xl font-bold text-green-600">
-                                <span >Net Sale:</span>
+                                <span >Net Sale / <span className="font-urdu">خالص فروخت</span>:</span>
                                 <span>₹{totals.netSale.toFixed(2)}</span>
                             </div>
                         </div>

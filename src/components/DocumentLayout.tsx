@@ -1,3 +1,4 @@
+
 // components/DocumentLayout.tsx
 import React from 'react';
 import { Logo } from './logo';
