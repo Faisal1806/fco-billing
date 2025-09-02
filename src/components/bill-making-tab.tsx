@@ -435,8 +435,8 @@ export function BillMakingTab() {
                         {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                         {isEditing ? 'Update Watak' : 'Save Watak'}
                     </Button>
-                    <Button onClick={navigateToPrint} variant="secondary" className="flex-1 min-w-[150px] gap-2">
-                       <FileText className="h-4 w-4" /> View Invoice
+                    <Button onClick={navigateToPrint} variant="secondary" className="flex-1 min-w-[150px] gap-2" disabled={!isEditing}>
+                       <FileText className="h-4 w-4" /> Print/View Invoice
                     </Button>
                      <Button onClick={handleShare} variant="outline" className="flex-1 min-w-[150px] gap-2" disabled={!isEditing}>
                        <Share className="h-4 w-4" /> Share
@@ -485,5 +485,3 @@ export function BillMakingTab() {
     </div>
   );
 }
-
-    
