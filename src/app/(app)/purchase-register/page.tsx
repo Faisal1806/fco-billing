@@ -18,13 +18,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, PlusCircle, Share2, Loader2, FilePenLine, Trash2, List, LayoutGrid } from 'lucide-react';
+import { ChevronDown, PlusCircle, Share2, Loader2, FilePenLine, Trash2, List, LayoutGrid, Search } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import DocumentCard from '@/components/DocumentCard';
@@ -50,6 +51,7 @@ export default function PurchaseRegisterPage() {
   const [purchases, setPurchases] = React.useState<PurchaseEntry[]>([]);
   const [growers, setGrowers] = React.useState<string[]>([]);
   const [selectedGrower, setSelectedGrower] = React.useState('All Growers');
+  const [searchTerm, setSearchTerm] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(true);
   const [viewMode, setViewMode] = React.useState<'table' | 'grid'>('grid');
   const [userRole, setUserRole] = React.useState<string | null>(null);
@@ -85,9 +87,17 @@ export default function PurchaseRegisterPage() {
     fetchPurchases();
   }, [toast]);
 
-  const filteredPurchases = selectedGrower === 'All Growers'
-    ? purchases
-    : purchases.filter(p => p.growerName === selectedGrower);
+  const filteredPurchases = purchases
+    .filter(p => selectedGrower === 'All Growers' || p.growerName === selectedGrower)
+    .filter(p => {
+        if (!searchTerm) return true;
+        const lowerCaseSearch = searchTerm.toLowerCase();
+        return (
+            p.growerName.toLowerCase().includes(lowerCaseSearch) ||
+            p.billNo.toLowerCase().includes(lowerCaseSearch)
+        )
+    });
+
 
   const footerTotals = filteredPurchases.reduce((acc, purchase) => {
     acc.grandTotal += purchase.totals.grandTotal || 0;
@@ -120,9 +130,19 @@ export default function PurchaseRegisterPage() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-start">
+        <div className="flex justify-between items-start gap-4 flex-wrap">
             <div className="flex items-center gap-4">
                 <CardTitle>Purchase Register</CardTitle>
+                 <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        type="search"
+                        placeholder="Search by Bill No, Name..."
+                        className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline" className="flex items-center gap-2 min-w-[200px]">
@@ -223,3 +243,5 @@ export default function PurchaseRegisterPage() {
     </Card>
   );
 }
+
+    

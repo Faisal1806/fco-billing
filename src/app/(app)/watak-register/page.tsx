@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/language-context';
-import { ChevronDown, PlusCircle, Loader2, FilePenLine, Trash2, List, LayoutGrid } from 'lucide-react';
+import { ChevronDown, PlusCircle, Loader2, FilePenLine, Trash2, List, LayoutGrid, Search } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import {
   DropdownMenu,
@@ -27,6 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import DocumentCard from '@/components/DocumentCard';
@@ -55,6 +56,7 @@ export default function WatakRegisterPage() {
   const [wataks, setWataks] = React.useState<WatakEntry[]>([]);
   const [growers, setGrowers] = React.useState<string[]>([]);
   const [selectedGrower, setSelectedGrower] = React.useState('All Growers');
+  const [searchTerm, setSearchTerm] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(true);
   const [viewMode, setViewMode] = React.useState<'table' | 'grid'>('grid');
   const [userRole, setUserRole] = React.useState<string | null>(null);
@@ -92,9 +94,17 @@ export default function WatakRegisterPage() {
     fetchWataks();
   }, [toast]);
 
-  const filteredWataks = selectedGrower === 'All Growers'
-    ? wataks
-    : wataks.filter(w => w.customerName === selectedGrower);
+  const filteredWataks = wataks
+    .filter(w => selectedGrower === 'All Growers' || w.customerName === selectedGrower)
+    .filter(w => {
+      if (!searchTerm) return true;
+      const lowerCaseSearch = searchTerm.toLowerCase();
+      return (
+        w.customerName.toLowerCase().includes(lowerCaseSearch) ||
+        w.sNo.toLowerCase().includes(lowerCaseSearch) ||
+        w.watakNo.toLowerCase().includes(lowerCaseSearch)
+      );
+    });
 
   const footerTotals = filteredWataks.reduce((acc, watak) => {
     acc.grossSale += watak.totals.grossSale || 0;
@@ -142,10 +152,20 @@ export default function WatakRegisterPage() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-start">
+        <div className="flex justify-between items-start gap-4 flex-wrap">
             <div className="flex items-center gap-4">
                 <CardTitle>{t('watak_register')}</CardTitle>
-                <DropdownMenu>
+                <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        type="search"
+                        placeholder="Search by Bill No, Watak No, Name..."
+                        className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline" className="flex items-center gap-2 min-w-[200px]">
                            <span className="flex-1 text-left">{selectedGrower}</span>
@@ -258,3 +278,5 @@ export default function WatakRegisterPage() {
     </Card>
   );
 }
+
+    
