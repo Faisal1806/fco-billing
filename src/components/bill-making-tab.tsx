@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Separator } from './ui/separator';
-import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Share } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Share, FileText } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import { saveDocument, deleteDocument } from '@/lib/actions';
 
@@ -67,7 +67,7 @@ export function BillMakingTab() {
               }
           }
       }
-      setSavedBills(bills.sort((a,b) => (a.sNo > b.sNo) ? 1 : -1));
+      setSavedBills(bills.sort((a,b) => (Number(a.sNo) > Number(b.sNo)) ? -1 : 1));
       setIsLoading(false);
   };
   
@@ -174,10 +174,10 @@ export function BillMakingTab() {
       },
     };
     
-    try {
-        // Save to LocalStorage first as a backup/for offline
-        localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
+    // Save to LocalStorage first as a backup/for offline
+    localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
         
+    try {
         // Then save to Firestore
         const result = await saveDocument('invoices', billId, billData);
 
@@ -185,21 +185,21 @@ export function BillMakingTab() {
             throw new Error(result.error);
         }
 
-        fetchBills(); // Re-fetch to update the list
-
         toast({
           title: isEditing ? 'Bill Updated' : 'Bill Saved',
-          description: `The bill has been successfully ${isEditing ? 'updated' : 'saved'}.`,
+          description: `The bill has been successfully saved to the cloud.`,
         });
-        router.push(`/invoice/${billId}`);
+
     } catch (error) {
-        console.error("Error saving bill:", error);
+        console.error("Error saving bill to cloud:", error);
         toast({
             variant: 'destructive',
             title: 'Save Failed',
             description: 'Could not save the bill to the cloud. It is saved locally.',
         });
     } finally {
+        fetchBills(); // Re-fetch to update the list
+        setIsEditing(true); // Ensure form stays in editing mode for the current bill
         setIsSubmitting(false);
     }
   };
@@ -211,7 +211,13 @@ export function BillMakingTab() {
     setWatakNo(bill.watakNo || '');
     setDate(bill.date);
     setFreight(bill.freight || 0);
-    setRows(bill.entries.length > 0 ? bill.entries : initialRows);
+    const loadedRows = bill.entries.map((e: any) => ({
+      type: e.type || (e.peti ? 'Patti' : 'Dabba'),
+      qty: e.qty || e.peti || e.daba,
+      variety: e.variety,
+      rate: e.rate
+    }));
+    setRows(loadedRows.length > 0 ? loadedRows : initialRows);
     setIsEditing(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -227,14 +233,14 @@ export function BillMakingTab() {
 
         try {
             localStorage.removeItem(`invoice-${billId}`);
-            const result = await deleteDocument('invoices', billId);
-            if (!result.success) throw new Error(result.error);
+            // Also delete from Firestore
+            await deleteDocument('invoices', billId);
             
             fetchBills(); // Re-fetch to update list
             
             toast({
                 title: "Bill Deleted",
-                description: `Bill #${billId} has been successfully deleted.`
+                description: `Bill #${billId} has been successfully deleted from local and cloud storage.`
             })
             if (sNo === billId) {
                 resetForm();
@@ -244,17 +250,27 @@ export function BillMakingTab() {
             toast({
                 variant: "destructive",
                 title: "Delete Failed",
-                description: "Could not delete the bill from the cloud.",
+                description: "Could not delete the bill.",
             })
         }
     }
 
-  const viewInPrintFormat = () => {
-    if (!sNo) {
+  const navigateToPrint = () => {
+    if (!isEditing || !sNo) {
         toast({ variant: 'destructive', title: 'Cannot View', description: 'Please save the bill first to generate a printable version.'});
         return;
     }
     router.push(`/invoice/${sNo}`);
+  };
+
+  const handleShare = () => {
+    if (!isEditing || !sNo) {
+      toast({ variant: 'destructive', title: 'Cannot Share', description: 'Please save the bill first.' });
+      return;
+    }
+    const message = `Check out this Invoice (#${sNo}) for ${ms}: ${window.location.origin}/invoice/${sNo}`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
   };
 
 
@@ -269,12 +285,10 @@ export function BillMakingTab() {
                         <p className="text-xs text-muted-foreground">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
                         <p className="text-xs text-muted-foreground">Prop: Firdous Ahmad Lone (Nadihal) | Cell: 7006136330, 9797002164, 9906740921 | Email: lone07936@gmail.com</p>
                     </div>
-                    {isEditing && (
-                        <Button variant="outline" size="sm" onClick={resetForm} className="gap-2">
-                            <FilePlus className="h-4 w-4" />
-                            New Bill
-                        </Button>
-                    )}
+                     <Button variant="outline" size="sm" onClick={resetForm} className="gap-2">
+                        <FilePlus className="h-4 w-4" />
+                        New Bill
+                    </Button>
                 </div>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -421,8 +435,11 @@ export function BillMakingTab() {
                         {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                         {isEditing ? 'Update Watak' : 'Save Watak'}
                     </Button>
-                    <Button onClick={viewInPrintFormat} variant="secondary" className="flex-1 min-w-[150px]">
-                        View Invoice
+                    <Button onClick={navigateToPrint} variant="secondary" className="flex-1 min-w-[150px] gap-2">
+                       <FileText className="h-4 w-4" /> View Invoice
+                    </Button>
+                     <Button onClick={handleShare} variant="outline" className="flex-1 min-w-[150px] gap-2" disabled={!isEditing}>
+                       <Share className="h-4 w-4" /> Share
                     </Button>
                 </div>
             </CardFooter>
@@ -468,3 +485,5 @@ export function BillMakingTab() {
     </div>
   );
 }
+
+    
