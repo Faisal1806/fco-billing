@@ -19,7 +19,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
-import { Factory, BellRing } from 'lucide-react';
+import { Factory, BellRing, Palette } from 'lucide-react';
 import { getClientMessaging } from '@/lib/firebase';
 import { getToken } from 'firebase/messaging';
 
@@ -134,6 +134,21 @@ export default function SettingsPage() {
                         <BellRing className="h-4 w-4" />
                         Enable Notifications
                     </Button>
+                </CardContent>
+            </Card>
+
+             <Card>
+                <CardHeader>
+                    <CardTitle>Appearance &amp; Customization</CardTitle>
+                    <CardDescription>
+                        Change invoice styles, choose header/footer layouts, and manage custom fields.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex items-center gap-4 text-muted-foreground">
+                        <Palette className="h-6 w-6" />
+                        <p>Advanced customization features are coming soon!</p>
+                    </div>
                 </CardContent>
             </Card>
 
