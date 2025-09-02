@@ -14,12 +14,13 @@ export const Logo = (props: React.SVGProps<SVGSVGElement>) => (
         fill="currentColor"
       />
       <text
-        x="50"
-        y="72"
+        x="50%"
+        y="75%"
         fontFamily="Arial, sans-serif"
         fontSize="60"
         fontWeight="bold"
         textAnchor="middle"
+        dominantBaseline="middle"
         fill="black"
       >
         F
