@@ -1,4 +1,3 @@
-
 'use client'
 
 import { useEffect, useState } from "react";
@@ -11,6 +10,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/logo";
 import BusinessCardQR from "@/components/BusinessCardQR";
+import { getClientDb } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 interface BillData {
     id: string;
@@ -54,10 +55,20 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             if (!params.id) return;
             setLoading(true);
             try {
-                const storedBill = localStorage.getItem(`invoice-${params.id}`);
+                // First try fetching from firestore
+                const db = getClientDb();
+                const docRef = doc(db, "invoices", params.id);
+                const docSnap = await getDoc(docRef);
                 let data: BillData | null = null;
-                if (storedBill) {
-                    data = JSON.parse(storedBill);
+                
+                if (docSnap.exists()) {
+                    data = docSnap.data() as BillData;
+                } else {
+                    // Fallback to localStorage
+                    const storedBill = localStorage.getItem(`invoice-${params.id}`);
+                     if (storedBill) {
+                        data = JSON.parse(storedBill);
+                    }
                 }
 
                 if(data) {

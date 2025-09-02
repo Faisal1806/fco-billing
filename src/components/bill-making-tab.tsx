@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useRef, useState, useEffect } from 'react';
@@ -16,6 +15,7 @@ import { ScrollArea } from './ui/scroll-area';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { saveDocument, deleteDocument, getDocuments } from '@/lib/actions';
 
 type Row = {
   type: 'Patti' | 'Dabba';
@@ -167,6 +167,7 @@ export function BillMakingTab() {
     
     try {
         localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
+        await saveDocument('invoices', billId, billData);
         setSavedBills(prev => [...prev.filter(b => b.sNo !== billId), billData].sort((a,b) => (a.sNo > b.sNo) ? 1 : -1));
 
         toast({
@@ -209,6 +210,7 @@ export function BillMakingTab() {
 
         try {
             localStorage.removeItem(`invoice-${billId}`);
+            await deleteDocument('invoices', billId);
             setSavedBills(prev => prev.filter(b => b.sNo !== billId));
             toast({
                 title: "Bill Deleted",
