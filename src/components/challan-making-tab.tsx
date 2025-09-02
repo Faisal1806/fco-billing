@@ -318,7 +318,7 @@ export function ChallanMakingTab() {
             <CardContent>
                 <ScrollArea className="h-96">
                     <div className="space-y-2">
-                        {savedChallans.length > 0 ? savedChallans.map(challan => (
+                        {savedChallans.map(challan => (
                             <div key={challan.challanNo} className="flex justify-between items-center p-2 border rounded-md">
                                 <div>
                                     <p className="font-medium">Challan #{challan.challanNo}</p>
@@ -336,7 +336,8 @@ export function ChallanMakingTab() {
                                     )}
                                 </div>
                             </div>
-                        )) : <p className="text-sm text-muted-foreground text-center">No recent challans found.</p>}
+                        ))}
+                         {savedChallans.length === 0 && <p className="text-sm text-muted-foreground text-center">No recent challans found.</p>}
                     </div>
                 </ScrollArea>
             </CardContent>
