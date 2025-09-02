@@ -13,10 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Separator } from './ui/separator';
 import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Share } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
-import { saveDocument, deleteDocument, getDocuments } from '@/lib/actions';
+import { saveDocument, deleteDocument } from '@/lib/actions';
 
 type Row = {
   type: 'Patti' | 'Dabba';
@@ -59,24 +56,21 @@ export function BillMakingTab() {
     setIsClient(true);
     const fetchBills = async () => {
       setIsLoading(true);
-      try {
-        const bills = await getDocuments('invoices');
-        setSavedBills(bills.sort((a,b) => (a.sNo > b.sNo) ? 1 : -1));
-      } catch (error) {
-          console.error("Error fetching bills from Firestore:", error);
-          // Fallback to localStorage if firestore fails
-          const bills = [];
-          for (let i = 0; i < localStorage.length; i++) {
-              const key = localStorage.key(i);
-              if (key && key.startsWith('invoice-')) {
-                  const bill = JSON.parse(localStorage.getItem(key)!);
-                  bills.push(bill);
+      // We must fetch from localStorage on the client
+      const bills = [];
+      for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('invoice-')) {
+              try {
+                const bill = JSON.parse(localStorage.getItem(key)!);
+                bills.push(bill);
+              } catch(e) {
+                console.error("Failed to parse bill from local storage", e);
               }
           }
-          setSavedBills(bills.sort((a,b) => (a.sNo > b.sNo) ? 1 : -1));
-      } finally {
-          setIsLoading(false);
       }
+      setSavedBills(bills.sort((a,b) => (a.sNo > b.sNo) ? 1 : -1));
+      setIsLoading(false);
     };
     fetchBills();
   }, []);
@@ -143,7 +137,7 @@ export function BillMakingTab() {
     };
 
 
-  const saveToLocalStorage = async () => {
+  const saveBill = async () => {
      if (!sNo || !date || !ms) {
         toast({
             variant: 'destructive',
@@ -179,8 +173,16 @@ export function BillMakingTab() {
     };
     
     try {
+        // Save to LocalStorage first as a backup/for offline
         localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
-        await saveDocument('invoices', billId, billData);
+        
+        // Then save to Firestore
+        const result = await saveDocument('invoices', billId, billData);
+
+        if (!result.success) {
+            throw new Error(result.error);
+        }
+
         setSavedBills(prev => [...prev.filter(b => b.sNo !== billId), billData].sort((a,b) => (a.sNo > b.sNo) ? 1 : -1));
 
         toast({
@@ -193,7 +195,7 @@ export function BillMakingTab() {
         toast({
             variant: 'destructive',
             title: 'Save Failed',
-            description: 'Could not save the bill.',
+            description: 'Could not save the bill to the cloud. It is saved locally.',
         });
     } finally {
         setIsSubmitting(false);
@@ -223,7 +225,8 @@ export function BillMakingTab() {
 
         try {
             localStorage.removeItem(`invoice-${billId}`);
-            await deleteDocument('invoices', billId);
+            const result = await deleteDocument('invoices', billId);
+            if (!result.success) throw new Error(result.error);
             setSavedBills(prev => prev.filter(b => b.sNo !== billId));
             toast({
                 title: "Bill Deleted",
@@ -237,7 +240,7 @@ export function BillMakingTab() {
             toast({
                 variant: "destructive",
                 title: "Delete Failed",
-                description: "Could not delete the bill."
+                description: "Could not delete the bill from the cloud.",
             })
         }
     }
@@ -250,125 +253,6 @@ export function BillMakingTab() {
     router.push(`/invoice/${sNo}`);
   };
 
-  const exportPDF = () => {
-    if (!sNo) {
-        toast({ variant: 'destructive', title: 'Cannot Export', description: 'Please enter a Bill No. before exporting.'});
-        return;
-    }
-    const doc = new jsPDF({ unit: 'mm', format: 'a5' });
-
-    // Header
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('F.Co - FIRDOUS AHMAD & COMPANY', doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Fruit Merchants & Commission Agents', doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
-    doc.text('SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.', doc.internal.pageSize.getWidth() / 2, 24, { align: 'center' });
-    doc.text('Cell: 7006136330, 9797002164', doc.internal.pageSize.getWidth() / 2, 28, { align: 'center' });
-    
-    // Bill details
-    autoTable(doc, {
-        body: [
-            [{ content: `Bill No: ${sNo}`, styles: { halign: 'left' } }, { content: `Date: ${new Date(date).toLocaleDateString()}`, styles: { halign: 'right' }}],
-            [{ content: `M/s: ${ms}`, styles: { halign: 'left' } }, { content: `Watak No: ${watakNo}`, styles: { halign: 'right' }}],
-            [{ content: `Khata: ${khata}`, styles: { halign: 'left' } }, ''],
-        ],
-        theme: 'plain',
-        startY: 32,
-        styles: { fontSize: 9 }
-    });
-
-    const finalY = (doc as any).lastAutoTable.finalY;
-
-    // Body tables
-    const itemsBody = rows.filter(r => r.qty > 0).map(r => [r.type, r.variety, r.qty, r.rate.toFixed(2), (r.qty * r.rate).toFixed(2)]);
-    const expensesBody = [
-      ['Freight', `₹${(Number(freight) || 0).toFixed(2)}`],
-      ['Labour', `₹${totals.labour.toFixed(2)}`],
-      ['Association', `₹${totals.association.toFixed(2)}`],
-      ['Security', `₹${totals.security.toFixed(2)}`],
-      ['Commission', `₹${totals.commission.toFixed(2)}`],
-    ];
-
-    autoTable(doc, {
-        head: [['Type', 'Variety', 'Qty', 'Rate', 'Gross Sale']],
-        body: itemsBody,
-        startY: finalY + 2,
-        theme: 'grid',
-        headStyles: { fillColor: [230, 230, 230], textColor: 20 },
-        styles: { fontSize: 8, cellPadding: 1.5 },
-        columnStyles: { 4: { halign: 'right' }},
-        didDrawPage: (data) => {
-            // Expenses table on the right
-            autoTable(doc, {
-                head: [['Details of Exp.', 'Amount']],
-                body: expensesBody,
-                startY: data.cursor?.y ?? finalY + 2,
-                theme: 'grid',
-                headStyles: { fillColor: [230, 230, 230], textColor: 20 },
-                styles: { fontSize: 8, cellPadding: 1.5 },
-                columnStyles: { 1: { halign: 'right' }},
-                margin: { left: doc.internal.pageSize.getWidth() / 2 + 5 },
-            });
-        },
-    });
-
-    const itemsFinalY = (doc as any).lastAutoTable.finalY;
-    
-    // Footer totals
-    autoTable(doc, {
-        body: [
-            [`Qty: ${totals.totalQty} (Patti: ${totals.pattiQty}, Dabba: ${totals.dabbaQty})`],
-            [`Gross Sale: ₹${totals.totalGrossSale.toFixed(2)}`],
-            [`Total Exp.: ₹${totals.totalExp.toFixed(2)}`],
-            [`Net Sale: ₹${totals.netSale.toFixed(2)}`],
-        ],
-        startY: itemsFinalY + 5,
-        theme: 'grid',
-        styles: { fontSize: 9, fontStyle: 'bold' }
-    });
-
-    doc.save(`Watak-${sNo}.pdf`);
-  };
-
-  const exportXLSX = () => {
-    if (!sNo) {
-        toast({ variant: 'destructive', title: 'Cannot Export', description: 'Please enter a Bill No. before exporting.'});
-        return;
-    }
-
-    const items = rows.filter(r => r.qty > 0).map(r => ({
-      Type: r.type,
-      Variety: r.variety,
-      Quantity: r.qty,
-      Rate: r.rate,
-      'Gross Sale': r.qty * r.rate,
-    }));
-    
-    const summary = [
-      { Category: 'Total Patti', Value: totals.pattiQty },
-      { Category: 'Total Dabba', Value: totals.dabbaQty },
-      { Category: 'Total Quantity', Value: totals.totalQty },
-      { Category: 'Gross Sale', Value: totals.totalGrossSale },
-      { Category: 'Labour', Value: totals.labour },
-      { Category: 'Association', Value: totals.association },
-      { Category: 'Security', Value: totals.security },
-      { Category: 'Freight', Value: freight },
-      { Category: 'Commission (12%)', Value: totals.commission },
-      { Category: 'Total Expenses', Value: totals.totalExp },
-      { Category: 'Net Sale', Value: totals.netSale },
-    ];
-
-    const ws_items = XLSX.utils.json_to_sheet(items);
-    const ws_summary = XLSX.utils.json_to_sheet(summary);
-
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws_items, 'Items');
-    XLSX.utils.book_append_sheet(wb, ws_summary, 'Summary');
-
-    XLSX.writeFile(wb, `Watak-${sNo}.xlsx`);
-  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -529,18 +413,12 @@ export function BillMakingTab() {
             </CardContent>
             <CardFooter>
                 <div className="flex w-full justify-center flex-wrap gap-3">
-                    <Button onClick={saveToLocalStorage} className="flex-1 min-w-[150px]" disabled={isSubmitting}>
+                    <Button onClick={saveBill} className="flex-1 min-w-[150px]" disabled={isSubmitting}>
                         {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                         {isEditing ? 'Update Watak' : 'Save Watak'}
                     </Button>
                     <Button onClick={viewInPrintFormat} variant="secondary" className="flex-1 min-w-[150px]">
                         View Invoice
-                    </Button>
-                    <Button onClick={exportPDF} variant="outline" className="flex-1 min-w-[150px] gap-2">
-                        <Share className="h-4 w-4" /> Export PDF
-                    </Button>
-                    <Button onClick={exportXLSX} variant="outline" className="flex-1 min-w-[150px] gap-2">
-                       <Share className="h-4 w-4" /> Export Excel
                     </Button>
                 </div>
             </CardFooter>
