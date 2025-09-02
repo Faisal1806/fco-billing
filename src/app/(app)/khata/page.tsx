@@ -19,7 +19,7 @@ import {
   TableFooter
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, FileDown, User, Users, Plus, ChevronDown, Leaf } from 'lucide-react';
+import { Loader2, FileDown, User, Users, Plus, ChevronDown, Leaf, Printer } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,6 +32,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import './print.css';
 
 type TransactionType = 'Sale' | 'Purchase';
 
@@ -267,6 +268,10 @@ export default function KhataLedgerPage() {
 
         XLSX.writeFile(workbook, `Ledger-${selectedParty}.xlsx`);
     };
+    
+    const handlePrint = () => {
+        window.print();
+    }
 
     const PartyIcon = ({ type }: { type: PartyType }) => {
         if (type === 'supplier') return <Leaf className="h-4 w-4 mr-2 text-green-500" />;
@@ -289,7 +294,7 @@ export default function KhataLedgerPage() {
     const AddNewFab = () => (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                 <Button className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg" size="icon">
+                 <Button className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg print-hidden" size="icon">
                     <Plus className="h-8 w-8" />
                  </Button>
             </DropdownMenuTrigger>
@@ -306,8 +311,8 @@ export default function KhataLedgerPage() {
 
     return (
     <>
-        <Card>
-            <CardHeader>
+        <Card className="printable-area">
+            <CardHeader className="print-hidden">
                 <div className="flex justify-between items-start">
                     <div>
                         <CardTitle>Khata Ledger</CardTitle>
@@ -316,6 +321,9 @@ export default function KhataLedgerPage() {
                      <div className="flex items-center gap-2">
                          {selectedParty && (
                             <>
+                                <Button onClick={handlePrint} variant="outline" size="sm" className="gap-1">
+                                    <Printer className="h-3.5 w-3.5" /> Print
+                                </Button>
                                 <Button onClick={exportToPDF} variant="outline" size="sm" className="gap-1">
                                     <FileDown className="h-3.5 w-3.5" /> PDF
                                 </Button>
@@ -328,48 +336,45 @@ export default function KhataLedgerPage() {
                 </div>
             </CardHeader>
             <CardContent>
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <div className="flex justify-between items-center mb-4">
+                <div className="print-header hidden print:block text-center mb-4">
+                    <h1 className="text-xl font-bold">Ledger Statement</h1>
+                    <h2 className="text-lg font-semibold">{selectedParty}</h2>
+                    <p className="text-sm">Firdous Ahmad & Company, Sopore</p>
+                    <p className="text-xs">Date: {new Date().toLocaleDateString('en-GB')}</p>
+                </div>
+
+                <div className="flex justify-between items-center mb-4 print-hidden">
+                    <Tabs value={activeTab} onValueChange={setActiveTab}>
                         <TabsList>
                             <TabsTrigger value="customers"><User className="h-4 w-4 mr-2"/>Customers</TabsTrigger>
                             <TabsTrigger value="growers"><Leaf className="h-4 w-4 mr-2"/>Growers</TabsTrigger>
                             <TabsTrigger value="all"><Users className="h-4 w-4 mr-2"/>All Parties</TabsTrigger>
                         </TabsList>
-                        
-                         {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" className="flex items-center gap-2 min-w-[250px]">
-                                    {selectedParty && ledgers[selectedParty] && <PartyIcon type={ledgers[selectedParty].partyType} />}
-                                    <span className="flex-1 text-left">{selectedParty || 'Select a Party'}</span>
-                                    <ChevronDown className="h-4 w-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="start" className="max-h-96 overflow-y-auto">
-                                    {filteredParties.map(party => (
-                                        <DropdownMenuItem key={party} onSelect={() => setSelectedParty(party)}>
-                                            <PartyIcon type={ledgers[party].partyType} />
-                                            {party}
-                                        </DropdownMenuItem>
-                                    ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                         )}
-                    </div>
+                    </Tabs>
                     
-                    <TabsContent value="customers">
-                       {/* Content is rendered outside based on selectedParty */}
-                    </TabsContent>
-                    <TabsContent value="growers">
-                        {/* Content is rendered outside based on selectedParty */}
-                    </TabsContent>
-                    <TabsContent value="all">
-                        {/* Content is rendered outside based on selectedParty */}
-                    </TabsContent>
-                </Tabs>
+                    {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" className="flex items-center gap-2 min-w-[250px]">
+                                {selectedParty && ledgers[selectedParty] && <PartyIcon type={ledgers[selectedParty].partyType} />}
+                                <span className="flex-1 text-left">{selectedParty || 'Select a Party'}</span>
+                                <ChevronDown className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="max-h-96 overflow-y-auto">
+                                {filteredParties.map(party => (
+                                    <DropdownMenuItem key={party} onSelect={() => setSelectedParty(party)}>
+                                        <PartyIcon type={ledgers[party].partyType} />
+                                        {party}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    )}
+                </div>
 
                 {isLoading ? (
-                    <div className="flex justify-center items-center h-64">
+                    <div className="flex justify-center items-center h-64 print-hidden">
                         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                     </div>
                 ) : selectedLedger ? (
@@ -390,9 +395,10 @@ export default function KhataLedgerPage() {
                             <TableRow key={tx.id}>
                                 <TableCell>{new Date(tx.date).toLocaleDateString('en-GB')}</TableCell>
                                 <TableCell>
-                                    <Button variant="link" className="p-0 h-auto" onClick={() => navigateToDoc(tx.type, tx.docId)}>
+                                    <Button variant="link" className="p-0 h-auto print-hidden" onClick={() => navigateToDoc(tx.type, tx.docId)}>
                                         #{tx.docId}
                                     </Button>
+                                    <span className="hidden print:inline">#{tx.docId}</span>
                                 </TableCell>
                                 <TableCell>
                                    <Badge variant={tx.type === 'Sale' ? 'default' : 'secondary'}>{tx.type}</Badge>
@@ -426,7 +432,7 @@ export default function KhataLedgerPage() {
                         </TableFooter>
                     </Table>
                 ) : (
-                    <div className="text-center text-muted-foreground py-12">
+                    <div className="text-center text-muted-foreground py-12 print-hidden">
                         <p>No transactions found for the selected category.</p>
                         <p className="text-sm">Start by creating sales or purchases, or select a different category.</p>
                     </div>

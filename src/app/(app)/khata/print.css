@@ -1,0 +1,16 @@
+
+@media print {
+  body {
+    background-color: white;
+  }
+  .print-hidden {
+    display: none;
+  }
+  .print-block {
+    display: block;
+  }
+  .printable-area {
+    box-shadow: none;
+    border: none;
+  }
+}
