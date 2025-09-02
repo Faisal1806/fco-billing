@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/language-context';
-import { ChevronDown, PlusCircle, Loader2, FilePenLine, Trash2, List, LayoutGrid, Search } from 'lucide-react';
+import { ChevronDown, PlusCircle, Loader2, FilePenLine, Trash2, List, LayoutGrid, Search, FileDown } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import {
   DropdownMenu,
@@ -31,6 +31,9 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import DocumentCard from '@/components/DocumentCard';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 
 export interface WatakEntry {
@@ -113,6 +116,56 @@ export default function WatakRegisterPage() {
     return acc;
   }, { grossSale: 0, totalExpenses: 0, netSale: 0 });
 
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.text(`Watak Register - ${selectedGrower}`, 14, 15);
+    doc.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, 14, 22);
+
+    const tableData = filteredWataks.map(w => [
+        new Date(w.date).toLocaleDateString('en-GB'),
+        w.sNo,
+        w.watakNo,
+        w.customerName,
+        `Rs. ${w.totals.grossSale.toFixed(2)}`,
+        `Rs. ${w.totals.totalExpenses.toFixed(2)}`,
+        `Rs. ${w.totals.netSale.toFixed(2)}`
+    ]);
+
+    autoTable(doc, {
+        head: [['Date', 'Bill No.', 'Watak No.', 'Khata (Grower)', 'Gross Sale', 'Total Exp.', 'Net Sale']],
+        body: tableData,
+        foot: [[
+            'Total', '', '', '', `Rs. ${footerTotals.grossSale.toFixed(2)}`, `Rs. ${footerTotals.totalExpenses.toFixed(2)}`, `Rs. ${footerTotals.netSale.toFixed(2)}`
+        ]],
+        startY: 30,
+        theme: 'striped',
+        headStyles: { fillColor: [22, 163, 74] }
+    });
+
+    doc.save(`Watak-Register-${selectedGrower}.pdf`);
+  };
+
+  const exportToExcel = () => {
+      const worksheetData = filteredWataks.map(w => ({
+        'Date': new Date(w.date).toLocaleDateString('en-GB'),
+        'Bill No.': w.sNo,
+        'Watak No.': w.watakNo,
+        'Khata (Grower)': w.customerName,
+        'Gross Sale': w.totals.grossSale,
+        'Total Expenses': w.totals.totalExpenses,
+        'Net Sale': w.totals.netSale
+    }));
+    
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+    XLSX.utils.sheet_add_aoa(worksheet, [
+        ["Total", "", "", "", footerTotals.grossSale, footerTotals.totalExpenses, footerTotals.netSale]
+    ], { origin: -1 });
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Wataks');
+    XLSX.writeFile(workbook, `Watak-Register-${selectedGrower}.xlsx`);
+  };
+
   const handleShare = () => {
     const date = new Date().toLocaleDateString('en-GB');
     let reportText = `*Watak Register for ${selectedGrower} on ${date}*\n\n`;
@@ -190,11 +243,17 @@ export default function WatakRegisterPage() {
                     >
                     {viewMode === 'table' ? <LayoutGrid className="h-4 w-4" /> : <List className="h-4 w-4" />}
                 </Button>
-                <Button size="sm" className="gap-1" onClick={handleShare} variant="outline">
+                <Button size="sm" onClick={handleShare} variant="outline" className="gap-1">
                     <FaWhatsapp className="h-4 w-4 text-green-500" />
-                     <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                        Share Register
-                    </span>
+                     Share
+                </Button>
+                 <Button size="sm" variant="outline" className="gap-1" onClick={exportToPDF}>
+                    <FileDown className="h-3.5 w-3.5" />
+                    PDF
+                </Button>
+                <Button size="sm" variant="outline" className="gap-1" onClick={exportToExcel}>
+                    <FileDown className="h-3.5 w-3.5" />
+                    Excel
                 </Button>
                 <Button size="sm" className="gap-1" onClick={() => router.push('/sales')}>
                     <PlusCircle className="h-3.5 w-3.5" />
