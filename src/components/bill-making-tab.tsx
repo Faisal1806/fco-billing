@@ -50,13 +50,11 @@ export function BillMakingTab() {
     if (typeof window !== 'undefined') {
       setUserRole(localStorage.getItem('userRole'));
     }
+    setIsClient(true);
   }, []);
 
-  useEffect(() => {
-    setIsClient(true);
-    const fetchBills = async () => {
+  const fetchBills = () => {
       setIsLoading(true);
-      // We must fetch from localStorage on the client
       const bills = [];
       for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
@@ -71,9 +69,13 @@ export function BillMakingTab() {
       }
       setSavedBills(bills.sort((a,b) => (a.sNo > b.sNo) ? 1 : -1));
       setIsLoading(false);
-    };
-    fetchBills();
-  }, []);
+  };
+  
+  useEffect(() => {
+    if (isClient) {
+      fetchBills();
+    }
+  }, [isClient]);
 
 
   // --- Calculations (ALL from your spec) ---
@@ -157,7 +159,7 @@ export function BillMakingTab() {
       khata,
       watakNo,
       freight: Number(freight) || 0,
-      entries: rows.filter(r => r.qty > 0).map(r => ({...r, total: r.qty * r.rate})),
+      entries: rows.filter(r => r.qty > 0).map(r => ({...r, qty: Number(r.qty), rate: Number(r.rate), total: Number(r.qty) * Number(r.rate)})),
       totals: {
         pattiQty: totals.pattiQty,
         dabbaQty: totals.dabbaQty,
@@ -183,7 +185,7 @@ export function BillMakingTab() {
             throw new Error(result.error);
         }
 
-        setSavedBills(prev => [...prev.filter(b => b.sNo !== billId), billData].sort((a,b) => (a.sNo > b.sNo) ? 1 : -1));
+        fetchBills(); // Re-fetch to update the list
 
         toast({
           title: isEditing ? 'Bill Updated' : 'Bill Saved',
@@ -227,7 +229,9 @@ export function BillMakingTab() {
             localStorage.removeItem(`invoice-${billId}`);
             const result = await deleteDocument('invoices', billId);
             if (!result.success) throw new Error(result.error);
-            setSavedBills(prev => prev.filter(b => b.sNo !== billId));
+            
+            fetchBills(); // Re-fetch to update list
+            
             toast({
                 title: "Bill Deleted",
                 description: `Bill #${billId} has been successfully deleted.`

@@ -46,8 +46,7 @@ export default function PurchasesPage() {
     }
   }, []);
 
-
-  useEffect(() => {
+  const fetchPurchases = () => {
     setIsLoading(true);
     const purchases = [];
     for (let i = 0; i < localStorage.length; i++) {
@@ -59,6 +58,10 @@ export default function PurchasesPage() {
     }
     setSavedPurchases(purchases.sort((a,b) => (a.billNo > b.billNo) ? 1 : -1));
     setIsLoading(false);
+  };
+
+  useEffect(() => {
+    fetchPurchases();
   }, []);
 
 
@@ -111,7 +114,7 @@ export default function PurchasesPage() {
       billNo,
       date,
       growerName: companyName,
-      entries: rows.filter(r => r.qty > 0 && r.rate > 0).map(r => ({...r, total: r.qty * r.rate})),
+      entries: rows.filter(r => r.qty > 0 && r.rate > 0).map(r => ({...r, qty: Number(r.qty), rate: Number(r.rate), total: Number(r.qty) * Number(r.rate)})),
       totals: {
         totalQty: totals.totalQty,
         grandTotal: Number(totals.grandTotal.toFixed(2)),
@@ -120,7 +123,7 @@ export default function PurchasesPage() {
     
     try {
         localStorage.setItem(`purchase-${purchaseId}`, JSON.stringify(purchaseData));
-        setSavedPurchases(prev => [...prev.filter(b => b.billNo !== purchaseId), purchaseData].sort((a,b) => (a.billNo > b.billNo) ? 1 : -1));
+        fetchPurchases(); // Re-fetch to update list
 
         toast({
           title: isEditing ? 'Purchase Updated' : 'Purchase Saved',
@@ -159,7 +162,8 @@ export default function PurchasesPage() {
 
         try {
             localStorage.removeItem(`purchase-${billId}`);
-            setSavedPurchases(prev => prev.filter(b => b.billNo !== billId));
+            fetchPurchases(); // Re-fetch to update list
+
             toast({
                 title: "Purchase Deleted",
                 description: `Purchase Bill #${billId} has been successfully deleted.`

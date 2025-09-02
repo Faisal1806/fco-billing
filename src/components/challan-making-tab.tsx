@@ -57,11 +57,6 @@ const ChallanEntryRow = ({
 export function ChallanMakingTab() {
   const { toast } = useToast();
   const router = useRouter();
-  const [isClient, setIsClient] = React.useState(false);
-
-  React.useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   const initialDetails = {
     challanNo: '',
@@ -89,19 +84,21 @@ export function ChallanMakingTab() {
     }
   }, []);
 
-  React.useEffect(() => {
-    if (isClient) {
-      const challans = [];
-      for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && key.startsWith('challan-')) {
-              const challan = JSON.parse(localStorage.getItem(key)!);
-              challans.push(challan);
-          }
-      }
-      setSavedChallans(challans.sort((a,b) => (a.challanNo > b.challanNo) ? 1 : -1));
+  const fetchChallans = () => {
+    const challans = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('challan-')) {
+            const challan = JSON.parse(localStorage.getItem(key)!);
+            challans.push(challan);
+        }
     }
-  }, [isClient]);
+    setSavedChallans(challans.sort((a,b) => (a.challanNo > b.challanNo) ? 1 : -1));
+  };
+  
+  React.useEffect(() => {
+    fetchChallans();
+  }, []);
 
   const handleEntryUpdate = (
     index: number,
@@ -127,8 +124,8 @@ export function ChallanMakingTab() {
     setEntries((prev) => prev.filter((_, i) => i !== index));
   };
   
-  const totalPetti = entries.reduce((acc, entry) => acc + (entry.peti || 0), 0);
-  const totalDabba = entries.reduce((acc, entry) => acc + (entry.daba || 0), 0);
+  const totalPetti = entries.reduce((acc, entry) => acc + (Number(entry.peti) || 0), 0);
+  const totalDabba = entries.reduce((acc, entry) => acc + (Number(entry.daba) || 0), 0);
   const totalNugs = totalPetti + totalDabba;
 
   const resetForm = () => {
@@ -156,7 +153,7 @@ export function ChallanMakingTab() {
     };
     
     localStorage.setItem(`challan-${challanId}`, JSON.stringify(challanData));
-    setSavedChallans(prev => [...prev.filter(r => r.challanNo !== challanId), challanData].sort((a,b) => (a.challanNo > b.challanNo) ? 1 : -1));
+    fetchChallans(); // Re-fetch to update list
 
     toast({
       title: isEditing ? 'Challan Updated' : 'Challan Saved',
@@ -191,7 +188,7 @@ export function ChallanMakingTab() {
     }
     try {
         localStorage.removeItem(`challan-${challanId}`);
-        setSavedChallans(prev => prev.filter(c => c.challanNo !== challanId));
+        fetchChallans(); // Re-fetch to update list
         toast({
             title: "Challan Deleted",
             description: `Challan #${challanId} has been successfully deleted.`

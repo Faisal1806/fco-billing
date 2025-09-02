@@ -64,11 +64,6 @@ const ItemEntryRow = ({
 export function PesticideBillTab() {
   const { toast } = useToast();
   const router = useRouter();
-  const [isClient, setIsClient] = React.useState(false);
-
-  React.useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   const initialBillDetails = {
     no: '',
@@ -92,19 +87,21 @@ export function PesticideBillTab() {
     }
   }, []);
 
-  React.useEffect(() => {
-    if (isClient) {
-      const bills = [];
-      for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && key.startsWith('pesticide-invoice-')) {
-              const bill = JSON.parse(localStorage.getItem(key)!);
-              bills.push(bill);
-          }
-      }
-      setSavedBills(bills.sort((a,b) => (a.no > b.no) ? 1 : -1));
+  const fetchBills = () => {
+    const bills = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('pesticide-invoice-')) {
+            const bill = JSON.parse(localStorage.getItem(key)!);
+            bills.push(bill);
+        }
     }
-  }, [isClient]);
+    setSavedBills(bills.sort((a,b) => (a.no > b.no) ? 1 : -1));
+  };
+  
+  React.useEffect(() => {
+    fetchBills();
+  }, []);
 
   const handleEntryUpdate = (
     index: number,
@@ -158,7 +155,7 @@ export function PesticideBillTab() {
     };
     
     localStorage.setItem(`pesticide-invoice-${billId}`, JSON.stringify(billData));
-    setSavedBills(prev => [...prev.filter(b => b.no !== billId), billData].sort((a,b) => (a.no > b.no) ? 1 : -1));
+    fetchBills(); // Re-fetch to update list
 
 
     toast({
@@ -189,7 +186,7 @@ export function PesticideBillTab() {
     }
     try {
         localStorage.removeItem(`pesticide-invoice-${billId}`);
-        setSavedBills(prev => prev.filter(b => b.no !== billId));
+        fetchBills(); // Re-fetch to update list
         toast({
             title: "Pesticide Bill Deleted",
             description: `Bill #${billId} has been successfully deleted.`

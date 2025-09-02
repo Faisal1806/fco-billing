@@ -69,12 +69,6 @@ const ReceiptEntryRow = ({
 export function ReceiptMakingTab() {
   const { toast } = useToast();
   const router = useRouter();
-  const [isClient, setIsClient] = React.useState(false);
-
-  React.useEffect(() => {
-    setIsClient(true);
-  }, []);
-
 
   const initialReceiptDetails = {
     no: '',
@@ -100,19 +94,21 @@ export function ReceiptMakingTab() {
     }
   }, []);
 
-  React.useEffect(() => {
-    if (isClient) {
-        const receipts = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith('receipt-')) {
-                const receipt = JSON.parse(localStorage.getItem(key)!);
-                receipts.push(receipt);
-            }
+  const fetchReceipts = () => {
+    const receipts = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('receipt-')) {
+            const receipt = JSON.parse(localStorage.getItem(key)!);
+            receipts.push(receipt);
         }
-        setSavedReceipts(receipts.sort((a,b) => (a.no > b.no) ? 1 : -1));
     }
-  }, [isClient]);
+    setSavedReceipts(receipts.sort((a,b) => (a.no > b.no) ? 1 : -1));
+  };
+  
+  React.useEffect(() => {
+    fetchReceipts();
+  }, []);
 
   const handleEntryUpdate = (
     index: number,
@@ -138,7 +134,7 @@ export function ReceiptMakingTab() {
     setEntries((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const totalNugs = entries.reduce((acc, entry) => acc + (entry.peti || 0) + (entry.daba || 0), 0);
+  const totalNugs = entries.reduce((acc, entry) => acc + (Number(entry.peti) || 0) + (Number(entry.daba) || 0), 0);
 
   const resetForm = () => {
     setReceiptDetails(initialReceiptDetails);
@@ -163,7 +159,7 @@ export function ReceiptMakingTab() {
     };
     
     localStorage.setItem(`receipt-${receiptId}`, JSON.stringify(receiptData));
-    setSavedReceipts(prev => [...prev.filter(r => r.no !== receiptId), receiptData].sort((a,b) => (a.no > b.no) ? 1 : -1));
+    fetchReceipts(); // Re-fetch to update list
 
     toast({
       title: isEditing ? 'Receipt Updated' : 'Receipt Saved',
@@ -197,7 +193,7 @@ export function ReceiptMakingTab() {
     }
     try {
         localStorage.removeItem(`receipt-${receiptId}`);
-        setSavedReceipts(prev => prev.filter(r => r.no !== receiptId));
+        fetchReceipts(); // Re-fetch to update list
         toast({
             title: "Receipt Deleted",
             description: `Receipt #${receiptId} has been successfully deleted.`
