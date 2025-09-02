@@ -176,11 +176,8 @@ export default function KhataLedgerPage() {
     const selectedLedger = selectedParty ? ledgers[selectedParty] : null;
 
     const navigateToDoc = (type: TransactionType, docId: string) => {
-        if (type === 'Sale') {
-            router.push(`/invoice/${docId}`);
-        } else {
-            router.push(`/purchase-bill/${docId}`);
-        }
+        const path = type === 'Sale' ? `/invoice/${docId}` : `/purchase-bill/${docId}`;
+        router.push(path);
     };
 
     const getLedgerWithRunningBalance = (): LedgerEntryWithRunningBalance[] => {
