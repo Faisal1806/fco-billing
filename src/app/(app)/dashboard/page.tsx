@@ -3,8 +3,10 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, PackagePlus, PackageMinus, Package, UserCheck, UserX } from 'lucide-react';
+import { Loader2, PackagePlus, PackageMinus, Package, UserCheck, UserX, Leaf, Box, Apple } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import RateList from '@/components/RateList';
 
 interface DailyStats {
   pattiPurchased: number;
@@ -34,6 +36,73 @@ const StatCard = ({ title, value, icon: Icon, note }: { title: string, value: st
         </CardContent>
     </Card>
 );
+
+const FruitDashboard = ({ stats, ledgerSummary, router }: { stats: DailyStats | null, ledgerSummary: LedgerEntry[], router: any }) => (
+    <div className="space-y-8">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+             <StatCard 
+                title="Total Purchased Today"
+                value={`₹${stats?.totalPurchaseValue.toLocaleString('en-IN') ?? '0'}`}
+                icon={PackagePlus}
+                note={`${stats?.pattiPurchased ?? 0} Patti / ${stats?.dabbaPurchased ?? 0} Dabba`}
+             />
+             <StatCard 
+                title="Total Sold Today"
+                value={`₹${stats?.totalSaleValue.toLocaleString('en-IN') ?? '0'}`}
+                icon={PackageMinus}
+                 note={`${stats?.pattiSold ?? 0} Patti / ${stats?.dabbaSold ?? 0} Dabba`}
+             />
+             <StatCard 
+                title="Current Stock (Pending)"
+                value={`${(stats?.currentPattiStock ?? 0) + (stats?.currentDabbaStock ?? 0)} Boxes`}
+                icon={Package}
+                note={`${stats?.currentPattiStock ?? 0} Patti / ${stats?.currentDabbaStock ?? 0} Dabba`}
+             />
+            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Khata Ledger Summary</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {ledgerSummary.length > 0 ? (
+                        <ul className="space-y-2">
+                            {ledgerSummary.map(item => (
+                                <li key={item.party} className="flex justify-between items-center text-sm">
+                                    <span className="font-medium">{item.party}</span>
+                                    <span className={`font-bold ${item.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        ₹{Math.abs(item.balance).toLocaleString('en-IN')}
+                                        {item.balance >= 0 ? <UserCheck className="h-4 w-4 inline ml-1" /> : <UserX className="h-4 w-4 inline ml-1" />}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : <p className="text-xs text-muted-foreground">No account balances to show.</p>}
+                     <button onClick={() => router.push('/khata')} className="text-sm text-primary hover:underline mt-4">
+                        View Full Ledger &rarr;
+                    </button>
+                </CardContent>
+            </Card>
+        </div>
+         <div className="mt-8">
+            <RateList />
+         </div>
+    </div>
+);
+
+
+const PlaceholderTab = ({ title, description }: { title: string, description: string }) => (
+    <Card>
+        <CardHeader>
+            <CardTitle>{title}</CardTitle>
+            <CardDescription>{description}</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <div className="text-center py-12 text-muted-foreground">
+                <p>This feature is under construction and will be available soon.</p>
+            </div>
+        </CardContent>
+    </Card>
+);
+
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -147,59 +216,29 @@ export default function DashboardPage() {
         </div>
     )
   }
-
-  if (!stats) {
-    return <p>Could not load dashboard statistics.</p>
-  }
   
   return (
-    <div className="space-y-8">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-             <StatCard 
-                title="Total Purchased Today"
-                value={`₹${stats.totalPurchaseValue.toLocaleString('en-IN')}`}
-                icon={PackagePlus}
-                note={`${stats.pattiPurchased} Patti / ${stats.dabbaPurchased} Dabba`}
-             />
-             <StatCard 
-                title="Total Sold Today"
-                value={`₹${stats.totalSaleValue.toLocaleString('en-IN')}`}
-                icon={PackageMinus}
-                 note={`${stats.pattiSold} Patti / ${stats.dabbaSold} Dabba`}
-             />
-             <StatCard 
-                title="Current Stock (Pending)"
-                value={`${stats.currentPattiStock + stats.currentDabbaStock} Boxes`}
-                icon={Package}
-                note={`${stats.currentPattiStock} Patti / ${stats.currentDabbaStock} Dabba`}
-             />
-            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Khata Ledger Summary</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {ledgerSummary.length > 0 ? (
-                        <ul className="space-y-2">
-                            {ledgerSummary.map(item => (
-                                <li key={item.party} className="flex justify-between items-center text-sm">
-                                    <span className="font-medium">{item.party}</span>
-                                    <span className={`font-bold ${item.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                        ₹{Math.abs(item.balance).toLocaleString('en-IN')}
-                                        {item.balance >= 0 ? <UserCheck className="h-4 w-4 inline ml-1" /> : <UserX className="h-4 w-4 inline ml-1" />}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : <p className="text-xs text-muted-foreground">No account balances to show.</p>}
-                     <button onClick={() => router.push('/khata')} className="text-sm text-primary hover:underline mt-4">
-                        View Full Ledger &rarr;
-                    </button>
-                </CardContent>
-            </Card>
-        </div>
-        <div className="mt-8 text-center text-muted-foreground">
-            <p>This summary is automatically calculated based on the sales and purchases you record.</p>
-        </div>
-    </div>
+    <Tabs defaultValue="fruit" className="space-y-4">
+        <TabsList>
+            <TabsTrigger value="fruit"><Apple className="w-4 h-4 mr-2" />Fruit Business</TabsTrigger>
+            <TabsTrigger value="agri"><Leaf className="w-4 h-4 mr-2" />Agri/Fertilizer Business</TabsTrigger>
+            <TabsTrigger value="packing"><Box className="w-4 h-4 mr-2" />Packing Materials</TabsTrigger>
+        </TabsList>
+        <TabsContent value="fruit">
+            <FruitDashboard stats={stats} ledgerSummary={ledgerSummary} router={router} />
+        </TabsContent>
+        <TabsContent value="agri">
+            <PlaceholderTab 
+                title="Agri/Fertilizer Business Dashboard"
+                description="A summary of your fertilizer sales, stock levels, and ledger will be shown here."
+            />
+        </TabsContent>
+        <TabsContent value="packing">
+            <PlaceholderTab 
+                title="Packing Materials Dashboard"
+                description="A summary of your packing material sales (wood, tape, etc.), stock levels, and ledger will be shown here."
+            />
+        </TabsContent>
+    </Tabs>
   );
 }
