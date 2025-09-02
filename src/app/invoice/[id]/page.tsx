@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useEffect, useState } from "react";
@@ -18,7 +19,7 @@ interface BillData {
     sNo: string;
     date: string;
     customerName: string;
-    challanNo: string;
+    watakNo: string;
     khata: string;
     entries: {
         peti: number;
@@ -146,7 +147,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     }
 
     const {
-        sNo, date, customerName, challanNo, khata, entries, totals, freight
+        sNo, date, customerName, watakNo, khata, entries, totals, freight
     } = billData;
 
 
@@ -193,7 +194,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                             <div className="text-right">
                                  <p><strong>Bill No:</strong> {sNo}</p>
                                  <p><strong>Date:</strong> {new Date(date).toLocaleDateString('en-GB')}</p>
-                                 <p><strong>Challan No:</strong> {challanNo}</p>
+                                 <p><strong>Watak No:</strong> {watakNo}</p>
                             </div>
                         </div>
 
@@ -279,3 +280,5 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         </div>
     );
 }
+
+    

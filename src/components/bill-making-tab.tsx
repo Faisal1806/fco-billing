@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useRef, useState, useEffect } from 'react';
@@ -32,7 +33,7 @@ export function BillMakingTab() {
   const [sNo, setSNo] = useState('');
   const [ms, setMs] = useState('');                 // M/S (customer)
   const [khata, setKhata] = useState('');           // Khata Name
-  const [challanNo, setChallanNo] = useState('');   // Challan / Rokat / Watak No (free text)
+  const [watakNo, setWatakNo] = useState('');   // Watak No
   const [date, setDate] = useState('');
   const [freight, setFreight] = useState<number>(0);
   const [rows, setRows] = useState<Row[]>(initialRows);
@@ -134,7 +135,7 @@ export function BillMakingTab() {
         setSNo('');
         setMs('');
         setKhata('');
-        setChallanNo('');
+        setWatakNo('');
         setDate('');
         setFreight(0);
         setRows(initialRows);
@@ -160,7 +161,7 @@ export function BillMakingTab() {
       date,
       customerName: ms,
       khata,
-      challanNo,
+      watakNo,
       freight: Number(freight) || 0,
       entries: rows.filter(r => r.qty > 0).map(r => ({...r, total: r.qty * r.rate})),
       totals: {
@@ -203,7 +204,7 @@ export function BillMakingTab() {
     setSNo(bill.sNo);
     setMs(bill.customerName);
     setKhata(bill.khata || '');
-    setChallanNo(bill.challanNo || '');
+    setWatakNo(bill.watakNo || '');
     setDate(bill.date);
     setFreight(bill.freight || 0);
     setRows(bill.entries.length > 0 ? bill.entries : initialRows);
@@ -270,7 +271,7 @@ export function BillMakingTab() {
     autoTable(doc, {
         body: [
             [{ content: `Bill No: ${sNo}`, styles: { halign: 'left' } }, { content: `Date: ${new Date(date).toLocaleDateString()}`, styles: { halign: 'right' }}],
-            [{ content: `M/s: ${ms}`, styles: { halign: 'left' } }, { content: `Challan No: ${challanNo}`, styles: { halign: 'right' }}],
+            [{ content: `M/s: ${ms}`, styles: { halign: 'left' } }, { content: `Watak No: ${watakNo}`, styles: { halign: 'right' }}],
             [{ content: `Khata: ${khata}`, styles: { halign: 'left' } }, ''],
         ],
         theme: 'plain',
@@ -408,8 +409,8 @@ export function BillMakingTab() {
                         <Input value={khata} onChange={e => setKhata(e.target.value)} />
                     </div>
                     <div>
-                        <Label>Challan / Watak No</Label>
-                        <Input value={challanNo} onChange={e => setChallanNo(e.target.value)} />
+                        <Label>Watak No</Label>
+                        <Input value={watakNo} onChange={e => setWatakNo(e.target.value)} />
                     </div>
                 </div>
 
@@ -585,3 +586,5 @@ export function BillMakingTab() {
     </div>
   );
 }
+
+    
