@@ -259,7 +259,7 @@ export function BillMakingTab() {
         body: [
             [{ content: `Bill No: ${sNo}`, styles: { halign: 'left' } }, { content: `Date: ${new Date(date).toLocaleDateString()}`, styles: { halign: 'right' }}],
             [{ content: `M/s: ${ms}`, styles: { halign: 'left' } }, { content: `Challan No: ${challanNo}`, styles: { halign: 'right' }}],
-            [{ content: `Khata No: ${khata}`, styles: { halign: 'left' } }, ''],
+            [{ content: `Khata: ${khata}`, styles: { halign: 'left' } }, ''],
         ],
         theme: 'plain',
         startY: 32,
@@ -392,7 +392,7 @@ export function BillMakingTab() {
                         <Input value={ms} onChange={e => setMs(e.target.value)} />
                     </div>
                     <div>
-                        <Label>Khata No</Label>
+                        <Label>Khata</Label>
                         <Input value={khata} onChange={e => setKhata(e.target.value)} />
                     </div>
                     <div>

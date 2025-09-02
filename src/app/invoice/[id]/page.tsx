@@ -188,7 +188,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                             <div>
                                 <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Bill To: / <span className="font-urdu">بل بنام</span></h2>
                                 <p className="font-bold text-xl">{customerName}</p>
-                                <p>Khata No: {khata}</p>
+                                <p>Khata: {khata}</p>
                             </div>
                             <div className="text-right">
                                  <p><strong>Bill No:</strong> {sNo}</p>
