@@ -53,44 +53,51 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
     useEffect(() => {
         const fetchBill = async () => {
-            if (!params.id) return;
+            if (!params.id) {
+                setLoading(false);
+                return;
+            };
             setLoading(true);
+
+            let data: BillData | null = null;
+
             try {
-                // First try fetching from firestore
+                // 1. Try fetching from Firestore
                 const db = getClientDb();
                 const docRef = doc(db, "invoices", params.id);
                 const docSnap = await getDoc(docRef);
-                let data: BillData | null = null;
-                
+
                 if (docSnap.exists()) {
                     data = docSnap.data() as BillData;
                 } else {
-                    // Fallback to localStorage
+                    // 2. If not in Firestore, fall back to localStorage
                     const storedBill = localStorage.getItem(`invoice-${params.id}`);
-                     if (storedBill) {
+                    if (storedBill) {
                         data = JSON.parse(storedBill);
                     }
                 }
-
-                if(data) {
-                     // Normalize the entries to ensure 'qty' is always present
-                     data.entries = data.entries.map(e => ({...e, qty: e.qty || e.peti || e.dabba || 0}))
+                
+                if (data) {
+                    // Normalize entries to ensure 'qty' is always present for calculations
+                    data.entries = data.entries.map(e => ({
+                        ...e, 
+                        qty: e.qty || e.peti || e.dabba || 0
+                    }));
                     setBillData(data);
                 } else {
-                     toast({
+                    toast({
                         variant: "destructive",
                         title: "Not Found",
-                        description: "The requested bill was not found."
-                    })
+                        description: "The requested bill was not found in the cloud or locally."
+                    });
                 }
-
             } catch (error) {
                  console.error("Error fetching bill:", error);
-                  toast({
+                 toast({
                     variant: "destructive",
                     title: "Error",
-                    description: "Could not fetch the bill data."
-                })
+                    description: "Could not fetch the bill data due to an error."
+                });
             } finally {
                 setLoading(false);
             }
