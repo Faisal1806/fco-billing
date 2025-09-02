@@ -18,7 +18,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, PlusCircle, Share2, Loader2, FilePenLine, Trash2, List, LayoutGrid, Search } from 'lucide-react';
+import { ChevronDown, PlusCircle, Share2, Loader2, FilePenLine, Trash2, List, LayoutGrid, Search, FileDown } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +29,10 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import DocumentCard from '@/components/DocumentCard';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+import { FaWhatsapp } from 'react-icons/fa';
 
 
 export interface PurchaseEntry {
@@ -127,6 +131,76 @@ export default function PurchaseRegisterPage() {
     }
   }
 
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.text(`Purchase Register - ${selectedGrower}`, 14, 15);
+    doc.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, 14, 22);
+
+    const tableData = filteredPurchases.map(p => [
+        new Date(p.date).toLocaleDateString('en-GB'),
+        p.billNo,
+        p.growerName,
+        p.entries.filter(e => e.type === 'Patti').reduce((acc, e) => acc + (e.qty || 0), 0),
+        p.entries.filter(e => e.type === 'Dabba').reduce((acc, e) => acc + (e.qty || 0), 0),
+        `Rs. ${p.totals.grandTotal.toFixed(2)}`
+    ]);
+
+    autoTable(doc, {
+        head: [['Date', 'Bill No.', 'Grower', 'Patti', 'Dabba', 'Grand Total']],
+        body: tableData,
+        foot: [[
+            'Total', '', '', footerTotals.patti, footerTotals.dabba, `Rs. ${footerTotals.grandTotal.toFixed(2)}`
+        ]],
+        startY: 30,
+        theme: 'striped',
+        headStyles: { fillColor: [22, 163, 74] }
+    });
+
+    doc.save(`Purchase-Register-${selectedGrower}.pdf`);
+  };
+
+  const exportToExcel = () => {
+    const worksheetData = filteredPurchases.map(p => ({
+        'Date': new Date(p.date).toLocaleDateString('en-GB'),
+        'Bill No.': p.billNo,
+        'Grower': p.growerName,
+        'Patti': p.entries.filter(e => e.type === 'Patti').reduce((acc, e) => acc + (e.qty || 0), 0),
+        'Dabba': p.entries.filter(e => e.type === 'Dabba').reduce((acc, e) => acc + (e.qty || 0), 0),
+        'Grand Total': p.totals.grandTotal
+    }));
+    
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+    XLSX.utils.sheet_add_aoa(worksheet, [
+        ["Total", "", "", footerTotals.patti, footerTotals.dabba, footerTotals.grandTotal]
+    ], { origin: -1 });
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Purchases');
+    XLSX.writeFile(workbook, `Purchase-Register-${selectedGrower}.xlsx`);
+  };
+    
+  const handleShare = () => {
+    let reportText = `*Purchase Register for ${selectedGrower}*\n`;
+    reportText += `*FIRDOUS AHMAD & COMPANY*\n\n`;
+
+    filteredPurchases.forEach(p => {
+        const patti = p.entries.filter(e => e.type === 'Patti').reduce((acc, e) => acc + (e.qty || 0), 0);
+        const dabba = p.entries.filter(e => e.type === 'Dabba').reduce((acc, e) => acc + (e.qty || 0), 0);
+        reportText += `*Bill #${p.billNo}* (${new Date(p.date).toLocaleDateString('en-GB')})\n`;
+        reportText += `Grower: ${p.growerName}\n`;
+        reportText += `Items: ${patti} Patti, ${dabba} Dabba\n`;
+        reportText += `Total: *₹${p.totals.grandTotal.toFixed(2)}*\n\n`;
+    });
+
+    reportText += `*Summary*\n`;
+    reportText += `Total Patti: ${footerTotals.patti}\n`;
+    reportText += `Total Dabba: ${footerTotals.dabba}\n`;
+    reportText += `*Grand Total: ₹${footerTotals.grandTotal.toFixed(2)}*`;
+
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(reportText)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -167,6 +241,18 @@ export default function PurchaseRegisterPage() {
                     title={viewMode === 'table' ? 'Grid View' : 'Table View'}
                     >
                     {viewMode === 'table' ? <LayoutGrid className="h-4 w-4" /> : <List className="h-4 w-4" />}
+                </Button>
+                 <Button size="sm" variant="outline" className="gap-1" onClick={handleShare}>
+                    <FaWhatsapp className="h-4 w-4 text-green-500" />
+                    Share
+                 </Button>
+                <Button size="sm" variant="outline" className="gap-1" onClick={exportToPDF}>
+                    <FileDown className="h-3.5 w-3.5" />
+                    PDF
+                </Button>
+                <Button size="sm" variant="outline" className="gap-1" onClick={exportToExcel}>
+                    <FileDown className="h-3.5 w-3.5" />
+                    Excel
                 </Button>
                 <Button size="sm" className="gap-1" onClick={() => router.push('/purchases')}>
                     <PlusCircle className="h-3.5 w-3.5" />
