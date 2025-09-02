@@ -50,11 +50,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-muted/40">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-muted/40 overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-1/3 bg-gray-900" />
-        <div className="relative z-10 flex flex-col items-center space-y-8">
-            <Logo className="h-32 w-32 text-white" />
-            <Card className="w-full max-w-sm shadow-2xl">
+        <div className="relative z-10 flex flex-col items-center space-y-8 animate-in fade-in slide-in-from-bottom-10 duration-700">
+            <Logo className="h-32 w-32 text-white animate-in fade-in duration-500" />
+            <Card className="w-full max-w-sm shadow-2xl animate-in fade-in delay-200 duration-500">
                 <CardHeader className="text-center">
                     <CardTitle className="text-2xl">Welcome Back</CardTitle>
                     <CardDescription>Enter your password to access the dashboard.</CardDescription>

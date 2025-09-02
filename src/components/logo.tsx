@@ -15,9 +15,9 @@ export const Logo = (props: React.SVGProps<SVGSVGElement>) => (
       />
       <text
         x="50"
-        y="70"
-        fontFamily="Arial-BoldMT, Arial"
-        fontSize="55"
+        y="72"
+        fontFamily="Arial, sans-serif"
+        fontSize="60"
         fontWeight="bold"
         textAnchor="middle"
         fill="black"
