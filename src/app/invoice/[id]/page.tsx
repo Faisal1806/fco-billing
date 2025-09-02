@@ -73,6 +73,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 }
 
                 if(data) {
+                     // Normalize the entries to ensure 'qty' is always present
                      data.entries = data.entries.map(e => ({...e, qty: e.qty || e.peti || e.dabba || 0}))
                     setBillData(data);
                 } else {
@@ -138,8 +139,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     if (!billData) {
         return (
             <div className="bg-gray-50 min-h-screen p-8 flex items-center justify-center">
-                <div className="text-center">
-                    <h2 className="text-xl font-semibold">Invoice Not Found</h2>
+                <div className="text-center p-8 border rounded-lg shadow-lg bg-white">
+                    <h2 className="text-2xl font-bold text-destructive">Invoice Not Found</h2>
                     <p className="text-muted-foreground mt-2">The invoice you are looking for does not exist or has been deleted.</p>
                 </div>
             </div>
