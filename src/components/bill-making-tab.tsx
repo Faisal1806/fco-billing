@@ -586,5 +586,3 @@ export function BillMakingTab() {
     </div>
   );
 }
-
-    
