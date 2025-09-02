@@ -31,7 +31,7 @@ const initialRows: Row[] = Array.from({ length: 5 }, () => ({ ...emptyRow }));
 export function BillMakingTab() {
   const [sNo, setSNo] = useState('');
   const [ms, setMs] = useState('');                 // M/S (customer)
-  const [khata, setKhata] = useState('');           // Khata No
+  const [khata, setKhata] = useState('');           // Khata Name
   const [challanNo, setChallanNo] = useState('');   // Challan / Rokat / Watak No (free text)
   const [date, setDate] = useState('');
   const [freight, setFreight] = useState<number>(0);
@@ -56,17 +56,28 @@ export function BillMakingTab() {
 
   useEffect(() => {
     setIsClient(true);
-    setIsLoading(true);
-    const bills = [];
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('invoice-')) {
-            const bill = JSON.parse(localStorage.getItem(key)!);
-            bills.push(bill);
-        }
-    }
-    setSavedBills(bills.sort((a,b) => (a.sNo > b.sNo) ? 1 : -1));
-    setIsLoading(false);
+    const fetchBills = async () => {
+      setIsLoading(true);
+      try {
+        const bills = await getDocuments('invoices');
+        setSavedBills(bills.sort((a,b) => (a.sNo > b.sNo) ? 1 : -1));
+      } catch (error) {
+          console.error("Error fetching bills from Firestore:", error);
+          // Fallback to localStorage if firestore fails
+          const bills = [];
+          for (let i = 0; i < localStorage.length; i++) {
+              const key = localStorage.key(i);
+              if (key && key.startsWith('invoice-')) {
+                  const bill = JSON.parse(localStorage.getItem(key)!);
+                  bills.push(bill);
+              }
+          }
+          setSavedBills(bills.sort((a,b) => (a.sNo > b.sNo) ? 1 : -1));
+      } finally {
+          setIsLoading(false);
+      }
+    };
+    fetchBills();
   }, []);
 
 
@@ -144,6 +155,7 @@ export function BillMakingTab() {
     setIsSubmitting(true);
     const billId = sNo;
     const billData = {
+      id: billId,
       sNo,
       date,
       customerName: ms,
@@ -194,7 +206,7 @@ export function BillMakingTab() {
     setChallanNo(bill.challanNo || '');
     setDate(bill.date);
     setFreight(bill.freight || 0);
-    setRows(bill.entries || initialRows);
+    setRows(bill.entries.length > 0 ? bill.entries : initialRows);
     setIsEditing(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -521,7 +533,7 @@ export function BillMakingTab() {
                         {isEditing ? 'Update Watak' : 'Save Watak'}
                     </Button>
                     <Button onClick={viewInPrintFormat} variant="secondary" className="flex-1 min-w-[150px]">
-                        Print / View
+                        View Invoice
                     </Button>
                     <Button onClick={exportPDF} variant="outline" className="flex-1 min-w-[150px] gap-2">
                         <Share className="h-4 w-4" /> Export PDF
