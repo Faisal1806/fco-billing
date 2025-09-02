@@ -11,13 +11,13 @@ export const Logo = (props: React.SVGProps<SVGSVGElement>) => (
     <g>
       <path
         d="M50,5A45,45,0,1,1,5,50,45,45,0,0,1,50,5M50,0a50,50,0,1,0,50,50A50,50,0,0,0,50,0Z"
-        fill="white"
+        fill="currentColor"
       />
       <text
         x="50"
-        y="68"
+        y="70"
         fontFamily="Arial-BoldMT, Arial"
-        fontSize="50"
+        fontSize="55"
         fontWeight="bold"
         textAnchor="middle"
         fill="black"
