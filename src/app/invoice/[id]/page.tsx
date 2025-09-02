@@ -269,7 +269,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                     </div>
                 </main>
 
-                <footer className="flex justify-between items-center mt-auto pt-4 border-t">
+                <footer className="flex justify-between items-end mt-auto pt-4 border-t print:pt-2">
                      <Controls />
                      <BusinessCardQR />
                      <div className="text-right text-xs">

@@ -64,7 +64,7 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
     if (loading) {
         return (
             <div className="bg-gray-50 min-h-screen p-8 flex items-center justify-center">
-                 <div className="w-full max-w-3xl mx-auto bg-white p-8">
+                 <div className="w-[210mm] min-h-[297mm] mx-auto bg-white p-8">
                     <Skeleton className="h-24 w-full mb-4" />
                     <Skeleton className="h-48 w-full" />
                  </div>
@@ -75,7 +75,7 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
     if (!billData) {
         return (
             <div className="bg-background min-h-screen flex items-center justify-center p-4">
-                 <div className="text-center p-8 border rounded-lg shadow-md">
+                 <div className="text-center p-8 border rounded-lg shadow-md bg-white">
                     <h2 className="text-xl font-bold">Bill Not Found</h2>
                     <p className="text-muted-foreground">The bill you are looking for does not exist.</p>
                 </div>
@@ -101,7 +101,7 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
                     }
                 }
             `}</style>
-            <div className="w-full max-w-3xl mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-8 my-8 print:my-0">
+            <div className="w-[210mm] min-h-[297mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-8 flex flex-col">
                 <header className="bg-gradient-to-r from-cyan-400 via-sky-500 to-blue-600 text-white p-6 rounded-t-xl shadow-lg">
                     <div className="flex justify-between items-center">
                         <Logo className="w-20 h-20" />
@@ -114,7 +114,7 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
                     </div>
                 </header>
                 
-                <main className="bg-white dark:bg-gray-800 p-6 rounded-b-xl shadow-lg -mt-4">
+                <main className="bg-white dark:bg-gray-800 p-6 rounded-b-xl shadow-lg -mt-4 flex-grow">
                      <div className="grid grid-cols-2 gap-4 text-sm border-b pb-4 mb-4">
                         <div>
                             <p><strong>No:</strong> {no}</p>
@@ -137,7 +137,7 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
                         </TableHeader>
                         <TableBody>
                             {entries.map((entry, index) => (
-                                <TableRow key={index}>
+                                <TableRow key={index} className="h-10">
                                     <TableCell>{index + 1}</TableCell>
                                     <TableCell>{entry.particulars}</TableCell>
                                     <TableCell className="text-right">{entry.qty}</TableCell>
@@ -148,18 +148,18 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
                         </TableBody>
                     </Table>
 
-                    <Separator className="my-4" />
-
-                    <div className="flex justify-end text-sm mt-2">
-                        <div className="w-full max-w-sm">
-                           <div className="flex justify-between font-bold text-2xl border-t-2 pt-2">
+                    <div className="flex justify-end mt-6">
+                        <div className="w-full max-w-sm space-y-2">
+                           <Separator />
+                           <div className="flex justify-between font-bold text-2xl pt-2">
                              <span>Grand Total:</span>
                              <span>₹{grandTotal.toFixed(2)}</span>
                            </div>
+                           <Separator />
                         </div>
                     </div>
                 </main>
-                <footer className="flex justify-between items-end p-4 mt-8 text-xs">
+                <footer className="flex justify-between items-end p-4 mt-auto print:pt-2 text-xs">
                      <div>
                         <p className="italic text-gray-500">Goods once sold can not be taken back.</p>
                         <Controls />

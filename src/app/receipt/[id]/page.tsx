@@ -3,7 +3,6 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Printer } from "lucide-react";
@@ -69,7 +68,7 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
     if (loading) {
         return (
             <div className="bg-gray-50 min-h-screen p-8 flex items-center justify-center">
-                 <div className="w-full max-w-2xl mx-auto bg-white p-8">
+                 <div className="w-[148mm] min-h-[210mm] mx-auto bg-white p-6">
                     <Skeleton className="h-24 w-full mb-4" />
                     <Skeleton className="h-48 w-full" />
                  </div>
@@ -80,12 +79,10 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
     if (!receiptData) {
         return (
             <div className="bg-background min-h-screen flex items-center justify-center p-4">
-                <Card className="w-full max-w-md mx-auto text-center">
-                    <CardHeader>
-                        <h2 className="text-xl font-bold">Receipt Not Found</h2>
-                        <p className="text-muted-foreground">The receipt you are looking for does not exist.</p>
-                    </CardHeader>
-                </Card>
+                <div className="text-center p-8 border rounded-lg shadow-md bg-white">
+                    <h2 className="text-xl font-bold">Receipt Not Found</h2>
+                    <p className="text-muted-foreground">The receipt you are looking for does not exist.</p>
+                </div>
             </div>
         );
     }
@@ -110,7 +107,7 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
                 }
             `}</style>
             <div className="w-[148mm] min-h-[210mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-6 flex flex-col">
-                <header className="bg-gradient-to-r from-yellow-400 via-orange-500 to-amber-600 text-white p-4 rounded-t-xl text-center">
+                <header className="bg-gradient-to-r from-yellow-400 via-orange-500 to-amber-600 text-white p-4 rounded-t-xl text-center shadow-md">
                     <h1 className="text-2xl font-bold">GOODS RECEIPT (F.Co)</h1>
                     <p className="text-xs">F.Co - FIRDOUS AHMAD & COMPANY</p>
                 </header>
@@ -136,7 +133,7 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
                         </TableHeader>
                         <TableBody className="text-xs">
                             {entries.map((entry, index) => (
-                                <TableRow key={index}>
+                                <TableRow key={index} className="h-8">
                                     <TableCell>{entry?.khata || ''}</TableCell>
                                     <TableCell>{entry?.peti || ''}</TableCell>
                                     <TableCell>{entry?.daba || ''}</TableCell>
@@ -158,7 +155,7 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
                         </div>
                     </div>
                 </main>
-                <footer className="flex justify-between items-end p-4 mt-auto text-xs">
+                <footer className="flex justify-between items-end p-4 mt-auto text-xs print:pt-2">
                      <Controls />
                      <div className="text-center">
                         <div className="w-32 h-10 border-b border-gray-400 border-dotted"></div>
