@@ -160,10 +160,10 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
                     </div>
                 </main>
                 <footer className="flex justify-between items-end p-4 mt-auto print:pt-2 text-xs">
-                     <div>
-                        <p className="italic text-gray-500">Goods once sold can not be taken back.</p>
-                        <Controls />
-                     </div>
+                    <div className="flex flex-col gap-2">
+                         <Controls />
+                         <p className="italic text-gray-500">Goods once sold can not be taken back.</p>
+                    </div>
                      <div className="text-center">
                         <div className="w-40 h-12 border-b border-gray-400 border-dotted"></div>
                         <p className="font-semibold">Authorized Signature</p>
