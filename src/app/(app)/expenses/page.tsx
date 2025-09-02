@@ -14,7 +14,7 @@ export default function ExpensesPage() {
     <Card>
       <CardHeader>
         <CardTitle>Expenses</CardTitle>
-        <CardDescription>This feature is coming soon. You will be able to track your business expenses here.</CardDescription>
+        <CardDescription>This feature is coming soon. You will be able to track your business expenses here, which will be used for Profit & Loss reporting.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="text-center py-12 text-muted-foreground">
