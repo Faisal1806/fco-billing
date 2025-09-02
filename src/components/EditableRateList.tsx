@@ -17,18 +17,22 @@ interface Rate {
     rate: string;
 }
 
-const STORAGE_KEY_PREFIX = 'daily-rate-list-';
+interface EditableRateListProps {
+    storageKeyPrefix: string;
+    title: string;
+    defaultRates?: Rate[];
+}
 
-const getStorageKey = (date: Date) => {
-    const dateString = date.toISOString().split('T')[0];
-    return `${STORAGE_KEY_PREFIX}${dateString}`;
-};
-
-export default function EditableRateList() {
+export default function EditableRateList({ storageKeyPrefix, title, defaultRates = [] }: EditableRateListProps) {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [rates, setRates] = useState<Rate[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
+
+    const getStorageKey = (date: Date) => {
+        const dateString = date.toISOString().split('T')[0];
+        return `${storageKeyPrefix}${dateString}`;
+    };
 
     useEffect(() => {
         setIsLoading(true);
@@ -37,10 +41,16 @@ export default function EditableRateList() {
         if (storedRates) {
             setRates(JSON.parse(storedRates));
         } else {
-            setRates([]);
+            // If it's today and we have default rates, show them.
+            const today = new Date();
+            if (currentDate.toDateString() === today.toDateString()) {
+                setRates(defaultRates);
+            } else {
+                setRates([]);
+            }
         }
         setIsLoading(false);
-    }, [currentDate]);
+    }, [currentDate, storageKeyPrefix, defaultRates]);
 
     const handleSave = () => {
         const storageKey = getStorageKey(currentDate);
@@ -84,7 +94,7 @@ export default function EditableRateList() {
             day: 'numeric', month: 'long', year: 'numeric'
         });
         
-        let shareText = `*Daily Rate List - ${dateString}*\n`;
+        let shareText = `*${title} - ${dateString}*\n`;
         shareText += `*FIRDOUS AHMAD & COMPANY*\n\n`;
 
         const groupedRates: {[key: string]: Rate[]} = rates.reduce((acc, rate) => {
@@ -117,7 +127,7 @@ export default function EditableRateList() {
                             📝 Editable Daily Rate List
                         </CardTitle>
                         <CardDescription>
-                            Manage and share your daily market rates.
+                            Manage and share your daily market rates for {title.toLowerCase()}.
                         </CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
@@ -146,21 +156,21 @@ export default function EditableRateList() {
                             <TableRow key={rate.id}>
                                 <TableCell>
                                     <Input
-                                        placeholder="e.g., Apples"
+                                        placeholder="e.g., Apples, Pesticide"
                                         value={rate.category}
                                         onChange={(e) => handleUpdateRate(rate.id, 'category', e.target.value)}
                                     />
                                 </TableCell>
                                 <TableCell>
                                     <Input
-                                        placeholder="e.g., Red Delicious"
+                                        placeholder="e.g., Red Delicious, Urea"
                                         value={rate.variety}
                                         onChange={(e) => handleUpdateRate(rate.id, 'variety', e.target.value)}
                                     />
                                 </TableCell>
                                 <TableCell>
                                     <Input
-                                        placeholder="e.g., 800-900"
+                                        placeholder="e.g., 800-900 or 1500"
                                         value={rate.rate}
                                         onChange={(e) => handleUpdateRate(rate.id, 'rate', e.target.value)}
                                     />
@@ -184,7 +194,7 @@ export default function EditableRateList() {
                             <Save className="h-4 w-4" />
                             Save
                         </Button>
-                        <Button variant="secondary" onClick={handleShare} className="gap-2">
+                        <Button variant="secondary" onClick={handleShare} className="gap-2" disabled={rates.length === 0}>
                             <FaWhatsapp className="h-4 w-4 text-green-500" />
                             Share List
                         </Button>

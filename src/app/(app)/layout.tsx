@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, ShoppingCart, Package, Settings, Receipt, BookUser, Truck, BookCopy, ScrollText, Tags } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, Settings, Receipt, BookUser, Truck, BookCopy, ScrollText, Tags, FlaskConical } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
 import { cn } from '@/lib/utils';
 import { Header } from '@/components/Header';
@@ -30,7 +30,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { href: '/expenses', icon: Receipt, label: 'Expenses', role: ['admin'] },
     { href: '/watak-register', icon: BookUser, label: t('watak_register'), role: ['admin', 'staff'] },
     { href: '/khata', icon: BookCopy, label: 'Khata Ledger', role: ['admin', 'staff'] },
-    { href: '/rates', icon: Tags, label: 'Rates', role: ['admin', 'staff'] },
+    { href: '/rates', icon: Tags, label: 'Fruit Rates', role: ['admin', 'staff'] },
+    { href: '/fertilizer-rates', icon: FlaskConical, label: 'Fertilizer Rates', role: ['admin', 'staff'] },
     { href: '/settings', icon: Settings, label: t('settings'), role: ['admin'] },
   ];
 
