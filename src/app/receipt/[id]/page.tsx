@@ -18,6 +18,7 @@ interface ReceiptData {
     ro: string;
     entries: {
         khata: string;
+        kind: string;
         peti: number;
         daba: number;
         freight: string;
@@ -126,6 +127,7 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
                         <TableHeader>
                             <TableRow className="text-xs">
                                 <TableHead>KHATA</TableHead>
+                                <TableHead>KIND</TableHead>
                                 <TableHead>PETI</TableHead>
                                 <TableHead>DABA</TableHead>
                                 <TableHead>FREIGHT</TableHead>
@@ -135,6 +137,7 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
                             {entries.map((entry, index) => (
                                 <TableRow key={index} className="h-8">
                                     <TableCell>{entry?.khata || ''}</TableCell>
+                                    <TableCell>{entry?.kind || ''}</TableCell>
                                     <TableCell>{entry?.peti || ''}</TableCell>
                                     <TableCell>{entry?.daba || ''}</TableCell>
                                     <TableCell>{entry?.freight || ''}</TableCell>

@@ -19,6 +19,7 @@ import { ScrollArea } from './ui/scroll-area';
 
 type ReceiptEntry = {
   khata: string;
+  kind: string;
   peti: number;
   daba: number;
   freight: string;
@@ -38,6 +39,12 @@ const ReceiptEntryRow = ({
       placeholder="Khata"
       value={entry.khata}
       onChange={(e) => onUpdate('khata', e.target.value)}
+      className="flex-1"
+    />
+     <Input
+      placeholder="Kind"
+      value={entry.kind}
+      onChange={(e) => onUpdate('kind', e.target.value)}
       className="flex-1"
     />
     <Input
@@ -79,7 +86,7 @@ export function ReceiptMakingTab() {
     wattakReadyOn: '',
   };
   const initialEntries: ReceiptEntry[] = [
-    { khata: '', peti: 0, daba: 0, freight: '' },
+    { khata: '', kind: '', peti: 0, daba: 0, freight: '' },
   ];
 
   const [entries, setEntries] = React.useState<ReceiptEntry[]>(initialEntries);
@@ -127,7 +134,7 @@ export function ReceiptMakingTab() {
   }
 
   const addSlot = () => {
-    setEntries((prev) => [...prev, { khata: '', peti: 0, daba: 0, freight: '' }]);
+    setEntries((prev) => [...prev, { khata: '', kind: '', peti: 0, daba: 0, freight: '' }]);
   };
 
   const removeSlot = (index: number) => {
@@ -255,6 +262,7 @@ export function ReceiptMakingTab() {
                     <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
                         <Label className="w-10">S.No.</Label>
                         <Label className="flex-1">KHATA</Label>
+                        <Label className="flex-1">KIND</Label>
                         <Label className="w-20">PETI</Label>
                         <Label className="w-20">DABA</Label>
                         <Label className="w-28">FREIGHT</Label>
