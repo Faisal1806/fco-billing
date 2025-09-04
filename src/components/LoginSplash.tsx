@@ -1,3 +1,4 @@
+
 "use client";
 
 import { motion } from "framer-motion";
@@ -50,29 +51,22 @@ export default function LoginSplash() {
 
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-500 to-purple-600">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-400 via-emerald-500 to-teal-600 p-4">
       <motion.div
-        initial={{ opacity: 0, y: -50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-        className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md text-center"
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="bg-background/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center border border-white/20"
       >
-        <motion.h1
-          initial={{ scale: 0.5, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.3, duration: 0.6 }}
-          className="text-3xl font-bold mb-6 text-purple-600"
-        >
-          🚀 Welcome Back
-        </motion.h1>
-
         <motion.div
-          initial={{ rotate: -20, scale: 0 }}
-          animate={{ rotate: 0, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.5, type: 'spring' }}
-          className="flex justify-center mb-6"
+          initial={{ y: -50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.6, type: "spring", stiffness: 100 }}
+          className="flex flex-col items-center mb-6"
         >
-          <Logo className="w-24 h-24 rounded-full shadow-lg" />
+          <Logo className="w-24 h-24 text-primary" />
+           <h1 className="text-2xl font-bold mt-4 text-foreground">F.Co Billing System</h1>
+           <p className="text-muted-foreground text-sm">Please login to continue</p>
         </motion.div>
 
         <div className="space-y-4">
@@ -81,7 +75,7 @@ export default function LoginSplash() {
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Enter your password"
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-400 text-center"
+                    className="w-full pl-4 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-primary/50 text-center bg-background/70"
                     required
                     value={password}
                     onChange={(e) => {
@@ -94,20 +88,20 @@ export default function LoginSplash() {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="absolute inset-y-0 right-0 h-full px-3"
+                    className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground"
                     onClick={() => setShowPassword(!showPassword)}
                     >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
                 </Button>
             </div>
-          {error && <p className="text-sm text-red-500">{error}</p>}
-          <button
+          {error && <p className="text-sm text-red-500 animate-pulse">{error}</p>}
+          <Button
             onClick={handleLogin}
-            className="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition"
+            className="w-full bg-primary text-primary-foreground py-3 rounded-lg hover:bg-primary/90 transition-all duration-300 transform hover:scale-105 shadow-lg"
           >
             Login →
-          </button>
+          </Button>
         </div>
       </motion.div>
     </div>

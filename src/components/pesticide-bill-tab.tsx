@@ -209,13 +209,15 @@ export function PesticideBillTab() {
         <Card className="md:col-span-2">
             <CardHeader>
                  <div className="flex justify-between items-center">
+                    <div className="text-sm font-bold">🍎 F.Co</div>
                     <div className="text-center flex-1">
                         <h2 className="text-2xl font-bold">F. Co Pesticides & Fertilizers</h2>
                         <p className="text-sm text-muted-foreground">Deals in:- All kinds of Pesticides & Fertilizers</p>
                         <p className="text-xs text-muted-foreground">NEAR JAMIA MASJID NADIHAL</p>
                     </div>
+                    <div className="text-sm font-bold">🍎 F.Co</div>
                      {isEditing && (
-                        <Button variant="outline" size="sm" onClick={resetForm} className="gap-2">
+                        <Button variant="outline" size="sm" onClick={resetForm} className="gap-2 ml-4">
                             <FilePlus className="h-4 w-4" />
                             New Bill
                         </Button>

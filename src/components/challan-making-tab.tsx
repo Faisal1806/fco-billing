@@ -229,14 +229,16 @@ export function ChallanMakingTab() {
         <Card className="lg:col-span-2">
             <CardHeader>
                 <div className="flex justify-between items-center">
+                    <div className="text-sm font-bold">🍎 F.Co</div>
                     <div className="text-center flex-1">
                         <h2 className="text-2xl font-bold">F.Co - FIRDOUS AHMAD & COMPANY</h2>
                         <p className="text-sm text-muted-foreground">Fruit Merchants & Commission Agents</p>
                         <p className="text-xs text-muted-foreground">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
                          <p className="text-xs text-muted-foreground">Prop: Firdous Ahmad Lone (Nadihal) | Cell: 7006136330, 9797002164, 9906740921 | Email: lone07936@gmail.com</p>
                     </div>
+                    <div className="text-sm font-bold">🍎 F.Co</div>
                      {isEditing && (
-                        <Button variant="outline" size="sm" onClick={resetForm} className="gap-2">
+                        <Button variant="outline" size="sm" onClick={resetForm} className="gap-2 ml-4">
                             <FilePlus className="h-4 w-4" />
                             New Challan
                         </Button>
