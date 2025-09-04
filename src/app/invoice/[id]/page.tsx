@@ -81,7 +81,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                     // Normalize entries to ensure 'qty' is always present for calculations
                     data.entries = data.entries.map(e => ({
                         ...e, 
-                        qty: e.qty || e.peti || e.dabba || 0
+                        qty: e.qty || e.peti || e.daba || 0
                     }));
                     setBillData(data);
                 } else {
