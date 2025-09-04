@@ -62,9 +62,8 @@ export default function LoginSplash() {
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.6, type: "spring", stiffness: 100 }}
-          className="flex flex-col items-center mb-6"
+          className="mb-6"
         >
-          <Logo className="w-24 h-24 text-primary" />
            <h1 className="text-2xl font-bold mt-4 text-foreground">F.Co Billing System</h1>
            <p className="text-muted-foreground text-sm">Please login to continue</p>
         </motion.div>
