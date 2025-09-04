@@ -1,11 +1,11 @@
 
 'use client'
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Printer } from "lucide-react";
+import { Printer, Download } from "lucide-react";
 import { FaWhatsapp } from 'react-icons/fa';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +13,8 @@ import { Logo } from "@/components/logo";
 import BusinessCardQR from "@/components/BusinessCardQR";
 import { getClientDb } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 interface BillData {
     id: string;
@@ -50,6 +52,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     const [billData, setBillData] = useState<BillData | null>(null);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
+    const printRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const fetchBill = async () => {
@@ -128,6 +131,27 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             toast({ variant: "destructive", title: "Share Failed", description: "Could not share the invoice." });
         }
     };
+    
+    const handleDownloadPdf = async () => {
+        const element = printRef.current;
+        if (!element || !billData) return;
+
+        const canvas = await html2canvas(element, {
+            scale: 2, // Higher scale for better quality
+        });
+
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a5'
+        });
+        
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`Invoice-${billData.sNo}.pdf`);
+    };
 
 
     const Controls = () => (
@@ -136,9 +160,13 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 <FaWhatsapp className="h-4 w-4 text-green-500" />
                 Share
             </Button>
-            <Button onClick={() => window.print()} size="sm" className="gap-2">
+            <Button onClick={() => window.print()} variant="outline" size="sm" className="gap-2">
                 <Printer className="h-4 w-4" />
                 Print
+            </Button>
+             <Button onClick={handleDownloadPdf} size="sm" className="gap-2">
+                <Download className="h-4 w-4" />
+                Download PDF
             </Button>
         </div>
     )
@@ -190,7 +218,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                     }
                 }
             `}</style>
-            <div className="w-[148mm] min-h-[210mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-4 flex flex-col text-xs">
+            <div ref={printRef} className="w-[148mm] min-h-[210mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-4 flex flex-col text-xs">
                  <header className="bg-gradient-to-r from-green-400 via-emerald-500 to-teal-600 text-white p-4 rounded-t-xl shadow-lg">
                     <div className="flex justify-between items-center">
                         <div className="text-left text-sm font-bold">
@@ -300,7 +328,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                      <Controls />
                      <BusinessCardQR size={60} />
                      <div className="text-right text-[10px]">
-                        <p className="font-signature text-xl text-gray-700 dark:text-gray-300">Faisal</p>
+                        <p className="font-signature text-2xl text-gray-700 dark:text-gray-300">Faisal</p>
                         <p className="font-bold">Sign. Of Manager</p>
                         <p>For Firdous Ahmad & Company</p>
                      </div>

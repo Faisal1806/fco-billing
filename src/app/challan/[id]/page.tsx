@@ -1,11 +1,11 @@
 
 'use client'
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Printer } from "lucide-react";
+import { Printer, Download } from "lucide-react";
 import { FaWhatsapp } from 'react-icons/fa';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +13,8 @@ import { Logo } from "@/components/logo";
 import { doc, getDoc } from "firebase/firestore";
 import { getClientDb } from "@/lib/firebase";
 import { deleteDocument, saveDocument } from "@/lib/actions";
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 
 interface ChallanData {
@@ -45,6 +47,7 @@ export default function ChallanPage({ params }: { params: { id: string } }) {
     const [challanData, setChallanData] = useState<ChallanData | null>(null);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
+    const printRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const fetchChallan = async () => {
@@ -111,6 +114,27 @@ export default function ChallanPage({ params }: { params: { id: string } }) {
             toast({ variant: "destructive", title: "Share Failed", description: "Could not share the challan." });
         }
     };
+    
+    const handleDownloadPdf = async () => {
+        const element = printRef.current;
+        if (!element || !challanData) return;
+
+        const canvas = await html2canvas(element, {
+            scale: 2, // Higher scale for better quality
+        });
+
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a5'
+        });
+        
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`Challan-${challanData.challanNo}.pdf`);
+    };
 
     const Controls = () => (
          <div className="flex items-center gap-2 print:hidden">
@@ -118,9 +142,13 @@ export default function ChallanPage({ params }: { params: { id: string } }) {
                 <FaWhatsapp className="h-4 w-4 text-green-500" />
                 Share
             </Button>
-            <Button onClick={() => window.print()} size="sm" className="gap-2">
+            <Button onClick={() => window.print()} variant="outline" size="sm" className="gap-2">
                 <Printer className="h-4 w-4" />
                 Print
+            </Button>
+             <Button onClick={handleDownloadPdf} size="sm" className="gap-2">
+                <Download className="h-4 w-4" />
+                Download PDF
             </Button>
         </div>
     )
@@ -170,7 +198,7 @@ export default function ChallanPage({ params }: { params: { id: string } }) {
                     }
                 }
             `}</style>
-            <div className="w-[148mm] min-h-[210mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-6 flex flex-col">
+            <div ref={printRef} className="w-[148mm] min-h-[210mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-6 flex flex-col">
                 <header className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white p-4 rounded-t-xl text-center flex justify-between items-center">
                     <div className="text-sm font-bold">🍎 F.Co</div>
                     <div>

@@ -36,6 +36,7 @@
     "clsx": "^2.1.1",
     "firebase": "^9.22.2",
     "framer-motion": "^11.2.12",
+    "html2canvas": "^1.4.1",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.5.28",
     "lucide-react": "^0.400.0",
