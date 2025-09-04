@@ -150,12 +150,12 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
                              </div>
                              <div className="flex-grow">
                                 <div className="text-xs">
-                                    Trade Mark: FCO <span className="mx-2">|</span> Cell: 9797002164, 7006136330
+                                     <p className="font-bold">Prop: Firdous Ahmad Lone (Nadihal)</p>
+                                     <p>Cell: 7006136330, 9797002164, 9906740921</p>
                                 </div>
                                 <h1 className="text-2xl font-bold text-green-800">FIRDOUS AHMAD & COMPANY</h1>
                                 <p className="text-xs font-semibold">Fruit Merchants & Commission Agents</p>
-                                <p className="text-xs">Shed No. 13, Fud No. 12-A, Fruit Mandi Sopore, Kashmir</p>
-                                <p className="text-xs font-bold">Prop: Firdous Ahmad</p>
+                                <p className="text-xs">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
                              </div>
                              <Logo className="w-16 h-16 opacity-50" />
                         </div>
