@@ -145,8 +145,8 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
                     {/* Header */}
                     <header className="text-center border-b-2 border-green-700 pb-2">
                         <div className="flex justify-between items-start">
-                             <div className="text-left text-xl">
-                                <p>🍎</p>
+                             <div className="text-left text-sm font-bold">
+                                <p>🍎 F.Co</p>
                              </div>
                              <div className="flex-grow">
                                 <div className="text-xs">
@@ -157,8 +157,8 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
                                 <p className="text-xs font-semibold">Fruit Merchants & Commission Agents</p>
                                 <p className="text-xs">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
                              </div>
-                             <div className="text-right text-xl">
-                                <p>🍎</p>
+                             <div className="text-right text-sm font-bold">
+                                <p>🍎 F.Co</p>
                              </div>
                         </div>
                     </header>

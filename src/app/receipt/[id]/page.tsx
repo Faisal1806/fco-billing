@@ -113,12 +113,12 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
             `}</style>
             <div className="w-[148mm] min-h-[210mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-6 flex flex-col">
                 <header className="bg-gradient-to-r from-yellow-400 via-orange-500 to-amber-600 text-white p-4 rounded-t-xl shadow-md flex justify-between items-center">
-                    <div className="text-2xl">🍎</div>
+                    <div className="text-sm font-bold">🍎 F.Co</div>
                     <div className="text-center">
                         <h1 className="text-2xl font-bold">GOODS RECEIPT</h1>
-                        <p className="text-xs">FIRDOUS AHMAD & COMPANY (F.Co)</p>
+                        <p className="text-xs">FIRDOUS AHMAD & COMPANY</p>
                     </div>
-                    <div className="text-2xl">🍎</div>
+                    <div className="text-sm font-bold">🍎 F.Co</div>
                 </header>
                 <main className="flex-grow bg-white dark:bg-gray-800 p-4 -mt-2 rounded-b-xl shadow-lg">
                      <div className="grid grid-cols-2 gap-2 text-xs border-b pb-2 mb-2">

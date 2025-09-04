@@ -172,13 +172,13 @@ export default function ChallanPage({ params }: { params: { id: string } }) {
             `}</style>
             <div className="w-[148mm] min-h-[210mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-6 flex flex-col">
                 <header className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white p-4 rounded-t-xl text-center flex justify-between items-center">
-                    <div className="text-2xl">🍎</div>
+                    <div className="text-sm font-bold">🍎 F.Co</div>
                     <div>
                         <h2 className="text-xl font-bold">FIRDOUS AHMAD & COMPANY</h2>
                         <p className="text-xs">Fruit Merchants & Commission Agents, Sopore</p>
                         <h1 className="text-2xl font-bold mt-2">CHALLAN</h1>
                     </div>
-                    <div className="text-2xl">🍎</div>
+                    <div className="text-sm font-bold">🍎 F.Co</div>
                 </header>
 
                  <main className="flex-grow bg-white dark:bg-gray-800 p-4 -mt-2 rounded-b-xl shadow-lg">

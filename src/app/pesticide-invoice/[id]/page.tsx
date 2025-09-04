@@ -108,13 +108,13 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
             <div className="w-[210mm] min-h-[297mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-8 flex flex-col">
                 <header className="bg-gradient-to-r from-cyan-400 via-sky-500 to-blue-600 text-white p-6 rounded-t-xl shadow-lg">
                     <div className="flex justify-between items-center">
-                        <Logo className="w-20 h-20" />
+                        <div className="text-sm font-bold">🍎 F.Co</div>
                         <div className="text-center">
                             <h1 className="text-3xl font-bold">F. Co Pesticides & Fertilizers</h1>
                             <p className="mt-1 text-sm">Deals in:- All kinds of Pesticides & Fertilizers</p>
                             <p className="text-xs">NEAR JAMIA MASJID NADIHAL, SOPORE</p>
                         </div>
-                        <div className="w-20"></div>
+                        <div className="text-sm font-bold">🍎 F.Co</div>
                     </div>
                 </header>
                 

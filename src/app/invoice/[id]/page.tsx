@@ -193,8 +193,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             <div className="w-[148mm] min-h-[210mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-4 flex flex-col text-xs">
                  <header className="bg-gradient-to-r from-green-400 via-emerald-500 to-teal-600 text-white p-4 rounded-t-xl shadow-lg">
                     <div className="flex justify-between items-center">
-                        <div className="text-left text-2xl">
-                           🍎
+                        <div className="text-left text-sm font-bold">
+                           🍎 F.Co
                         </div>
                         <div className="text-center">
                             <h2 className="text-xl font-bold">FIRDOUS AHMAD & COMPANY</h2>
@@ -202,8 +202,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                             <p className="text-[8px]">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
                             <p className="text-[8px]">Prop: Firdous Ahmad Lone (Nadihal) | Cell: 7006136330, 9797002164, 9906740921 | Email: lone07936@gmail.com</p>
                         </div>
-                        <div className="text-right text-2xl">
-                           🍎
+                        <div className="text-right text-sm font-bold">
+                           🍎 F.Co
                         </div>
                     </div>
                 </header>
