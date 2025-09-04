@@ -186,7 +186,7 @@ export function BillMakingTab() {
         }
 
         toast({
-          title: isEditing ? 'Bill Updated' : 'Bill Saved',
+          title: isEditing ? 'Bill Updated & Synced' : 'Bill Saved & Synced',
           description: `The bill has been successfully saved to the cloud.`,
         });
 
@@ -194,8 +194,8 @@ export function BillMakingTab() {
         console.error("Error saving bill to cloud:", error);
         toast({
             variant: 'destructive',
-            title: 'Save Failed',
-            description: 'Could not save the bill to the cloud. It is saved locally.',
+            title: 'Cloud Sync Failed',
+            description: 'Could not save the bill to the cloud. It is saved locally on this device.',
         });
     } finally {
         fetchBills(); // Re-fetch to update the list
@@ -231,27 +231,30 @@ export function BillMakingTab() {
             return;
         }
 
+        // Delete from LocalStorage first
+        localStorage.removeItem(`invoice-${billId}`);
+
         try {
-            localStorage.removeItem(`invoice-${billId}`);
-            // Also delete from Firestore
+            // Then delete from Firestore
             await deleteDocument('invoices', billId);
-            
-            fetchBills(); // Re-fetch to update list
             
             toast({
                 title: "Bill Deleted",
                 description: `Bill #${billId} has been successfully deleted from local and cloud storage.`
             })
+
+        } catch (error) {
+            console.error("Error deleting bill from cloud:", error);
+            toast({
+                variant: "destructive",
+                title: "Cloud Delete Failed",
+                description: "Could not delete bill from cloud, but it was removed locally."
+            })
+        } finally {
+            fetchBills(); // Re-fetch to update list
             if (sNo === billId) {
                 resetForm();
             }
-        } catch (error) {
-            console.error("Error deleting bill:", error);
-            toast({
-                variant: "destructive",
-                title: "Delete Failed",
-                description: "Could not delete the bill.",
-            })
         }
     }
 
