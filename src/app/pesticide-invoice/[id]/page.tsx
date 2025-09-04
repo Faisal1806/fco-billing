@@ -90,6 +90,10 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
     return (
         <div className="bg-gray-100 dark:bg-gray-900 font-sans print:bg-white">
             <style jsx global>{`
+                @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
+                .font-signature {
+                    font-family: 'Dancing Script', cursive;
+                }
                 @media print {
                     @page {
                         size: A4 portrait;
@@ -165,11 +169,13 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
                          <p className="italic text-gray-500">Goods once sold can not be taken back.</p>
                     </div>
                      <div className="text-center">
-                        <div className="w-40 h-12 border-b border-gray-400 border-dotted"></div>
-                        <p className="font-semibold">Authorized Signature</p>
+                        <p className="font-signature text-2xl text-gray-700 dark:text-gray-300">Faisal</p>
+                        <p className="font-bold">Sign. Of Manager</p>
                      </div>
                 </footer>
             </div>
         </div>
     );
 }
+
+    

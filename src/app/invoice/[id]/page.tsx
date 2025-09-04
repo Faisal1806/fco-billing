@@ -162,6 +162,10 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     return (
         <div className="bg-gray-100 dark:bg-gray-900 font-sans print:bg-white">
              <style jsx global>{`
+                @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
+                .font-signature {
+                    font-family: 'Dancing Script', cursive;
+                }
                 @media print {
                     @page {
                         size: A4;
@@ -280,7 +284,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                      <Controls />
                      <BusinessCardQR />
                      <div className="text-right text-xs">
-                        <p className="font-bold">Manager</p>
+                        <p className="font-signature text-2xl text-gray-700 dark:text-gray-300">Faisal</p>
+                        <p className="font-bold">Sign. Of Manager</p>
                         <p>For Firdous Ahmad & Company</p>
                      </div>
                 </footer>
@@ -288,3 +293,5 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         </div>
     );
 }
+
+    

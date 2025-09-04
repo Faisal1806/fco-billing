@@ -118,6 +118,10 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
     return (
         <div className="bg-gray-200 dark:bg-gray-900 font-sans print:bg-white flex justify-center py-8">
             <style jsx global>{`
+                @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
+                .font-signature {
+                    font-family: 'Dancing Script', cursive;
+                }
                 @media print {
                     @page {
                         size: A5 portrait;
@@ -217,11 +221,11 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
                             <p>Your Satisfaction is our Success</p>
                             <p className="italic">If the bill is not paid within 15 days interest @ 5% will be Charged extra</p>
                         </div>
-                        <div className="flex justify-between mt-4">
+                        <div className="flex justify-between items-end mt-4">
                             <Controls />
                             <div className="text-center">
-                                <p className="border-t border-dotted border-black w-32 mt-8"></p>
-                                <p className="font-semibold">Signature</p>
+                                <p className="font-signature text-2xl text-gray-700 dark:text-gray-300">Faisal</p>
+                                <p className="font-bold">Sign. Of Manager</p>
                             </div>
                         </div>
                     </footer>
@@ -230,3 +234,5 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
         </div>
     );
 }
+
+    
