@@ -16,6 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { PlusCircle, Trash2, FilePenLine, FilePlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
+import { saveDocument, deleteDocument } from '@/lib/actions';
 
 type ChallanEntry = {
   peti: number;
@@ -89,8 +90,12 @@ export function ChallanMakingTab() {
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && key.startsWith('challan-')) {
-            const challan = JSON.parse(localStorage.getItem(key)!);
-            challans.push(challan);
+            try {
+                const challan = JSON.parse(localStorage.getItem(key)!);
+                challans.push(challan);
+            } catch(e) {
+                console.error("Failed to parse challan from local storage", e);
+            }
         }
     }
     setSavedChallans(challans.sort((a,b) => (a.challanNo > b.challanNo) ? 1 : -1));
@@ -134,7 +139,7 @@ export function ChallanMakingTab() {
     setIsEditing(false);
   };
 
-  const handleCreateChallan = () => {
+  const handleCreateChallan = async () => {
     if (!details.challanNo || !details.date || !details.toMs) {
         toast({
             variant: 'destructive',
@@ -153,12 +158,22 @@ export function ChallanMakingTab() {
     };
     
     localStorage.setItem(`challan-${challanId}`, JSON.stringify(challanData));
-    fetchChallans(); // Re-fetch to update list
+    
+    try {
+        await saveDocument('challans', challanId, challanData);
+        toast({
+            title: isEditing ? 'Challan Updated & Synced' : 'Challan Saved & Synced',
+            description: 'The challan has been successfully saved to the cloud.',
+        });
+    } catch (error) {
+         toast({
+            variant: 'destructive',
+            title: 'Cloud Sync Failed',
+            description: 'Could not save the challan to the cloud. It is saved locally.',
+        });
+    }
 
-    toast({
-      title: isEditing ? 'Challan Updated' : 'Challan Saved',
-      description: 'The challan has been successfully saved.',
-    });
+    fetchChallans(); // Re-fetch to update list
     router.push(`/challan/${challanId}`);
   };
 
@@ -173,7 +188,7 @@ export function ChallanMakingTab() {
       tollTax: challan.tollTax,
       payOnlyFreight: challan.payOnlyFreight,
     });
-    setEntries(challan.entries);
+    setEntries(challan.entries.length > 0 ? challan.entries : initialEntries);
     setIsEditing(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -186,23 +201,26 @@ export function ChallanMakingTab() {
     if(!window.confirm(`Are you sure you want to delete Challan #${challanId}? This action cannot be undone.`)) {
         return;
     }
+    
+    localStorage.removeItem(`challan-${challanId}`);
+
     try {
-        localStorage.removeItem(`challan-${challanId}`);
-        fetchChallans(); // Re-fetch to update list
+        await deleteDocument('challans', challanId);
         toast({
             title: "Challan Deleted",
-            description: `Challan #${challanId} has been successfully deleted.`
+            description: `Challan #${challanId} has been successfully deleted from local and cloud storage.`
         });
-        if (details.challanNo === challanId) {
-            resetForm();
-        }
     } catch (error) {
-        console.error("Error deleting challan:", error);
         toast({
             variant: "destructive",
-            title: "Delete Failed",
-            description: "Could not delete the challan."
+            title: "Cloud Delete Failed",
+            description: "Could not delete challan from cloud, but it was removed locally."
         });
+    }
+
+    fetchChallans(); // Re-fetch to update list
+    if (details.challanNo === challanId) {
+        resetForm();
     }
   };
 

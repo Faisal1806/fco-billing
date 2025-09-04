@@ -10,6 +10,10 @@ import { FaWhatsapp } from 'react-icons/fa';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/logo";
+import { doc, getDoc } from "firebase/firestore";
+import { getClientDb } from "@/lib/firebase";
+import { deleteDocument, saveDocument } from "@/lib/actions";
+
 
 interface ChallanData {
     challanNo: string;
@@ -43,12 +47,60 @@ export default function ChallanPage({ params }: { params: { id: string } }) {
     const { toast } = useToast();
 
     useEffect(() => {
-        const storedChallan = localStorage.getItem(`challan-${params.id}`);
-        if (storedChallan) {
-            setChallanData(JSON.parse(storedChallan));
-        }
-        setLoading(false);
-    }, [params.id]);
+        const fetchChallan = async () => {
+             if (!params.id) {
+                setLoading(false);
+                return;
+            };
+            setLoading(true);
+
+            let data: ChallanData | null = null;
+            let errorOccurred = false;
+
+            try {
+                const db = getClientDb();
+                const docRef = doc(db, "challans", params.id);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    data = docSnap.data() as ChallanData;
+                }
+            } catch (error) {
+                console.error("Firestore fetch failed, will try localStorage.", error);
+                errorOccurred = true;
+            }
+
+            if (!data) {
+                try {
+                     const storedChallan = localStorage.getItem(`challan-${params.id}`);
+                     if (storedChallan) {
+                        data = JSON.parse(storedChallan);
+                        if (errorOccurred) {
+                            toast({
+                                title: "Displaying Local Version",
+                                description: "Could not connect to the cloud. Showing the locally saved challan."
+                            });
+                        }
+                    }
+                } catch (e) {
+                     console.error("Could not parse challan from localStorage", e);
+                }
+            }
+            
+            if (data) {
+                setChallanData(data);
+            } else {
+                toast({
+                    variant: "destructive",
+                    title: "Challan Not Found",
+                    description: "The requested challan was not found online or on this device."
+                });
+            }
+            
+            setLoading(false);
+        };
+        fetchChallan();
+    }, [params.id, toast]);
 
     const handleShare = () => {
         if (challanData) {
@@ -76,7 +128,7 @@ export default function ChallanPage({ params }: { params: { id: string } }) {
     if (loading) {
         return (
             <div className="bg-muted min-h-screen p-8 flex items-center justify-center">
-                 <div className="w-[210mm] min-h-[148mm] mx-auto bg-white p-6">
+                 <div className="w-[148mm] min-h-[210mm] mx-auto bg-white p-6">
                     <Skeleton className="h-24 w-full mb-4" />
                     <Skeleton className="h-48 w-full" />
                  </div>
@@ -109,7 +161,7 @@ export default function ChallanPage({ params }: { params: { id: string } }) {
                 }
                 @media print {
                     @page {
-                        size: A5 landscape;
+                        size: A5 portrait;
                         margin: 0;
                     }
                     body {
@@ -118,18 +170,11 @@ export default function ChallanPage({ params }: { params: { id: string } }) {
                     }
                 }
             `}</style>
-            <div className="w-[210mm] min-h-[148mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-6 flex flex-col">
-                <header className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white p-4 rounded-t-xl">
-                    <div className="flex justify-between items-start">
-                        <div className="text-left">
-                            <h1 className="text-xl font-bold">(F.Co)</h1>
-                        </div>
-                        <div className="text-center -mt-2">
-                             <h2 className="text-xl font-bold">FIRDOUS AHMAD & COMPANY</h2>
-                             <p className="text-xs">Fruit Merchants & Commission Agents, Sopore</p>
-                        </div>
-                        <h2 className="text-2xl font-bold">CHALLAN</h2>
-                    </div>
+            <div className="w-[148mm] min-h-[210mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-6 flex flex-col">
+                <header className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white p-4 rounded-t-xl text-center">
+                    <h2 className="text-xl font-bold">FIRDOUS AHMAD & COMPANY</h2>
+                    <p className="text-xs">Fruit Merchants & Commission Agents, Sopore</p>
+                    <h1 className="text-2xl font-bold mt-2">CHALLAN</h1>
                 </header>
 
                  <main className="flex-grow bg-white dark:bg-gray-800 p-4 -mt-2 rounded-b-xl shadow-lg">

@@ -146,7 +146,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     if (loading) {
         return (
             <div className="bg-gray-50 min-h-screen p-8 flex items-center justify-center">
-                 <div className="w-[210mm] min-h-[297mm] mx-auto bg-white p-8">
+                 <div className="w-[148mm] min-h-[210mm] mx-auto bg-white p-8">
                     <Skeleton className="h-16 w-3/4 self-center mb-8" />
                     <div className="flex-grow mt-8">
                         <Skeleton className="h-96 w-full" />
@@ -181,7 +181,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 }
                 @media print {
                     @page {
-                        size: A4;
+                        size: A5 portrait;
                         margin: 0;
                     }
                     body {
@@ -190,33 +190,33 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                     }
                 }
             `}</style>
-            <div className="w-[210mm] min-h-[297mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-8 flex flex-col">
-                 <header className="bg-gradient-to-r from-green-400 via-emerald-500 to-teal-600 text-white p-6 rounded-t-xl shadow-lg">
+            <div className="w-[148mm] min-h-[210mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-4 flex flex-col text-xs">
+                 <header className="bg-gradient-to-r from-green-400 via-emerald-500 to-teal-600 text-white p-4 rounded-t-xl shadow-lg">
                     <div className="flex justify-between items-center">
-                        <div className="text-left text-4xl">
+                        <div className="text-left text-2xl">
                            🍎
                         </div>
                         <div className="text-center">
-                            <h2 className="text-3xl font-bold">FIRDOUS AHMAD & COMPANY</h2>
-                            <p className="mt-1">Fruit Merchants & Commission Agents</p>
-                            <p className="text-xs">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
-                            <p className="text-xs">Prop: Firdous Ahmad Lone (Nadihal) | Cell: 7006136330, 9797002164, 9906740921 | Email: lone07936@gmail.com</p>
+                            <h2 className="text-xl font-bold">FIRDOUS AHMAD & COMPANY</h2>
+                            <p className="mt-1 text-[10px]">Fruit Merchants & Commission Agents</p>
+                            <p className="text-[8px]">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
+                            <p className="text-[8px]">Prop: Firdous Ahmad Lone (Nadihal) | Cell: 7006136330, 9797002164, 9906740921 | Email: lone07936@gmail.com</p>
                         </div>
-                        <div className="text-right text-4xl">
+                        <div className="text-right text-2xl">
                            🍎
                         </div>
                     </div>
                 </header>
 
-                <main className="bg-white dark:bg-gray-800 p-6 rounded-b-xl shadow-lg -mt-4 flex-grow relative">
+                <main className="bg-white dark:bg-gray-800 p-4 rounded-b-xl shadow-lg -mt-4 flex-grow relative">
                     <div className="absolute inset-0 flex items-center justify-center z-0">
-                        <Logo className="w-96 h-96 opacity-5" />
+                        <Logo className="w-64 h-64 opacity-5" />
                     </div>
                     <div className="relative z-10">
-                        <div className="grid grid-cols-2 gap-4 border-b pb-4 mb-4">
+                        <div className="grid grid-cols-2 gap-4 border-b pb-2 mb-2">
                             <div>
-                                <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Bill To: / <span className="font-urdu">بل بنام</span></h2>
-                                <p className="font-bold text-xl">{customerName}</p>
+                                <h2 className="font-semibold text-gray-700 dark:text-gray-300">Bill To: / <span className="font-urdu">بل بنام</span></h2>
+                                <p className="font-bold text-base">{customerName}</p>
                                 <p>Khata: {khata}</p>
                             </div>
                             <div className="text-right">
@@ -226,16 +226,16 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-5 gap-4">
+                        <div className="grid grid-cols-5 gap-2">
                             <div className="col-span-3">
                                 <Table>
                                     <TableHeader>
                                         <TableRow className="bg-gray-100 dark:bg-gray-700">
-                                            <TableHead>Type / <span className="font-urdu">قسم</span></TableHead>
-                                            <TableHead>Variety / <span className="font-urdu">ورائٹی</span></TableHead>
-                                            <TableHead>Qty / <span className="font-urdu">مقدار</span></TableHead>
-                                            <TableHead>Rate / <span className="font-urdu">ریٹ</span></TableHead>
-                                            <TableHead className="text-right">Gross / <span className="font-urdu">مجموعی</span></TableHead>
+                                            <TableHead>Type</TableHead>
+                                            <TableHead>Variety</TableHead>
+                                            <TableHead>Qty</TableHead>
+                                            <TableHead>Rate</TableHead>
+                                            <TableHead className="text-right">Gross</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -256,39 +256,39 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                                  <Table>
                                     <TableHeader>
                                         <TableRow className="bg-gray-100 dark:bg-gray-700">
-                                            <TableHead>Expenses / <span className="font-urdu">اخراجات</span></TableHead>
-                                            <TableHead className="text-right">Amount / <span className="font-urdu">رقم</span></TableHead>
+                                            <TableHead>Expenses</TableHead>
+                                            <TableHead className="text-right">Amount</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        <TableRow><TableCell>Freight / <span className="font-urdu">فریٹ</span></TableCell><TableCell className="text-right">₹{freight.toFixed(2)}</TableCell></TableRow>
-                                        <TableRow><TableCell>Labour / <span className="font-urdu">مزدوری</span></TableCell><TableCell className="text-right">₹{totals.labour.toFixed(2)}</TableCell></TableRow>
-                                        <TableRow><TableCell>Association / <span className="font-urdu">انجمن</span></TableCell><TableCell className="text-right">₹{totals.association.toFixed(2)}</TableCell></TableRow>
-                                        <TableRow><TableCell>Security / <span className="font-urdu">سیکیورٹی</span></TableCell><TableCell className="text-right">₹{totals.security.toFixed(2)}</TableCell></TableRow>
-                                        <TableRow className="font-semibold border-t-2"><TableCell>Commission / <span className="font-urdu">کمیشن</span></TableCell><TableCell className="text-right">₹{totals.commissionAmount.toFixed(2)}</TableCell></TableRow>
+                                        <TableRow><TableCell>Freight</TableCell><TableCell className="text-right">₹{freight.toFixed(2)}</TableCell></TableRow>
+                                        <TableRow><TableCell>Labour</TableCell><TableCell className="text-right">₹{totals.labour.toFixed(2)}</TableCell></TableRow>
+                                        <TableRow><TableCell>Association</TableCell><TableCell className="text-right">₹{totals.association.toFixed(2)}</TableCell></TableRow>
+                                        <TableRow><TableCell>Security</TableCell><TableCell className="text-right">₹{totals.security.toFixed(2)}</TableCell></TableRow>
+                                        <TableRow className="font-semibold border-t-2"><TableCell>Commission</TableCell><TableCell className="text-right">₹{totals.commissionAmount.toFixed(2)}</TableCell></TableRow>
                                     </TableBody>
                                 </Table>
                             </div>
                         </div>
 
-                        <Separator className="my-6" />
+                        <Separator className="my-4" />
 
-                        <div className="grid grid-cols-2 gap-8">
+                        <div className="grid grid-cols-2 gap-4">
                             <div>
-                                 <p><strong>Total Quantity / <span className="font-urdu">کل مقدار</span>:</strong> {totals.totalQty} (Patti: {totals.pattiQty}, Dabba: {totals.dabbaQty})</p>
+                                 <p><strong>Total Quantity:</strong> {totals.totalQty} (Patti: {totals.pattiQty}, Dabba: {totals.dabbaQty})</p>
                             </div>
-                            <div className="space-y-2">
-                                <div className="flex justify-between items-center text-lg">
-                                    <span className="font-semibold">Gross Sale / <span className="font-urdu">مجموعی فروخت</span>:</span>
+                            <div className="space-y-1">
+                                <div className="flex justify-between items-center">
+                                    <span className="font-semibold">Gross Sale:</span>
                                     <span>₹{totals.grossSale.toFixed(2)}</span>
                                  </div>
-                                 <div className="flex justify-between items-center text-lg">
-                                    <span className="font-semibold">Total Expenses / <span className="font-urdu">کل اخراجات</span>:</span>
+                                 <div className="flex justify-between items-center">
+                                    <span className="font-semibold">Total Expenses:</span>
                                     <span>- ₹{totals.totalExpenses.toFixed(2)}</span>
                                 </div>
                                 <Separator />
-                                 <div className="flex justify-between items-center text-2xl font-bold text-green-600">
-                                    <span >Net Sale / <span className="font-urdu">خالص فروخت</span>:</span>
+                                 <div className="flex justify-between items-center text-lg font-bold text-green-600">
+                                    <span >Net Sale:</span>
                                     <span>₹{totals.netSale.toFixed(2)}</span>
                                  </div>
                             </div>
@@ -296,11 +296,11 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                     </div>
                 </main>
 
-                <footer className="flex justify-between items-end mt-auto pt-4 border-t print:pt-2">
+                <footer className="flex justify-between items-end mt-auto pt-2 border-t print:pt-1">
                      <Controls />
-                     <BusinessCardQR />
-                     <div className="text-right text-xs">
-                        <p className="font-signature text-2xl text-gray-700 dark:text-gray-300">Faisal</p>
+                     <BusinessCardQR size={60} />
+                     <div className="text-right text-[10px]">
+                        <p className="font-signature text-xl text-gray-700 dark:text-gray-300">Faisal</p>
                         <p className="font-bold">Sign. Of Manager</p>
                         <p>For Firdous Ahmad & Company</p>
                      </div>
