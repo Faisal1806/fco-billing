@@ -288,18 +288,21 @@ export function BillMakingTab() {
                         <p className="text-xs text-muted-foreground">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
                         <p className="text-xs text-muted-foreground">Prop: Firdous Ahmad Lone (Nadihal) | Cell: 7006136330, 9797002164, 9906740921 | Email: lone07936@gmail.com</p>
                     </div>
-                     <Button variant="outline" size="sm" onClick={resetForm} className="gap-2">
-                        <FilePlus className="h-4 w-4" />
-                        New Bill
-                    </Button>
                 </div>
             </CardHeader>
             <CardContent className="space-y-6">
                  {/* Header fields */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                    <div>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4 items-end">
+                    <div className="md:col-span-2">
                         <Label>Bill No</Label>
-                        <Input value={sNo} onChange={e => setSNo(e.target.value)} disabled={isEditing} />
+                        <div className="flex items-center gap-2">
+                            <Input value={sNo} onChange={e => setSNo(e.target.value)} disabled={isEditing} />
+                             {isEditing && (
+                                <Button variant="outline" size="icon" onClick={resetForm} title="Create a new bill">
+                                    <FilePlus className="h-4 w-4" />
+                                </Button>
+                            )}
+                        </div>
                     </div>
                      <div>
                         <Label>Date</Label>
