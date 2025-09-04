@@ -95,7 +95,7 @@ export function BillMakingTab() {
     const labour = totalQty * 3;
     const association = totalQty * 0.1;
     const security = totalQty * 0.9;
-    const commission = totalGrossSale * 0.12;
+    const commission = Math.floor(totalGrossSale * 0.12);
 
     const totalExp = commission + labour + association + security + (Number(freight) || 0);
     const netSale = totalGrossSale - totalExp;
