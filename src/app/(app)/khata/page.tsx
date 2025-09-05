@@ -19,7 +19,7 @@ import {
   TableFooter
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, FileDown, User, Users, Plus, ChevronDown, Leaf, Printer } from 'lucide-react';
+import { Loader2, FileDown, User, Users, Plus, ChevronDown, Leaf, Printer, UserCheck, UserX } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,7 +65,7 @@ export default function KhataLedgerPage() {
     const [allParties, setAllParties] = React.useState<string[]>([]);
     const [filteredParties, setFilteredParties] = React.useState<string[]>([]);
     const [selectedParty, setSelectedParty] = React.useState<string | null>(null);
-    const [activeTab, setActiveTab] = React.useState('customers');
+    const [activeTab, setActiveTab] = React.useState('growers');
     const [isLoading, setIsLoading] = React.useState(true);
 
     React.useEffect(() => {
@@ -161,7 +161,8 @@ export default function KhataLedgerPage() {
             }
         };
         
-        if (activeTab === 'customers') filterAndSetParties('customer');
+        if (activeTab === 'growers') filterAndSetParties('supplier');
+        else if (activeTab === 'customers') filterAndSetParties('customer');
         else if (activeTab === 'all') {
             setFilteredParties(allParties);
              if(allParties.length > 0) {
@@ -342,6 +343,7 @@ export default function KhataLedgerPage() {
                 <div className="flex justify-between items-center mb-4 print-hidden">
                     <Tabs value={activeTab} onValueChange={setActiveTab}>
                         <TabsList>
+                            <TabsTrigger value="growers"><Leaf className="h-4 w-4 mr-2"/>Growers</TabsTrigger>
                             <TabsTrigger value="customers"><User className="h-4 w-4 mr-2"/>Customers</TabsTrigger>
                             <TabsTrigger value="all"><Users className="h-4 w-4 mr-2"/>All Parties</TabsTrigger>
                         </TabsList>
@@ -438,3 +440,5 @@ export default function KhataLedgerPage() {
     </>
   );
 }
+
+    
