@@ -47,23 +47,27 @@ export default function AutomaticRateList({ sourceType, title }: AutomaticRateLi
                 if (!key) continue;
 
                 try {
-                    let docEntries: any[] = [];
-                    let varietyKey: string = 'variety';
-                    let rateKey: string = 'rate';
-
                     if (sourceType === 'fruit' && key.startsWith('invoice-')) {
                         const watak: WatakEntry = JSON.parse(localStorage.getItem(key)!);
-                        docEntries = watak.entries;
+                        watak.entries.forEach(entry => {
+                            const rate = entry.rate;
+                            const type = (entry as any).type || (entry.peti > 0 ? 'Patti' : 'Dabba'); // Handle old and new entry formats
+                            const variety = entry.variety;
+
+                            if (variety && rate > 0) {
+                                // Create a unique name combining variety and type, e.g., "American (Patti)"
+                                const compositeName = `${variety} (${type})`; 
+                                if (!allTimeRates[compositeName]) {
+                                    allTimeRates[compositeName] = { name: compositeName, rates: new Set() };
+                                }
+                                allTimeRates[compositeName].rates.add(rate);
+                            }
+                        });
                     } else if (sourceType === 'fertilizer' && key.startsWith('pesticide-invoice-')) {
                         const bill: PesticideBillData = JSON.parse(localStorage.getItem(key)!);
-                        docEntries = bill.entries;
-                        varietyKey = 'particulars';
-                    }
-
-                    if (docEntries) {
-                        docEntries.forEach(entry => {
-                            const name = entry[varietyKey];
-                            const rate = entry[rateKey];
+                        bill.entries.forEach(entry => {
+                            const name = entry.particulars;
+                            const rate = entry.rate;
                             if (name && rate > 0) {
                                 if (!allTimeRates[name]) {
                                     allTimeRates[name] = { name: name, rates: new Set() };
