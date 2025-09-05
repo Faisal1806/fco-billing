@@ -34,57 +34,76 @@ interface AutomaticRateListProps {
 }
 
 export default function AutomaticRateList({ sourceType, title }: AutomaticRateListProps) {
-    const [currentDate, setCurrentDate] = useState(new Date());
+    const [displayDate, setDisplayDate] = useState(new Date());
     const [rates, setRates] = useState<DailyRate[]>([]);
+    const [ratesDate, setRatesDate] = useState<Date | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         setIsLoading(true);
-        const dateString = currentDate.toISOString().split('T')[0];
-        const todaysRates: { [key: string]: DailyRate } = {};
+        let foundRates = false;
+        let ratesForDate: Date | null = null;
+        
+        for (let i = 0; i < 30; i++) { // Look back up to 30 days
+            const dateToFetch = new Date(displayDate);
+            dateToFetch.setDate(dateToFetch.getDate() - i);
+            const dateString = dateToFetch.toISOString().split('T')[0];
+            const todaysRates: { [key: string]: DailyRate } = {};
 
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (!key) continue;
+            for (let j = 0; j < localStorage.length; j++) {
+                const key = localStorage.key(j);
+                if (!key) continue;
 
-            try {
-                if (sourceType === 'fruit' && key.startsWith('invoice-')) {
-                    const watak: WatakEntry = JSON.parse(localStorage.getItem(key)!);
-                    if (watak.date === dateString) {
-                        watak.entries.forEach(entry => {
-                            if (entry.variety && entry.rate > 0) {
-                                if (!todaysRates[entry.variety]) {
-                                    todaysRates[entry.variety] = { name: entry.variety, rates: new Set() };
+                try {
+                    if (sourceType === 'fruit' && key.startsWith('invoice-')) {
+                        const watak: WatakEntry = JSON.parse(localStorage.getItem(key)!);
+                        if (watak.date === dateString) {
+                            watak.entries.forEach(entry => {
+                                if (entry.variety && entry.rate > 0) {
+                                    if (!todaysRates[entry.variety]) {
+                                        todaysRates[entry.variety] = { name: entry.variety, rates: new Set() };
+                                    }
+                                    todaysRates[entry.variety].rates.add(entry.rate);
                                 }
-                                todaysRates[entry.variety].rates.add(entry.rate);
-                            }
-                        });
-                    }
-                } else if (sourceType === 'fertilizer' && key.startsWith('pesticide-invoice-')) {
-                    const bill: PesticideBillData = JSON.parse(localStorage.getItem(key)!);
-                    if (bill.date === dateString) {
-                        bill.entries.forEach(entry => {
-                            if (entry.particulars && entry.rate > 0) {
-                                 if (!todaysRates[entry.particulars]) {
-                                    todaysRates[entry.particulars] = { name: entry.particulars, rates: new Set() };
+                            });
+                        }
+                    } else if (sourceType === 'fertilizer' && key.startsWith('pesticide-invoice-')) {
+                        const bill: PesticideBillData = JSON.parse(localStorage.getItem(key)!);
+                        if (bill.date === dateString) {
+                            bill.entries.forEach(entry => {
+                                if (entry.particulars && entry.rate > 0) {
+                                    if (!todaysRates[entry.particulars]) {
+                                        todaysRates[entry.particulars] = { name: entry.particulars, rates: new Set() };
+                                    }
+                                    todaysRates[entry.particulars].rates.add(entry.rate);
                                 }
-                                todaysRates[entry.particulars].rates.add(entry.rate);
-                            }
-                        });
+                            });
+                        }
                     }
+                } catch (e) {
+                    console.error(`Could not parse item from local storage: ${key}`, e);
                 }
-            } catch (e) {
-                console.error(`Could not parse item from local storage: ${key}`, e);
+            }
+
+            const processedRates = Object.values(todaysRates).sort((a,b) => a.name.localeCompare(b.name));
+            if (processedRates.length > 0) {
+                setRates(processedRates);
+                ratesForDate = dateToFetch;
+                foundRates = true;
+                break; 
             }
         }
 
-        const processedRates = Object.values(todaysRates).sort((a,b) => a.name.localeCompare(b.name));
-        setRates(processedRates);
+        if (!foundRates) {
+            setRates([]);
+        }
+
+        setRatesDate(ratesForDate);
         setIsLoading(false);
-    }, [currentDate, sourceType]);
+    }, [displayDate, sourceType]);
 
     const handleDateChange = (days: number) => {
-        setCurrentDate(prevDate => {
+        setDisplayDate(prevDate => {
             const newDate = new Date(prevDate);
             newDate.setDate(newDate.getDate() + days);
             return newDate;
@@ -92,7 +111,8 @@ export default function AutomaticRateList({ sourceType, title }: AutomaticRateLi
     };
 
     const handleShare = () => {
-        const dateString = currentDate.toLocaleDateString('en-GB', {
+        if (!ratesDate) return;
+        const dateString = ratesDate.toLocaleDateString('en-GB', {
             day: 'numeric', month: 'long', year: 'numeric'
         });
         
@@ -110,6 +130,8 @@ export default function AutomaticRateList({ sourceType, title }: AutomaticRateLi
         window.open(whatsappUrl, '_blank');
     };
     
+    const isToday = displayDate.toDateString() === new Date().toDateString();
+    
     return (
         <Card>
             <CardHeader>
@@ -119,15 +141,15 @@ export default function AutomaticRateList({ sourceType, title }: AutomaticRateLi
                             📊 {title}
                         </CardTitle>
                         <CardDescription>
-                            Rates for {currentDate.toLocaleDateString('en-CA')}. Automatically updated from your sales.
+                           Viewing rates for {displayDate.toLocaleDateString('en-CA')}
                         </CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
                         <Button variant="outline" size="icon" onClick={() => handleDateChange(-1)}>
                             <ChevronLeft className="h-4 w-4" />
                         </Button>
-                        <span className="font-semibold">{currentDate.toLocaleDateString('en-CA')}</span>
-                        <Button variant="outline" size="icon" onClick={() => handleDateChange(1)}>
+                        <span className="font-semibold">{displayDate.toLocaleDateString('en-CA')}</span>
+                        <Button variant="outline" size="icon" onClick={() => handleDateChange(1)} disabled={isToday}>
                             <ChevronRight className="h-4 w-4" />
                         </Button>
                     </div>
@@ -137,10 +159,15 @@ export default function AutomaticRateList({ sourceType, title }: AutomaticRateLi
                  {isLoading ? (
                     <div className="flex justify-center items-center h-48">
                         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                        <p className="ml-4">Loading rates for {currentDate.toLocaleDateString('en-CA')}...</p>
+                        <p className="ml-4">Loading rates for {displayDate.toLocaleDateString('en-CA')}...</p>
                     </div>
-                 ) : rates.length > 0 ? (
+                 ) : rates.length > 0 && ratesDate ? (
                     <>
+                        {ratesDate.toDateString() !== displayDate.toDateString() && (
+                            <div className="mb-4 p-3 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-md text-sm">
+                                No sales found for {displayDate.toLocaleDateString('en-CA')}. Showing most recent rates from {ratesDate.toLocaleDateString('en-CA')}.
+                            </div>
+                        )}
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -168,7 +195,7 @@ export default function AutomaticRateList({ sourceType, title }: AutomaticRateLi
                     </>
                 ) : (
                      <div className="text-center text-muted-foreground mt-6 py-12 border-2 border-dashed rounded-lg">
-                        <p>No sales recorded for this date.</p>
+                        <p>No sales recorded for this date or any recent day.</p>
                         <p className="text-sm">Rates will appear here as you create new sales documents.</p>
                     </div>
                 )}
