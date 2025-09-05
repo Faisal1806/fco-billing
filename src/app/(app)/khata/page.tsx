@@ -150,7 +150,7 @@ export default function KhataLedgerPage() {
                 if (type === 'all') return true;
                 const ledger = ledgers[p];
                 if (type === 'customer') return ledger.partyType === 'customer' || ledger.partyType === 'both';
-                if (type === 'supplier') return ledger.partyType === 'supplier' || ledger.partyType === 'both';
+                if (type === 'supplier') return ledger.partyType === 'customer' || ledger.partyType === 'both'; // Changed this line
                 return false;
             });
             setFilteredParties(parties);
