@@ -5,49 +5,49 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { WatakEntry } from "@/app/(app)/watak-register/page";
 import { Loader2 } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-interface DailyRate {
-    variety: string;
-    rates: number[];
+interface SeasonRate {
+    name: string;
+    rates: Set<number>;
 }
 
 export default function RateList() {
-  const [dailyRates, setDailyRates] = useState<DailyRate[]>([]);
+  const [seasonRates, setSeasonRates] = useState<SeasonRate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchAndProcessWataks = () => {
         setIsLoading(true);
-        const today = new Date().toDateString();
-        const todaysRates: { [key: string]: Set<number> } = {};
+        const allTimeRates: { [key: string]: SeasonRate } = {};
 
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             if (key && key.startsWith('invoice-')) {
                 try {
                     const watak: WatakEntry = JSON.parse(localStorage.getItem(key)!);
-                    if (new Date(watak.date).toDateString() === today) {
-                        watak.entries.forEach(entry => {
-                            if (entry.variety && entry.rate > 0) {
-                                if (!todaysRates[entry.variety]) {
-                                    todaysRates[entry.variety] = new Set();
-                                }
-                                todaysRates[entry.variety].add(entry.rate);
+                    watak.entries.forEach(entry => {
+                        const rate = entry.rate;
+                        // Handle both old and new entry formats
+                        const type = (entry as any).type || (entry.peti > 0 ? 'Patti' : 'Dabba');
+                        const variety = entry.variety;
+
+                        if (variety && rate > 0) {
+                            const compositeName = `${variety} (${type})`; 
+                            if (!allTimeRates[compositeName]) {
+                                allTimeRates[compositeName] = { name: compositeName, rates: new Set() };
                             }
-                        });
-                    }
+                            allTimeRates[compositeName].rates.add(rate);
+                        }
+                    });
                 } catch (e) {
                     console.error("Could not parse watak from local storage", e);
                 }
             }
         }
 
-        const processedRates: DailyRate[] = Object.entries(todaysRates).map(([variety, ratesSet]) => ({
-            variety,
-            rates: Array.from(ratesSet).sort((a, b) => a - b)
-        }));
-
-        setDailyRates(processedRates);
+        const processedRates = Object.values(allTimeRates).sort((a,b) => a.name.localeCompare(b.name));
+        setSeasonRates(processedRates);
         setIsLoading(false);
     };
 
@@ -58,39 +58,40 @@ export default function RateList() {
     <Card>
       <CardHeader>
         <CardTitle className="text-2xl font-bold text-primary">
-            📊 Daily Rate List
+            📊 Sopore Mandi Rate Summary
         </CardTitle>
         <CardDescription>
-            Automatically updated rates based on today's wataks.
+            A summary of all recorded rates from your local sales this season.
         </CardDescription>
       </CardHeader>
       <CardContent>
           {isLoading ? (
              <div className="flex justify-center items-center h-48">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                <p className="ml-4">Loading today's rates...</p>
+                <p className="ml-4">Loading all recorded rates...</p>
             </div>
-          ) : dailyRates.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {dailyRates.map(({ variety, rates }) => (
-                <Card
-                    key={variety}
-                    className="shadow-lg rounded-2xl border hover:shadow-xl transition-shadow duration-300"
-                >
-                    <CardHeader>
-                        <CardTitle className="text-xl">{variety}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="font-semibold text-lg">
-                           ₹{rates.join(' / ')}
-                        </p>
-                    </CardContent>
-                </Card>
-                ))}
-            </div>
+          ) : seasonRates.length > 0 ? (
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Variety / Kind</TableHead>
+                        <TableHead className="text-right">Recorded Rates</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {seasonRates.slice(0, 10).map(rate => ( // Show top 10 for dashboard summary
+                        <TableRow key={rate.name}>
+                            <TableCell className="font-medium">{rate.name}</TableCell>
+                            <TableCell className="text-right font-semibold text-lg">
+                                ₹{Array.from(rate.rates).sort((a, b) => a - b).join(' / ')}
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
           ) : (
             <div className="text-center text-muted-foreground mt-6 py-12 border-2 border-dashed rounded-lg">
-                <p>No wataks have been created today.</p>
+                <p>No local sales have been recorded yet.</p>
                 <p className="text-sm">Rates will appear here as you create new wataks.</p>
             </div>
           )}
