@@ -37,20 +37,33 @@ export default function EditableRateList({ storageKeyPrefix, title, defaultRates
     useEffect(() => {
         setIsLoading(true);
         const storageKey = getStorageKey(currentDate);
-        const storedRates = localStorage.getItem(storageKey);
-        if (storedRates) {
-            setRates(JSON.parse(storedRates));
-        } else {
-            // If it's today and we have default rates, show them.
-            const today = new Date();
-            if (currentDate.toDateString() === today.toDateString()) {
-                setRates(defaultRates);
+        try {
+            const storedRates = localStorage.getItem(storageKey);
+            if (storedRates) {
+                setRates(JSON.parse(storedRates));
             } else {
-                setRates([]);
+                // If it's today and we have default rates, show them.
+                const today = new Date();
+                if (currentDate.toDateString() === today.toDateString() && defaultRates.length > 0) {
+                     // Check if default rates for today are already saved
+                    const todayStorageKey = getStorageKey(today);
+                    const todayStoredRates = localStorage.getItem(todayStorageKey);
+                    if (!todayStoredRates) {
+                        setRates(defaultRates);
+                    } else {
+                        setRates(JSON.parse(todayStoredRates));
+                    }
+                } else {
+                    setRates([]);
+                }
             }
+        } catch (error) {
+            console.error("Failed to load or parse rates from local storage:", error);
+            setRates(defaultRates); // Fallback to defaults on error
         }
         setIsLoading(false);
-    }, [currentDate, storageKeyPrefix, defaultRates]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentDate, storageKeyPrefix]);
 
     const handleSave = () => {
         const storageKey = getStorageKey(currentDate);
@@ -105,7 +118,9 @@ export default function EditableRateList({ storageKeyPrefix, title, defaultRates
         }, {} as {[key: string]: Rate[]});
 
         for (const category in groupedRates) {
-            shareText += `*${category.toUpperCase()}*\n`;
+            if (category !== 'Uncategorized') {
+                shareText += `*${category.toUpperCase()}*\n`;
+            }
             groupedRates[category].forEach(rate => {
                 if (rate.variety && rate.rate) {
                    shareText += `- ${rate.variety}: *₹${rate.rate}*\n`;
@@ -124,10 +139,10 @@ export default function EditableRateList({ storageKeyPrefix, title, defaultRates
                 <div className="flex justify-between items-center">
                     <div>
                         <CardTitle className="text-2xl font-bold text-primary">
-                            📝 Editable Daily Rate List
+                            📝 {title}
                         </CardTitle>
                         <CardDescription>
-                            Manage and share your daily market rates for {title.toLowerCase()}.
+                            Manually manage and share your daily market rates. These are saved separately from automatic rates.
                         </CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
@@ -146,7 +161,7 @@ export default function EditableRateList({ storageKeyPrefix, title, defaultRates
                     <TableHeader>
                         <TableRow>
                             <TableHead>Category</TableHead>
-                            <TableHead>Variety</TableHead>
+                            <TableHead>Variety / Particulars</TableHead>
                             <TableHead>Rate (e.g., 500-600)</TableHead>
                             <TableHead className="w-[50px]"></TableHead>
                         </TableRow>
@@ -156,14 +171,14 @@ export default function EditableRateList({ storageKeyPrefix, title, defaultRates
                             <TableRow key={rate.id}>
                                 <TableCell>
                                     <Input
-                                        placeholder="e.g., Apples, Pesticide"
+                                        placeholder="e.g., Apples, Fungicide"
                                         value={rate.category}
                                         onChange={(e) => handleUpdateRate(rate.id, 'category', e.target.value)}
                                     />
                                 </TableCell>
                                 <TableCell>
                                     <Input
-                                        placeholder="e.g., Red Delicious, Urea"
+                                        placeholder="e.g., Red Delicious, Mancozeb"
                                         value={rate.variety}
                                         onChange={(e) => handleUpdateRate(rate.id, 'variety', e.target.value)}
                                     />
@@ -192,17 +207,17 @@ export default function EditableRateList({ storageKeyPrefix, title, defaultRates
                     <div className="flex gap-2">
                         <Button onClick={handleSave} className="gap-2">
                             <Save className="h-4 w-4" />
-                            Save
+                            Save Manual List
                         </Button>
                         <Button variant="secondary" onClick={handleShare} className="gap-2" disabled={rates.length === 0}>
                             <FaWhatsapp className="h-4 w-4 text-green-500" />
-                            Share List
+                            Share Manual List
                         </Button>
                     </div>
                 </div>
                 {rates.length === 0 && !isLoading && (
                      <div className="text-center text-muted-foreground mt-6 py-12 border-2 border-dashed rounded-lg">
-                        <p>No rates found for this date.</p>
+                        <p>No manual rates found for this date.</p>
                         <p className="text-sm">Click "Add Rate" to get started.</p>
                     </div>
                 )}
