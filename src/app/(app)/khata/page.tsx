@@ -162,7 +162,6 @@ export default function KhataLedgerPage() {
         };
         
         if (activeTab === 'growers') filterAndSetParties('customer');
-        else if (activeTab === 'customers') filterAndSetParties('customer');
         else if (activeTab === 'all') {
             setFilteredParties(allParties);
              if(allParties.length > 0) {
@@ -344,7 +343,6 @@ export default function KhataLedgerPage() {
                     <Tabs value={activeTab} onValueChange={setActiveTab}>
                         <TabsList>
                             <TabsTrigger value="growers"><Leaf className="h-4 w-4 mr-2"/>Growers</TabsTrigger>
-                            <TabsTrigger value="customers"><User className="h-4 w-4 mr-2"/>Customers</TabsTrigger>
                             <TabsTrigger value="all"><Users className="h-4 w-4 mr-2"/>All Parties</TabsTrigger>
                         </TabsList>
                     </Tabs>
@@ -440,3 +438,5 @@ export default function KhataLedgerPage() {
     </>
   );
 }
+
+    
