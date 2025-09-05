@@ -19,14 +19,16 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
-import { Factory, BellRing, Palette } from 'lucide-react';
+import { Factory, BellRing, Palette, CloudUpload } from 'lucide-react';
 import { getClientMessaging } from '@/lib/firebase';
 import { getToken } from 'firebase/messaging';
+import { saveDocument } from '@/lib/actions';
 
 
 export default function SettingsPage() {
     const { t } = useLanguage();
     const { toast } = useToast();
+    const [isSyncing, setIsSyncing] = React.useState(false);
 
     const handleFactoryReset = () => {
         try {
@@ -45,6 +47,72 @@ export default function SettingsPage() {
             })
         }
     }
+
+    const handleSyncOldData = async () => {
+        setIsSyncing(true);
+        toast({
+            title: "Syncing Local Data...",
+            description: "Please do not close this window. This may take a moment."
+        });
+
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (!key) continue;
+
+            let collectionName = '';
+            let docId = '';
+            
+            if (key.startsWith('invoice-')) {
+                collectionName = 'invoices';
+                docId = key.replace('invoice-', '');
+            } else if (key.startsWith('purchase-')) {
+                collectionName = 'purchases';
+                docId = key.replace('purchase-', '');
+            } else if (key.startsWith('receipt-')) {
+                collectionName = 'receipts';
+                docId = key.replace('receipt-', '');
+            } else if (key.startsWith('challan-')) {
+                collectionName = 'challans';
+                docId = key.replace('challan-', '');
+            } else if (key.startsWith('pesticide-invoice-')) {
+                collectionName = 'pesticide-invoices';
+                docId = key.replace('pesticide-invoice-', '');
+            }
+
+            if (collectionName && docId) {
+                try {
+                    const data = JSON.parse(localStorage.getItem(key)!);
+                    const result = await saveDocument(collectionName, docId, data);
+                    if (result.success) {
+                        successCount++;
+                    } else {
+                        errorCount++;
+                    }
+                } catch (e) {
+                    console.error(`Failed to sync item ${key}:`, e);
+                    errorCount++;
+                }
+            }
+        }
+        
+        setIsSyncing(false);
+        if (errorCount > 0) {
+             toast({
+                variant: "destructive",
+                title: "Sync Partially Failed",
+                description: `${successCount} records synced, but ${errorCount} failed. Check the console for details.`,
+            });
+        } else {
+            toast({
+                title: "Sync Complete!",
+                description: `Successfully synced ${successCount} local records to the cloud.`,
+            });
+        }
+    };
+
 
     const handleEnableNotifications = async () => {
         const messaging = getClientMessaging();
@@ -121,6 +189,21 @@ export default function SettingsPage() {
             </Card>
 
             <ProfileForm />
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Cloud Data Sync</CardTitle>
+                    <CardDescription>
+                        First-time setup: Upload all data saved on this device to the cloud. Run this on each of your devices (phone, laptop) once to sync everything.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                     <Button onClick={handleSyncOldData} className="gap-2" disabled={isSyncing}>
+                        <CloudUpload className="h-4 w-4" />
+                        {isSyncing ? "Syncing..." : "Sync Local Data to Cloud"}
+                    </Button>
+                </CardContent>
+            </Card>
 
             <Card>
                 <CardHeader>
