@@ -19,7 +19,7 @@ import {
   TableFooter
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, FileDown, User, Users, Plus, ChevronDown, Leaf, Printer, UserCheck, UserX } from 'lucide-react';
+import { Loader2, FileDown, User, Users, Plus, ChevronDown, Leaf, Printer, UserCheck, UserX, ShoppingCart } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -161,14 +161,10 @@ export default function KhataLedgerPage() {
             }
         };
         
-        if (activeTab === 'growers') filterAndSetParties('customer');
+        if (activeTab === 'growers') filterAndSetParties('supplier');
+        else if (activeTab === 'customers') filterAndSetParties('customer');
         else if (activeTab === 'all') {
-            setFilteredParties(allParties);
-             if(allParties.length > 0) {
-                setSelectedParty(allParties[0]);
-            } else {
-                setSelectedParty(null);
-            }
+            filterAndSetParties('all');
         }
     }, [activeTab, allParties, ledgers]);
 
@@ -271,7 +267,7 @@ export default function KhataLedgerPage() {
 
     const PartyIcon = ({ type }: { type: PartyType }) => {
         if (type === 'supplier') return <Leaf className="h-4 w-4 mr-2 text-green-500" />;
-        if (type === 'customer') return <User className="h-4 w-4 mr-2 text-blue-500" />;
+        if (type === 'customer') return <ShoppingCart className="h-4 w-4 mr-2 text-blue-500" />;
         return <Users className="h-4 w-4 mr-2 text-purple-500" />;
     };
     
@@ -343,6 +339,7 @@ export default function KhataLedgerPage() {
                     <Tabs value={activeTab} onValueChange={setActiveTab}>
                         <TabsList>
                             <TabsTrigger value="growers"><Leaf className="h-4 w-4 mr-2"/>Growers</TabsTrigger>
+                            <TabsTrigger value="customers"><ShoppingCart className="h-4 w-4 mr-2"/>Customers</TabsTrigger>
                             <TabsTrigger value="all"><Users className="h-4 w-4 mr-2"/>All Parties</TabsTrigger>
                         </TabsList>
                     </Tabs>
