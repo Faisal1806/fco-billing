@@ -9,7 +9,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit/zod';
+import { z } from 'zod';
 
 // Define the input schema for the flow
 export const CategorizePesticideInputSchema = z.object({

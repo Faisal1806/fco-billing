@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -6,7 +7,7 @@
  * in the application, such as defining flows, prompts, and tools.
  */
 
-import { genkit } from 'genkit';
+import { genkit } from '@genkit-ai/ai';
 import { googleAI } from '@genkit-ai/googleai';
 import { firebase } from 'genkitx-firebase';
 
