@@ -1,4 +1,3 @@
-
 "use client";
 
 import { motion } from "framer-motion";
@@ -6,12 +5,11 @@ import { useState } from "react";
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff } from 'lucide-react';
-import { Logo } from './logo';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 
-export default function LoginSplash() {
+export default function LoginPage() {
     const router = useRouter();
     const { toast } = useToast();
     const [password, setPassword] = useState('');
@@ -64,8 +62,8 @@ export default function LoginSplash() {
           transition={{ delay: 0.2, duration: 0.6, type: "spring", stiffness: 100 }}
           className="mb-6"
         >
-           <h1 className="text-2xl font-bold mt-4 text-foreground">F.Co Billing System</h1>
-           <p className="text-muted-foreground text-sm">Please login to continue</p>
+           <h1 className="text-2xl font-bold mt-4 text-foreground">Welcome To F.Co Billing System</h1>
+           <p className="text-muted-foreground text-sm">Your Satisfaction Is Our Success</p>
         </motion.div>
 
         <div className="space-y-4">
