@@ -6,7 +6,6 @@ import { useState } from "react";
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff } from 'lucide-react';
-import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
