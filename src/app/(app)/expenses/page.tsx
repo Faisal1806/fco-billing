@@ -154,13 +154,13 @@ export default function ExpensesPage() {
 
     useEffect(() => {
         setIsClient(true);
-        if (typeof window !== 'undefined') {
-            setUserRole(localStorage.getItem('userRole'));
-        }
     }, []);
-
+    
     const fetchExpenses = () => {
         if (typeof window === 'undefined') return;
+        
+        setUserRole(localStorage.getItem('userRole'));
+
         const allLabourExpenses: ExpenseEntry[] = [];
         const allCompanyExpenses: ExpenseEntry[] = [];
         const allCommissionIncome: ExpenseEntry[] = [];
@@ -345,6 +345,10 @@ export default function ExpensesPage() {
         return commissionIncome.reduce((acc, exp) => acc + exp.amount, 0);
     }, [commissionIncome]);
 
+    if (!isClient) {
+        return null; // Render nothing on the server
+    }
+
     return (
         <div className="space-y-8">
              <ExpenseTable 
@@ -407,5 +411,3 @@ export default function ExpensesPage() {
         </div>
     );
 }
-
-    
