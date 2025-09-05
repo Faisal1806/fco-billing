@@ -40,72 +40,80 @@ export default function AutomaticRateList({ sourceType, title }: AutomaticRateLi
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
-        setIsLoading(true);
-        let foundRates = false;
-        let ratesForDate: Date | null = null;
-        
-        for (let i = 0; i < 30; i++) { // Look back up to 30 days
-            const dateToFetch = new Date(displayDate);
-            dateToFetch.setDate(dateToFetch.getDate() - i);
-            const dateString = dateToFetch.toISOString().split('T')[0];
-            const todaysRates: { [key: string]: DailyRate } = {};
+        const fetchRates = (dateToSearchFrom: Date) => {
+            setIsLoading(true);
+            let foundRates = false;
+            let dateWithRates: Date | null = null;
 
-            for (let j = 0; j < localStorage.length; j++) {
-                const key = localStorage.key(j);
-                if (!key) continue;
+            for (let i = 0; i < 30; i++) { // Look back up to 30 days
+                const dateToFetch = new Date(dateToSearchFrom);
+                dateToFetch.setDate(dateToFetch.getDate() - i);
+                const dateString = dateToFetch.toISOString().split('T')[0];
+                const todaysRates: { [key: string]: DailyRate } = {};
 
-                try {
-                    if (sourceType === 'fruit' && key.startsWith('invoice-')) {
-                        const watak: WatakEntry = JSON.parse(localStorage.getItem(key)!);
-                        if (watak.date === dateString) {
-                            watak.entries.forEach(entry => {
-                                if (entry.variety && entry.rate > 0) {
-                                    if (!todaysRates[entry.variety]) {
-                                        todaysRates[entry.variety] = { name: entry.variety, rates: new Set() };
+                for (let j = 0; j < localStorage.length; j++) {
+                    const key = localStorage.key(j);
+                    if (!key) continue;
+
+                    try {
+                        if (sourceType === 'fruit' && key.startsWith('invoice-')) {
+                            const watak: WatakEntry = JSON.parse(localStorage.getItem(key)!);
+                            if (watak.date === dateString) {
+                                watak.entries.forEach(entry => {
+                                    if (entry.variety && entry.rate > 0) {
+                                        if (!todaysRates[entry.variety]) {
+                                            todaysRates[entry.variety] = { name: entry.variety, rates: new Set() };
+                                        }
+                                        todaysRates[entry.variety].rates.add(entry.rate);
                                     }
-                                    todaysRates[entry.variety].rates.add(entry.rate);
-                                }
-                            });
-                        }
-                    } else if (sourceType === 'fertilizer' && key.startsWith('pesticide-invoice-')) {
-                        const bill: PesticideBillData = JSON.parse(localStorage.getItem(key)!);
-                        if (bill.date === dateString) {
-                            bill.entries.forEach(entry => {
-                                if (entry.particulars && entry.rate > 0) {
-                                    if (!todaysRates[entry.particulars]) {
-                                        todaysRates[entry.particulars] = { name: entry.particulars, rates: new Set() };
+                                });
+                            }
+                        } else if (sourceType === 'fertilizer' && key.startsWith('pesticide-invoice-')) {
+                            const bill: PesticideBillData = JSON.parse(localStorage.getItem(key)!);
+                            if (bill.date === dateString) {
+                                bill.entries.forEach(entry => {
+                                    if (entry.particulars && entry.rate > 0) {
+                                        if (!todaysRates[entry.particulars]) {
+                                            todaysRates[entry.particulars] = { name: entry.particulars, rates: new Set() };
+                                        }
+                                        todaysRates[entry.particulars].rates.add(entry.rate);
                                     }
-                                    todaysRates[entry.particulars].rates.add(entry.rate);
-                                }
-                            });
+                                });
+                            }
                         }
+                    } catch (e) {
+                        console.error(`Could not parse item from local storage: ${key}`, e);
                     }
-                } catch (e) {
-                    console.error(`Could not parse item from local storage: ${key}`, e);
+                }
+
+                const processedRates = Object.values(todaysRates).sort((a,b) => a.name.localeCompare(b.name));
+                if (processedRates.length > 0) {
+                    setRates(processedRates);
+                    dateWithRates = dateToFetch;
+                    foundRates = true;
+                    break;
                 }
             }
 
-            const processedRates = Object.values(todaysRates).sort((a,b) => a.name.localeCompare(b.name));
-            if (processedRates.length > 0) {
-                setRates(processedRates);
-                ratesForDate = dateToFetch;
-                foundRates = true;
-                break; 
+            if (!foundRates) {
+                setRates([]);
             }
-        }
 
-        if (!foundRates) {
-            setRates([]);
-        }
-
-        setRatesDate(ratesForDate);
-        setIsLoading(false);
+            setRatesDate(dateWithRates);
+            setIsLoading(false);
+        };
+        
+        fetchRates(displayDate);
     }, [displayDate, sourceType]);
 
     const handleDateChange = (days: number) => {
         setDisplayDate(prevDate => {
             const newDate = new Date(prevDate);
             newDate.setDate(newDate.getDate() + days);
+            // Prevent navigating to a future date
+            if (newDate > new Date()) {
+                return prevDate;
+            }
             return newDate;
         });
     };
@@ -141,7 +149,7 @@ export default function AutomaticRateList({ sourceType, title }: AutomaticRateLi
                             📊 {title}
                         </CardTitle>
                         <CardDescription>
-                           Viewing rates for {displayDate.toLocaleDateString('en-CA')}
+                           {ratesDate ? `Showing rates for ${ratesDate.toLocaleDateString('en-CA')}` : `Searching for rates...`}
                         </CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
