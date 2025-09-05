@@ -21,9 +21,19 @@ interface EditableRateListProps {
     storageKeyPrefix: string;
     title: string;
     defaultRates?: Rate[];
+    categoryLabel?: string;
+    categoryPlaceholder?: string;
+    varietyPlaceholder?: string;
 }
 
-export default function EditableRateList({ storageKeyPrefix, title, defaultRates = [] }: EditableRateListProps) {
+export default function EditableRateList({ 
+    storageKeyPrefix, 
+    title, 
+    defaultRates = [],
+    categoryLabel = 'Category',
+    categoryPlaceholder = 'e.g., Apples, Fungicide',
+    varietyPlaceholder = 'e.g., Red Delicious, Mancozeb',
+}: EditableRateListProps) {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [rates, setRates] = useState<Rate[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -160,7 +170,7 @@ export default function EditableRateList({ storageKeyPrefix, title, defaultRates
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Category</TableHead>
+                            <TableHead>{categoryLabel}</TableHead>
                             <TableHead>Variety / Particulars</TableHead>
                             <TableHead>Rate (e.g., 500-600)</TableHead>
                             <TableHead className="w-[50px]"></TableHead>
@@ -171,14 +181,14 @@ export default function EditableRateList({ storageKeyPrefix, title, defaultRates
                             <TableRow key={rate.id}>
                                 <TableCell>
                                     <Input
-                                        placeholder="e.g., Apples, Fungicide"
+                                        placeholder={categoryPlaceholder}
                                         value={rate.category}
                                         onChange={(e) => handleUpdateRate(rate.id, 'category', e.target.value)}
                                     />
                                 </TableCell>
                                 <TableCell>
                                     <Input
-                                        placeholder="e.g., Red Delicious, Mancozeb"
+                                        placeholder={varietyPlaceholder}
                                         value={rate.variety}
                                         onChange={(e) => handleUpdateRate(rate.id, 'variety', e.target.value)}
                                     />

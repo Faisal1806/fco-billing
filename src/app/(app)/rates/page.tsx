@@ -11,21 +11,24 @@ export default function RatesPage() {
       <>
         <Card className="mb-6">
             <CardHeader>
-                <CardTitle>Fruit Rates</CardTitle>
-                <CardDescription>Automatically generated daily market rates for fruits based on your sales, with an option for manual entries.</CardDescription>
+                <CardTitle>National Fruit Market Rates</CardTitle>
+                <CardDescription>View your local automatic rates alongside manually entered rates from markets outside Kashmir.</CardDescription>
             </CardHeader>
         </Card>
         
         <AutomaticRateList 
             sourceType="fruit"
-            title="Automatic Fruit Rate List (from Sales)"
+            title="Sopore Mandi Rates (from Local Sales)"
         />
 
         <Separator className="my-8" />
 
         <EditableRateList 
-          storageKeyPrefix="manual-fruit-rates-"
-          title="Manual & Add-on Fruit Rates"
+          storageKeyPrefix="manual-outside-rates-"
+          title="Outside Market Rates (Manual Entry)"
+          categoryLabel="State / Market"
+          categoryPlaceholder="e.g., Delhi, Kolkata"
+          varietyPlaceholder="e.g., American, Red Delicious"
         />
       </>
   );
