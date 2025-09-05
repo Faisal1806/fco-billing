@@ -27,7 +27,7 @@ export default function RatesPage() {
           storageKeyPrefix="manual-outside-rates-"
           title="Outside Market Rates (Manual Entry)"
           categoryLabel="State / Market"
-          categoryPlaceholder="e.g., Delhi, Kolkata"
+          categoryPlaceholder="e.g., Delhi, Guwahati, Kolkata"
           varietyPlaceholder="e.g., American, Red Delicious"
         />
       </>

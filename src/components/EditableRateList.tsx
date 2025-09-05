@@ -228,7 +228,7 @@ export default function EditableRateList({
                 {rates.length === 0 && !isLoading && (
                      <div className="text-center text-muted-foreground mt-6 py-12 border-2 border-dashed rounded-lg">
                         <p>No manual rates found for this date.</p>
-                        <p className="text-sm">Click "Add Rate" to get started.</p>
+                        <p className="text-sm">Click "Add Rate" to start building your list for different states.</p>
                     </div>
                 )}
             </CardContent>
