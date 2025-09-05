@@ -65,7 +65,7 @@ export default function KhataLedgerPage() {
     const [allParties, setAllParties] = React.useState<string[]>([]);
     const [filteredParties, setFilteredParties] = React.useState<string[]>([]);
     const [selectedParty, setSelectedParty] = React.useState<string | null>(null);
-    const [activeTab, setActiveTab] = React.useState('growers');
+    const [activeTab, setActiveTab] = React.useState('customers');
     const [isLoading, setIsLoading] = React.useState(true);
 
     React.useEffect(() => {
@@ -162,7 +162,6 @@ export default function KhataLedgerPage() {
         };
         
         if (activeTab === 'customers') filterAndSetParties('customer');
-        else if (activeTab === 'growers') filterAndSetParties('supplier');
         else if (activeTab === 'all') {
             setFilteredParties(allParties);
              if(allParties.length > 0) {
@@ -343,7 +342,6 @@ export default function KhataLedgerPage() {
                 <div className="flex justify-between items-center mb-4 print-hidden">
                     <Tabs value={activeTab} onValueChange={setActiveTab}>
                         <TabsList>
-                            <TabsTrigger value="growers"><Leaf className="h-4 w-4 mr-2"/>Growers</TabsTrigger>
                             <TabsTrigger value="customers"><User className="h-4 w-4 mr-2"/>Customers</TabsTrigger>
                             <TabsTrigger value="all"><Users className="h-4 w-4 mr-2"/>All Parties</TabsTrigger>
                         </TabsList>
