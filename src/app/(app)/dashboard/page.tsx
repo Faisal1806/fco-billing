@@ -242,5 +242,3 @@ export default function DashboardPage() {
     </Tabs>
   );
 }
-
-    
