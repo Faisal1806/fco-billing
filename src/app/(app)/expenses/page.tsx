@@ -22,7 +22,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, Trash2, Receipt } from 'lucide-react';
+import { PlusCircle, Trash2, Receipt, Users, Building, Percent } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { saveDocument, deleteDocument } from '@/lib/actions';
@@ -45,9 +45,85 @@ const emptyFormState = {
     amount: 0,
 }
 
+const ExpenseTable = ({ title, icon, description, expenses, total, children, showActions, onDelete }: {
+    title: string,
+    icon: React.ReactNode,
+    description: string,
+    expenses: ExpenseEntry[],
+    total: number,
+    children?: React.ReactNode,
+    showActions: boolean,
+    onDelete?: (id: string) => void
+}) => (
+     <Card>
+        <CardHeader>
+            <div className="flex items-center gap-3">
+                {icon}
+                <CardTitle>{title}</CardTitle>
+            </div>
+            <CardDescription>{description}</CardDescription>
+        </CardHeader>
+        <CardContent>
+             {expenses.length > 0 ? (
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Category</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                            {showActions && <TableHead className="text-right">Actions</TableHead>}
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {expenses.map((exp) => (
+                            <TableRow key={exp.id}>
+                                <TableCell>{new Date(exp.date).toLocaleDateString('en-GB')}</TableCell>
+                                <TableCell className="font-medium">{exp.category}</TableCell>
+                                <TableCell>{exp.description}</TableCell>
+                                <TableCell>
+                                    <Badge variant={exp.type === 'auto' ? 'secondary' : 'default'}>{exp.type}</Badge>
+                                </TableCell>
+                                <TableCell className="text-right font-mono">₹{exp.amount.toFixed(2)}</TableCell>
+                                {showActions && onDelete && (
+                                    <TableCell className="text-right">
+                                        {exp.type === 'manual' && (
+                                            <Button variant="ghost" size="icon" onClick={() => onDelete(exp.id)}>
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
+                                        )}
+                                    </TableCell>
+                                )}
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                        <TableFooter>
+                        <TableRow className="font-bold text-lg">
+                            <TableCell colSpan={showActions ? 5 : 4} className="text-right">Total</TableCell>
+                            <TableCell className="text-right font-mono">₹{total.toFixed(2)}</TableCell>
+                            {showActions && <TableCell></TableCell>}
+                        </TableRow>
+                    </TableFooter>
+                </Table>
+            ) : (
+                <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
+                    <Receipt className="mx-auto h-12 w-12" />
+                    <h3 className="mt-4 text-lg font-semibold">No records yet.</h3>
+                    <p className="mt-1 text-sm">Entries in this category will appear here automatically.</p>
+                </div>
+            )}
+        </CardContent>
+        {children && <CardFooter>{children}</CardFooter>}
+    </Card>
+);
+
+
 export default function ExpensesPage() {
     const { toast } = useToast();
-    const [expenses, setExpenses] = useState<ExpenseEntry[]>([]);
+    const [labourExpenses, setLabourExpenses] = useState<ExpenseEntry[]>([]);
+    const [companyExpenses, setCompanyExpenses] = useState<ExpenseEntry[]>([]);
+    const [commissionIncome, setCommissionIncome] = useState<ExpenseEntry[]>([]);
     const [formState, setFormState] = useState(emptyFormState);
     const [isClient, setIsClient] = useState(false);
     const [userRole, setUserRole] = useState<string | null>(null);
@@ -61,14 +137,16 @@ export default function ExpensesPage() {
 
     const fetchExpenses = () => {
         if (typeof window === 'undefined') return;
-        const allExpenses: ExpenseEntry[] = [];
+        const allLabourExpenses: ExpenseEntry[] = [];
+        const allCompanyExpenses: ExpenseEntry[] = [];
+        const allCommissionIncome: ExpenseEntry[] = [];
         
         // Fetch manual expenses
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             if (key?.startsWith('expense-')) {
                 const expense = JSON.parse(localStorage.getItem(key)!);
-                allExpenses.push({ ...expense, type: 'manual' });
+                allCompanyExpenses.push({ ...expense, type: 'manual' });
             }
         }
 
@@ -79,7 +157,7 @@ export default function ExpensesPage() {
                 const sale = JSON.parse(localStorage.getItem(key)!);
                 if(sale.totals) {
                     if (sale.totals.labour > 0) {
-                        allExpenses.push({
+                        allLabourExpenses.push({
                             id: `auto-labour-${sale.sNo}`,
                             date: sale.date,
                             category: 'Sales Deduction',
@@ -89,7 +167,7 @@ export default function ExpensesPage() {
                         });
                     }
                     if (sale.totals.association > 0) {
-                         allExpenses.push({
+                         allLabourExpenses.push({
                             id: `auto-assoc-${sale.sNo}`,
                             date: sale.date,
                             category: 'Sales Deduction',
@@ -99,7 +177,7 @@ export default function ExpensesPage() {
                         });
                     }
                     if (sale.totals.security > 0) {
-                         allExpenses.push({
+                         allCompanyExpenses.push({
                             id: `auto-security-${sale.sNo}`,
                             date: sale.date,
                             category: 'Sales Deduction',
@@ -108,11 +186,23 @@ export default function ExpensesPage() {
                             type: 'auto',
                         });
                     }
+                     if (sale.totals.commissionAmount > 0) {
+                         allCommissionIncome.push({
+                            id: `auto-commission-${sale.sNo}`,
+                            date: sale.date,
+                            category: 'Sales Commission',
+                            description: `Commission from Bill #${sale.sNo}`,
+                            amount: sale.totals.commissionAmount,
+                            type: 'auto',
+                        });
+                    }
                 }
             }
         }
         
-        setExpenses(allExpenses.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        setLabourExpenses(allLabourExpenses.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        setCompanyExpenses(allCompanyExpenses.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        setCommissionIncome(allCommissionIncome.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     }
 
     useEffect(() => {
@@ -182,97 +272,81 @@ export default function ExpensesPage() {
         fetchExpenses();
     };
 
-    const totalExpenses = useMemo(() => {
-        return expenses.reduce((acc, exp) => acc + exp.amount, 0);
-    }, [expenses]);
+    const totalLabourExpenses = useMemo(() => {
+        return labourExpenses.reduce((acc, exp) => acc + exp.amount, 0);
+    }, [labourExpenses]);
+
+    const totalCompanyExpenses = useMemo(() => {
+        return companyExpenses.reduce((acc, exp) => acc + exp.amount, 0);
+    }, [companyExpenses]);
+
+    const totalCommissionIncome = useMemo(() => {
+        return commissionIncome.reduce((acc, exp) => acc + exp.amount, 0);
+    }, [commissionIncome]);
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2">
-                <CardHeader>
-                    <CardTitle>Expense Register</CardTitle>
-                    <CardDescription>A log of all your business expenses, both automatic and manual.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {isClient && expenses.length > 0 ? (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Category</TableHead>
-                                    <TableHead>Description</TableHead>
-                                    <TableHead>Type</TableHead>
-                                    <TableHead className="text-right">Amount</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {expenses.map((exp) => (
-                                    <TableRow key={exp.id}>
-                                        <TableCell>{new Date(exp.date).toLocaleDateString('en-GB')}</TableCell>
-                                        <TableCell className="font-medium">{exp.category}</TableCell>
-                                        <TableCell>{exp.description}</TableCell>
-                                        <TableCell>
-                                            <Badge variant={exp.type === 'auto' ? 'secondary' : 'default'}>{exp.type}</Badge>
-                                        </TableCell>
-                                        <TableCell className="text-right font-mono">₹{exp.amount.toFixed(2)}</TableCell>
-                                        <TableCell className="text-right">
-                                            {exp.type === 'manual' && userRole === 'admin' && (
-                                                <Button variant="ghost" size="icon" onClick={() => handleDeleteExpense(exp.id)}>
-                                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                                </Button>
-                                            )}
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                             <TableFooter>
-                                <TableRow className="font-bold text-lg">
-                                    <TableCell colSpan={4} className="text-right">Total Expenses</TableCell>
-                                    <TableCell className="text-right font-mono">₹{totalExpenses.toFixed(2)}</TableCell>
-                                    <TableCell></TableCell>
-                                </TableRow>
-                            </TableFooter>
-                        </Table>
-                    ) : (
-                        <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
-                            <Receipt className="mx-auto h-12 w-12" />
-                            <h3 className="mt-4 text-lg font-semibold">No expenses recorded yet.</h3>
-                            <p className="mt-1 text-sm">Add your first manual expense using the form.</p>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+        <div className="space-y-8">
+             <ExpenseTable 
+                title="Commission Earned"
+                icon={<Percent className="h-6 w-6 text-primary"/>}
+                description="Commission income automatically calculated from your sales invoices (wataks)."
+                expenses={commissionIncome}
+                total={totalCommissionIncome}
+                showActions={false}
+            />
+            
+            <ExpenseTable 
+                title="Labour & Association Expenses"
+                icon={<Users className="h-6 w-6 text-primary"/>}
+                description="Expenses paid out to company laborers, automatically calculated from sales deductions."
+                expenses={labourExpenses}
+                total={totalLabourExpenses}
+                showActions={false}
+            />
 
-            <Card className="h-fit">
-                <CardHeader>
-                    <CardTitle>Add Manual Expense</CardTitle>
-                    <CardDescription>Record any other business expenses here.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div>
-                        <Label htmlFor="date">Date</Label>
-                        <Input id="date" name="date" type="date" value={formState.date} onChange={handleInputChange} />
-                    </div>
-                     <div>
-                        <Label htmlFor="category">Category</Label>
-                        <Input id="category" name="category" placeholder="e.g., Shop Rent, Electricity" value={formState.category} onChange={handleInputChange} />
-                    </div>
-                     <div>
-                        <Label htmlFor="description">Description</Label>
-                        <Input id="description" name="description" placeholder="e.g., Monthly shop rent" value={formState.description} onChange={handleInputChange} />
-                    </div>
-                     <div>
-                        <Label htmlFor="amount">Amount</Label>
-                        <Input id="amount" name="amount" type="number" placeholder="0.00" value={formState.amount || ''} onChange={handleInputChange} />
-                    </div>
-                </CardContent>
-                 <CardFooter>
-                    <Button onClick={handleSaveExpense} className="w-full">
-                        <PlusCircle className="h-4 w-4 mr-2" /> Add Expense
-                    </Button>
-                </CardFooter>
-            </Card>
+            <ExpenseTable 
+                title="Company & Security Expenses"
+                icon={<Building className="h-6 w-6 text-primary"/>}
+                description="Expenses for the company itself, including security fees from sales and other manually added costs."
+                expenses={companyExpenses}
+                total={totalCompanyExpenses}
+                showActions={userRole === 'admin'}
+                onDelete={handleDeleteExpense}
+            >
+                <Card className="w-full">
+                     <CardHeader>
+                        <CardTitle>Add Manual Company Expense</CardTitle>
+                        <CardDescription>Record any other business expenses here (e.g. Shop Rent).</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                         <div>
+                            <Label htmlFor="date">Date</Label>
+                            <Input id="date" name="date" type="date" value={formState.date} onChange={handleInputChange} />
+                        </div>
+                        <div>
+                            <Label htmlFor="category">Category</Label>
+                            <Input id="category" name="category" placeholder="e.g., Shop Rent" value={formState.category} onChange={handleInputChange} />
+                        </div>
+                        <div>
+                            <Label htmlFor="description">Description</Label>
+                            <Input id="description" name="description" placeholder="e.g., Monthly shop rent" value={formState.description} onChange={handleInputChange} />
+                        </div>
+                        <div>
+                            <Label htmlFor="amount">Amount</Label>
+                            <Input id="amount" name="amount" type="number" placeholder="0.00" value={formState.amount || ''} onChange={handleInputChange} />
+                        </div>
+                    </CardContent>
+                     <CardFooter>
+                        <Button onClick={handleSaveExpense} className="gap-2">
+                            <PlusCircle className="h-4 w-4" /> Add Company Expense
+                        </Button>
+                    </CardFooter>
+                </Card>
+            </ExpenseTable>
         </div>
     );
 }
+
+    
+
+    
