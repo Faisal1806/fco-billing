@@ -65,7 +65,7 @@ export default function KhataLedgerPage() {
     const [allParties, setAllParties] = React.useState<string[]>([]);
     const [filteredParties, setFilteredParties] = React.useState<string[]>([]);
     const [selectedParty, setSelectedParty] = React.useState<string | null>(null);
-    const [activeTab, setActiveTab] = React.useState('customers');
+    const [activeTab, setActiveTab] = React.useState('growers');
     const [isLoading, setIsLoading] = React.useState(true);
 
     React.useEffect(() => {
@@ -150,7 +150,7 @@ export default function KhataLedgerPage() {
                 if (type === 'all') return true;
                 const ledger = ledgers[p];
                 if (type === 'customer') return ledger.partyType === 'customer' || ledger.partyType === 'both';
-                if (type === 'supplier') return ledger.partyType === 'customer' || ledger.partyType === 'both'; // Changed this line
+                if (type === 'supplier') return ledger.partyType === 'supplier' || ledger.partyType === 'both';
                 return false;
             });
             setFilteredParties(parties);
@@ -343,8 +343,8 @@ export default function KhataLedgerPage() {
                 <div className="flex justify-between items-center mb-4 print-hidden">
                     <Tabs value={activeTab} onValueChange={setActiveTab}>
                         <TabsList>
-                            <TabsTrigger value="customers"><User className="h-4 w-4 mr-2"/>Customers</TabsTrigger>
                             <TabsTrigger value="growers"><Leaf className="h-4 w-4 mr-2"/>Growers</TabsTrigger>
+                            <TabsTrigger value="customers"><User className="h-4 w-4 mr-2"/>Customers</TabsTrigger>
                             <TabsTrigger value="all"><Users className="h-4 w-4 mr-2"/>All Parties</TabsTrigger>
                         </TabsList>
                     </Tabs>
