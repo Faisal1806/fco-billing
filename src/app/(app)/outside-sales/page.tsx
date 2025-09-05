@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Globe, ArrowRight } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Globe, ArrowRight, Percent } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { saveDocument, deleteDocument } from '@/lib/actions';
@@ -35,6 +35,7 @@ export default function OutsideSalesPage() {
     const [market, setMarket] = useState('');
     const [rows, setRows] = useState<BikriEntry[]>([emptyRow]);
     const [expenses, setExpenses] = useState(0);
+    const [commissionRate, setCommissionRate] = useState(0);
 
     // State for data management
     const [availableChallans, setAvailableChallans] = useState<any[]>([]);
@@ -77,12 +78,13 @@ export default function OutsideSalesPage() {
 
     const calculation = useMemo(() => {
         const grossSale = rows.reduce((acc, row) => acc + (Number(row.qty) || 0) * (Number(row.rate) || 0), 0);
+        const commissionAmount = grossSale * ((Number(commissionRate) || 0) / 100);
         const freightCost = selectedChallan?.payOnlyFreight || 0;
-        const totalExpenses = freightCost + (Number(expenses) || 0);
+        const totalExpenses = freightCost + (Number(expenses) || 0) + commissionAmount;
         const netSale = grossSale - totalExpenses;
 
-        return { grossSale, freightCost, totalExpenses, netSale };
-    }, [rows, expenses, selectedChallan]);
+        return { grossSale, commissionAmount, freightCost, totalExpenses, netSale };
+    }, [rows, expenses, commissionRate, selectedChallan]);
 
 
     const resetForm = () => {
@@ -92,6 +94,7 @@ export default function OutsideSalesPage() {
         setMarket('');
         setRows([emptyRow]);
         setExpenses(0);
+        setCommissionRate(0);
         setIsEditing(false);
     };
 
@@ -110,6 +113,7 @@ export default function OutsideSalesPage() {
             market,
             entries: rows.filter(r => r.qty > 0 && r.rate > 0),
             expenses: Number(expenses),
+            commissionRate: Number(commissionRate),
             calculation
         };
         localStorage.setItem(`bikri-${id}`, JSON.stringify(data));
@@ -119,9 +123,16 @@ export default function OutsideSalesPage() {
         } catch (error) {
             toast({ variant: 'destructive', title: 'Sync Failed', description: 'Saved locally, but failed to sync to cloud.' });
         } finally {
-            setSavedBikris(prev => [...prev, data]);
+            setSavedBikris(prev => {
+                const existing = prev.findIndex(b => b.id === data.id);
+                if (existing > -1) {
+                    const copy = [...prev];
+                    copy[existing] = data;
+                    return copy;
+                }
+                return [...prev, data];
+            });
             setIsSubmitting(false);
-            resetForm();
         }
     };
     
@@ -132,6 +143,7 @@ export default function OutsideSalesPage() {
         setMarket(bikri.market);
         setRows(bikri.entries.length > 0 ? bikri.entries : [emptyRow]);
         setExpenses(bikri.expenses);
+        setCommissionRate(bikri.commissionRate || 0);
         setIsEditing(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -258,16 +270,26 @@ export default function OutsideSalesPage() {
                     
                     {/* Calculation */}
                     <div className="grid md:grid-cols-2 gap-6">
-                        <div>
-                             <Label htmlFor="expenses">Other Expenses from Bikri (Labour, etc.)</Label>
-                             <Input id="expenses" type="number" value={expenses || ''} onChange={e => setExpenses(Number(e.target.value))} />
+                        <div className="space-y-4">
+                             <div>
+                                <Label htmlFor="commissionRate">Commission Rate (%)</Label>
+                                <div className="relative">
+                                     <Percent className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                     <Input id="commissionRate" type="number" className="pl-8" placeholder="e.g., 8 for 8%" value={commissionRate || ''} onChange={e => setCommissionRate(Number(e.target.value))} />
+                                </div>
+                            </div>
+                            <div>
+                                <Label htmlFor="expenses">Other Expenses from Bikri (Labour, etc.)</Label>
+                                <Input id="expenses" type="number" value={expenses || ''} onChange={e => setExpenses(Number(e.target.value))} />
+                            </div>
                         </div>
                         <Card className="p-4 bg-muted">
                             <h3 className="font-bold text-lg mb-2">Profit / Loss Calculation</h3>
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between"><span>Gross Sale from Bikri:</span> <span className="font-medium">₹{calculation.grossSale.toFixed(2)}</span></div>
-                                <div className="flex justify-between"><span>(-) Freight from Challan:</span> <span className="font-medium text-red-500">₹{calculation.freightCost.toFixed(2)}</span></div>
-                                <div className="flex justify-between"><span>(-) Other Expenses:</span> <span className="font-medium text-red-500">₹{(Number(expenses) || 0).toFixed(2)}</span></div>
+                                <div className="flex justify-between text-red-500"><span>(-) Commission:</span> <span className="font-medium">₹{calculation.commissionAmount.toFixed(2)}</span></div>
+                                <div className="flex justify-between text-red-500"><span>(-) Freight from Challan:</span> <span className="font-medium">₹{calculation.freightCost.toFixed(2)}</span></div>
+                                <div className="flex justify-between text-red-500"><span>(-) Other Expenses:</span> <span className="font-medium">₹{(Number(expenses) || 0).toFixed(2)}</span></div>
                                 <Separator />
                                 <div className={`flex justify-between font-bold text-lg ${calculation.netSale >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                     <span>Net Profit / Loss:</span>
@@ -289,7 +311,7 @@ export default function OutsideSalesPage() {
             <Card className="lg:col-span-1 h-fit">
                 <CardHeader><CardTitle>Saved Bikris</CardTitle></CardHeader>
                 <CardContent>
-                    <ScrollArea className="h-96">
+                    <ScrollArea className="h-[500px]">
                         {isLoading ? <Loader2 className="mx-auto h-6 w-6 animate-spin" /> :
                          savedBikris.length > 0 ? (
                             <div className="space-y-2">
@@ -322,3 +344,5 @@ export default function OutsideSalesPage() {
         </div>
     );
 }
+
+    
