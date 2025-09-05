@@ -31,8 +31,8 @@ export default function EditableRateList({
     title, 
     defaultRates = [],
     categoryLabel = 'Category',
-    categoryPlaceholder = 'e.g., Apples, Fungicide',
-    varietyPlaceholder = 'e.g., Red Delicious, Mancozeb',
+    categoryPlaceholder = 'e.g., Delhi, Guwahati, Kolkata',
+    varietyPlaceholder = 'e.g., American, Red Delicious',
 }: EditableRateListProps) {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [rates, setRates] = useState<Rate[]>([]);
