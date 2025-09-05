@@ -161,7 +161,7 @@ export default function KhataLedgerPage() {
             }
         };
         
-        if (activeTab === 'growers') filterAndSetParties('supplier');
+        if (activeTab === 'growers') filterAndSetParties('customer');
         else if (activeTab === 'customers') filterAndSetParties('customer');
         else if (activeTab === 'all') {
             setFilteredParties(allParties);
@@ -440,5 +440,3 @@ export default function KhataLedgerPage() {
     </>
   );
 }
-
-    
