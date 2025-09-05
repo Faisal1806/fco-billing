@@ -37,10 +37,11 @@ type ExpenseEntry = {
     type: 'manual' | 'auto';
 };
 
-type CommissionStats = {
+type ExpenseStats = {
     totalWataks: number;
     totalPatti: number;
     totalDabba: number;
+    totalNugs: number;
 }
 
 const emptyFormState = {
@@ -124,13 +125,29 @@ const ExpenseTable = ({ title, icon, description, expenses, total, children, sho
     </Card>
 );
 
+const StatsDescription = ({ text, stats }: { text: string; stats: ExpenseStats }) => (
+    <div className="space-y-1">
+        <p>{text}</p>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold pt-1 text-foreground">
+            <span>Wataks: <Badge variant="secondary">{stats.totalWataks}</Badge></span>
+            <span>Patti: <Badge variant="secondary">{stats.totalPatti}</Badge></span>
+            <span>Dabba: <Badge variant="secondary">{stats.totalDabba}</Badge></span>
+            <span>Total Nugs: <Badge variant="outline">{stats.totalNugs}</Badge></span>
+        </div>
+    </div>
+);
+
 
 export default function ExpensesPage() {
     const { toast } = useToast();
     const [labourExpenses, setLabourExpenses] = useState<ExpenseEntry[]>([]);
     const [companyExpenses, setCompanyExpenses] = useState<ExpenseEntry[]>([]);
     const [commissionIncome, setCommissionIncome] = useState<ExpenseEntry[]>([]);
-    const [commissionStats, setCommissionStats] = useState<CommissionStats>({ totalWataks: 0, totalPatti: 0, totalDabba: 0 });
+    
+    const [commissionStats, setCommissionStats] = useState<ExpenseStats>({ totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 });
+    const [labourStats, setLabourStats] = useState<ExpenseStats>({ totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 });
+    const [companyStats, setCompanyStats] = useState<ExpenseStats>({ totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 });
+    
     const [formState, setFormState] = useState(emptyFormState);
     const [isClient, setIsClient] = useState(false);
     const [userRole, setUserRole] = useState<string | null>(null);
@@ -147,9 +164,14 @@ export default function ExpensesPage() {
         const allLabourExpenses: ExpenseEntry[] = [];
         const allCompanyExpenses: ExpenseEntry[] = [];
         const allCommissionIncome: ExpenseEntry[] = [];
-        let newCommissionStats: CommissionStats = { totalWataks: 0, totalPatti: 0, totalDabba: 0 };
         
-        // Fetch manual expenses
+        let newCommissionStats: ExpenseStats = { totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 };
+        let newLabourStats: ExpenseStats = { totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 };
+        let newCompanyStats: ExpenseStats = { totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 };
+        
+        const companyWataks = new Set<string>();
+        const labourWataks = new Set<string>();
+
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             if (key?.startsWith('expense-')) {
@@ -158,12 +180,15 @@ export default function ExpensesPage() {
             }
         }
 
-        // Fetch automatic expenses from sales
          for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             if (key?.startsWith('invoice-')) {
                 const sale = JSON.parse(localStorage.getItem(key)!);
                 if(sale.totals) {
+                    const pattiQty = sale.totals.pattiQty || 0;
+                    const dabbaQty = sale.totals.dabbaQty || 0;
+                    const totalNugs = pattiQty + dabbaQty;
+
                     if (sale.totals.labour > 0) {
                         allLabourExpenses.push({
                             id: `auto-labour-${sale.sNo}`,
@@ -173,6 +198,10 @@ export default function ExpensesPage() {
                             amount: sale.totals.labour,
                             type: 'auto',
                         });
+                        labourWataks.add(sale.sNo);
+                        newLabourStats.totalPatti += pattiQty;
+                        newLabourStats.totalDabba += dabbaQty;
+                        newLabourStats.totalNugs += totalNugs;
                     }
                     if (sale.totals.association > 0) {
                          allCompanyExpenses.push({
@@ -183,6 +212,7 @@ export default function ExpensesPage() {
                             amount: sale.totals.association,
                             type: 'auto',
                         });
+                        companyWataks.add(sale.sNo);
                     }
                     if (sale.totals.security > 0) {
                          allCompanyExpenses.push({
@@ -193,6 +223,7 @@ export default function ExpensesPage() {
                             amount: sale.totals.security,
                             type: 'auto',
                         });
+                        companyWataks.add(sale.sNo);
                     }
                      if (sale.totals.commissionAmount > 0) {
                          allCommissionIncome.push({
@@ -204,17 +235,35 @@ export default function ExpensesPage() {
                             type: 'auto',
                         });
                         newCommissionStats.totalWataks += 1;
-                        newCommissionStats.totalPatti += sale.totals.pattiQty || 0;
-                        newCommissionStats.totalDabba += sale.totals.dabbaQty || 0;
+                        newCommissionStats.totalPatti += pattiQty;
+                        newCommissionStats.totalDabba += dabbaQty;
+                        newCommissionStats.totalNugs += totalNugs;
                     }
                 }
             }
         }
+
+        // Aggregate company stats for wataks that have either security or association fees
+        const companyWatakIds = Array.from(companyWataks);
+        newCompanyStats.totalWataks = companyWatakIds.length;
+        companyWatakIds.forEach(sNo => {
+            const sale = JSON.parse(localStorage.getItem(`invoice-${sNo}`)!);
+            const pattiQty = sale.totals.pattiQty || 0;
+            const dabbaQty = sale.totals.dabbaQty || 0;
+            newCompanyStats.totalPatti += pattiQty;
+            newCompanyStats.totalDabba += dabbaQty;
+            newCompanyStats.totalNugs += pattiQty + dabbaQty;
+        });
+
+        newLabourStats.totalWataks = labourWataks.size;
         
         setLabourExpenses(allLabourExpenses.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         setCompanyExpenses(allCompanyExpenses.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         setCommissionIncome(allCommissionIncome.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        
         setCommissionStats(newCommissionStats);
+        setLabourStats(newLabourStats);
+        setCompanyStats(newCompanyStats);
     }
 
     useEffect(() => {
@@ -296,23 +345,12 @@ export default function ExpensesPage() {
         return commissionIncome.reduce((acc, exp) => acc + exp.amount, 0);
     }, [commissionIncome]);
 
-    const commissionDescription = (
-        <div className="space-y-1">
-            <p>Commission income automatically calculated from your sales invoices (wataks).</p>
-            <div className="flex gap-4 text-xs font-semibold pt-1 text-foreground">
-                <span>Wataks: <Badge variant="secondary">{commissionStats.totalWataks}</Badge></span>
-                <span>Patti: <Badge variant="secondary">{commissionStats.totalPatti}</Badge></span>
-                <span>Dabba: <Badge variant="secondary">{commissionStats.totalDabba}</Badge></span>
-            </div>
-        </div>
-    );
-
     return (
         <div className="space-y-8">
              <ExpenseTable 
                 title="Commission Earned"
                 icon={<Percent className="h-6 w-6 text-primary"/>}
-                description={commissionDescription}
+                description={<StatsDescription text="Commission income automatically calculated from your sales invoices (wataks)." stats={commissionStats} />}
                 expenses={commissionIncome}
                 total={totalCommissionIncome}
                 showActions={false}
@@ -321,7 +359,7 @@ export default function ExpensesPage() {
             <ExpenseTable 
                 title="Labour Expenses"
                 icon={<Users className="h-6 w-6 text-primary"/>}
-                description="Expenses paid out to company laborers, automatically calculated from sales deductions."
+                description={<StatsDescription text="Expenses paid out to company laborers, automatically calculated from sales deductions." stats={labourStats} />}
                 expenses={labourExpenses}
                 total={totalLabourExpenses}
                 showActions={false}
@@ -330,7 +368,7 @@ export default function ExpensesPage() {
             <ExpenseTable 
                 title="Company, Security & Association Expenses"
                 icon={<Building className="h-6 w-6 text-primary"/>}
-                description="Expenses for the company itself, including security/association fees from sales and other manually added costs."
+                description={<StatsDescription text="Expenses for the company itself, including security/association fees from sales and other manually added costs." stats={companyStats} />}
                 expenses={companyExpenses}
                 total={totalCompanyExpenses}
                 showActions={userRole === 'admin'}
