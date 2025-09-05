@@ -141,9 +141,14 @@ export default function ProductsPage() {
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle>Products & Inventory</CardTitle>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog open={isDialogOpen} onOpenChange={(isOpen) => {
+              setIsDialogOpen(isOpen);
+              if (!isOpen) {
+                resetForm();
+              }
+          }}>
             <DialogTrigger asChild>
-              <Button size="sm" className="gap-1" onClick={resetForm}>
+              <Button size="sm" className="gap-1">
                 <PlusCircle className="h-3.5 w-3.5" />
                 Add Product
               </Button>
@@ -213,9 +218,47 @@ export default function ProductsPage() {
             <Package className="mx-auto h-12 w-12" />
             <h3 className="mt-4 text-lg font-semibold">No products found.</h3>
             <p className="mt-1 text-sm">Get started by adding your first product.</p>
+             <Dialog open={isDialogOpen} onOpenChange={(isOpen) => {
+                setIsDialogOpen(isOpen);
+                if (!isOpen) {
+                    resetForm();
+                }
+             }}>
+                <DialogTrigger asChild>
+                <Button size="sm" className="mt-4 gap-1">
+                    <PlusCircle className="h-3.5 w-3.5" />
+                    Add Your First Product
+                </Button>
+                </DialogTrigger>
+                <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>{productId ? 'Edit Product' : 'Add New Product'}</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="name" className="text-right">Name</Label>
+                    <Input id="name" value={productName} onChange={(e) => setProductName(e.target.value)} className="col-span-3" />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="category" className="text-right">Category</Label>
+                    <Input id="category" value={category} onChange={(e) => setCategory(e.target.value)} className="col-span-3" placeholder="e.g., Fruit, Pesticide, Fertilizer" />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="stock" className="text-right">Stock</Label>
+                    <Input id="stock" type="number" value={stock || ''} onChange={(e) => setStock(Number(e.target.value))} className="col-span-3" />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                    <Button onClick={handleSaveProduct}>Save Product</Button>
+                </DialogFooter>
+                </DialogContent>
+            </Dialog>
           </div>
         )}
       </CardContent>
     </Card>
   );
 }
+
+    
