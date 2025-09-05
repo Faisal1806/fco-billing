@@ -16,6 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { PlusCircle, Trash2, FilePenLine, FilePlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
+import { saveDocument, deleteDocument } from '@/lib/actions';
 
 type ReceiptEntry = {
   khata: string;
@@ -149,7 +150,7 @@ export function ReceiptMakingTab() {
     setIsEditing(false);
   };
 
-  const handleCreateReceipt = () => {
+  const handleCreateReceipt = async () => {
     if (!receiptDetails.no || !receiptDetails.date || !receiptDetails.customerName) {
         toast({
             variant: 'destructive',
@@ -166,12 +167,22 @@ export function ReceiptMakingTab() {
     };
     
     localStorage.setItem(`receipt-${receiptId}`, JSON.stringify(receiptData));
-    fetchReceipts(); // Re-fetch to update list
 
-    toast({
-      title: isEditing ? 'Receipt Updated' : 'Receipt Saved',
-      description: 'The receipt has been successfully saved.',
-    });
+    try {
+        await saveDocument('receipts', receiptId, receiptData);
+        toast({
+            title: isEditing ? 'Receipt Updated & Synced' : 'Receipt Saved & Synced',
+            description: 'The receipt has been successfully saved to the cloud.',
+        });
+    } catch (error) {
+         toast({
+            variant: 'destructive',
+            title: 'Cloud Sync Failed',
+            description: 'Could not save the receipt to the cloud. It is saved locally.',
+        });
+    }
+
+    fetchReceipts(); // Re-fetch to update list
     router.push(`/receipt/${receiptId}`);
   };
 
@@ -198,23 +209,26 @@ export function ReceiptMakingTab() {
     if(!window.confirm(`Are you sure you want to delete Receipt #${receiptId}? This action cannot be undone.`)) {
         return;
     }
+    
+    localStorage.removeItem(`receipt-${receiptId}`);
+
     try {
-        localStorage.removeItem(`receipt-${receiptId}`);
-        fetchReceipts(); // Re-fetch to update list
+        await deleteDocument('receipts', receiptId);
         toast({
             title: "Receipt Deleted",
-            description: `Receipt #${receiptId} has been successfully deleted.`
+            description: `Receipt #${receiptId} has been successfully deleted from local and cloud storage.`
         });
-        if (receiptDetails.no === receiptId) {
-            resetForm();
-        }
     } catch (error) {
-        console.error("Error deleting receipt:", error);
         toast({
             variant: "destructive",
-            title: "Delete Failed",
-            description: "Could not delete the receipt."
+            title: "Cloud Delete Failed",
+            description: "Could not delete receipt from cloud, but it was removed locally."
         });
+    }
+
+    fetchReceipts(); // Re-fetch to update list
+    if (receiptDetails.no === receiptId) {
+        resetForm();
     }
   };
 

@@ -10,6 +10,8 @@ import { FaWhatsapp } from 'react-icons/fa';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/logo";
+import { doc, getDoc } from "firebase/firestore";
+import { getClientDb } from "@/lib/firebase";
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
@@ -41,27 +43,49 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
         const fetchBill = async () => {
             if (!params.id) return;
             setLoading(true);
+            
+            let data: PurchaseData | null = null;
+            let errorOccurred = false;
+
             try {
-                const storedBill = localStorage.getItem(`purchase-${params.id}`);
-                if (storedBill) {
-                    setBillData(JSON.parse(storedBill));
-                } else {
-                     toast({
-                        variant: "destructive",
-                        title: "Not Found",
-                        description: "The requested purchase bill was not found."
-                    })
+                const db = getClientDb();
+                const docRef = doc(db, "purchases", params.id);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    data = docSnap.data() as PurchaseData;
                 }
             } catch (error) {
-                 console.error("Error fetching purchase bill:", error);
-                  toast({
-                    variant: "destructive",
-                    title: "Error",
-                    description: "Could not fetch the purchase bill data."
-                })
-            } finally {
-                setLoading(false);
+                console.error("Firestore fetch failed, will try localStorage.", error);
+                errorOccurred = true;
             }
+
+            if (!data) {
+                try {
+                    const storedBill = localStorage.getItem(`purchase-${params.id}`);
+                    if (storedBill) {
+                        data = JSON.parse(storedBill);
+                        if (errorOccurred) {
+                            toast({
+                                title: "Displaying Local Version",
+                                description: "Could not connect to the cloud. Showing the locally saved purchase."
+                            });
+                        }
+                    }
+                } catch (e) {
+                     console.error("Could not parse purchase from localStorage", e);
+                }
+            }
+
+            if (data) {
+                setBillData(data);
+            } else {
+                 toast({
+                    variant: "destructive",
+                    title: "Not Found",
+                    description: "The requested purchase bill was not found online or locally."
+                })
+            }
+            setLoading(false);
         };
         fetchBill();
     }, [params.id, toast]);

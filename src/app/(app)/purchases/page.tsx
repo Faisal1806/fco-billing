@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Separator } from '@/components/ui/separator';
 import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { saveDocument, deleteDocument } from '@/lib/actions';
 
 type PurchaseRow = {
   type: 'Patti' | 'Dabba';
@@ -121,24 +122,25 @@ export default function PurchasesPage() {
       },
     };
     
-    try {
-        localStorage.setItem(`purchase-${purchaseId}`, JSON.stringify(purchaseData));
-        fetchPurchases(); // Re-fetch to update list
+    localStorage.setItem(`purchase-${purchaseId}`, JSON.stringify(purchaseData));
 
+    try {
+        await saveDocument('purchases', purchaseId, purchaseData);
         toast({
-          title: isEditing ? 'Purchase Updated' : 'Purchase Saved',
-          description: `The purchase bill has been successfully ${isEditing ? 'updated' : 'saved'}.`,
+          title: isEditing ? 'Purchase Updated & Synced' : 'Purchase Saved & Synced',
+          description: `The purchase bill has been successfully saved to the cloud.`,
         });
-        router.push(`/purchase-bill/${purchaseId}`);
     } catch (error) {
-        console.error("Error saving purchase:", error);
+        console.error("Error saving purchase to cloud:", error);
         toast({
             variant: 'destructive',
-            title: 'Save Failed',
-            description: 'Could not save the purchase bill.',
+            title: 'Cloud Sync Failed',
+            description: 'Could not save the purchase bill to the cloud. It is saved locally.',
         });
     } finally {
+        fetchPurchases(); // Re-fetch to update list
         setIsSubmitting(false);
+        router.push(`/purchase-bill/${purchaseId}`);
     }
   };
 
@@ -159,25 +161,27 @@ export default function PurchasesPage() {
         if(!window.confirm(`Are you sure you want to delete Purchase Bill #${billId}? This action cannot be undone.`)) {
             return;
         }
+        
+        localStorage.removeItem(`purchase-${billId}`);
 
         try {
-            localStorage.removeItem(`purchase-${billId}`);
-            fetchPurchases(); // Re-fetch to update list
-
+            await deleteDocument('purchases', billId);
             toast({
                 title: "Purchase Deleted",
-                description: `Purchase Bill #${billId} has been successfully deleted.`
+                description: `Purchase Bill #${billId} has been successfully deleted from local and cloud storage.`
             })
+        } catch (error) {
+            console.error("Error deleting purchase from cloud:", error);
+            toast({
+                variant: "destructive",
+                title: "Cloud Delete Failed",
+                description: "Could not delete purchase from the cloud, but it was removed locally."
+            })
+        } finally {
+            fetchPurchases(); // Re-fetch to update list
             if (billNo === billId) {
                 resetForm();
             }
-        } catch (error) {
-            console.error("Error deleting purchase:", error);
-            toast({
-                variant: "destructive",
-                title: "Delete Failed",
-                description: "Could not delete the purchase bill."
-            })
         }
     }
 
