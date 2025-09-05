@@ -1,16 +1,15 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, Trash2, ChevronLeft, ChevronRight, Save } from 'lucide-react';
-import { FaWhatsapp } from 'react-icons/fa';
+import { PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-interface Rate {
+interface ManualRate {
     id: string;
     category: string;
     variety: string;
@@ -20,218 +19,123 @@ interface Rate {
 interface EditableRateListProps {
     storageKeyPrefix: string;
     title: string;
-    defaultRates?: Rate[];
-    categoryLabel?: string;
-    categoryPlaceholder?: string;
-    varietyPlaceholder?: string;
+    defaultRates: ManualRate[];
 }
 
-export default function EditableRateList({ 
-    storageKeyPrefix, 
-    title, 
-    defaultRates = [],
-    categoryLabel = 'Category',
-    categoryPlaceholder = 'e.g., Delhi, Guwahati, Kolkata',
-    varietyPlaceholder = 'e.g., American, Red Delicious',
-}: EditableRateListProps) {
-    const [currentDate, setCurrentDate] = useState(new Date());
-    const [rates, setRates] = useState<Rate[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+export default function EditableRateList({ storageKeyPrefix, title, defaultRates }: EditableRateListProps) {
     const { toast } = useToast();
-
-    const getStorageKey = (date: Date) => {
-        const dateString = date.toISOString().split('T')[0];
-        return `${storageKeyPrefix}${dateString}`;
-    };
+    const [rates, setRates] = useState<ManualRate[]>([]);
+    const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
-        setIsLoading(true);
-        const storageKey = getStorageKey(currentDate);
-        try {
-            const storedRates = localStorage.getItem(storageKey);
-            if (storedRates) {
-                setRates(JSON.parse(storedRates));
+        setIsClient(true);
+    }, []);
+
+    useEffect(() => {
+        if (isClient) {
+            let loadedRates: ManualRate[] = [];
+            let hasSavedData = false;
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key?.startsWith(storageKeyPrefix)) {
+                    hasSavedData = true;
+                    loadedRates.push(JSON.parse(localStorage.getItem(key)!));
+                }
+            }
+            if (!hasSavedData) {
+                // If no saved data, load defaults and save them
+                defaultRates.forEach(rate => {
+                    localStorage.setItem(`${storageKeyPrefix}${rate.id}`, JSON.stringify(rate));
+                });
+                setRates(defaultRates);
             } else {
-                // If it's today and we have default rates, show them.
-                const today = new Date();
-                if (currentDate.toDateString() === today.toDateString() && defaultRates.length > 0) {
-                     // Check if default rates for today are already saved
-                    const todayStorageKey = getStorageKey(today);
-                    const todayStoredRates = localStorage.getItem(todayStorageKey);
-                    if (!todayStoredRates) {
-                        setRates(defaultRates);
-                    } else {
-                        setRates(JSON.parse(todayStoredRates));
-                    }
-                } else {
-                    setRates([]);
-                }
+                setRates(loadedRates.sort((a,b) => a.id.localeCompare(b.id)));
             }
-        } catch (error) {
-            console.error("Failed to load or parse rates from local storage:", error);
-            setRates(defaultRates); // Fallback to defaults on error
         }
-        setIsLoading(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentDate, storageKeyPrefix]);
+    }, [isClient, storageKeyPrefix, defaultRates]);
 
+    const handleUpdate = (id: string, field: keyof ManualRate, value: string) => {
+        const newRates = rates.map(r => r.id === id ? { ...r, [field]: value } : r);
+        setRates(newRates);
+    };
+    
     const handleSave = () => {
-        const storageKey = getStorageKey(currentDate);
-        localStorage.setItem(storageKey, JSON.stringify(rates));
-        toast({
-            title: 'Rates Saved',
-            description: `The rate list for ${currentDate.toLocaleDateString()} has been saved.`,
-        });
-    };
-    
-    const handleAddRate = () => {
-        const newRate: Rate = {
-            id: crypto.randomUUID(),
-            category: '',
-            variety: '',
-            rate: '',
-        };
-        setRates([...rates, newRate]);
-    };
-
-    const handleUpdateRate = (id: string, field: keyof Omit<Rate, 'id'>, value: string) => {
-        setRates(
-            rates.map(rate => (rate.id === id ? { ...rate, [field]: value } : rate))
-        );
-    };
-
-    const handleRemoveRate = (id: string) => {
-        setRates(rates.filter(rate => rate.id !== id));
-    };
-
-    const handleDateChange = (days: number) => {
-        setCurrentDate(prevDate => {
-            const newDate = new Date(prevDate);
-            newDate.setDate(newDate.getDate() + days);
-            return newDate;
-        });
-    };
-
-    const handleShare = () => {
-        const dateString = currentDate.toLocaleDateString('en-GB', {
-            day: 'numeric', month: 'long', year: 'numeric'
-        });
-        
-        let shareText = `*${title} - ${dateString}*\n`;
-        shareText += `*FIRDOUS AHMAD & COMPANY*\n\n`;
-
-        const groupedRates: {[key: string]: Rate[]} = rates.reduce((acc, rate) => {
-            const category = rate.category || 'Uncategorized';
-            if (!acc[category]) acc[category] = [];
-            acc[category].push(rate);
-            return acc;
-        }, {} as {[key: string]: Rate[]});
-
-        for (const category in groupedRates) {
-            if (category !== 'Uncategorized') {
-                shareText += `*${category.toUpperCase()}*\n`;
+        rates.forEach(rate => {
+            if (rate.id && rate.category && rate.variety && rate.rate) {
+                 localStorage.setItem(`${storageKeyPrefix}${rate.id}`, JSON.stringify(rate));
             }
-            groupedRates[category].forEach(rate => {
-                if (rate.variety && rate.rate) {
-                   shareText += `- ${rate.variety}: *₹${rate.rate}*\n`;
-                }
-            });
-            shareText += '\n';
-        }
-        
-        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
-        window.open(whatsappUrl, '_blank');
+        });
+        toast({ title: 'Rates Saved', description: 'Your manual rates have been updated.' });
+    };
+
+    const addRate = () => {
+        const newId = `manual-${Date.now()}`;
+        setRates([...rates, { id: newId, category: '', variety: '', rate: '' }]);
     };
     
+    const removeRate = (id: string) => {
+        localStorage.removeItem(`${storageKeyPrefix}${id}`);
+        setRates(rates.filter(r => r.id !== id));
+    };
+
     return (
         <Card>
             <CardHeader>
-                <div className="flex justify-between items-center">
-                    <div>
-                        <CardTitle className="text-2xl font-bold text-primary">
-                            📝 {title}
-                        </CardTitle>
-                        <CardDescription>
-                            Manually manage and share your daily market rates. These are saved separately from automatic rates.
-                        </CardDescription>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Button variant="outline" size="icon" onClick={() => handleDateChange(-1)}>
-                            <ChevronLeft className="h-4 w-4" />
-                        </Button>
-                        <span className="font-semibold">{currentDate.toLocaleDateString('en-CA')}</span>
-                        <Button variant="outline" size="icon" onClick={() => handleDateChange(1)}>
-                            <ChevronRight className="h-4 w-4" />
-                        </Button>
-                    </div>
-                </div>
+                <CardTitle className="text-2xl font-bold text-primary">
+                    📝 {title}
+                </CardTitle>
             </CardHeader>
             <CardContent>
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>{categoryLabel}</TableHead>
-                            <TableHead>Variety / Particulars</TableHead>
-                            <TableHead>Rate (e.g., 500-600)</TableHead>
-                            <TableHead className="w-[50px]"></TableHead>
+                            <TableHead>Category</TableHead>
+                            <TableHead>Variety/Item</TableHead>
+                            <TableHead>Rate</TableHead>
+                            <TableHead className="w-12"></TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {rates.map(rate => (
-                            <TableRow key={rate.id}>
+                             <TableRow key={rate.id}>
                                 <TableCell>
-                                    <Input
-                                        placeholder={categoryPlaceholder}
-                                        value={rate.category}
-                                        onChange={(e) => handleUpdateRate(rate.id, 'category', e.target.value)}
+                                    <Input 
+                                        placeholder="e.g., Fungicide, State"
+                                        value={rate.category} 
+                                        onChange={e => handleUpdate(rate.id, 'category', e.target.value)} 
                                     />
                                 </TableCell>
                                 <TableCell>
-                                    <Input
-                                        placeholder={varietyPlaceholder}
-                                        value={rate.variety}
-                                        onChange={(e) => handleUpdateRate(rate.id, 'variety', e.target.value)}
+                                     <Input 
+                                        placeholder="e.g., Mancozeb, American"
+                                        value={rate.variety} 
+                                        onChange={e => handleUpdate(rate.id, 'variety', e.target.value)} 
                                     />
                                 </TableCell>
                                 <TableCell>
-                                    <Input
-                                        placeholder="e.g., 800-900 or 1500"
-                                        value={rate.rate}
-                                        onChange={(e) => handleUpdateRate(rate.id, 'rate', e.target.value)}
+                                    <Input 
+                                        placeholder="e.g., 550-600"
+                                        value={rate.rate} 
+                                        onChange={e => handleUpdate(rate.id, 'rate', e.target.value)} 
                                     />
                                 </TableCell>
                                 <TableCell>
-                                    <Button variant="ghost" size="icon" onClick={() => handleRemoveRate(rate.id)}>
-                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    <Button variant="ghost" size="icon" onClick={() => removeRate(rate.id)}>
+                                        <Trash2 className="text-red-500 h-4 w-4"/>
                                     </Button>
                                 </TableCell>
-                            </TableRow>
+                             </TableRow>
                         ))}
                     </TableBody>
                 </Table>
                 <div className="mt-4 flex justify-between">
-                     <Button variant="outline" onClick={handleAddRate} className="gap-2">
-                        <PlusCircle className="h-4 w-4" />
-                        Add Rate
+                    <Button variant="outline" size="sm" onClick={addRate} className="gap-2">
+                        <PlusCircle className="h-4 w-4" /> Add Rate
                     </Button>
-                    <div className="flex gap-2">
-                        <Button onClick={handleSave} className="gap-2">
-                            <Save className="h-4 w-4" />
-                            Save Manual List
-                        </Button>
-                        <Button variant="secondary" onClick={handleShare} className="gap-2" disabled={rates.length === 0}>
-                            <FaWhatsapp className="h-4 w-4 text-green-500" />
-                            Share Manual List
-                        </Button>
-                    </div>
+                    <Button onClick={handleSave}>Save Manual Rates</Button>
                 </div>
-                {rates.length === 0 && !isLoading && (
-                     <div className="text-center text-muted-foreground mt-6 py-12 border-2 border-dashed rounded-lg">
-                        <p>No manual rates found for this date.</p>
-                        <p className="text-sm">Click "Add Rate" to start building your list for different states.</p>
-                    </div>
-                )}
             </CardContent>
         </Card>
     );
 }
+

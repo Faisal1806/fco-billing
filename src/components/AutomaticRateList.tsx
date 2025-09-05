@@ -22,6 +22,16 @@ interface PesticideBillData {
     grandTotal: number;
 }
 
+interface BikriData {
+    id: string;
+    market: string;
+    entries: {
+        type: 'Patti' | 'Dabba';
+        variety: string;
+        rate: number;
+    }[];
+}
+
 interface DailyRate {
     name: string;
     rates: Set<number>;
@@ -29,7 +39,7 @@ interface DailyRate {
 }
 
 interface AutomaticRateListProps {
-    sourceType: 'fruit' | 'fertilizer';
+    sourceType: 'fruit' | 'fertilizer' | 'outside';
     title: string;
 }
 
@@ -51,11 +61,10 @@ export default function AutomaticRateList({ sourceType, title }: AutomaticRateLi
                         const watak: WatakEntry = JSON.parse(localStorage.getItem(key)!);
                         watak.entries.forEach(entry => {
                             const rate = entry.rate;
-                            const type = (entry as any).type || (entry.peti > 0 ? 'Patti' : 'Dabba'); // Handle old and new entry formats
+                            const type = (entry as any).type || (entry.peti > 0 ? 'Patti' : 'Dabba');
                             const variety = entry.variety;
 
                             if (variety && rate > 0) {
-                                // Create a unique name combining variety and type, e.g., "American (Patti)"
                                 const compositeName = `${variety} (${type})`; 
                                 if (!allTimeRates[compositeName]) {
                                     allTimeRates[compositeName] = { name: compositeName, rates: new Set() };
@@ -75,6 +84,18 @@ export default function AutomaticRateList({ sourceType, title }: AutomaticRateLi
                                 allTimeRates[name].rates.add(rate);
                             }
                         });
+                    } else if (sourceType === 'outside' && key.startsWith('bikri-')) {
+                        const bikri: BikriData = JSON.parse(localStorage.getItem(key)!);
+                        bikri.entries.forEach(entry => {
+                             if (entry.variety && entry.rate > 0) {
+                                // Group by Market -> Variety -> Type
+                                const compositeName = `${bikri.market} - ${entry.variety} (${entry.type})`;
+                                if (!allTimeRates[compositeName]) {
+                                    allTimeRates[compositeName] = { name: compositeName, rates: new Set() };
+                                }
+                                allTimeRates[compositeName].rates.add(entry.rate);
+                            }
+                        })
                     }
                 } catch (e) {
                     console.error(`Could not parse item from local storage: ${key}`, e);
@@ -132,7 +153,7 @@ export default function AutomaticRateList({ sourceType, title }: AutomaticRateLi
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>{sourceType === 'fruit' ? 'Variety / Kind' : 'Particulars'}</TableHead>
+                                    <TableHead>{sourceType === 'outside' ? 'Market - Variety / Kind' : (sourceType === 'fruit' ? 'Variety / Kind' : 'Item')}</TableHead>
                                     <TableHead className="text-right">Recorded Rates</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -156,8 +177,8 @@ export default function AutomaticRateList({ sourceType, title }: AutomaticRateLi
                     </>
                 ) : (
                      <div className="text-center text-muted-foreground mt-6 py-12 border-2 border-dashed rounded-lg">
-                        <p>No sales have been recorded yet.</p>
-                        <p className="text-sm">Rates will appear here as you create new sales documents.</p>
+                        <p>No sales have been recorded yet for this category.</p>
+                        <p className="text-sm">Rates will appear here as you create new documents.</p>
                     </div>
                 )}
             </CardContent>
