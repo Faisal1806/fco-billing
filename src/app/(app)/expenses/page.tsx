@@ -175,7 +175,7 @@ export default function ExpensesPage() {
                         });
                     }
                     if (sale.totals.association > 0) {
-                         allLabourExpenses.push({
+                         allCompanyExpenses.push({
                             id: `auto-assoc-${sale.sNo}`,
                             date: sale.date,
                             category: 'Sales Deduction',
@@ -319,7 +319,7 @@ export default function ExpensesPage() {
             />
             
             <ExpenseTable 
-                title="Labour & Association Expenses"
+                title="Labour Expenses"
                 icon={<Users className="h-6 w-6 text-primary"/>}
                 description="Expenses paid out to company laborers, automatically calculated from sales deductions."
                 expenses={labourExpenses}
@@ -328,9 +328,9 @@ export default function ExpensesPage() {
             />
 
             <ExpenseTable 
-                title="Company & Security Expenses"
+                title="Company, Security & Association Expenses"
                 icon={<Building className="h-6 w-6 text-primary"/>}
-                description="Expenses for the company itself, including security fees from sales and other manually added costs."
+                description="Expenses for the company itself, including security/association fees from sales and other manually added costs."
                 expenses={companyExpenses}
                 total={totalCompanyExpenses}
                 showActions={userRole === 'admin'}
@@ -369,3 +369,5 @@ export default function ExpensesPage() {
         </div>
     );
 }
+
+    
