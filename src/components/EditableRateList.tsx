@@ -1,14 +1,15 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, Trash2, ChevronLeft, ChevronRight, Save } from 'lucide-react';
+import { PlusCircle, Trash2, ChevronLeft, ChevronRight, Save, Sparkles } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { useToast } from '@/hooks/use-toast';
+import { categorizePesticide } from '@/ai/flows/categorize-pesticide-flow';
 
 interface Rate {
     id: string;
@@ -27,6 +28,7 @@ export default function EditableRateList({ storageKeyPrefix, title, defaultRates
     const [currentDate, setCurrentDate] = useState(new Date());
     const [rates, setRates] = useState<Rate[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isCategorizing, setIsCategorizing] = useState<string | null>(null);
     const { toast } = useToast();
 
     const getStorageKey = (date: Date) => {
@@ -133,6 +135,26 @@ export default function EditableRateList({ storageKeyPrefix, title, defaultRates
         window.open(whatsappUrl, '_blank');
     };
     
+    const handleAutoCategorize = useCallback(async (rateId: string, variety: string) => {
+        if (!variety || storageKeyPrefix !== 'manual-fertilizer-rates-') return;
+        setIsCategorizing(rateId);
+        try {
+            const result = await categorizePesticide({ pesticideName: variety });
+            if (result.category) {
+                handleUpdateRate(rateId, 'category', result.category);
+            }
+        } catch (error) {
+            console.error("Failed to categorize pesticide:", error);
+            toast({
+                variant: 'destructive',
+                title: 'AI Categorization Failed',
+                description: 'Could not automatically determine the category.',
+            });
+        } finally {
+            setIsCategorizing(null);
+        }
+    }, [storageKeyPrefix, toast]);
+
     return (
         <Card>
             <CardHeader>
@@ -174,14 +196,29 @@ export default function EditableRateList({ storageKeyPrefix, title, defaultRates
                                         placeholder="e.g., Apples, Fungicide"
                                         value={rate.category}
                                         onChange={(e) => handleUpdateRate(rate.id, 'category', e.target.value)}
+                                        disabled={isCategorizing === rate.id}
                                     />
                                 </TableCell>
                                 <TableCell>
-                                    <Input
-                                        placeholder="e.g., Red Delicious, Mancozeb"
-                                        value={rate.variety}
-                                        onChange={(e) => handleUpdateRate(rate.id, 'variety', e.target.value)}
-                                    />
+                                    <div className="flex items-center gap-1">
+                                        <Input
+                                            placeholder="e.g., Red Delicious, Mancozeb"
+                                            value={rate.variety}
+                                            onChange={(e) => handleUpdateRate(rate.id, 'variety', e.target.value)}
+                                            onBlur={(e) => handleAutoCategorize(rate.id, e.target.value)}
+                                        />
+                                         {storageKeyPrefix === 'manual-fertilizer-rates-' && (
+                                            <Button 
+                                                variant="ghost" 
+                                                size="icon" 
+                                                onClick={() => handleAutoCategorize(rate.id, rate.variety)} 
+                                                disabled={isCategorizing === rate.id || !rate.variety}
+                                                title="Auto-categorize"
+                                            >
+                                                <Sparkles className={`h-4 w-4 ${isCategorizing === rate.id ? 'animate-spin text-yellow-400' : 'text-muted-foreground'}`} />
+                                            </Button>
+                                        )}
+                                    </div>
                                 </TableCell>
                                 <TableCell>
                                     <Input
