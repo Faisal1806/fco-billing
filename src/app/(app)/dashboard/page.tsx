@@ -7,6 +7,7 @@ import { Loader2, PackagePlus, PackageMinus, Package, UserCheck, UserX, Leaf, Bo
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import RateList from '@/components/RateList';
+import { Button } from '@/components/ui/button';
 
 interface DailyStats {
   pattiPurchased: number;
@@ -311,3 +312,5 @@ export default function DashboardPage() {
     </Tabs>
   );
 }
+
+    
