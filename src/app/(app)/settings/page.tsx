@@ -19,10 +19,13 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
-import { Factory, BellRing, Palette, CloudUpload } from 'lucide-react';
+import { Factory, BellRing, Palette, CloudUpload, Paintbrush, FileText, Settings2 } from 'lucide-react';
 import { getClientMessaging } from '@/lib/firebase';
 import { getToken } from 'firebase/messaging';
 import { saveDocument } from '@/lib/actions';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 
 export default function SettingsPage() {
@@ -180,6 +183,17 @@ export default function SettingsPage() {
         }
     };
 
+    const ColorButton = ({ color }: { color: string }) => (
+        <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            style={{ backgroundColor: color }}
+        >
+            <span className="sr-only">Set theme to {color}</span>
+        </Button>
+    )
+
 
     return (
         <div className="grid gap-6">
@@ -201,6 +215,77 @@ export default function SettingsPage() {
             </Card>
 
             <ProfileForm />
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Paintbrush className="h-5 w-5" /> Appearance &amp; Customization</CardTitle>
+                    <CardDescription>
+                        Change invoice styles, choose color themes, manage custom fields, and tailor the app to your brand.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Accordion type="multiple" className="w-full space-y-4">
+                        <AccordionItem value="item-1" className="border rounded-lg px-4">
+                            <AccordionTrigger className="text-lg font-semibold"><FileText className="h-5 w-5 mr-3 text-primary" />Invoice & Bill Styles</AccordionTrigger>
+                            <AccordionContent className="space-y-4 pt-4">
+                                <div className="space-y-2">
+                                    <Label>Invoice Template</Label>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        <Button variant="outline">Classic</Button>
+                                        <Button variant="outline">Modern</Button>
+                                        <Button variant="outline">Textured</Button>
+                                        <Button variant="outline">Urdu/English</Button>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">Select a pre-designed layout for your documents.</p>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Switch id="watermark-switch" />
+                                    <Label htmlFor="watermark-switch">Add Faint Logo Watermark to Documents</Label>
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+
+                         <AccordionItem value="item-2" className="border rounded-lg px-4">
+                            <AccordionTrigger className="text-lg font-semibold"><Palette className="h-5 w-5 mr-3 text-primary" />Color Theme & Branding</AccordionTrigger>
+                            <AccordionContent className="space-y-4 pt-4">
+                                <div className="space-y-2">
+                                    <Label>Primary Accent Color</Label>
+                                     <div className="flex items-center gap-2">
+                                        <ColorButton color="#22c55e" /> {/* green */}
+                                        <ColorButton color="#ef4444" /> {/* red */}
+                                        <ColorButton color="#3b82f6" /> {/* blue */}
+                                        <ColorButton color="#f97316" /> {/* orange */}
+                                        <ColorButton color="#14b8a6" /> {/* teal */}
+                                     </div>
+                                    <p className="text-xs text-muted-foreground">Change the main color for buttons and highlights across the app.</p>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Company Logo</Label>
+                                    <Input type="file" />
+                                    <p className="text-xs text-muted-foreground">Upload your company logo. Appears on bills and headers.</p>
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+
+                         <AccordionItem value="item-3" className="border rounded-lg px-4">
+                            <AccordionTrigger className="text-lg font-semibold"><Settings2 className="h-5 w-5 mr-3 text-primary" />Header, Footer & Custom Fields</AccordionTrigger>
+                            <AccordionContent className="space-y-4 pt-4">
+                                <div className="space-y-2">
+                                    <Label>Footer Text</Label>
+                                    <Input defaultValue="Your Satisfaction is Our Success – Subject to Sopore Jurisdiction Only" />
+                                    <p className="text-xs text-muted-foreground">This text will appear at the bottom of your documents.</p>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Switch id="qr-code-switch" checked />
+                                    <Label htmlFor="qr-code-switch">Show QR Code in Footer</Label>
+                                </div>
+                                 <p className="text-sm font-medium pt-2 border-t mt-4">Custom Fields (Coming Soon)</p>
+                            </AccordionContent>
+                        </AccordionItem>
+
+                    </Accordion>
+                </CardContent>
+            </Card>
 
             <Card>
                 <CardHeader>
@@ -229,21 +314,6 @@ export default function SettingsPage() {
                         <BellRing className="h-4 w-4" />
                         Enable Notifications
                     </Button>
-                </CardContent>
-            </Card>
-
-             <Card>
-                <CardHeader>
-                    <CardTitle>Appearance &amp; Customization</CardTitle>
-                    <CardDescription>
-                        Change invoice styles, choose header/footer layouts, and manage custom fields.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex items-center gap-4 text-muted-foreground">
-                        <Palette className="h-6 w-6" />
-                        <p>Advanced customization features are coming soon!</p>
-                    </div>
                 </CardContent>
             </Card>
 
@@ -280,3 +350,5 @@ export default function SettingsPage() {
         </div>
     )
 }
+
+    
