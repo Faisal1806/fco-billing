@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, PackagePlus, PackageMinus, Package, UserCheck, UserX, Leaf, Box, Apple } from 'lucide-react';
+import { Loader2, PackagePlus, PackageMinus, Package, UserCheck, UserX, Leaf, Box, Apple, FlaskConical, Shapes } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import RateList from '@/components/RateList';
@@ -22,6 +22,13 @@ interface DailyStats {
 type LedgerEntry = {
     party: string;
     balance: number;
+}
+
+type AccessoryStats = {
+    totalSales: number;
+    fertilizerSales: number;
+    packagingSales: number;
+    otherSales: number;
 }
 
 const StatCard = ({ title, value, icon: Icon, note }: { title: string, value: string, icon: React.ElementType, note?: string }) => (
@@ -60,7 +67,7 @@ const FruitDashboard = ({ stats, ledgerSummary, router }: { stats: DailyStats | 
              />
             <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Khata Ledger Summary</CardTitle>
+                    <CardTitle className="text-sm font-medium">Fruit Khata Summary</CardTitle>
                 </CardHeader>
                 <CardContent>
                     {ledgerSummary.length > 0 ? (
@@ -77,7 +84,7 @@ const FruitDashboard = ({ stats, ledgerSummary, router }: { stats: DailyStats | 
                         </ul>
                     ) : <p className="text-xs text-muted-foreground">No account balances to show.</p>}
                      <button onClick={() => router.push('/khata')} className="text-sm text-primary hover:underline mt-4">
-                        View Full Ledger &rarr;
+                        View Full Fruit Ledger &rarr;
                     </button>
                 </CardContent>
             </Card>
@@ -88,19 +95,31 @@ const FruitDashboard = ({ stats, ledgerSummary, router }: { stats: DailyStats | 
     </div>
 );
 
-
-const PlaceholderTab = ({ title, description }: { title: string, description: string }) => (
-    <Card>
-        <CardHeader>
-            <CardTitle>{title}</CardTitle>
-            <CardDescription>{description}</CardDescription>
-        </CardHeader>
-        <CardContent>
-            <div className="text-center py-12 text-muted-foreground">
-                <p>This feature is under construction and will be available soon.</p>
-            </div>
-        </CardContent>
-    </Card>
+const AccessoriesDashboard = ({ stats, router }: { stats: AccessoryStats | null, router: any }) => (
+     <div className="space-y-8">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+             <StatCard 
+                title="Today's Fertilizer/Pesticide Sales"
+                value={`₹${stats?.fertilizerSales.toLocaleString('en-IN') ?? '0'}`}
+                icon={FlaskConical}
+             />
+             <StatCard 
+                title="Today's Packaging Material Sales"
+                value={`₹${stats?.packagingSales.toLocaleString('en-IN') ?? '0'}`}
+                icon={Box}
+             />
+             <StatCard 
+                title="Today's Other Accessory Sales"
+                value={`₹${stats?.otherSales.toLocaleString('en-IN') ?? '0'}`}
+                icon={Shapes}
+             />
+        </div>
+         <div className="mt-8 text-center">
+            <Button onClick={() => router.push('/accessories')}>
+                Go to Full Accessories Ledger
+            </Button>
+         </div>
+    </div>
 );
 
 
@@ -108,6 +127,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [stats, setStats] = useState<DailyStats | null>(null);
   const [ledgerSummary, setLedgerSummary] = useState<LedgerEntry[]>([]);
+  const [accessoryStats, setAccessoryStats] = useState<AccessoryStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -120,6 +140,7 @@ export default function DashboardPage() {
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
 
+    // Fruit Stats Calculation
     let pattiPurchasedToday = 0;
     let dabbaPurchasedToday = 0;
     let totalPurchaseValueToday = 0;
@@ -130,8 +151,14 @@ export default function DashboardPage() {
     let totalDabbaPurchased = 0;
     let totalPattiSold = 0;
     let totalDabbaSold = 0;
-
     const ledgers: {[party: string]: number} = {};
+    
+    // Accessory Stats Calculation
+    let totalAccessorySalesToday = 0;
+    let fertilizerSalesToday = 0;
+    let packagingSalesToday = 0;
+    let otherSalesToday = 0;
+
 
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
@@ -155,7 +182,6 @@ export default function DashboardPage() {
                 
                 if (isToday) totalSaleValueToday += sale.totals.netSale || 0;
                 
-                // Update ledger
                 const party = sale.customerName;
                 if (!ledgers[party]) ledgers[party] = 0;
                 ledgers[party] += sale.totals.netSale || 0;
@@ -178,10 +204,22 @@ export default function DashboardPage() {
                 
                 if (isToday) totalPurchaseValueToday += purchase.totals.grandTotal || 0;
 
-                // Update ledger
                 const party = purchase.growerName;
                 if (!ledgers[party]) ledgers[party] = 0;
                 ledgers[party] -= purchase.totals.grandTotal || 0;
+            } else if (key.startsWith('accessory-ledger-')) {
+                const entry = JSON.parse(localStorage.getItem(key)!);
+                if (entry.date === todayStr) {
+                    const amount = (entry.qty || 0) * (entry.rate || 0);
+                    totalAccessorySalesToday += amount;
+                    if (entry.category === 'Fertilizer/Pesticide') {
+                        fertilizerSalesToday += amount;
+                    } else if (entry.category === 'Packaging') {
+                        packagingSalesToday += amount;
+                    } else {
+                        otherSalesToday += amount;
+                    }
+                }
             }
         } catch (error) {
             console.error(`Failed to parse item from local storage: ${key}`, error);
@@ -197,6 +235,13 @@ export default function DashboardPage() {
       totalSaleValue: totalSaleValueToday,
       currentPattiStock: totalPattiPurchased - totalPattiSold,
       currentDabbaStock: totalDabbaPurchased - totalDabbaSold,
+    });
+    
+    setAccessoryStats({
+        totalSales: totalAccessorySalesToday,
+        fertilizerSales: fertilizerSalesToday,
+        packagingSales: packagingSalesToday,
+        otherSales: otherSalesToday,
     });
 
     const summary = Object.entries(ledgers)
@@ -220,24 +265,14 @@ export default function DashboardPage() {
   return (
     <Tabs defaultValue="fruit" className="space-y-4">
         <TabsList>
-            <TabsTrigger value="fruit"><Apple className="w-4 h-4 mr-2" />Fruit Business</TabsTrigger>
-            <TabsTrigger value="agri"><Leaf className="w-4 h-4 mr-2" />Agri/Fertilizer Business</TabsTrigger>
-            <TabsTrigger value="packing"><Box className="w-4 h-4 mr-2" />Packing Materials</TabsTrigger>
+            <TabsTrigger value="fruit"><Apple className="w-4 h-4 mr-2" />Fruit Ledger</TabsTrigger>
+            <TabsTrigger value="accessories"><Box className="w-4 h-4 mr-2" />Accessories Ledger</TabsTrigger>
         </TabsList>
         <TabsContent value="fruit">
             <FruitDashboard stats={stats} ledgerSummary={ledgerSummary} router={router} />
         </TabsContent>
-        <TabsContent value="agri">
-            <PlaceholderTab 
-                title="Agri/Fertilizer Business Dashboard"
-                description="A summary of your fertilizer sales, stock levels, and ledger will be shown here."
-            />
-        </TabsContent>
-        <TabsContent value="packing">
-            <PlaceholderTab 
-                title="Packing Materials Dashboard"
-                description="A summary of your packing material sales (wood, tape, etc.), stock levels, and ledger will be shown here."
-            />
+        <TabsContent value="accessories">
+            <AccessoriesDashboard stats={accessoryStats} router={router} />
         </TabsContent>
     </Tabs>
   );

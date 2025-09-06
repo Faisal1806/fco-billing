@@ -197,7 +197,7 @@ export default function KhataLedgerPage() {
         
         // Header
         doc.setFontSize(18);
-        doc.text(`Ledger Statement for ${selectedParty}`, 14, 22);
+        doc.text(`Fruit Ledger Statement for ${selectedParty}`, 14, 22);
         doc.setFontSize(11);
         doc.setTextColor(100);
         doc.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, 14, 28);
@@ -234,7 +234,7 @@ export default function KhataLedgerPage() {
             doc.text('Your Satisfaction is Our Success – Subject to Sopore Jurisdiction Only', doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center'});
         }
         
-        doc.save(`Ledger-${selectedParty}.pdf`);
+        doc.save(`Fruit-Ledger-${selectedParty}.pdf`);
     };
 
     const exportToExcel = () => {
@@ -258,7 +258,7 @@ export default function KhataLedgerPage() {
             ["", "", "", "", "", "Final Balance", selectedLedger.balance]
         ], { origin: -1 });
 
-        XLSX.writeFile(workbook, `Ledger-${selectedParty}.xlsx`);
+        XLSX.writeFile(workbook, `Fruit-Ledger-${selectedParty}.xlsx`);
     };
     
     const handlePrint = () => {
@@ -307,8 +307,8 @@ export default function KhataLedgerPage() {
             <CardHeader className="print-hidden">
                 <div className="flex justify-between items-start">
                     <div>
-                        <CardTitle>Khata Ledger</CardTitle>
-                        <CardDescription>View detailed transaction history and balances for all parties.</CardDescription>
+                        <CardTitle>Fruit Ledger (Khata)</CardTitle>
+                        <CardDescription>View transaction history for fruit sales (wataks) and purchases.</CardDescription>
                     </div>
                      <div className="flex items-center gap-2">
                          {selectedParty && (
@@ -329,7 +329,7 @@ export default function KhataLedgerPage() {
             </CardHeader>
             <CardContent>
                 <div className="print-header hidden print:block text-center mb-4">
-                    <h1 className="text-xl font-bold">Ledger Statement</h1>
+                    <h1 className="text-xl font-bold">Fruit Ledger Statement</h1>
                     <h2 className="text-lg font-semibold">{selectedParty}</h2>
                     <p className="text-sm">Firdous Ahmad & Company, Sopore</p>
                     <p className="text-xs">Date: {new Date().toLocaleDateString('en-GB')}</p>
