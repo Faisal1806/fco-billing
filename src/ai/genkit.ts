@@ -2,7 +2,7 @@
 import {genkit, Plugin, durableFlow} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 
-constMockFlow: durableFlow<any, any, any=""> = (name, fn) => {
+const MockFlow: durableFlow<any, any, any> = (name, fn) => {
   return fn;
 }
 
