@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, ShoppingCart, Package, Settings, Receipt, BookUser, Truck, BookCopy, ScrollText, Tags, FlaskConical, Shapes, Globe, Banknote, Snowflake } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, Settings, Receipt, BookUser, Truck, BookCopy, ScrollText, Tags, FlaskConical, Shapes, Globe, Banknote, Snowflake, History } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
 import { cn } from '@/lib/utils';
 import { Header } from '@/components/Header';
@@ -36,19 +36,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { href: '/rates', icon: Tags, label: 'Fruit Rates', role: ['admin', 'staff'] },
     { href: '/fertilizers', icon: FlaskConical, label: 'Fertilizers & Pesticides', role: ['admin', 'staff'] },
     { href: '/accessories', icon: Shapes, label: 'Accessories', role: ['admin', 'staff'] },
+    { href: '/activity-log', icon: History, label: 'Activity Log', role: ['admin'] },
     { href: '/settings', icon: Settings, label: t('settings'), role: ['admin'] },
   ];
 
   const filteredNavItems = navItems.filter(item => userRole && item.role.includes(userRole));
 
   const getPageTitle = () => {
-    const item = navItems.find(item => pathname.startsWith(item.href));
     // A simple way to derive title for sub-pages like /invoice/[id]
     if (pathname.startsWith('/invoice/')) return 'Invoice';
     if (pathname.startsWith('/purchase-bill/')) return 'Purchase Bill';
     if (pathname.startsWith('/receipt/')) return 'Receipt';
     if (pathname.startsWith('/challan/')) return 'Challan';
     if (pathname.startsWith('/pesticide-invoice/')) return 'Pesticide Bill';
+    if (pathname.startsWith('/activity-log')) return 'Activity Log';
+    
+    const item = navItems.find(item => pathname.startsWith(item.href));
     return item ? item.label : 'SwiftSale';
   }
 

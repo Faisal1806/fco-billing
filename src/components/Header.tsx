@@ -10,7 +10,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/language-context";
-import { LayoutDashboard, Package, Settings, Receipt, BookUser, Menu, ShoppingCart, Truck, BookCopy, ScrollText, Tags, FlaskConical, Shapes, Globe, Banknote, Snowflake } from 'lucide-react';
+import { LayoutDashboard, Package, Settings, Receipt, BookUser, Menu, ShoppingCart, Truck, BookCopy, ScrollText, Tags, FlaskConical, Shapes, Globe, Banknote, Snowflake, History } from 'lucide-react';
 import { Logo } from "./logo";
 import React from "react";
 
@@ -41,6 +41,7 @@ export function Header({ title }: { title: string }) {
       { href: '/rates', icon: Tags, label: 'Fruit Rates', role: ['admin', 'staff'] },
       { href: '/fertilizers', icon: FlaskConical, label: 'Fertilizers & Pesticides', role: ['admin', 'staff'] },
       { href: '/accessories', icon: Shapes, label: 'Accessories', role: ['admin', 'staff'] },
+      { href: '/activity-log', icon: History, label: 'Activity Log', role: ['admin'] },
       { href: '/settings', icon: Settings, label: t('settings'), role: ['admin'] },
     ];
 

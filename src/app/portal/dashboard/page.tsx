@@ -1,3 +1,4 @@
+
 'use client'
 
 import * as React from 'react';
@@ -26,6 +27,7 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { useToast } from '@/hooks/use-toast';
 import './../(app)/khata/print.css'; // Reuse styles
+import { addLog } from '@/lib/logger';
 
 type TransactionType = 'Sale' | 'Purchase';
 
@@ -57,6 +59,7 @@ export default function CustomerDashboardPage() {
             return;
         }
         setCustomerName(name);
+        addLog('View Ledger', `Customer "${name}" viewed their ledger dashboard.`);
 
         const allTransactions: Transaction[] = [];
 
@@ -130,6 +133,8 @@ export default function CustomerDashboardPage() {
     const exportToPDF = () => {
         if (!customerName) return;
         
+        addLog('Download Report', `Customer "${customerName}" downloaded their ledger as a PDF.`);
+
         const doc = new jsPDF();
         
         doc.setFontSize(18);
@@ -166,6 +171,8 @@ export default function CustomerDashboardPage() {
 
     const exportToExcel = () => {
         if (!customerName) return;
+
+        addLog('Download Report', `Customer "${customerName}" downloaded their ledger as an Excel file.`);
 
         const worksheetData = ledgerForExport.map(tx => ({
             Date: new Date(tx.date).toLocaleDateString('en-GB'),

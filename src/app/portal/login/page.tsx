@@ -1,3 +1,4 @@
+
 'use client';
 
 import { motion } from 'framer-motion';
@@ -9,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { User } from 'lucide-react';
+import { addLog } from '@/lib/logger';
 
 export default function CustomerLoginPage() {
   const router = useRouter();
@@ -31,13 +33,15 @@ export default function CustomerLoginPage() {
     // In a real app, you would have OTP verification here.
     // For this demo, we'll just check if a ledger exists for this customer.
     let ledgerExists = false;
+    const trimmedName = customerName.trim();
+
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && (key.startsWith('invoice-') || key.startsWith('purchase-'))) {
             try {
                 const doc = JSON.parse(localStorage.getItem(key)!);
                 const party = doc.customerName || doc.growerName;
-                if (party && party.toLowerCase() === customerName.trim().toLowerCase()) {
+                if (party && party.toLowerCase() === trimmedName.toLowerCase()) {
                     ledgerExists = true;
                     break;
                 }
@@ -49,12 +53,13 @@ export default function CustomerLoginPage() {
 
     if (ledgerExists) {
         if (typeof window !== 'undefined') {
-            localStorage.setItem('customerName', customerName.trim());
+            localStorage.setItem('customerName', trimmedName);
         }
+        addLog('Portal Login', `Customer "${trimmedName}" logged in successfully.`);
         router.push('/portal/dashboard');
         toast({
             title: 'Login Successful',
-            description: `Welcome, ${customerName.trim()}!`,
+            description: `Welcome, ${trimmedName}!`,
         });
     } else {
         setError('No ledger found for this name. Please check the spelling.');
