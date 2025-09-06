@@ -308,7 +308,7 @@ export default function KhataLedgerPage() {
                 <div className="flex justify-between items-start">
                     <div>
                         <CardTitle>Fruit Ledger (Khata)</CardTitle>
-                        <CardDescription>View transaction history for fruit sales (wataks) and purchases.</CardDescription>
+                        <CardDescription>Separate ledgers for what you owe to Growers (Payable) and what Customers owe you (Receivable).</CardDescription>
                     </div>
                      <div className="flex items-center gap-2">
                          {selectedParty && (
@@ -338,8 +338,8 @@ export default function KhataLedgerPage() {
                 <div className="flex justify-between items-center mb-4 print-hidden">
                     <Tabs value={activeTab} onValueChange={setActiveTab}>
                         <TabsList>
-                            <TabsTrigger value="growers"><Leaf className="h-4 w-4 mr-2"/>Growers</TabsTrigger>
-                            <TabsTrigger value="customers"><ShoppingCart className="h-4 w-4 mr-2"/>Customers</TabsTrigger>
+                            <TabsTrigger value="growers"><Leaf className="h-4 w-4 mr-2"/>Grower Ledger (Payable)</TabsTrigger>
+                            <TabsTrigger value="customers"><ShoppingCart className="h-4 w-4 mr-2"/>Customer Ledger (Receivable)</TabsTrigger>
                             <TabsTrigger value="all"><Users className="h-4 w-4 mr-2"/>All Parties</TabsTrigger>
                         </TabsList>
                     </Tabs>
@@ -435,3 +435,5 @@ export default function KhataLedgerPage() {
     </>
   );
 }
+
+    
