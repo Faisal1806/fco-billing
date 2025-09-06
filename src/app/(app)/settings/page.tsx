@@ -80,7 +80,17 @@ export default function SettingsPage() {
             } else if (key.startsWith('pesticide-invoice-')) {
                 collectionName = 'pesticide-invoices';
                 docId = key.replace('pesticide-invoice-', '');
+            } else if (key.startsWith('product-')) {
+                collectionName = 'products';
+                docId = key.replace('product-', '');
+            } else if (key.startsWith('accessory-ledger-')) {
+                collectionName = 'accessory-ledgers';
+                docId = key.replace('accessory-ledger-', '');
+            } else if (key.startsWith('expense-')) {
+                collectionName = 'expenses';
+                docId = key.replace('expense-', '');
             }
+
 
             if (collectionName && docId) {
                 try {
@@ -90,9 +100,10 @@ export default function SettingsPage() {
                         successCount++;
                     } else {
                         errorCount++;
+                        console.error(`Failed to sync item ${key} to ${collectionName}:`, result.error);
                     }
                 } catch (e) {
-                    console.error(`Failed to sync item ${key}:`, e);
+                    console.error(`Failed to parse or sync item ${key}:`, e);
                     errorCount++;
                 }
             }
@@ -134,6 +145,7 @@ export default function SettingsPage() {
                 if (fcmToken) {
                     console.log('FCM Token:', fcmToken);
                     // TODO: Send this token to your server to store it for sending notifications
+                    await saveDocument('fcm-tokens', fcmToken, { token: fcmToken, enabledAt: new Date().toISOString() });
                     toast({
                         title: 'Notifications Enabled',
                         description: 'You will now receive push notifications once setup is complete.',
