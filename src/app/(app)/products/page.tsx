@@ -420,18 +420,20 @@ export default function ProductsPage() {
                 <DialogHeader>
                     <DialogTitle>{'id' in formState ? 'Edit Product' : 'Add New Product'}</DialogTitle>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">Name</Label>
-                    <Input id="name" name="name" value={formState.name} onChange={handleInputChange} className="col-span-3" />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="category" className="text-right">Category</Label>
-                    <Input id="category" name="category" value={formState.category} onChange={handleInputChange} className="col-span-3" placeholder="e.g., Fruit, Pesticide, Fertilizer" />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="stock" className="text-right">Stock</Label>
-                    <Input id="stock" name="stock" type="number" value={formState.stock || ''} onChange={handleInputChange} className="col-span-3" />
+                 <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                          <Label htmlFor="name">Name</Label>
+                          <Input id="name" name="name" value={formState.name} onChange={handleInputChange} />
+                      </div>
+                       <div className="space-y-2">
+                          <Label htmlFor="category">Category</Label>
+                          <Input id="category" name="category" value={formState.category} onChange={handleInputChange} placeholder="e.g., Fruit, Pesticide, Fertilizer" />
+                      </div>
+                       <div className="space-y-2">
+                          <Label htmlFor="stock">Stock Quantity</Label>
+                          <Input id="stock" name="stock" type="number" value={formState.stock || ''} onChange={handleInputChange} />
+                      </div>
                     </div>
                 </div>
                 <DialogFooter>
@@ -447,4 +449,3 @@ export default function ProductsPage() {
   );
 }
 
-    
