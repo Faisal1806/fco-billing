@@ -29,10 +29,12 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import { PlusCircle, Edit, Trash2, Package, Apple, Box } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Package, Apple, Box, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Textarea } from '@/components/ui/textarea';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Product {
   id: string;
@@ -73,6 +75,10 @@ export default function ProductsPage() {
   const [formState, setFormState] = useState<Product | Omit<Product, 'id'>>(emptyFormState);
   const [userRole, setUserRole] = useState<string | null>(null);
 
+  // Filter and search state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+
   useEffect(() => {
     setIsClient(true);
     if (typeof window !== 'undefined') {
@@ -98,10 +104,29 @@ export default function ProductsPage() {
     }
   }, [isClient]);
 
+  const filteredProducts = useMemo(() => {
+    return products
+        .filter(p => {
+            const lowerCaseSearch = searchTerm.toLowerCase();
+            return p.name.toLowerCase().includes(lowerCaseSearch) || (p.supplier && p.supplier.toLowerCase().includes(lowerCaseSearch));
+        })
+        .filter(p => {
+            if (categoryFilter === 'all') return true;
+            if (categoryFilter === 'fruits') {
+                 return ['fruit', 'apple', 'pear', 'nakh', 'gosha', 'red delicious', 'american', 'gala mast', 'shimla'].includes(p.category.toLowerCase());
+            }
+            if (categoryFilter === 'accessories') {
+                 return !['fruit', 'apple', 'pear', 'nakh', 'gosha', 'red delicious', 'american', 'gala mast', 'shimla'].includes(p.category.toLowerCase());
+            }
+            return true;
+        });
+  }, [products, searchTerm, categoryFilter]);
+
+
   const { fruitProducts, accessoryProducts } = useMemo(() => {
     const fruits: Product[] = [];
     const accessories: Product[] = [];
-    products.forEach(p => {
+    filteredProducts.forEach(p => {
         const lowerCat = p.category.toLowerCase();
         if (['fruit', 'apple', 'pear', 'nakh', 'gosha', 'red delicious', 'american', 'gala mast', 'shimla'].includes(lowerCat)) {
             fruits.push(p);
@@ -110,7 +135,7 @@ export default function ProductsPage() {
         }
     });
     return { fruitProducts: fruits, accessoryProducts: accessories };
-  }, [products]);
+  }, [filteredProducts]);
   
   const resetForm = () => {
     setFormState(emptyFormState);
@@ -165,7 +190,7 @@ export default function ProductsPage() {
     fetchProducts();
   }
   
-  const ProductTable = ({ products, title, icon }: { products: Product[], title: string, icon: React.ReactNode }) => (
+  const ProductTable = ({ products }: { products: Product[] }) => (
     <div className="mb-4">
         {products.length > 0 ? (
             <Table>
@@ -202,7 +227,7 @@ export default function ProductsPage() {
             </TableBody>
           </Table>
         ) : (
-            <p className="text-sm text-muted-foreground text-center py-4">No products in this category yet.</p>
+            <p className="text-sm text-muted-foreground text-center py-4">No products in this category match your search.</p>
         )}
     </div>
   );
@@ -210,100 +235,124 @@ export default function ProductsPage() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle>Products & Inventory</CardTitle>
-          <Dialog open={isDialogOpen} onOpenChange={(isOpen) => {
-              setIsDialogOpen(isOpen);
-              if (!isOpen) {
-                resetForm();
-              }
-          }}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="gap-1">
-                <PlusCircle className="h-3.5 w-3.5" />
-                Add Product
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>{'id' in formState ? 'Edit Product' : 'Add New Product'}</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="name">Name</Label>
-                        <Input id="name" name="name" value={formState.name} onChange={handleInputChange} />
+        <div className="flex justify-between items-center flex-wrap gap-4">
+          <div>
+            <CardTitle>Products & Inventory</CardTitle>
+            <CardDescription>
+              Manage your product inventory, track stock levels, and receive low-stock alerts here.
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+             <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                    type="search"
+                    placeholder="Search by name..."
+                    className="pl-8 sm:w-[200px] lg:w-[250px]"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
+             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filter by category" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    <SelectItem value="fruits">Fruits</SelectItem>
+                    <SelectItem value="accessories">Accessories</SelectItem>
+                </SelectContent>
+            </Select>
+            <Dialog open={isDialogOpen} onOpenChange={(isOpen) => {
+                setIsDialogOpen(isOpen);
+                if (!isOpen) {
+                  resetForm();
+                }
+            }}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="gap-1">
+                  <PlusCircle className="h-3.5 w-3.5" />
+                  Add Product
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>{'id' in formState ? 'Edit Product' : 'Add New Product'}</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                          <Label htmlFor="name">Name</Label>
+                          <Input id="name" name="name" value={formState.name} onChange={handleInputChange} />
+                      </div>
+                       <div className="space-y-2">
+                          <Label htmlFor="category">Category</Label>
+                          <Input id="category" name="category" value={formState.category} onChange={handleInputChange} placeholder="e.g., Fruit, Pesticide, Fertilizer" />
+                      </div>
+                       <div className="space-y-2">
+                          <Label htmlFor="unitType">Unit Type</Label>
+                          <Input id="unitType" name="unitType" value={formState.unitType || ''} onChange={handleInputChange} placeholder="e.g., kg, box, patti, liter, piece" />
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="varietyGrade">Variety/Grade</Label>
+                          <Input id="varietyGrade" name="varietyGrade" value={formState.varietyGrade || ''} onChange={handleInputChange} placeholder="e.g., Extraordinary, Standard" />
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="rateRange">Rate Range</Label>
+                          <Input id="rateRange" name="rateRange" value={formState.rateRange || ''} onChange={handleInputChange} placeholder="e.g., 500-600" />
+                      </div>
+                       <div className="space-y-2">
+                          <Label htmlFor="stock">Stock Quantity</Label>
+                          <Input id="stock" name="stock" type="number" value={formState.stock || ''} onChange={handleInputChange} />
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="batchNo">Batch No. (for chemicals)</Label>
+                          <Input id="batchNo" name="batchNo" value={formState.batchNo || ''} onChange={handleInputChange} />
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="expiryDate">Expiry Date (for chemicals)</Label>
+                          <Input id="expiryDate" name="expiryDate" type="date" value={formState.expiryDate || ''} onChange={handleInputChange} />
+                      </div>
+                       <div className="space-y-2">
+                          <Label htmlFor="supplier">Supplier / Company</Label>
+                          <Input id="supplier" name="supplier" value={formState.supplier || ''} onChange={handleInputChange} />
+                      </div>
+                       <div className="space-y-2">
+                          <Label htmlFor="reorderLevel">Reorder Level</Label>
+                          <Input id="reorderLevel" name="reorderLevel" type="number" value={formState.reorderLevel || ''} onChange={handleInputChange} placeholder="Alert when stock drops to this level" />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                          <Label htmlFor="notes">Notes</Label>
+                          <Textarea id="notes" name="notes" value={formState.notes || ''} onChange={handleInputChange} />
+                      </div>
                     </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="category">Category</Label>
-                        <Input id="category" name="category" value={formState.category} onChange={handleInputChange} placeholder="e.g., Fruit, Pesticide, Fertilizer" />
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="unitType">Unit Type</Label>
-                        <Input id="unitType" name="unitType" value={formState.unitType || ''} onChange={handleInputChange} placeholder="e.g., kg, box, patti, liter, piece" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="varietyGrade">Variety/Grade</Label>
-                        <Input id="varietyGrade" name="varietyGrade" value={formState.varietyGrade || ''} onChange={handleInputChange} placeholder="e.g., Extraordinary, Standard" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="rateRange">Rate Range</Label>
-                        <Input id="rateRange" name="rateRange" value={formState.rateRange || ''} onChange={handleInputChange} placeholder="e.g., 500-600" />
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="stock">Stock Quantity</Label>
-                        <Input id="stock" name="stock" type="number" value={formState.stock || ''} onChange={handleInputChange} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="batchNo">Batch No. (for chemicals)</Label>
-                        <Input id="batchNo" name="batchNo" value={formState.batchNo || ''} onChange={handleInputChange} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="expiryDate">Expiry Date (for chemicals)</Label>
-                        <Input id="expiryDate" name="expiryDate" type="date" value={formState.expiryDate || ''} onChange={handleInputChange} />
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="supplier">Supplier / Company</Label>
-                        <Input id="supplier" name="supplier" value={formState.supplier || ''} onChange={handleInputChange} />
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="reorderLevel">Reorder Level</Label>
-                        <Input id="reorderLevel" name="reorderLevel" type="number" value={formState.reorderLevel || ''} onChange={handleInputChange} placeholder="Alert when stock drops to this level" />
-                    </div>
-                    <div className="space-y-2 md:col-span-2">
-                        <Label htmlFor="notes">Notes</Label>
-                        <Textarea id="notes" name="notes" value={formState.notes || ''} onChange={handleInputChange} />
-                    </div>
-                  </div>
-              </div>
-              <DialogFooter>
-                <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                <Button onClick={handleSaveProduct}>Save Product</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                </div>
+                <DialogFooter>
+                  <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                  <Button onClick={handleSaveProduct}>Save Product</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
-        <CardDescription>
-          Manage your product inventory, track stock levels, and receive low-stock alerts here.
-        </CardDescription>
       </CardHeader>
       <CardContent>
          {isClient && products.length > 0 ? (
             <Accordion type="multiple" defaultValue={['fruits', 'accessories']} className="w-full">
-                <AccordionItem value="fruits">
+                <AccordionItem value="fruits" className={categoryFilter !== 'accessories' ? '' : 'hidden'}>
                     <AccordionTrigger>
                         <h2 className="text-xl font-semibold flex items-center gap-2"><Apple className="h-5 w-5 text-red-500" /> Fruits ({fruitProducts.length})</h2>
                     </AccordionTrigger>
                     <AccordionContent>
-                       <ProductTable products={fruitProducts} title="" icon={null} />
+                       <ProductTable products={fruitProducts} />
                     </AccordionContent>
                 </AccordionItem>
-                <AccordionItem value="accessories">
+                <AccordionItem value="accessories" className={categoryFilter !== 'fruits' ? '' : 'hidden'}>
                     <AccordionTrigger>
                         <h2 className="text-xl font-semibold flex items-center gap-2"><Box className="h-5 w-5 text-blue-500" /> Accessories ({accessoryProducts.length})</h2>
                     </AccordionTrigger>
                     <AccordionContent>
-                        <ProductTable products={accessoryProducts} title="" icon={null} />
+                        <ProductTable products={accessoryProducts} />
                     </AccordionContent>
                 </AccordionItem>
             </Accordion>
@@ -354,5 +403,3 @@ export default function ProductsPage() {
     </Card>
   );
 }
-
-    
