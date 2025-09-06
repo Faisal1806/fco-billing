@@ -167,19 +167,21 @@ export default function WatakRegisterPage() {
   };
 
   const handleShare = () => {
-    const date = new Date().toLocaleDateString('en-GB');
-    let reportText = `*Watak Register for ${selectedGrower} on ${date}*\n\n`;
-    reportText += `*FIRDOUS AHMAD & COMPANY*\n\n`;
-    reportText += `| Date | Bill | Watak | Net Sale |\n`;
-    reportText += `|---|---|---|---|\n`;
+    if (selectedGrower === 'All Growers') {
+        toast({
+            variant: 'destructive',
+            title: 'Select a Grower',
+            description: 'Please select a specific grower from the dropdown to share their portal link.',
+        });
+        return;
+    }
 
-    filteredWataks.forEach(w => {
-      reportText += `| ${new Date(w.date).toLocaleDateString('en-GB')} | ${w.sNo} | ${w.watakNo} | ₹${w.totals.netSale.toFixed(2)} |\n`;
-    });
+    let message = `Salaam ${selectedGrower},\n\n`;
+    message += `You can view your complete account ledger with Firdous Ahmad & Company by clicking the link below. You will be asked to enter your name to log in.\n\n`;
+    message += `Portal Link: ${window.location.origin}/portal/login\n\n`;
+    message += `Thank you for your business!`;
 
-    reportText += `\n*Total Net Sale: ₹${footerTotals.netSale.toFixed(2)}*`;
-
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(reportText)}`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
@@ -245,7 +247,7 @@ export default function WatakRegisterPage() {
                 </Button>
                 <Button size="sm" onClick={handleShare} variant="outline" className="gap-1">
                     <FaWhatsapp className="h-4 w-4 text-green-500" />
-                     Share
+                     Share Portal
                 </Button>
                  <Button size="sm" variant="outline" className="gap-1" onClick={exportToPDF}>
                     <FileDown className="h-3.5 w-3.5" />
