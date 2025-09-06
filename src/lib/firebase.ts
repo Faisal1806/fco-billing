@@ -26,7 +26,12 @@ export function getClientDb(): Firestore {
 
 export const getClientMessaging = () => {
     if (typeof window !== 'undefined' && typeof self.indexedDB !== 'undefined') {
-        return getMessaging(app);
+        try {
+            return getMessaging(app);
+        } catch (err) {
+            console.error('Failed to initialize Firebase Messaging', err);
+            return null;
+        }
     }
     return null;
 }
