@@ -19,7 +19,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
-import { Factory, BellRing, Palette, CloudUpload, Paintbrush, FileText, Settings2 } from 'lucide-react';
+import { Factory, BellRing, Palette, CloudUpload, Paintbrush, FileText, Settings2, PlusCircle, Trash2 } from 'lucide-react';
 import { getClientMessaging } from '@/lib/firebase';
 import { getToken } from 'firebase/messaging';
 import { saveDocument } from '@/lib/actions';
@@ -28,11 +28,29 @@ import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Input } from '@/components/ui/input';
 
+type CustomField = {
+    id: number;
+    label: string;
+    placeholder: string;
+};
 
 export default function SettingsPage() {
     const { t } = useLanguage();
     const { toast } = useToast();
     const [isSyncing, setIsSyncing] = React.useState(false);
+    const [customFields, setCustomFields] = React.useState<CustomField[]>([
+        { id: 1, label: 'Vehicle No.', placeholder: 'e.g., JK05X 1234' },
+        { id: 2, label: 'Broker Name', placeholder: 'e.g., John Doe' }
+    ]);
+
+    const addCustomField = () => {
+        setCustomFields(prev => [...prev, { id: Date.now(), label: '', placeholder: ''}]);
+    };
+
+    const removeCustomField = (id: number) => {
+        setCustomFields(prev => prev.filter(field => field.id !== id));
+    };
+
 
     const handleFactoryReset = () => {
         try {
@@ -280,7 +298,24 @@ export default function SettingsPage() {
                                     <Switch id="qr-code-switch" checked />
                                     <Label htmlFor="qr-code-switch">Show QR Code in Footer</Label>
                                 </div>
-                                 <p className="text-sm font-medium pt-2 border-t mt-4">Custom Fields (Coming Soon)</p>
+                                <div className="pt-4 mt-4 border-t">
+                                     <h4 className="font-medium mb-2">Custom Document Fields</h4>
+                                     <p className="text-xs text-muted-foreground mb-4">Add or remove custom text fields that will appear on your documents.</p>
+                                     <div className="space-y-2">
+                                        {customFields.map(field => (
+                                            <div key={field.id} className="flex items-center gap-2">
+                                                <Input defaultValue={field.label} placeholder="Field Label (e.g., Transport)" />
+                                                <Input defaultValue={field.placeholder} placeholder="Placeholder Text (e.g., Transport Name)" />
+                                                <Button variant="ghost" size="icon" onClick={() => removeCustomField(field.id)}>
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                     </div>
+                                      <Button variant="outline" size="sm" className="mt-2 gap-1" onClick={addCustomField}>
+                                        <PlusCircle className="h-4 w-4" /> Add Field
+                                     </Button>
+                                 </div>
                             </AccordionContent>
                         </AccordionItem>
 
@@ -351,4 +386,3 @@ export default function SettingsPage() {
         </div>
     )
 }
-
