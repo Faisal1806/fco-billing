@@ -5,7 +5,7 @@ import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { Paintbrush, Palette, CheckCircle, Upload, Type, Move, QrCode, SlidersHorizontal } from 'lucide-react';
+import { Paintbrush, Palette, CheckCircle, Upload, Type, Move, QrCode, SlidersHorizontal, List, Truck, User, Phone, Box, TreePine, Banknote, Percent, Package, Pencil } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +25,10 @@ import {
 import { getClientMessaging } from '@/lib/firebase';
 import { saveDocument } from '@/lib/actions';
 import { getToken } from 'firebase/messaging';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const InvoicePreview = ({ title, colors, logoPosition, qrPosition, font, footer, features, children }: {
     title: string,
@@ -56,6 +60,20 @@ const InvoicePreview = ({ title, colors, logoPosition, qrPosition, font, footer,
         </CardFooter>
     </Card>
 );
+
+const CustomFieldSuggestion = ({ icon, title, example, children } : { icon: React.ElementType, title: string, example: string, children: React.ReactNode }) => (
+    <div className="flex items-start gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors">
+        <div className="p-2 bg-primary/10 rounded-md">
+            <icon className="h-5 w-5 text-primary" />
+        </div>
+        <div>
+            <h4 className="font-semibold">{title}</h4>
+            <p className="text-sm text-muted-foreground">{children}</p>
+            <p className="text-xs font-mono bg-muted px-2 py-1 rounded-md mt-1 inline-block">e.g., {example}</p>
+        </div>
+    </div>
+);
+
 
 export default function SettingsPage() {
     const { toast } = useToast();
@@ -180,61 +198,114 @@ export default function SettingsPage() {
     
     return (
         <div className="space-y-6">
-            <Card>
+             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-3"><Paintbrush className="h-6 w-6" /> Appearance &amp; Customization</CardTitle>
-                    <CardDescription>This section will allow you to change invoice styles, colors, fonts, and layouts for all your documents (Bills, Wataks, Challans, Receipts).</CardDescription>
+                    <CardDescription>Change invoice styles, choose color themes, manage custom fields, and tailor the app to your brand.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Tabs defaultValue="classic" className="w-full">
-                        <TabsList className="grid w-full grid-cols-3">
-                            <TabsTrigger value="classic">Classic Style</TabsTrigger>
-                            <TabsTrigger value="modern">Modern Style</TabsTrigger>
-                            <TabsTrigger value="urdu">Urdu-English Mix</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="classic" className="mt-4">
-                             <InvoicePreview title="Classic Style" colors="bg-white text-black" logoPosition="top-2 left-1/2 -translate-x-1/2" qrPosition="top-2 right-2" font="font-serif" footer="Thank you for your business – F.Co" features={["Professional & Clean", "Red Headers", "Traditional Look"]}>
-                                Professional, clean, and looks like a traditional Sopore Mandi bill. Ideal for formal record-keeping.
-                            </InvoicePreview>
-                        </TabsContent>
-                        <TabsContent value="modern" className="mt-4">
-                             <InvoicePreview title="Modern Style" colors="bg-gradient-to-br from-red-500 to-green-500 text-white" logoPosition="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-10 text-5xl" qrPosition="bottom-10 right-2" font="font-sans" footer="Your Satisfaction is Our Success – Subject to Sopore Jurisdiction Only" features={["Textured & Stylish", "Icons for items", "Great for Sharing"]}>
-                                Stylish and modern, perfect for sharing on WhatsApp or email. Uses gradients and icons for a fresh look.
-                            </InvoicePreview>
-                        </TabsContent>
-                         <TabsContent value="urdu" className="mt-4">
-                             <InvoicePreview title="Urdu-English Mix" colors="bg-amber-50 text-black border-green-700" logoPosition="top-2 left-2" qrPosition="top-2 right-2" font="font-urdu" footer="F.Co – Fruit Merchant & Commission Agent | Sopore Mandi" features={["Bilingual Fields", "Nastaliq Font", "Beige Paper Look"]}>
-                                A bilingual design perfect for both English and Urdu-speaking customers, with elegant Nastaliq font for headings.
-                            </InvoicePreview>
-                        </TabsContent>
-                    </Tabs>
+                    <Accordion type="multiple" defaultValue={['styles', 'fields']} className="w-full">
+                        <AccordionItem value="styles">
+                            <AccordionTrigger className="text-lg font-semibold">Invoice & Bill Styles</AccordionTrigger>
+                            <AccordionContent>
+                                <Tabs defaultValue="classic" className="w-full mt-2">
+                                    <TabsList className="grid w-full grid-cols-3">
+                                        <TabsTrigger value="classic">Classic Style</TabsTrigger>
+                                        <TabsTrigger value="modern">Modern Style</TabsTrigger>
+                                        <TabsTrigger value="urdu">Urdu-English Mix</TabsTrigger>
+                                    </TabsList>
+                                    <TabsContent value="classic" className="mt-4">
+                                        <InvoicePreview title="Classic Style" colors="bg-white text-black" logoPosition="top-2 left-1/2 -translate-x-1/2" qrPosition="top-2 right-2" font="font-serif" footer="Thank you for your business – F.Co" features={["Professional & Clean", "Red Headers", "Traditional Look"]}>
+                                            Professional, clean, and looks like a traditional Sopore Mandi bill. Ideal for formal record-keeping.
+                                        </InvoicePreview>
+                                    </TabsContent>
+                                    <TabsContent value="modern" className="mt-4">
+                                        <InvoicePreview title="Modern Style" colors="bg-gradient-to-br from-red-500 to-green-500 text-white" logoPosition="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-10 text-5xl" qrPosition="bottom-10 right-2" font="font-sans" footer="Your Satisfaction is Our Success – Subject to Sopore Jurisdiction Only" features={["Textured & Stylish", "Icons for items", "Great for Sharing"]}>
+                                            Stylish and modern, perfect for sharing on WhatsApp or email. Uses gradients and icons for a fresh look.
+                                        </InvoicePreview>
+                                    </TabsContent>
+                                    <TabsContent value="urdu" className="mt-4">
+                                        <InvoicePreview title="Urdu-English Mix" colors="bg-amber-50 text-black border-green-700" logoPosition="top-2 left-2" qrPosition="top-2 right-2" font="font-urdu" footer="F.Co – Fruit Merchant & Commission Agent | Sopore Mandi" features={["Bilingual Fields", "Nastaliq Font", "Beige Paper Look"]}>
+                                            A bilingual design perfect for both English and Urdu-speaking customers, with elegant Nastaliq font for headings.
+                                        </InvoicePreview>
+                                    </TabsContent>
+                                </Tabs>
+                            </AccordionContent>
+                        </AccordionItem>
+                        
+                        <AccordionItem value="branding">
+                             <AccordionTrigger className="text-lg font-semibold">Color Theme & Branding</AccordionTrigger>
+                             <AccordionContent className="pt-4 space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><Palette className="h-5 w-5 text-primary" /> Color Gradients</h3>
+                                        <p className="text-sm text-muted-foreground mb-4">Each document type gets a unique theme so you can instantly recognize it.</p>
+                                        <div className="space-y-3">
+                                            <ColorPill gradient="bg-gradient-to-r from-red-500 to-green-500" name="Bills" />
+                                            <ColorPill gradient="bg-gradient-to-r from-blue-500 to-purple-500" name="Wataks" />
+                                            <ColorPill gradient="bg-gradient-to-r from-orange-500 to-yellow-500" name="Challans" />
+                                            <ColorPill gradient="bg-gradient-to-r from-gray-600 to-gray-400" name="Receipts" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><Upload className="h-5 w-5 text-primary" /> Company Logo</h3>
+                                            <p className="text-sm text-muted-foreground mb-2">Upload your company logo. Appears on bills and headers.</p>
+                                            <Input type="file" />
+                                        </div>
+                                         <div>
+                                            <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><Type className="h-5 w-5 text-primary" /> Font Style</h3>
+                                            <p className="text-sm text-muted-foreground mb-2">Select the font style for your documents.</p>
+                                            <Select defaultValue="sans">
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="sans">Sans-serif (Modern)</SelectItem>
+                                                    <SelectItem value="serif">Serif (Classic)</SelectItem>
+                                                    <SelectItem value="urdu">Urdu-English Mix</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                </div>
+                             </AccordionContent>
+                        </AccordionItem>
 
-                    <Separator className="my-6" />
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                             <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><Palette className="h-5 w-5 text-primary" /> Color Gradients</h3>
-                             <p className="text-sm text-muted-foreground mb-4">Each document type gets a unique theme so you can instantly recognize it.</p>
-                             <div className="space-y-3">
-                                <ColorPill gradient="bg-gradient-to-r from-red-500 to-green-500" name="Bills" />
-                                <ColorPill gradient="bg-gradient-to-r from-blue-500 to-purple-500" name="Wataks" />
-                                <ColorPill gradient="bg-gradient-to-r from-orange-500 to-yellow-500" name="Challans" />
-                                <ColorPill gradient="bg-gradient-to-r from-gray-600 to-gray-400" name="Receipts" />
-                             </div>
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><SlidersHorizontal className="h-5 w-5 text-primary" /> Customization Options</h3>
-                            <p className="text-sm text-muted-foreground mb-4">Fine-tune every aspect of the app and your documents.</p>
-                            <ul className="space-y-2 text-sm">
-                                <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Switch between invoice styles anytime.</li>
-                                <li className="flex items-center gap-2"><Type className="h-4 w-4 text-blue-500" /> Change fonts (Serif, Sans-Serif, Nastaliq).</li>
-                                <li className="flex items-center gap-2"><Upload className="h-4 w-4 text-purple-500" /> Upload your own company logo.</li>
-                                <li className="flex items-center gap-2"><Move className="h-4 w-4 text-orange-500" /> Adjust margins & spacing for print.</li>
-                                <li className="flex items-center gap-2"><QrCode className="h-4 w-4 text-teal-500" /> Enable or disable QR codes on documents.</li>
-                                <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-red-500" /> Set custom headers and footers.</li>
-                            </ul>
-                        </div>
-                    </div>
+                        <AccordionItem value="fields">
+                            <AccordionTrigger className="text-lg font-semibold">Header, Footer &amp; Custom Fields</AccordionTrigger>
+                            <AccordionContent className="pt-4 space-y-6">
+                                 <div>
+                                    <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><Pencil className="h-5 w-5 text-primary" /> Suggested Custom Fields</h3>
+                                    <p className="text-sm text-muted-foreground mb-4">Here are some powerful custom fields you can add to your documents. Support for adding these is coming soon!</p>
+                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                                        <CustomFieldSuggestion icon={Truck} title="Vehicle No." example="JK05X 1234">For tracking transport and logistics.</CustomFieldSuggestion>
+                                        <CustomFieldSuggestion icon={User} title="Broker Name" example="Abdul Rashid Shah">To record the agent involved in a sale.</CustomFieldSuggestion>
+                                        <CustomFieldSuggestion icon={User} title="Driver Name" example="Mohammad Yousuf">For challans and transport records.</CustomFieldSuggestion>
+                                        <CustomFieldSuggestion icon={Phone} title="Contact No." example="+91 9797002164">Add a secondary contact number.</CustomFieldSuggestion>
+                                        <CustomFieldSuggestion icon={Box} title="Load Type" example="Full Truck / Pickup">Specify the size of the consignment.</CustomFieldSuggestion>
+                                        <CustomFieldSuggestion icon={TreePine} title="Grower's Village" example="Bomai, Sopore">For better tracking of produce origin.</CustomFieldSuggestion>
+                                        <CustomFieldSuggestion icon={Banknote} title="Payment Mode" example="Cash / UPI / Credit">Record how a transaction was paid.</CustomFieldSuggestion>
+                                        <CustomFieldSuggestion icon={Percent} title="Commission %" example="10%">Adjust commission for specific growers.</CustomFieldSuggestion>
+                                        <CustomFieldSuggestion icon={Package} title="Packing Type" example="5 Layer Box">Detail the specific packaging used.</CustomFieldSuggestion>
+                                        <CustomFieldSuggestion icon={Pencil} title="Delivery Remarks" example="Handle with care">Add special instructions for delivery.</CustomFieldSuggestion>
+                                    </div>
+                                 </div>
+                                <Separator />
+                                <div className="space-y-4">
+                                     <div className="space-y-2">
+                                        <Label htmlFor="footerText">Footer Text</Label>
+                                        <Textarea id="footerText" placeholder="e.g., Your Satisfaction is Our Success..." defaultValue="Your Satisfaction is Our Success – Subject to Sopore Jurisdiction Only" />
+                                        <p className="text-xs text-muted-foreground">This text will appear at the bottom of your documents.</p>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Input type="checkbox" id="show-qr" defaultChecked />
+                                        <Label htmlFor="show-qr" className="cursor-pointer">Show QR Code in Footer</Label>
+                                    </div>
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Accordion>
                 </CardContent>
             </Card>
 
