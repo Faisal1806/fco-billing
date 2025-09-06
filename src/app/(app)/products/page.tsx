@@ -1,7 +1,7 @@
 
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -29,8 +29,9 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import { PlusCircle, Edit, Trash2, Package } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Package, Apple, Box } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 interface Product {
   id: string;
@@ -77,6 +78,20 @@ export default function ProductsPage() {
       fetchProducts();
     }
   }, [isClient]);
+
+  const { fruitProducts, accessoryProducts } = useMemo(() => {
+    const fruits: Product[] = [];
+    const accessories: Product[] = [];
+    products.forEach(p => {
+        const lowerCat = p.category.toLowerCase();
+        if (['fruit', 'apple', 'pear', 'nakh', 'gosha', 'red delicious', 'american', 'gala mast', 'shimla'].includes(lowerCat)) {
+            fruits.push(p);
+        } else {
+            accessories.push(p);
+        }
+    });
+    return { fruitProducts: fruits, accessoryProducts: accessories };
+  }, [products]);
   
   const resetForm = () => {
     setProductId(null);
@@ -135,6 +150,45 @@ export default function ProductsPage() {
     });
     fetchProducts();
   }
+  
+  const ProductTable = ({ products, title, icon }: { products: Product[], title: string, icon: React.ReactNode }) => (
+    <div className="mb-4">
+        <h3 className="flex items-center text-lg font-semibold mb-2">{icon}{title}</h3>
+        {products.length > 0 ? (
+            <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Product Name</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Stock</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {products.map((product) => (
+                <TableRow key={product.id}>
+                  <TableCell className="font-medium">{product.name}</TableCell>
+                  <TableCell>{product.category}</TableCell>
+                  <TableCell>{product.stock}</TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="icon" onClick={() => handleEditClick(product)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    {userRole === 'admin' && (
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(product.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : (
+            <p className="text-sm text-muted-foreground text-center py-4">No products in this category yet.</p>
+        )}
+    </div>
+  );
 
   return (
     <Card>
@@ -183,37 +237,26 @@ export default function ProductsPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {isClient && products.length > 0 ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Product Name</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Stock Quantity</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {products.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>{product.category}</TableCell>
-                  <TableCell>{product.stock}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => handleEditClick(product)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    {userRole === 'admin' && (
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(product.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        ) : (
+         {isClient && products.length > 0 ? (
+            <Accordion type="multiple" defaultValue={['fruits', 'accessories']} className="w-full">
+                <AccordionItem value="fruits">
+                    <AccordionTrigger>
+                        <h2 className="text-xl font-semibold flex items-center gap-2"><Apple className="h-5 w-5 text-red-500" /> Fruits ({fruitProducts.length})</h2>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                       <ProductTable products={fruitProducts} title="" icon={null} />
+                    </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="accessories">
+                    <AccordionTrigger>
+                        <h2 className="text-xl font-semibold flex items-center gap-2"><Box className="h-5 w-5 text-blue-500" /> Accessories ({accessoryProducts.length})</h2>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                        <ProductTable products={accessoryProducts} title="" icon={null} />
+                    </AccordionContent>
+                </AccordionItem>
+            </Accordion>
+         ) : (
           <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
             <Package className="mx-auto h-12 w-12" />
             <h3 className="mt-4 text-lg font-semibold">No products found.</h3>
@@ -260,5 +303,3 @@ export default function ProductsPage() {
     </Card>
   );
 }
-
-    
