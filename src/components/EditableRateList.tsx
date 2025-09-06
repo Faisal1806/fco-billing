@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { PlusCircle, Trash2, Sparkles, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { categorizePesticide } from '@/ai/flows/categorize-pesticide-flow';
+import { getDocuments, saveDocument, deleteDocument } from '@/lib/actions';
 
 interface ManualRate {
     id: string;
@@ -18,56 +19,64 @@ interface ManualRate {
 }
 
 interface EditableRateListProps {
-    storageKeyPrefix: string;
+    storageKeyPrefix: string; // This will now be used as the collection name
     title: string;
     defaultRates: ManualRate[];
 }
 
-export default function EditableRateList({ storageKeyPrefix, title, defaultRates }: EditableRateListProps) {
+export default function EditableRateList({ storageKeyPrefix: collectionName, title, defaultRates }: EditableRateListProps) {
     const { toast } = useToast();
     const [rates, setRates] = useState<ManualRate[]>([]);
-    const [isClient, setIsClient] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [isCategorizing, setIsCategorizing] = useState<string | null>(null);
 
     useEffect(() => {
-        setIsClient(true);
-    }, []);
+        const fetchRates = async () => {
+            setIsLoading(true);
+            const result = await getDocuments(collectionName);
 
-    useEffect(() => {
-        if (isClient) {
-            let loadedRates: ManualRate[] = [];
-            let hasSavedData = false;
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key?.startsWith(storageKeyPrefix)) {
-                    hasSavedData = true;
-                    loadedRates.push(JSON.parse(localStorage.getItem(key)!));
+            if (result.success && result.data) {
+                if (result.data.length === 0) {
+                    // If no data in cloud, load defaults and save them
+                    setRates(defaultRates);
+                    // Optionally, you could pre-populate Firestore with default rates here
+                    // for (const rate of defaultRates) {
+                    //     await saveDocument(collectionName, rate.id, rate);
+                    // }
+                } else {
+                    setRates(result.data.sort((a,b) => a.id.localeCompare(b.id)));
                 }
-            }
-            if (!hasSavedData) {
-                // If no saved data, load defaults and save them
-                defaultRates.forEach(rate => {
-                    localStorage.setItem(`${storageKeyPrefix}${rate.id}`, JSON.stringify(rate));
-                });
-                setRates(defaultRates);
             } else {
-                setRates(loadedRates.sort((a,b) => a.id.localeCompare(b.id)));
+                toast({
+                    variant: 'destructive',
+                    title: 'Error fetching rates',
+                    description: result.error || 'Could not load rates from the cloud.',
+                });
+                // Fallback to default rates on error
+                setRates(defaultRates);
             }
-        }
-    }, [isClient, storageKeyPrefix, defaultRates]);
+            setIsLoading(false);
+        };
+        
+        fetchRates();
+    }, [collectionName, defaultRates, toast]);
 
     const handleUpdate = (id: string, field: keyof ManualRate, value: string) => {
         const newRates = rates.map(r => r.id === id ? { ...r, [field]: value } : r);
         setRates(newRates);
     };
     
-    const handleSave = () => {
-        rates.forEach(rate => {
+    const handleSave = async () => {
+        let successCount = 0;
+        for (const rate of rates) {
             if (rate.id && rate.variety && rate.rate) {
-                 localStorage.setItem(`${storageKeyPrefix}${rate.id}`, JSON.stringify(rate));
+                 const result = await saveDocument(collectionName, rate.id, rate);
+                 if (result.success) {
+                    successCount++;
+                 }
             }
-        });
-        toast({ title: 'Rates Saved', description: 'Your manual rates have been updated.' });
+        }
+        toast({ title: 'Rates Saved', description: `Successfully saved ${successCount} rates to the cloud.` });
     };
 
     const addRate = () => {
@@ -75,9 +84,14 @@ export default function EditableRateList({ storageKeyPrefix, title, defaultRates
         setRates([...rates, { id: newId, category: '', variety: '', rate: '' }]);
     };
     
-    const removeRate = (id: string) => {
-        localStorage.removeItem(`${storageKeyPrefix}${id}`);
-        setRates(rates.filter(r => r.id !== id));
+    const removeRate = async (id: string) => {
+        const result = await deleteDocument(collectionName, id);
+        if (result.success) {
+            setRates(rates.filter(r => r.id !== id));
+            toast({ title: 'Rate Deleted' });
+        } else {
+             toast({ variant: 'destructive', title: 'Delete Failed', description: result.error });
+        }
     };
 
     const handleAutoCategory = async (rateId: string, variety: string) => {
@@ -109,6 +123,11 @@ export default function EditableRateList({ storageKeyPrefix, title, defaultRates
                 </CardDescription>
             </CardHeader>
             <CardContent>
+                {isLoading ? (
+                    <div className="flex justify-center items-center h-48">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    </div>
+                ) : (
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -156,6 +175,7 @@ export default function EditableRateList({ storageKeyPrefix, title, defaultRates
                         ))}
                     </TableBody>
                 </Table>
+                )}
                 <div className="mt-4 flex justify-between">
                     <Button variant="outline" size="sm" onClick={addRate} className="gap-2">
                         <PlusCircle className="h-4 w-4" /> Add Rate

@@ -28,11 +28,14 @@ export async function deleteDocument(collectionName: string, id: string) {
     }
 }
 
-// This function cannot be a server action if it's called from client components on load.
-// It is better to handle local storage fallback on the client side.
-// However, if we want a server-side fetch, it must be used in Server Components.
-export async function getDocuments(collectionName: string) {
-    const db = getClientDb();
-    const querySnapshot = await getDocs(collection(db, collectionName));
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+export async function getDocuments(collectionName: string): Promise<{ success: boolean; data?: any[]; error?: string }> {
+    try {
+        const db = getClientDb();
+        const querySnapshot = await getDocs(collection(db, collectionName));
+        const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        return { success: true, data };
+    } catch (error) {
+        console.error("Error fetching documents:", error);
+        return { success: false, error: (error as Error).message };
+    }
 }
