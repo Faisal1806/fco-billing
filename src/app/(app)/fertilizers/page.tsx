@@ -16,13 +16,13 @@ const defaultPesticideRates = [
     { id: '6', category: 'Fertilizer', variety: 'DAP', rate: '1400' },
 ];
 
-export default function FertilizerRatesPage() {
+export default function FertilizersPage() {
   return (
       <>
         <Card className="mb-6">
             <CardHeader>
-                <CardTitle>Fertilizers & Pesticides Rates</CardTitle>
-                <CardDescription>Automatically generated rates from sales, plus a section for manual add-ons and adjustments.</CardDescription>
+                <CardTitle>Fertilizers & Pesticides</CardTitle>
+                <CardDescription>Automatically generated rates from sales, plus a section for manual add-ons, adjustments and AI-powered categorization.</CardDescription>
             </CardHeader>
         </Card>
         

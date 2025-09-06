@@ -37,7 +37,7 @@ export function Header({ title }: { title: string }) {
       { href: '/watak-register', icon: BookUser, label: t('watak_register'), role: ['admin', 'staff'] },
       { href: '/khata', icon: BookCopy, label: 'Khata Ledger', role: ['admin', 'staff'] },
       { href: '/rates', icon: Tags, label: 'Fruit Rates', role: ['admin', 'staff'] },
-      { href: '/fertilizer-rates', icon: FlaskConical, label: 'Fertilizer Rates', role: ['admin', 'staff'] },
+      { href: '/fertilizers', icon: FlaskConical, label: 'Fertilizers & Pesticides', role: ['admin', 'staff'] },
       { href: '/accessories', icon: Shapes, label: 'Accessories', role: ['admin', 'staff'] },
       { href: '/settings', icon: Settings, label: t('settings'), role: ['admin'] },
     ];
