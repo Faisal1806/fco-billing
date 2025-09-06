@@ -10,7 +10,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/language-context";
-import { LayoutDashboard, Package, Settings, Receipt, BookUser, Menu, ShoppingCart, Truck, BookCopy, ScrollText, Tags, FlaskConical, Shapes, Globe, Banknote } from 'lucide-react';
+import { LayoutDashboard, Package, Settings, Receipt, BookUser, Menu, ShoppingCart, Truck, BookCopy, ScrollText, Tags, FlaskConical, Shapes, Globe, Banknote, Snowflake } from 'lucide-react';
 import { Logo } from "./logo";
 import React from "react";
 
@@ -35,6 +35,7 @@ export function Header({ title }: { title: string }) {
       { href: '/products', icon: Package, label: t('products'), role: ['admin'] },
       { href: '/expenses', icon: Receipt, label: 'Expenses', role: ['admin'] },
       { href: '/advances', icon: Banknote, label: 'Advances', role: ['admin'] },
+      { href: '/cold-storage', icon: Snowflake, label: 'Cold Storage', role: ['admin'] },
       { href: '/watak-register', icon: BookUser, label: t('watak_register'), role: ['admin', 'staff'] },
       { href: '/khata', icon: BookCopy, label: 'Khata Ledger', role: ['admin', 'staff'] },
       { href: '/rates', icon: Tags, label: 'Fruit Rates', role: ['admin', 'staff'] },
