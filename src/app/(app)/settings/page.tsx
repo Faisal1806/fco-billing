@@ -2,11 +2,15 @@
 'use client'
 
 import * as React from 'react';
-import { LanguageSwitcher } from "@/components/language-switcher";
-import { ProfileForm } from "@/components/profile-form";
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useLanguage } from "@/contexts/language-context";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { useToast } from '@/hooks/use-toast';
+import { Paintbrush, Palette, CheckCircle, Upload, Type, Move, QrCode, SlidersHorizontal } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { ProfileForm } from "@/components/profile-form";
+import { Factory, BellRing, CloudUpload } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,41 +21,46 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { useToast } from '@/hooks/use-toast';
-import { Factory, BellRing, Palette, CloudUpload, Paintbrush, FileText, Settings2, PlusCircle, Trash2 } from 'lucide-react';
+} from "@/components/ui/alert-dialog";
 import { getClientMessaging } from '@/lib/firebase';
-import { getToken } from 'firebase/messaging';
 import { saveDocument } from '@/lib/actions';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Input } from '@/components/ui/input';
+import { getToken } from 'firebase/messaging';
 
-type CustomField = {
-    id: number;
-    label: string;
-    placeholder: string;
-};
+const InvoicePreview = ({ title, colors, logoPosition, qrPosition, font, footer, features, children }: {
+    title: string,
+    colors: string,
+    logoPosition: string,
+    qrPosition: string,
+    font: string,
+    footer: string,
+    features?: string[],
+    children: React.ReactNode,
+}) => (
+    <Card className="w-full h-full flex flex-col">
+        <CardHeader>
+            <CardTitle>{title}</CardTitle>
+            <CardDescription>{children}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-grow">
+            <div className={`relative w-full h-48 rounded-md border-2 border-dashed p-2 flex flex-col ${colors}`}>
+                <div className={`absolute ${logoPosition}`}>🍎</div>
+                <div className={`absolute ${qrPosition}`}>🔲</div>
+                <div className={`flex-grow flex items-center justify-center text-xs ${font}`}>
+                    <p>...bill content...</p>
+                </div>
+                <div className="text-center text-[8px] p-1 bg-black/10 rounded-b-md">{footer}</div>
+            </div>
+        </CardContent>
+        <CardFooter className="flex-wrap gap-2">
+            {features?.map(f => <Badge key={f} variant="secondary">{f}</Badge>)}
+        </CardFooter>
+    </Card>
+);
 
 export default function SettingsPage() {
-    const { t } = useLanguage();
     const { toast } = useToast();
     const [isSyncing, setIsSyncing] = React.useState(false);
-    const [customFields, setCustomFields] = React.useState<CustomField[]>([
-        { id: 1, label: 'Vehicle No.', placeholder: 'e.g., JK05X 1234' },
-        { id: 2, label: 'Broker Name', placeholder: 'e.g., John Doe' }
-    ]);
-
-    const addCustomField = () => {
-        setCustomFields(prev => [...prev, { id: Date.now(), label: '', placeholder: ''}]);
-    };
-
-    const removeCustomField = (id: number) => {
-        setCustomFields(prev => prev.filter(field => field.id !== id));
-    };
-
-
+    
     const handleFactoryReset = () => {
         try {
             localStorage.clear();
@@ -59,7 +68,6 @@ export default function SettingsPage() {
                 title: "Factory Reset Successful",
                 description: "All application data has been cleared.",
             })
-            // Optional: reload the page to reflect changes
             window.location.reload();
         } catch (error) {
             toast({
@@ -87,32 +95,14 @@ export default function SettingsPage() {
             let collectionName = '';
             let docId = '';
             
-            if (key.startsWith('invoice-')) {
-                collectionName = 'invoices';
-                docId = key.replace('invoice-', '');
-            } else if (key.startsWith('purchase-')) {
-                collectionName = 'purchases';
-                docId = key.replace('purchase-', '');
-            } else if (key.startsWith('receipt-')) {
-                collectionName = 'receipts';
-                docId = key.replace('receipt-', '');
-            } else if (key.startsWith('challan-')) {
-                collectionName = 'challans';
-                docId = key.replace('challan-', '');
-            } else if (key.startsWith('pesticide-invoice-')) {
-                collectionName = 'pesticide-invoices';
-                docId = key.replace('pesticide-invoice-', '');
-            } else if (key.startsWith('product-')) {
-                collectionName = 'products';
-                docId = key.replace('product-', '');
-            } else if (key.startsWith('accessory-ledger-')) {
-                collectionName = 'accessory-ledgers';
-                docId = key.replace('accessory-ledger-', '');
-            } else if (key.startsWith('expense-')) {
-                collectionName = 'expenses';
-                docId = key.replace('expense-', '');
-            }
-
+            if (key.startsWith('invoice-')) { collectionName = 'invoices'; docId = key.replace('invoice-', ''); }
+            else if (key.startsWith('purchase-')) { collectionName = 'purchases'; docId = key.replace('purchase-', ''); }
+            else if (key.startsWith('receipt-')) { collectionName = 'receipts'; docId = key.replace('receipt-', ''); }
+            else if (key.startsWith('challan-')) { collectionName = 'challans'; docId = key.replace('challan-', ''); }
+            else if (key.startsWith('pesticide-invoice-')) { collectionName = 'pesticide-invoices'; docId = key.replace('pesticide-invoice-', ''); }
+            else if (key.startsWith('product-')) { collectionName = 'products'; docId = key.replace('product-', ''); }
+            else if (key.startsWith('accessory-ledger-')) { collectionName = 'accessory-ledgers'; docId = key.replace('accessory-ledger-', ''); }
+            else if (key.startsWith('expense-')) { collectionName = 'expenses'; docId = key.replace('expense-', ''); }
 
             if (collectionName && docId) {
                 try {
@@ -136,7 +126,7 @@ export default function SettingsPage() {
              toast({
                 variant: "destructive",
                 title: "Sync Partially Failed",
-                description: `${successCount} records synced, but ${errorCount} failed. Check the console for details.`,
+                description: `${successCount} records synced, but ${errorCount} failed. Check console for details.`,
             });
         } else {
             toast({
@@ -161,74 +151,89 @@ export default function SettingsPage() {
         try {
             const permission = await Notification.requestPermission();
             if (permission === 'granted') {
-                // IMPORTANT: Replace 'YOUR_VAPID_KEY_HERE' with your actual VAPID key from your Firebase project settings
                 const fcmToken = await getToken(messaging, { vapidKey: 'YOUR_VAPID_KEY_HERE' }); 
                 
                 if (fcmToken) {
-                    console.log('FCM Token:', fcmToken);
-                    // TODO: Send this token to your server to store it for sending notifications
                     await saveDocument('fcm-tokens', fcmToken, { token: fcmToken, enabledAt: new Date().toISOString() });
                     toast({
                         title: 'Notifications Enabled',
-                        description: 'You will now receive push notifications once setup is complete.',
+                        description: 'You will now receive push notifications.',
                     });
                 } else {
-                     toast({
-                        variant: 'destructive',
-                        title: 'Token Error',
-                        description: 'Could not get the notification token. Please try again.',
-                    });
+                     toast({ variant: 'destructive', title: 'Token Error', description: 'Could not get notification token.' });
                 }
-
-            } else if (permission === 'denied') {
-                 toast({
-                    variant: 'destructive',
-                    title: 'Permission Denied',
-                    description: 'You have blocked notifications. Please enable them in your browser settings.',
-                });
             } else {
-                toast({
-                    title: 'Permission Ignored',
-                    description: 'Notification permission request was dismissed.',
-                });
+                 toast({ variant: 'destructive', title: 'Permission Denied', description: 'Please enable notifications in browser settings.' });
             }
         } catch (error) {
             console.error('Error getting FCM token:', error);
-            toast({
-                variant: 'destructive',
-                title: 'Notification Error',
-                description: 'An error occurred while enabling notifications.',
-            });
+            toast({ variant: 'destructive', title: 'Notification Error', description: 'An error occurred.' });
         }
     };
 
-    const ColorButton = ({ color }: { color: string }) => (
-        <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8 rounded-full"
-            style={{ backgroundColor: color }}
-        >
-            <span className="sr-only">Set theme to {color}</span>
-        </Button>
-    )
-
-
+    const ColorPill = ({ gradient, name }: { gradient: string, name: string}) => (
+        <div className="flex items-center gap-2">
+            <div className={`w-10 h-6 rounded-full ${gradient}`}></div>
+            <span className="font-medium">{name}</span>
+        </div>
+    );
+    
     return (
-        <div className="grid gap-6">
+        <div className="space-y-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>{t('language')}</CardTitle>
-                    <CardDescription>
-                        Choose the language for the application interface.
-                    </CardDescription>
+                    <CardTitle className="flex items-center gap-3"><Paintbrush className="h-6 w-6" /> Appearance &amp; Customization</CardTitle>
+                    <CardDescription>This section will allow you to change invoice styles, colors, fonts, and layouts for all your documents (Bills, Wataks, Challans, Receipts).</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="flex items-center space-x-2">
-                        <LanguageSwitcher />
-                        <span className="text-sm text-muted-foreground">
-                            {t('language') === 'Language' ? 'English' : 'اردو'}
-                        </span>
+                    <Tabs defaultValue="classic" className="w-full">
+                        <TabsList className="grid w-full grid-cols-3">
+                            <TabsTrigger value="classic">Classic Style</TabsTrigger>
+                            <TabsTrigger value="modern">Modern Style</TabsTrigger>
+                            <TabsTrigger value="urdu">Urdu-English Mix</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="classic" className="mt-4">
+                             <InvoicePreview title="Classic Style" colors="bg-white text-black" logoPosition="top-2 left-1/2 -translate-x-1/2" qrPosition="top-2 right-2" font="font-serif" footer="Thank you for your business – F.Co" features={["Professional & Clean", "Red Headers", "Traditional Look"]}>
+                                Professional, clean, and looks like a traditional Sopore Mandi bill. Ideal for formal record-keeping.
+                            </InvoicePreview>
+                        </TabsContent>
+                        <TabsContent value="modern" className="mt-4">
+                             <InvoicePreview title="Modern Style" colors="bg-gradient-to-br from-red-500 to-green-500 text-white" logoPosition="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-10 text-5xl" qrPosition="bottom-10 right-2" font="font-sans" footer="Your Satisfaction is Our Success – Subject to Sopore Jurisdiction Only" features={["Textured & Stylish", "Icons for items", "Great for Sharing"]}>
+                                Stylish and modern, perfect for sharing on WhatsApp or email. Uses gradients and icons for a fresh look.
+                            </InvoicePreview>
+                        </TabsContent>
+                         <TabsContent value="urdu" className="mt-4">
+                             <InvoicePreview title="Urdu-English Mix" colors="bg-amber-50 text-black border-green-700" logoPosition="top-2 left-2" qrPosition="top-2 right-2" font="font-urdu" footer="F.Co – Fruit Merchant & Commission Agent | Sopore Mandi" features={["Bilingual Fields", "Nastaliq Font", "Beige Paper Look"]}>
+                                A bilingual design perfect for both English and Urdu-speaking customers, with elegant Nastaliq font for headings.
+                            </InvoicePreview>
+                        </TabsContent>
+                    </Tabs>
+
+                    <Separator className="my-6" />
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                             <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><Palette className="h-5 w-5 text-primary" /> Color Gradients</h3>
+                             <p className="text-sm text-muted-foreground mb-4">Each document type gets a unique theme so you can instantly recognize it.</p>
+                             <div className="space-y-3">
+                                <ColorPill gradient="bg-gradient-to-r from-red-500 to-green-500" name="Bills" />
+                                <ColorPill gradient="bg-gradient-to-r from-blue-500 to-purple-500" name="Wataks" />
+                                <ColorPill gradient="bg-gradient-to-r from-orange-500 to-yellow-500" name="Challans" />
+                                <ColorPill gradient="bg-gradient-to-r from-gray-600 to-gray-400" name="Receipts" />
+                             </div>
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><SlidersHorizontal className="h-5 w-5 text-primary" /> Customization Options</h3>
+                            <p className="text-sm text-muted-foreground mb-4">Fine-tune every aspect of the app and your documents.</p>
+                            <ul className="space-y-2 text-sm">
+                                <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Switch between invoice styles anytime.</li>
+                                <li className="flex items-center gap-2"><Type className="h-4 w-4 text-blue-500" /> Change fonts (Serif, Sans-Serif, Nastaliq).</li>
+                                <li className="flex items-center gap-2"><Upload className="h-4 w-4 text-purple-500" /> Upload your own company logo.</li>
+                                <li className="flex items-center gap-2"><Move className="h-4 w-4 text-orange-500" /> Adjust margins & spacing for print.</li>
+                                <li className="flex items-center gap-2"><QrCode className="h-4 w-4 text-teal-500" /> Enable or disable QR codes on documents.</li>
+                                <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-red-500" /> Set custom headers and footers.</li>
+                            </ul>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
@@ -237,97 +242,9 @@ export default function SettingsPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Paintbrush className="h-5 w-5" /> Appearance &amp; Customization</CardTitle>
-                    <CardDescription>
-                        Change invoice styles, choose color themes, manage custom fields, and tailor the app to your brand.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Accordion type="multiple" className="w-full space-y-4">
-                        <AccordionItem value="item-1" className="border rounded-lg px-4">
-                            <AccordionTrigger className="text-lg font-semibold"><FileText className="h-5 w-5 mr-3 text-primary" />Invoice & Bill Styles</AccordionTrigger>
-                            <AccordionContent className="space-y-4 pt-4">
-                                <div className="space-y-2">
-                                    <Label>Invoice Template</Label>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                        <Button variant="outline">Classic</Button>
-                                        <Button variant="outline">Modern</Button>
-                                        <Button variant="outline">Textured</Button>
-                                        <Button variant="outline">Urdu/English</Button>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground">Select a pre-designed layout for your documents.</p>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <Switch id="watermark-switch" />
-                                    <Label htmlFor="watermark-switch">Add Faint Logo Watermark to Documents</Label>
-                                </div>
-                            </AccordionContent>
-                        </AccordionItem>
-
-                         <AccordionItem value="item-2" className="border rounded-lg px-4">
-                            <AccordionTrigger className="text-lg font-semibold"><Palette className="h-5 w-5 mr-3 text-primary" />Color Theme & Branding</AccordionTrigger>
-                            <AccordionContent className="space-y-4 pt-4">
-                                <div className="space-y-2">
-                                    <Label>Primary Accent Color</Label>
-                                     <div className="flex items-center gap-2">
-                                        <ColorButton color="#22c55e" /> {/* green */}
-                                        <ColorButton color="#ef4444" /> {/* red */}
-                                        <ColorButton color="#3b82f6" /> {/* blue */}
-                                        <ColorButton color="#f97316" /> {/* orange */}
-                                        <ColorButton color="#14b8a6" /> {/* teal */}
-                                     </div>
-                                    <p className="text-xs text-muted-foreground">Change the main color for buttons and highlights across the app.</p>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Company Logo</Label>
-                                    <Input type="file" />
-                                    <p className="text-xs text-muted-foreground">Upload your company logo. Appears on bills and headers.</p>
-                                </div>
-                            </AccordionContent>
-                        </AccordionItem>
-
-                         <AccordionItem value="item-3" className="border rounded-lg px-4">
-                            <AccordionTrigger className="text-lg font-semibold"><Settings2 className="h-5 w-5 mr-3 text-primary" />Header, Footer & Custom Fields</AccordionTrigger>
-                            <AccordionContent className="space-y-4 pt-4">
-                                <div className="space-y-2">
-                                    <Label>Footer Text</Label>
-                                    <Input defaultValue="Your Satisfaction is Our Success – Subject to Sopore Jurisdiction Only" />
-                                    <p className="text-xs text-muted-foreground">This text will appear at the bottom of your documents.</p>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <Switch id="qr-code-switch" checked />
-                                    <Label htmlFor="qr-code-switch">Show QR Code in Footer</Label>
-                                </div>
-                                <div className="pt-4 mt-4 border-t">
-                                     <h4 className="font-medium mb-2">Custom Document Fields</h4>
-                                     <p className="text-xs text-muted-foreground mb-4">Add or remove custom text fields that will appear on your documents.</p>
-                                     <div className="space-y-2">
-                                        {customFields.map(field => (
-                                            <div key={field.id} className="flex items-center gap-2">
-                                                <Input defaultValue={field.label} placeholder="Field Label (e.g., Transport)" />
-                                                <Input defaultValue={field.placeholder} placeholder="Placeholder Text (e.g., Transport Name)" />
-                                                <Button variant="ghost" size="icon" onClick={() => removeCustomField(field.id)}>
-                                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                                </Button>
-                                            </div>
-                                        ))}
-                                     </div>
-                                      <Button variant="outline" size="sm" className="mt-2 gap-1" onClick={addCustomField}>
-                                        <PlusCircle className="h-4 w-4" /> Add Field
-                                     </Button>
-                                 </div>
-                            </AccordionContent>
-                        </AccordionItem>
-
-                    </Accordion>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
                     <CardTitle>Cloud Data Sync</CardTitle>
                     <CardDescription>
-                        First-time setup: Upload all data saved on this device to the cloud. Run this on each of your devices (phone, laptop) once to sync everything.
+                        First-time setup: Upload all data saved on this device to the cloud. Run this on each of your devices once to sync everything.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -384,5 +301,5 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
         </div>
-    )
+    );
 }
