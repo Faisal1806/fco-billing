@@ -4,7 +4,7 @@
 import React from 'react';
 import QRCode from 'qrcode.react';
 
-const upiId = "YOUR_UPI_ID@okaxis"; // IMPORTANT: Replace with your actual UPI ID
+const upiId = "firdousahmad.70061@oksbi"; // IMPORTANT: Replace with your actual UPI ID
 const companyName = "Firdous Ahmad & Company";
 const contactPerson = "Firdous Ahmad";
 const phone = "7006136330";
