@@ -23,9 +23,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Trash2, FileSignature, Loader2 } from 'lucide-react';
+import { PlusCircle, Trash2, FileSignature, Loader2, Printer, FileDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveDocument, deleteDocument } from '@/lib/actions';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+import './../khata/print.css';
 
 type LedgerEntry = {
     id: string;
@@ -152,10 +156,51 @@ export default function AccessoriesLedgerPage() {
     };
 
     const dailyTotal = entries.filter(entry => entry.date === new Date().toISOString().split('T')[0]).reduce((acc, curr) => acc + (curr.qty * curr.rate), 0);
+    const overallTotal = entries.reduce((acc, curr) => acc + (curr.qty * curr.rate), 0);
+    
+    const handlePrint = () => {
+        window.print();
+    };
+
+    const exportToPDF = () => {
+        const doc = new jsPDF();
+        doc.text("Accessories Ledger", 14, 15);
+        autoTable(doc, {
+            head: [['Date', 'Customer', 'Category', 'Item', 'Qty', 'Rate', 'Payment', 'Amount']],
+            body: entries.map(e => [
+                new Date(e.date).toLocaleDateString('en-GB'),
+                e.customer,
+                e.category,
+                e.item,
+                e.qty,
+                `₹${e.rate.toFixed(2)}`,
+                e.paymentMode,
+                `₹${(e.qty * e.rate).toFixed(2)}`
+            ]),
+            foot: [[{ content: 'Total', colSpan: 7, styles: { halign: 'right' } }, `₹${overallTotal.toFixed(2)}`]],
+        });
+        doc.save("accessories-ledger.pdf");
+    };
+
+    const exportToExcel = () => {
+        const ws = XLSX.utils.json_to_sheet(entries.map(e => ({
+            Date: new Date(e.date).toLocaleDateString('en-GB'),
+            Customer: e.customer,
+            Category: e.category,
+            Item: e.item,
+            Quantity: e.qty,
+            Rate: e.rate,
+            'Payment Mode': e.paymentMode,
+            Amount: e.qty * e.rate,
+        })));
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Accessories");
+        XLSX.writeFile(wb, "accessories-ledger.xlsx");
+    };
 
   return (
-    <div className="space-y-6">
-        <Card>
+    <div className="space-y-6 printable-area">
+        <Card className="print-hidden">
           <CardHeader>
             <CardTitle>Add to Daily Accessories Ledger</CardTitle>
             <CardDescription>Log sales of fertilizers, packaging materials, and other farm inputs.</CardDescription>
@@ -213,8 +258,17 @@ export default function AccessoriesLedgerPage() {
 
     <Card>
       <CardHeader>
-        <CardTitle>Ledger History</CardTitle>
-        <CardDescription>A record of all accessory and material sales.</CardDescription>
+        <div className="flex justify-between items-center">
+            <div>
+                <CardTitle>Ledger History</CardTitle>
+                <CardDescription>A record of all accessory and material sales.</CardDescription>
+            </div>
+            <div className="flex gap-2 print-hidden">
+                <Button onClick={handlePrint} variant="outline" size="sm" className="gap-1"><Printer className="h-4 w-4"/>Print</Button>
+                <Button onClick={exportToPDF} variant="outline" size="sm" className="gap-1"><FileDown className="h-4 w-4"/>PDF</Button>
+                <Button onClick={exportToExcel} variant="outline" size="sm" className="gap-1"><FileDown className="h-4 w-4"/>Excel</Button>
+            </div>
+        </div>
       </CardHeader>
       <CardContent>
          {isLoading ? (
@@ -233,7 +287,7 @@ export default function AccessoriesLedgerPage() {
                         <TableHead>Rate</TableHead>
                         <TableHead>Payment</TableHead>
                         <TableHead className="text-right">Amount</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableHead className="text-right print-hidden">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -247,7 +301,7 @@ export default function AccessoriesLedgerPage() {
                             <TableCell>₹{entry.rate.toFixed(2)}</TableCell>
                             <TableCell>{entry.paymentMode}</TableCell>
                             <TableCell className="text-right font-mono">₹{(entry.qty * entry.rate).toFixed(2)}</TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="text-right print-hidden">
                                 <Button variant="outline" size="sm" className="mr-2" disabled>
                                     <FileSignature className="h-3 w-3 mr-1" /> Bill
                                 </Button>
@@ -264,7 +318,12 @@ export default function AccessoriesLedgerPage() {
                     <TableRow className="font-bold text-lg">
                         <TableCell colSpan={7} className="text-right">Today's Total</TableCell>
                         <TableCell className="text-right font-mono">₹{dailyTotal.toFixed(2)}</TableCell>
-                        <TableCell></TableCell>
+                        <TableCell className="print-hidden"></TableCell>
+                    </TableRow>
+                     <TableRow className="font-bold text-xl bg-muted">
+                        <TableCell colSpan={7} className="text-right">Overall Total</TableCell>
+                        <TableCell className="text-right font-mono">₹{overallTotal.toFixed(2)}</TableCell>
+                        <TableCell className="print-hidden"></TableCell>
                     </TableRow>
                 </TableFooter>
             </Table>
@@ -279,3 +338,5 @@ export default function AccessoriesLedgerPage() {
     </div>
   );
 }
+
+    
