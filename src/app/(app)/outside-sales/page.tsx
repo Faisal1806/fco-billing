@@ -204,8 +204,8 @@ export default function OutsideSalesPage() {
                             <Input id="bikriNo" value={bikriNo} onChange={e => setBikriNo(e.target.value)} disabled={isEditing}/>
                         </div>
                         <div>
-                            <Label htmlFor="date">Bikri Date</Label>
-                            <Input id="date" type="date" value={date} onChange={e => setDate(e.target.value)} />
+                            <Label htmlFor="bikriDate">Bikri Date</Label>
+                            <Input id="bikriDate" type="date" value={date} onChange={e => setDate(e.target.value)} />
                         </div>
                         <div>
                             <Label htmlFor="market">Market</Label>
@@ -344,5 +344,3 @@ export default function OutsideSalesPage() {
         </div>
     );
 }
-
-    
