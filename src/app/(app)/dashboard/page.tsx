@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, PackagePlus, PackageMinus, Package, UserCheck, UserX, Leaf, Box, Apple, FlaskConical, Shapes } from 'lucide-react';
+import { Loader2, PackagePlus, PackageMinus, Package, UserCheck, UserX, Leaf, Box, Apple, FlaskConical, Shapes, Calendar, Star, CreditCard } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import RateList from '@/components/RateList';
@@ -25,10 +25,10 @@ type LedgerEntry = {
 }
 
 type AccessoryStats = {
-    totalSales: number;
-    fertilizerSales: number;
-    packagingSales: number;
-    otherSales: number;
+    todaySales: number;
+    monthSales: number;
+    topItem: string;
+    outstandingCredit: number;
 }
 
 const StatCard = ({ title, value, icon: Icon, note }: { title: string, value: string, icon: React.ElementType, note?: string }) => (
@@ -97,21 +97,26 @@ const FruitDashboard = ({ stats, ledgerSummary, router }: { stats: DailyStats | 
 
 const AccessoriesDashboard = ({ stats, router }: { stats: AccessoryStats | null, router: any }) => (
      <div className="space-y-8">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
              <StatCard 
-                title="Today's Fertilizer/Pesticide Sales"
-                value={`₹${stats?.fertilizerSales.toLocaleString('en-IN') ?? '0'}`}
-                icon={FlaskConical}
+                title="Today's Accessories Sale"
+                value={`₹${stats?.todaySales.toLocaleString('en-IN') ?? '0'}`}
+                icon={Package}
              />
              <StatCard 
-                title="Today's Packaging Material Sales"
-                value={`₹${stats?.packagingSales.toLocaleString('en-IN') ?? '0'}`}
-                icon={Box}
+                title="This Month's Accessories Sale"
+                value={`₹${stats?.monthSales.toLocaleString('en-IN') ?? '0'}`}
+                icon={Calendar}
              />
              <StatCard 
-                title="Today's Other Accessory Sales"
-                value={`₹${stats?.otherSales.toLocaleString('en-IN') ?? '0'}`}
-                icon={Shapes}
+                title="Outstanding Khata (Credit)"
+                value={`₹${stats?.outstandingCredit.toLocaleString('en-IN') ?? '0'}`}
+                icon={CreditCard}
+             />
+             <StatCard 
+                title="Top Selling Item"
+                value={stats?.topItem ?? 'N/A'}
+                icon={Star}
              />
         </div>
          <div className="mt-8 text-center">
@@ -139,6 +144,8 @@ export default function DashboardPage() {
 
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
 
     // Fruit Stats Calculation
     let pattiPurchasedToday = 0;
@@ -154,10 +161,10 @@ export default function DashboardPage() {
     const ledgers: {[party: string]: number} = {};
     
     // Accessory Stats Calculation
-    let totalAccessorySalesToday = 0;
-    let fertilizerSalesToday = 0;
-    let packagingSalesToday = 0;
-    let otherSalesToday = 0;
+    let accessorySalesToday = 0;
+    let accessorySalesMonth = 0;
+    let accessoryCredit = 0;
+    const itemQuantities: {[name: string]: number} = {};
 
 
     for (let i = 0; i < localStorage.length; i++) {
@@ -207,18 +214,23 @@ export default function DashboardPage() {
                 const party = purchase.growerName;
                 if (!ledgers[party]) ledgers[party] = 0;
                 ledgers[party] -= purchase.totals.grandTotal || 0;
+
             } else if (key.startsWith('accessory-ledger-')) {
                 const entry = JSON.parse(localStorage.getItem(key)!);
+                const entryDate = new Date(entry.date);
+                const amount = (entry.qty || 0) * (entry.rate || 0);
+
                 if (entry.date === todayStr) {
-                    const amount = (entry.qty || 0) * (entry.rate || 0);
-                    totalAccessorySalesToday += amount;
-                    if (entry.category === 'Fertilizer/Pesticide') {
-                        fertilizerSalesToday += amount;
-                    } else if (entry.category === 'Packaging') {
-                        packagingSalesToday += amount;
-                    } else {
-                        otherSalesToday += amount;
-                    }
+                    accessorySalesToday += amount;
+                }
+                if(entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear) {
+                    accessorySalesMonth += amount;
+                }
+                if(entry.paymentMode === 'Khata' || entry.paymentMode === 'Credit') {
+                    accessoryCredit += amount;
+                }
+                if(entry.item){
+                    itemQuantities[entry.item] = (itemQuantities[entry.item] || 0) + (entry.qty || 0);
                 }
             }
         } catch (error) {
@@ -237,11 +249,13 @@ export default function DashboardPage() {
       currentDabbaStock: totalDabbaPurchased - totalDabbaSold,
     });
     
+    const topItem = Object.entries(itemQuantities).sort(([, a], [, b]) => b - a)[0]?.[0] || 'N/A';
+
     setAccessoryStats({
-        totalSales: totalAccessorySalesToday,
-        fertilizerSales: fertilizerSalesToday,
-        packagingSales: packagingSalesToday,
-        otherSales: otherSalesToday,
+        todaySales: accessorySalesToday,
+        monthSales: accessorySalesMonth,
+        topItem: topItem,
+        outstandingCredit: accessoryCredit,
     });
 
     const summary = Object.entries(ledgers)
