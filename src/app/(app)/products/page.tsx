@@ -29,12 +29,15 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import { PlusCircle, Edit, Trash2, Package, Apple, Box, Search } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Package, Apple, Box, Search, FileDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Textarea } from '@/components/ui/textarea';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+
 
 interface Product {
   id: string;
@@ -190,6 +193,44 @@ export default function ProductsPage() {
     fetchProducts();
   }
   
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.text("Product Inventory List", 14, 15);
+    autoTable(doc, {
+        head: [['Name', 'Category', 'Stock', 'Unit', 'Variety/Grade', 'Rate Range', 'Supplier', 'Expiry']],
+        body: filteredProducts.map(p => [
+            p.name,
+            p.category,
+            p.stock,
+            p.unitType || '',
+            p.varietyGrade || '',
+            p.rateRange || '',
+            p.supplier || '',
+            p.expiryDate || '',
+        ]),
+    });
+    doc.save("product-inventory.pdf");
+  };
+
+  const exportToExcel = () => {
+      const ws = XLSX.utils.json_to_sheet(filteredProducts.map(p => ({
+          'Product Name': p.name,
+          'Category': p.category,
+          'Stock Quantity': p.stock,
+          'Unit Type': p.unitType,
+          'Variety/Grade': p.varietyGrade,
+          'Rate Range': p.rateRange,
+          'Batch No': p.batchNo,
+          'Expiry Date': p.expiryDate,
+          'Supplier': p.supplier,
+          'Reorder Level': p.reorderLevel,
+          'Notes': p.notes,
+      })));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Inventory");
+      XLSX.writeFile(wb, "product-inventory.xlsx");
+  };
+
   const ProductTable = ({ products }: { products: Product[] }) => (
     <div className="mb-4">
         {products.length > 0 ? (
@@ -263,6 +304,8 @@ export default function ProductsPage() {
                     <SelectItem value="accessories">Accessories</SelectItem>
                 </SelectContent>
             </Select>
+            <Button onClick={exportToPDF} variant="outline" size="sm" className="gap-1"><FileDown className="h-4 w-4"/>PDF</Button>
+            <Button onClick={exportToExcel} variant="outline" size="sm" className="gap-1"><FileDown className="h-4 w-4"/>Excel</Button>
             <Dialog open={isDialogOpen} onOpenChange={(isOpen) => {
                 setIsDialogOpen(isOpen);
                 if (!isOpen) {
@@ -403,3 +446,5 @@ export default function ProductsPage() {
     </Card>
   );
 }
+
+    
