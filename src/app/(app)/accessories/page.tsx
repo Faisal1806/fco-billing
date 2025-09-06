@@ -42,6 +42,13 @@ type LedgerEntry = {
     paymentMode: 'Cash' | 'Credit' | 'Khata';
 };
 
+interface Product {
+  id: string;
+  name: string;
+  category: string;
+  stock: number;
+}
+
 const emptyFormState: Omit<LedgerEntry, 'id'> = {
     date: new Date().toISOString().split('T')[0],
     customer: '',
@@ -110,6 +117,42 @@ export default function AccessoriesLedgerPage() {
             return;
         }
 
+        // --- Inventory Deduction Logic ---
+        let productToUpdate: Product | null = null;
+        let productKey: string | null = null;
+
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key?.startsWith('product-')) {
+                try {
+                    const product: Product = JSON.parse(localStorage.getItem(key)!);
+                    if (product.name.toLowerCase() === formState.item.toLowerCase()) {
+                        productToUpdate = product;
+                        productKey = key;
+                        break;
+                    }
+                } catch(e) {
+                    console.error("Failed to parse product for stock update", e);
+                }
+            }
+        }
+
+        if (productToUpdate && productKey) {
+             if (productToUpdate.stock < formState.qty) {
+                if (!window.confirm(`Warning: Stock for ${productToUpdate.name} is low (${productToUpdate.stock} available). Continue with sale?`)) {
+                    return; // Stop if user cancels
+                }
+            }
+            productToUpdate.stock -= formState.qty;
+            localStorage.setItem(productKey, JSON.stringify(productToUpdate));
+        } else {
+             if (!window.confirm(`Warning: "${formState.item}" is not found in your inventory. Stock will not be deducted. Continue anyway?`)) {
+                return; // Stop if user cancels
+            }
+        }
+        // --- End of Inventory Deduction Logic ---
+
+
         const id = `accessory-ledger-${Date.now()}`;
         const newEntry = { ...formState, id };
         
@@ -119,7 +162,7 @@ export default function AccessoriesLedgerPage() {
             await saveDocument('accessory-ledgers', id, newEntry);
             toast({
                 title: 'Ledger Entry Saved',
-                description: 'Your entry has been recorded.',
+                description: 'Your entry has been recorded and stock updated.',
             });
         } catch (e) {
             toast({
@@ -138,7 +181,7 @@ export default function AccessoriesLedgerPage() {
             toast({variant: 'destructive', title: 'Permission Denied'});
             return;
         }
-        if (!window.confirm('Are you sure you want to delete this ledger entry?')) return;
+        if (!window.confirm('Are you sure you want to delete this ledger entry? Note: This will not automatically add stock back.')) return;
         
         localStorage.removeItem(id);
         
@@ -203,7 +246,7 @@ export default function AccessoriesLedgerPage() {
         <Card className="print-hidden">
           <CardHeader>
             <CardTitle>Add to Daily Accessories Ledger</CardTitle>
-            <CardDescription>Log sales of fertilizers, packaging materials, and other farm inputs.</CardDescription>
+            <CardDescription>Log sales of fertilizers, packaging materials, and other farm inputs. Inventory stock will be deducted automatically.</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
