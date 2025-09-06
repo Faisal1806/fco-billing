@@ -29,6 +29,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 
 const InvoicePreview = ({ title, colors, logoPosition, qrPosition, font, footer, features, children }: {
     title: string,
@@ -201,7 +203,7 @@ export default function SettingsPage() {
              <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-3"><Paintbrush className="h-6 w-6" /> Appearance &amp; Customization</CardTitle>
-                    <CardDescription>Change invoice styles, choose color themes, manage custom fields, and tailor the app to your brand.</CardDescription>
+                    <CardDescription>This section will allow you to change invoice styles, colors, fonts, and layouts for all your documents (Bills, Wataks, Challans, Receipts).</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Accordion type="multiple" defaultValue={['styles', 'fields']} className="w-full">
@@ -215,17 +217,17 @@ export default function SettingsPage() {
                                         <TabsTrigger value="urdu">Urdu-English Mix</TabsTrigger>
                                     </TabsList>
                                     <TabsContent value="classic" className="mt-4">
-                                        <InvoicePreview title="Classic Style" colors="bg-white text-black" logoPosition="top-2 left-1/2 -translate-x-1/2" qrPosition="top-2 right-2" font="font-serif" footer="Thank you for your business – F.Co" features={["Professional & Clean", "Red Headers", "Traditional Look"]}>
-                                            Professional, clean, and looks like a traditional Sopore Mandi bill. Ideal for formal record-keeping.
+                                        <InvoicePreview title="Classic Style (Professional + Clean)" colors="bg-white text-black" logoPosition="top-2 left-1/2 -translate-x-1/2" qrPosition="top-2 right-2" font="font-serif" footer="Thank you for your business – F.Co" features={["Professional & Clean", "Red Headers", "Traditional Look"]}>
+                                            Looks like a traditional Sopore Mandi bill. Ideal for formal record-keeping.
                                         </InvoicePreview>
                                     </TabsContent>
                                     <TabsContent value="modern" className="mt-4">
-                                        <InvoicePreview title="Modern Style" colors="bg-gradient-to-br from-red-500 to-green-500 text-white" logoPosition="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-10 text-5xl" qrPosition="bottom-10 right-2" font="font-sans" footer="Your Satisfaction is Our Success – Subject to Sopore Jurisdiction Only" features={["Textured & Stylish", "Icons for items", "Great for Sharing"]}>
+                                        <InvoicePreview title="Modern Style (Textured + Stylish)" colors="bg-gradient-to-br from-red-500 to-green-500 text-white" logoPosition="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-10 text-5xl" qrPosition="bottom-10 right-2" font="font-sans" footer="Your Satisfaction is Our Success – Subject to Sopore Jurisdiction Only" features={["Textured & Stylish", "Icons for items", "Great for Sharing"]}>
                                             Stylish and modern, perfect for sharing on WhatsApp or email. Uses gradients and icons for a fresh look.
                                         </InvoicePreview>
                                     </TabsContent>
                                     <TabsContent value="urdu" className="mt-4">
-                                        <InvoicePreview title="Urdu-English Mix" colors="bg-amber-50 text-black border-green-700" logoPosition="top-2 left-2" qrPosition="top-2 right-2" font="font-urdu" footer="F.Co – Fruit Merchant & Commission Agent | Sopore Mandi" features={["Bilingual Fields", "Nastaliq Font", "Beige Paper Look"]}>
+                                        <InvoicePreview title="Urdu-English Mix (Dual Language Print)" colors="bg-amber-50 text-black border-green-700" logoPosition="top-2 left-2" qrPosition="top-2 right-2" font="font-urdu" footer="F.Co – Fruit Merchant & Commission Agent | Sopore Mandi" features={["Bilingual Fields", "Nastaliq Font", "Beige Paper Look"]}>
                                             A bilingual design perfect for both English and Urdu-speaking customers, with elegant Nastaliq font for headings.
                                         </InvoicePreview>
                                     </TabsContent>
@@ -275,9 +277,21 @@ export default function SettingsPage() {
                         <AccordionItem value="fields">
                             <AccordionTrigger className="text-lg font-semibold">Header, Footer &amp; Custom Fields</AccordionTrigger>
                             <AccordionContent className="pt-4 space-y-6">
+                                <div className="space-y-4">
+                                     <div className="space-y-2">
+                                        <Label htmlFor="footerText">Footer Text</Label>
+                                        <Textarea id="footerText" placeholder="e.g., Your Satisfaction is Our Success..." defaultValue="Your Satisfaction is Our Success – Subject to Sopore Jurisdiction Only" />
+                                        <p className="text-xs text-muted-foreground">This text will appear at the bottom of your documents.</p>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Input type="checkbox" id="show-qr" defaultChecked />
+                                        <Label htmlFor="show-qr" className="cursor-pointer">Show QR Code in Footer</Label>
+                                    </div>
+                                </div>
+                                <Separator />
                                  <div>
                                     <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><Pencil className="h-5 w-5 text-primary" /> Suggested Custom Fields</h3>
-                                    <p className="text-sm text-muted-foreground mb-4">Here are some powerful custom fields you can add to your documents. Support for adding these is coming soon!</p>
+                                    <p className="text-sm text-muted-foreground mb-4">Every grower, customer, or truck has different details. These fields will appear automatically in print, PDF, or WhatsApp export.</p>
                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                                         <CustomFieldSuggestion icon={Truck} title="Vehicle No." example="JK05X 1234">For tracking transport and logistics.</CustomFieldSuggestion>
                                         <CustomFieldSuggestion icon={User} title="Broker Name" example="Abdul Rashid Shah">To record the agent involved in a sale.</CustomFieldSuggestion>
@@ -291,18 +305,6 @@ export default function SettingsPage() {
                                         <CustomFieldSuggestion icon={Pencil} title="Delivery Remarks" example="Handle with care">Add special instructions for delivery.</CustomFieldSuggestion>
                                     </div>
                                  </div>
-                                <Separator />
-                                <div className="space-y-4">
-                                     <div className="space-y-2">
-                                        <Label htmlFor="footerText">Footer Text</Label>
-                                        <Textarea id="footerText" placeholder="e.g., Your Satisfaction is Our Success..." defaultValue="Your Satisfaction is Our Success – Subject to Sopore Jurisdiction Only" />
-                                        <p className="text-xs text-muted-foreground">This text will appear at the bottom of your documents.</p>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <Input type="checkbox" id="show-qr" defaultChecked />
-                                        <Label htmlFor="show-qr" className="cursor-pointer">Show QR Code in Footer</Label>
-                                    </div>
-                                </div>
                             </AccordionContent>
                         </AccordionItem>
                     </Accordion>
