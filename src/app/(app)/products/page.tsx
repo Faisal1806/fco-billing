@@ -32,12 +32,35 @@ import {
 import { PlusCircle, Edit, Trash2, Package, Apple, Box } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Textarea } from '@/components/ui/textarea';
 
 interface Product {
   id: string;
   name: string;
   category: string;
   stock: number;
+  unitType?: string;
+  varietyGrade?: string;
+  rateRange?: string;
+  batchNo?: string;
+  expiryDate?: string;
+  supplier?: string;
+  reorderLevel?: number;
+  notes?: string;
+}
+
+const emptyFormState: Omit<Product, 'id'> = {
+    name: '',
+    category: '',
+    stock: 0,
+    unitType: '',
+    varietyGrade: '',
+    rateRange: '',
+    batchNo: '',
+    expiryDate: '',
+    supplier: '',
+    reorderLevel: 0,
+    notes: '',
 }
 
 export default function ProductsPage() {
@@ -46,12 +69,8 @@ export default function ProductsPage() {
   const [isClient, setIsClient] = useState(false);
   
   // Form state
-  const [productId, setProductId] = useState<string | null>(null);
-  const [productName, setProductName] = useState('');
-  const [category, setCategory] = useState('');
-  const [stock, setStock] = useState(0);
-  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [formState, setFormState] = useState<Product | Omit<Product, 'id'>>(emptyFormState);
   const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
@@ -94,14 +113,17 @@ export default function ProductsPage() {
   }, [products]);
   
   const resetForm = () => {
-    setProductId(null);
-    setProductName('');
-    setCategory('');
-    setStock(0);
+    setFormState(emptyFormState);
   }
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    const val = type === 'number' ? Number(value) : value;
+    setFormState(prev => ({...prev, [name]: val}));
+  };
+
   const handleSaveProduct = () => {
-    if (!productName || !category) {
+    if (!formState.name || !formState.category) {
       toast({
         variant: 'destructive',
         title: 'Missing Fields',
@@ -110,18 +132,13 @@ export default function ProductsPage() {
       return;
     }
 
-    const id = productId || `product-${Date.now()}`;
-    const newProduct: Product = {
-      id,
-      name: productName,
-      category,
-      stock: Number(stock) || 0,
-    };
+    const id = 'id' in formState ? formState.id : `product-${Date.now()}`;
+    const newProduct: Product = { id, ...formState } as Product;
 
     localStorage.setItem(id, JSON.stringify(newProduct));
     toast({
-      title: productId ? 'Product Updated' : 'Product Added',
-      description: `${productName} has been saved.`,
+      title: 'id' in formState ? 'Product Updated' : 'Product Added',
+      description: `${formState.name} has been saved.`,
     });
     
     fetchProducts();
@@ -130,10 +147,7 @@ export default function ProductsPage() {
   };
 
   const handleEditClick = (product: Product) => {
-    setProductId(product.id);
-    setProductName(product.name);
-    setCategory(product.category);
-    setStock(product.stock);
+    setFormState(product);
     setIsDialogOpen(true);
   }
   
@@ -153,13 +167,14 @@ export default function ProductsPage() {
   
   const ProductTable = ({ products, title, icon }: { products: Product[], title: string, icon: React.ReactNode }) => (
     <div className="mb-4">
-        <h3 className="flex items-center text-lg font-semibold mb-2">{icon}{title}</h3>
         {products.length > 0 ? (
             <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Product Name</TableHead>
                 <TableHead>Category</TableHead>
+                <TableHead>Variety/Grade</TableHead>
+                <TableHead>Unit</TableHead>
                 <TableHead>Stock</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -169,6 +184,8 @@ export default function ProductsPage() {
                 <TableRow key={product.id}>
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell>{product.category}</TableCell>
+                  <TableCell>{product.varietyGrade}</TableCell>
+                  <TableCell>{product.unitType}</TableCell>
                   <TableCell>{product.stock}</TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="icon" onClick={() => handleEditClick(product)}>
@@ -207,23 +224,57 @@ export default function ProductsPage() {
                 Add Product
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-2xl">
               <DialogHeader>
-                <DialogTitle>{productId ? 'Edit Product' : 'Add New Product'}</DialogTitle>
+                <DialogTitle>{'id' in formState ? 'Edit Product' : 'Add New Product'}</DialogTitle>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="name" className="text-right">Name</Label>
-                  <Input id="name" value={productName} onChange={(e) => setProductName(e.target.value)} className="col-span-3" />
-                </div>
-                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="category" className="text-right">Category</Label>
-                  <Input id="category" value={category} onChange={(e) => setCategory(e.target.value)} className="col-span-3" placeholder="e.g., Fruit, Pesticide, Fertilizer" />
-                </div>
-                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="stock" className="text-right">Stock</Label>
-                  <Input id="stock" type="number" value={stock || ''} onChange={(e) => setStock(Number(e.target.value))} className="col-span-3" />
-                </div>
+              <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="name">Name</Label>
+                        <Input id="name" name="name" value={formState.name} onChange={handleInputChange} />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="category">Category</Label>
+                        <Input id="category" name="category" value={formState.category} onChange={handleInputChange} placeholder="e.g., Fruit, Pesticide, Fertilizer" />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="unitType">Unit Type</Label>
+                        <Input id="unitType" name="unitType" value={formState.unitType || ''} onChange={handleInputChange} placeholder="e.g., kg, box, patti, liter, piece" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="varietyGrade">Variety/Grade</Label>
+                        <Input id="varietyGrade" name="varietyGrade" value={formState.varietyGrade || ''} onChange={handleInputChange} placeholder="e.g., Extraordinary, Standard" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="rateRange">Rate Range</Label>
+                        <Input id="rateRange" name="rateRange" value={formState.rateRange || ''} onChange={handleInputChange} placeholder="e.g., 500-600" />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="stock">Stock Quantity</Label>
+                        <Input id="stock" name="stock" type="number" value={formState.stock || ''} onChange={handleInputChange} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="batchNo">Batch No. (for chemicals)</Label>
+                        <Input id="batchNo" name="batchNo" value={formState.batchNo || ''} onChange={handleInputChange} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="expiryDate">Expiry Date (for chemicals)</Label>
+                        <Input id="expiryDate" name="expiryDate" type="date" value={formState.expiryDate || ''} onChange={handleInputChange} />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="supplier">Supplier / Company</Label>
+                        <Input id="supplier" name="supplier" value={formState.supplier || ''} onChange={handleInputChange} />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="reorderLevel">Reorder Level</Label>
+                        <Input id="reorderLevel" name="reorderLevel" type="number" value={formState.reorderLevel || ''} onChange={handleInputChange} placeholder="Alert when stock drops to this level" />
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="notes">Notes</Label>
+                        <Textarea id="notes" name="notes" value={formState.notes || ''} onChange={handleInputChange} />
+                    </div>
+                  </div>
               </div>
               <DialogFooter>
                 <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
@@ -275,20 +326,20 @@ export default function ProductsPage() {
                 </DialogTrigger>
                 <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{productId ? 'Edit Product' : 'Add New Product'}</DialogTitle>
+                    <DialogTitle>{'id' in formState ? 'Edit Product' : 'Add New Product'}</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="name" className="text-right">Name</Label>
-                    <Input id="name" value={productName} onChange={(e) => setProductName(e.target.value)} className="col-span-3" />
+                    <Input id="name" name="name" value={formState.name} onChange={handleInputChange} className="col-span-3" />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="category" className="text-right">Category</Label>
-                    <Input id="category" value={category} onChange={(e) => setCategory(e.target.value)} className="col-span-3" placeholder="e.g., Fruit, Pesticide, Fertilizer" />
+                    <Input id="category" name="category" value={formState.category} onChange={handleInputChange} className="col-span-3" placeholder="e.g., Fruit, Pesticide, Fertilizer" />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="stock" className="text-right">Stock</Label>
-                    <Input id="stock" type="number" value={stock || ''} onChange={(e) => setStock(Number(e.target.value))} className="col-span-3" />
+                    <Input id="stock" name="stock" type="number" value={formState.stock || ''} onChange={handleInputChange} className="col-span-3" />
                     </div>
                 </div>
                 <DialogFooter>
