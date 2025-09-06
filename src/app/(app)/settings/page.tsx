@@ -5,7 +5,7 @@ import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { Paintbrush, Palette, CheckCircle, Upload, Type, Move, QrCode, SlidersHorizontal, List, Truck, User, Phone, Box, TreePine, Banknote, Percent, Package, Pencil } from 'lucide-react';
+import { Paintbrush, Palette, CheckCircle, Upload, Type, Move, QrCode, SlidersHorizontal, List, Truck, User, Phone, Box, TreePine, Banknote, Percent, Package, Pencil, Building, Snowflake, Weight, Signature, Lock, MessageSquare, Hash, FileText } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
@@ -303,6 +303,23 @@ export default function SettingsPage() {
                                         <CustomFieldSuggestion icon={Percent} title="Commission %" example="10%">Adjust commission for specific growers.</CustomFieldSuggestion>
                                         <CustomFieldSuggestion icon={Package} title="Packing Type" example="5 Layer Box">Detail the specific packaging used.</CustomFieldSuggestion>
                                         <CustomFieldSuggestion icon={Pencil} title="Delivery Remarks" example="Handle with care">Add special instructions for delivery.</CustomFieldSuggestion>
+                                    </div>
+                                 </div>
+                                <Separator />
+                                 <div>
+                                    <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><SlidersHorizontal className="h-5 w-5 text-primary" /> Extra Optional Custom Fields</h3>
+                                    <p className="text-sm text-muted-foreground mb-4">Enable these for more advanced scenarios like GST billing, cold storage, or transport management. You can toggle them ON/OFF per template.</p>
+                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                                        <CustomFieldSuggestion icon={FileText} title="GST / Tax No." example="01ABCDE1234F1Z5">For customers outside J&K or for future compliance.</CustomFieldSuggestion>
+                                        <CustomFieldSuggestion icon={Building} title="Consignee Name" example="To M/S XYZ Traders, Delhi">Party name at the destination market.</CustomFieldSuggestion>
+                                        <CustomFieldSuggestion icon={Truck} title="Transport Agency" example="ABC Transport Pvt Ltd">The name of the transport company used.</CustomFieldSuggestion>
+                                        <CustomFieldSuggestion icon={Lock} title="Seal/Invoice No." example="SEAL-5921">Transport company's unique seal or invoice number.</CustomFieldSuggestion>
+                                        <CustomFieldSuggestion icon={Snowflake} title="Cold Store No." example="C-14, Chamber 5">Track produce stored in local cold storage facilities.</CustomFieldSuggestion>
+                                        <CustomFieldSuggestion icon={Banknote} title="Loading/Unloading Charges" example="500.00">Option to show these charges separately on the bill.</CustomFieldSuggestion>
+                                        <CustomFieldSuggestion icon={Weight} title="Weight Slip No." example="T-889-A">Reference number from mandi weighing slips (Taar/Net).</CustomFieldSuggestion>
+                                        <CustomFieldSuggestion icon={MessageSquare} title="Payment Remarks" example="Advance ₹20,000 received">Add notes about advance payments or khata status.</CustomFieldSuggestion>
+                                        <CustomFieldSuggestion icon={Signature} title="Digital Signature Space" example="Enable a blank space">Add space for digital or scanned signatures.</CustomFieldSuggestion>
+                                        <CustomFieldSuggestion icon={Hash} title="UPI Payment Reference" example="UPI Ref: 4165...">Optional field to show UPI transaction ID on bills.</CustomFieldSuggestion>
                                     </div>
                                  </div>
                             </AccordionContent>
