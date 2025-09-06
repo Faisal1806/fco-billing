@@ -120,11 +120,27 @@ const AccessoriesDashboard = ({ stats, router }: { stats: AccessoryStats | null,
              />
         </div>
          <div className="mt-8 text-center">
-            <Button onClick={() => router.push('/accessories')}>
+             <Button onClick={() => router.push('/accessories')}>
                 Go to Full Accessories Ledger
             </Button>
          </div>
     </div>
+);
+
+const InventoryDashboard = () => (
+    <Card>
+        <CardHeader>
+            <CardTitle>Inventory Analytics</CardTitle>
+            <CardDescription>A complete overview of your stock levels and product status.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
+                <Package className="mx-auto h-12 w-12" />
+                <h3 className="mt-4 text-lg font-semibold">Inventory Analytics Coming Soon!</h3>
+                <p className="mt-1 text-sm">Insights on stock levels, top-selling products, and expiry alerts will be available here.</p>
+            </div>
+        </CardContent>
+    </Card>
 );
 
 
@@ -278,15 +294,19 @@ export default function DashboardPage() {
   
   return (
     <Tabs defaultValue="fruit" className="space-y-4">
-        <TabsList>
-            <TabsTrigger value="fruit"><Apple className="w-4 h-4 mr-2" />Fruit Ledger</TabsTrigger>
-            <TabsTrigger value="accessories"><Box className="w-4 h-4 mr-2" />Accessories Ledger</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="fruit"><Apple className="w-4 h-4 mr-2" />Fruit Business</TabsTrigger>
+            <TabsTrigger value="accessories"><Box className="w-4 h-4 mr-2" />Accessories</TabsTrigger>
+            <TabsTrigger value="inventory"><Package className="w-4 h-4 mr-2" />Inventory</TabsTrigger>
         </TabsList>
         <TabsContent value="fruit">
             <FruitDashboard stats={stats} ledgerSummary={ledgerSummary} router={router} />
         </TabsContent>
         <TabsContent value="accessories">
             <AccessoriesDashboard stats={accessoryStats} router={router} />
+        </TabsContent>
+        <TabsContent value="inventory">
+            <InventoryDashboard />
         </TabsContent>
     </Tabs>
   );
