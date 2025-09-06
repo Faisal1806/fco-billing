@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, ShoppingCart, Package, Settings, Receipt, BookUser, Truck, BookCopy, ScrollText, Tags, FlaskConical, Shapes, Globe } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, Settings, Receipt, BookUser, Truck, BookCopy, ScrollText, Tags, FlaskConical, Shapes, Globe, Banknote } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
 import { cn } from '@/lib/utils';
 import { Header } from '@/components/Header';
@@ -29,6 +29,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { href: '/outside-sales', icon: Globe, label: 'Outside Sales', role: ['admin', 'staff'] },
     { href: '/products', icon: Package, label: t('products'), role: ['admin'] },
     { href: '/expenses', icon: Receipt, label: 'Expenses', role: ['admin'] },
+    { href: '/advances', icon: Banknote, label: 'Advances', role: ['admin'] },
     { href: '/watak-register', icon: BookUser, label: t('watak_register'), role: ['admin', 'staff'] },
     { href: '/khata', icon: BookCopy, label: 'Khata Ledger', role: ['admin', 'staff'] },
     { href: '/rates', icon: Tags, label: 'Fruit Rates', role: ['admin', 'staff'] },
@@ -41,6 +42,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const getPageTitle = () => {
     const item = navItems.find(item => pathname.startsWith(item.href));
+    // A simple way to derive title for sub-pages like /invoice/[id]
+    if (pathname.startsWith('/invoice/')) return 'Invoice';
+    if (pathname.startsWith('/purchase-bill/')) return 'Purchase Bill';
+    if (pathname.startsWith('/receipt/')) return 'Receipt';
+    if (pathname.startsWith('/challan/')) return 'Challan';
+    if (pathname.startsWith('/pesticide-invoice/')) return 'Pesticide Bill';
     return item ? item.label : 'SwiftSale';
   }
 
