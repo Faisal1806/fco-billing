@@ -26,6 +26,7 @@ import { saveDocument } from '@/lib/actions';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Input } from '@/components/ui/input';
 
 
 export default function SettingsPage() {
@@ -351,4 +352,3 @@ export default function SettingsPage() {
     )
 }
 
-    
