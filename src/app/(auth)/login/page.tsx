@@ -16,7 +16,7 @@ export default function LoginPage() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const allowedAdminPassword = 'Faisal@1806';
+    const allowedAdminPassword = 'Faisal1806';
     const allowedStaffPassword = 'staff123';
 
     const handleLogin = () => {
