@@ -107,36 +107,45 @@ export default function SettingsPage() {
 
         let successCount = 0;
         let errorCount = 0;
+        const keyPrefixes: {[key:string]: string} = {
+            'invoice-': 'invoices',
+            'purchase-': 'purchases',
+            'receipt-': 'receipts',
+            'challan-': 'challans',
+            'pesticide-invoice-': 'pesticide-invoices',
+            'product-': 'products',
+            'accessory-ledger-': 'accessory-ledgers',
+            'expense-': 'expenses',
+            'advance-': 'advances',
+            'cold-storage-': 'cold-storage',
+            'manual-fertilizer-rates-': 'manual-fertilizer-rates',
+            'bikri-': 'bikris',
+        }
 
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             if (!key) continue;
 
-            let collectionName = '';
-            let docId = '';
-            
-            if (key.startsWith('invoice-')) { collectionName = 'invoices'; docId = key.replace('invoice-', ''); }
-            else if (key.startsWith('purchase-')) { collectionName = 'purchases'; docId = key.replace('purchase-', ''); }
-            else if (key.startsWith('receipt-')) { collectionName = 'receipts'; docId = key.replace('receipt-', ''); }
-            else if (key.startsWith('challan-')) { collectionName = 'challans'; docId = key.replace('challan-', ''); }
-            else if (key.startsWith('pesticide-invoice-')) { collectionName = 'pesticide-invoices'; docId = key.replace('pesticide-invoice-', ''); }
-            else if (key.startsWith('product-')) { collectionName = 'products'; docId = key.replace('product-', ''); }
-            else if (key.startsWith('accessory-ledger-')) { collectionName = 'accessory-ledgers'; docId = key.replace('accessory-ledger-', ''); }
-            else if (key.startsWith('expense-')) { collectionName = 'expenses'; docId = key.replace('expense-', ''); }
+            const matchingPrefix = Object.keys(keyPrefixes).find(prefix => key.startsWith(prefix));
 
-            if (collectionName && docId) {
-                try {
-                    const data = JSON.parse(localStorage.getItem(key)!);
-                    const result = await saveDocument(collectionName, docId, data);
-                    if (result.success) {
-                        successCount++;
-                    } else {
+            if (matchingPrefix) {
+                const collectionName = keyPrefixes[matchingPrefix];
+                const docId = key.replace(matchingPrefix, '');
+                
+                if (collectionName && docId) {
+                    try {
+                        const data = JSON.parse(localStorage.getItem(key)!);
+                        const result = await saveDocument(collectionName, docId, data);
+                        if (result.success) {
+                            successCount++;
+                        } else {
+                            errorCount++;
+                            console.error(`Failed to sync item ${key} to ${collectionName}:`, result.error);
+                        }
+                    } catch (e) {
+                        console.error(`Failed to parse or sync item ${key}:`, e);
                         errorCount++;
-                        console.error(`Failed to sync item ${key} to ${collectionName}:`, result.error);
                     }
-                } catch (e) {
-                    console.error(`Failed to parse or sync item ${key}:`, e);
-                    errorCount++;
                 }
             }
         }
@@ -171,7 +180,7 @@ export default function SettingsPage() {
         try {
             const permission = await Notification.requestPermission();
             if (permission === 'granted') {
-                const fcmToken = await getToken(messaging, { vapidKey: 'BOl2W2Z_2gSj2GZ7TzL9f_...YOUR_KEY_HERE..._4gY' }); 
+                const fcmToken = await getToken(messaging, { vapidKey: 'BDrkE0XgA5wWlPz9sUeS_gZ4-N9xY6kIuX0eY3oD2hM0c4b1Z7n8R6J4k9sQ1xZ5m4w3j6p9yIuQ8c4jGkY' }); 
                 
                 if (fcmToken) {
                     await saveDocument('fcm-tokens', fcmToken, { token: fcmToken, enabledAt: new Date().toISOString() });
