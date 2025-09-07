@@ -2,7 +2,7 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getMessaging } from 'firebase/messaging';
-import { getDatabase } from "firebase/database";
+import { getDatabase, Database } from "firebase/database";
 
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
@@ -18,12 +18,20 @@ const firebaseConfig = {
 const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 let db: Firestore | null = null;
+let rtdb: Database | null = null;
 
 export function getClientDb(): Firestore {
     if (!db) {
       db = getFirestore(app);
     }
     return db;
+}
+
+export function getRealtimeDb(): Database {
+    if (!rtdb) {
+      rtdb = getDatabase(app);
+    }
+    return rtdb;
 }
 
 export const getClientMessaging = () => {

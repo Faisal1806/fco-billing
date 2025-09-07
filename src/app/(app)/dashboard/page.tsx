@@ -8,8 +8,8 @@ import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import RateList from '@/components/RateList';
 import { Button } from '@/components/ui/button';
-import { getClientDb } from '@/lib/firebase';
-import { getDatabase, ref, onValue } from 'firebase/database';
+import { getRealtimeDb } from '@/lib/firebase';
+import { ref, onValue } from 'firebase/database';
 
 
 interface DailyStats {
@@ -52,7 +52,7 @@ const RealtimeDatabaseCard = () => {
     const [message, setMessage] = useState<string | null>('Connecting to database...');
 
     useEffect(() => {
-        const db = getDatabase();
+        const db = getRealtimeDb();
         const messageRef = ref(db, 'message');
 
         // onValue() sets up the listener.
