@@ -13,18 +13,19 @@ import { Logo } from '@/components/logo';
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { t } = useLanguage();
+  const router = useRouter();
   const [userRole, setUserRole] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
       const role = localStorage.getItem('userRole');
       if (!role) {
-        useRouter().push('/login');
+        router.push('/login');
       } else {
         setUserRole(role);
       }
     }
-  }, []);
+  }, [router]);
 
   const navItems = [
     { href: '/dashboard', icon: LayoutDashboard, label: t('dashboard'), role: ['admin', 'staff'] },
@@ -58,6 +59,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     
     const item = navItems.find(item => pathname.startsWith(item.href));
     return item ? item.label : 'SwiftSale';
+  }
+
+  if (!userRole) {
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <p className="ml-4">Loading...</p>
+        </div>
+    );
   }
 
   return (
