@@ -17,7 +17,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
-      setUserRole(localStorage.getItem('userRole'));
+      const role = localStorage.getItem('userRole');
+      if (!role) {
+        useRouter().push('/login');
+      } else {
+        setUserRole(role);
+      }
     }
   }, []);
 

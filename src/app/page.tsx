@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -8,7 +9,14 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/login');
+    if (typeof window !== 'undefined') {
+      const userRole = localStorage.getItem('userRole');
+      if (userRole) {
+        router.replace('/dashboard');
+      } else {
+        router.replace('/login');
+      }
+    }
   }, [router]);
 
   return (
