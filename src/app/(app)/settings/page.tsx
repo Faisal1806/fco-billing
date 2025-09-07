@@ -108,8 +108,8 @@ export default function SettingsPage() {
         let successCount = 0;
         let errorCount = 0;
         
-        // More specific list of prefixes to sync
-        const keyPrefixes: { [key: string]: string } = {
+        // This is the definitive map of all data prefixes to their cloud collection names.
+        const keyPrefixToCollectionMap: { [key: string]: string } = {
             'invoice-': 'invoices',
             'purchase-': 'purchases',
             'receipt-': 'receipts',
@@ -119,12 +119,12 @@ export default function SettingsPage() {
             'accessory-ledger-': 'accessory-ledgers',
             'expense-': 'expenses',
             'advance-': 'advances',
-            'cold-storage-': 'cold-storage',
+            'cs-': 'cold-storage', // Using 'cs-' prefix for cold-storage
             'manual-fertilizer-rates-': 'manual-fertilizer-rates',
             'bikri-': 'bikris',
         };
 
-        const prefixes = Object.keys(keyPrefixes);
+        const prefixes = Object.keys(keyPrefixToCollectionMap);
 
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
@@ -133,7 +133,7 @@ export default function SettingsPage() {
             const matchingPrefix = prefixes.find(prefix => key.startsWith(prefix));
 
             if (matchingPrefix) {
-                const collectionName = keyPrefixes[matchingPrefix];
+                const collectionName = keyPrefixToCollectionMap[matchingPrefix];
                 const docId = key.replace(matchingPrefix, '');
                 
                 if (collectionName && docId) {
@@ -152,8 +152,7 @@ export default function SettingsPage() {
                     }
                 }
             } else {
-                 // Optional: log which keys are being skipped
-                 // console.log('Skipping unmatched key:', key);
+                 // Safely ignore keys that are not in our map (e.g., userRole, activityLogs, etc.)
             }
         }
         
@@ -163,6 +162,11 @@ export default function SettingsPage() {
                 variant: "destructive",
                 title: "Sync Partially Failed",
                 description: `${successCount} records synced, but ${errorCount} failed. Check console for details.`,
+            });
+        } else if (successCount === 0) {
+            toast({
+                title: "No New Data to Sync",
+                description: "Your local data is already up-to-date with the cloud.",
             });
         } else {
             toast({
