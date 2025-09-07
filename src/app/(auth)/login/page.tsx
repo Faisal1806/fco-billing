@@ -62,6 +62,7 @@ export default function LoginPage() {
             <h1 className="text-4xl md:text-5xl font-bold text-white">
                F.Co Billing App Welcomes You
             </h1>
+            <p className="text-lg text-muted-foreground">Your Satisfaction Is Our Success</p>
         </motion.div>
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
