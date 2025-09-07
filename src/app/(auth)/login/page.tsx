@@ -56,12 +56,12 @@ export default function LoginPage() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="text-center mb-8"
+            className="text-center mb-8 flex flex-col items-center gap-4"
         >
-            <h1 className="text-5xl font-bold text-white">
-               Welcome to <span className="text-primary">SwiftSale</span>
+            <Logo className="h-24 w-24 text-primary" />
+            <h1 className="text-4xl md:text-5xl font-bold text-white">
+               F.Co Billing App Welcomes You
             </h1>
-            <p className="text-xl text-muted-foreground mt-2">F.Co Official Billing System</p>
         </motion.div>
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}

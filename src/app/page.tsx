@@ -22,7 +22,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      <p className="ml-4">Loading...</p>
+      <p className="ml-4">Redirecting...</p>
     </div>
   );
 }
