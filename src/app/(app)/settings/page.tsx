@@ -1,3 +1,4 @@
+
 'use client'
 
 import * as React from 'react';
@@ -106,7 +107,9 @@ export default function SettingsPage() {
 
         let successCount = 0;
         let errorCount = 0;
-        const keyPrefixes: {[key:string]: string} = {
+        
+        // More specific list of prefixes to sync
+        const keyPrefixes: { [key: string]: string } = {
             'invoice-': 'invoices',
             'purchase-': 'purchases',
             'receipt-': 'receipts',
@@ -119,13 +122,15 @@ export default function SettingsPage() {
             'cold-storage-': 'cold-storage',
             'manual-fertilizer-rates-': 'manual-fertilizer-rates',
             'bikri-': 'bikris',
-        }
+        };
+
+        const prefixes = Object.keys(keyPrefixes);
 
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             if (!key) continue;
 
-            const matchingPrefix = Object.keys(keyPrefixes).find(prefix => key.startsWith(prefix));
+            const matchingPrefix = prefixes.find(prefix => key.startsWith(prefix));
 
             if (matchingPrefix) {
                 const collectionName = keyPrefixes[matchingPrefix];
@@ -146,6 +151,9 @@ export default function SettingsPage() {
                         errorCount++;
                     }
                 }
+            } else {
+                 // Optional: log which keys are being skipped
+                 // console.log('Skipping unmatched key:', key);
             }
         }
         
