@@ -1,19 +1,21 @@
-
 'use client';
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, ShoppingCart, Package, Settings, Receipt, BookUser, Truck, BookCopy, ScrollText, Tags, FlaskConical, Shapes, Globe, Banknote, Snowflake, History } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, Settings, Receipt, BookUser, Truck, BookCopy, ScrollText, Tags, FlaskConical, Shapes, Globe, Banknote, Snowflake, History, LogOut } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
 import { cn } from '@/lib/utils';
 import { Header } from '@/components/Header';
 import React from 'react';
 import { Logo } from '@/components/logo';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { t } = useLanguage();
   const router = useRouter();
+  const { toast } = useToast();
   const [userRole, setUserRole] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -26,6 +28,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       }
     }
   }, [router]);
+  
+  const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+        localStorage.removeItem('userRole');
+    }
+    toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
+    router.push('/login');
+  };
+
 
   const navItems = [
     { href: '/dashboard', icon: LayoutDashboard, label: t('dashboard'), role: ['admin', 'staff'] },
@@ -79,7 +90,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <span className="">{t('app_title')}</span>
             </Link>
           </div>
-          <div className="flex-1">
+          <div className="flex-1 overflow-auto">
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
               {filteredNavItems.map((item) => (
                 <Link
@@ -96,11 +107,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               ))}
             </nav>
           </div>
+           <div className="mt-auto p-4">
+              <Button variant="ghost" className="w-full justify-start gap-3" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4" />
+                  Logout
+              </Button>
+            </div>
         </div>
       </div>
       <div className="flex flex-col">
         <Header title={getPageTitle()} />
-        <main className="flex-1 bg-background p-4 md:p-6">
+        <main className="flex-1 bg-background p-4 md:p-6 overflow-auto">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

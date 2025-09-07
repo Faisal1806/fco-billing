@@ -7,16 +7,19 @@ import { LanguageSwitcher } from "./language-switcher";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/language-context";
-import { LayoutDashboard, Package, Settings, Receipt, BookUser, Menu, ShoppingCart, Truck, BookCopy, ScrollText, Tags, FlaskConical, Shapes, Globe, Banknote, Snowflake, History } from 'lucide-react';
+import { LayoutDashboard, Package, Settings, Receipt, BookUser, Menu, ShoppingCart, Truck, BookCopy, ScrollText, Tags, FlaskConical, Shapes, Globe, Banknote, Snowflake, History, LogOut } from 'lucide-react';
 import { Logo } from "./logo";
 import React from "react";
+import { useToast } from "@/hooks/use-toast";
 
 
 export function Header({ title }: { title: string }) {
     const pathname = usePathname();
+    const router = useRouter();
+    const { toast } = useToast();
     const { t } = useLanguage();
     const [userRole, setUserRole] = React.useState<string | null>(null);
 
@@ -25,6 +28,14 @@ export function Header({ title }: { title: string }) {
         setUserRole(localStorage.getItem('userRole'));
         }
     }, []);
+    
+    const handleLogout = () => {
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem('userRole');
+        }
+        toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
+        router.push('/login');
+    };
 
     const navItems = [
       { href: '/dashboard', icon: LayoutDashboard, label: t('dashboard'), role: ['admin', 'staff'] },
@@ -80,6 +91,12 @@ export function Header({ title }: { title: string }) {
                   </Link>
                 ))}
               </nav>
+               <div className="mt-auto">
+                <Button variant="secondary" className="w-full justify-start gap-3" onClick={handleLogout}>
+                    <LogOut className="h-5 w-5" />
+                    Logout
+                </Button>
+              </div>
             </SheetContent>
         </Sheet>
 
