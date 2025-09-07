@@ -163,7 +163,7 @@ export default function SettingsPage() {
             toast({
                 variant: 'destructive',
                 title: 'Unsupported Browser',
-                description: 'Push notifications are not supported on this browser.',
+                description: 'Push notifications are not supported on this browser or environment.',
             });
             return;
         }
@@ -171,7 +171,7 @@ export default function SettingsPage() {
         try {
             const permission = await Notification.requestPermission();
             if (permission === 'granted') {
-                const fcmToken = await getToken(messaging, { vapidKey: 'YOUR_VAPID_KEY_HERE' }); 
+                const fcmToken = await getToken(messaging, { vapidKey: 'BOl2W2Z_2gSj2GZ7TzL9f_...YOUR_KEY_HERE..._4gY' }); 
                 
                 if (fcmToken) {
                     await saveDocument('fcm-tokens', fcmToken, { token: fcmToken, enabledAt: new Date().toISOString() });
@@ -180,14 +180,14 @@ export default function SettingsPage() {
                         description: 'You will now receive push notifications.',
                     });
                 } else {
-                     toast({ variant: 'destructive', title: 'Token Error', description: 'Could not get notification token.' });
+                     toast({ variant: 'destructive', title: 'Token Error', description: 'Could not get notification token. Is your service worker set up?' });
                 }
             } else {
-                 toast({ variant: 'destructive', title: 'Permission Denied', description: 'Please enable notifications in browser settings.' });
+                 toast({ variant: 'destructive', title: 'Permission Denied', description: 'Please enable notifications in your browser settings.' });
             }
         } catch (error) {
             console.error('Error getting FCM token:', error);
-            toast({ variant: 'destructive', title: 'Notification Error', description: 'An error occurred.' });
+            toast({ variant: 'destructive', title: 'Notification Error', description: `An error occurred: ${(error as Error).message}` });
         }
     };
 

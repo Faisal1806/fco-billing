@@ -1,7 +1,7 @@
 
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
-import { getMessaging } from 'firebase/messaging';
+import { getMessaging, Messaging } from 'firebase/messaging';
 import { getDatabase, Database } from "firebase/database";
 
 const firebaseConfig = {
@@ -19,6 +19,8 @@ const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseCon
 
 let db: Firestore | null = null;
 let rtdb: Database | null = null;
+let messaging: Messaging | null = null;
+
 
 export function getClientDb(): Firestore {
     if (!db) {
@@ -35,16 +37,14 @@ export function getRealtimeDb(): Database {
 }
 
 export const getClientMessaging = () => {
-    if (typeof window !== 'undefined' && typeof self.indexedDB !== 'undefined') {
-        try {
-            return getMessaging(app);
-        } catch (err) {
-            console.error('Failed to initialize Firebase Messaging', err);
-            return null;
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+        if (!messaging) {
+            messaging = getMessaging(app);
         }
+        return messaging;
     }
     return null;
 }
 
 
-export { app };
+export { app, firebaseConfig };
