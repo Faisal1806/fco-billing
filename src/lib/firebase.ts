@@ -2,6 +2,7 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getMessaging } from 'firebase/messaging';
+import { getDatabase } from "firebase/database";
 
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
@@ -10,6 +11,7 @@ const firebaseConfig = {
   storageBucket: "swiftsale-ewd7o.appspot.com",
   messagingSenderId: "596325992913",
   appId: "1:596325992913:web:e37529452a3637a898b31d",
+  databaseURL: "https://swiftsale-ewd7o-default-rtdb.firebaseio.com"
 };
 
 

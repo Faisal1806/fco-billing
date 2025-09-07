@@ -1,12 +1,16 @@
+
 'use client'
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, PackagePlus, PackageMinus, Package, UserCheck, UserX, Leaf, Box, Apple, FlaskConical, Shapes, Calendar, Star, CreditCard } from 'lucide-react';
+import { Loader2, PackagePlus, PackageMinus, Package, UserCheck, UserX, Leaf, Box, Apple, FlaskConical, Shapes, Calendar, Star, CreditCard, Database } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import RateList from '@/components/RateList';
 import { Button } from '@/components/ui/button';
+import { getClientDb } from '@/lib/firebase';
+import { getDatabase, ref, onValue } from 'firebase/database';
+
 
 interface DailyStats {
   pattiPurchased: number;
@@ -43,6 +47,52 @@ const StatCard = ({ title, value, icon: Icon, note }: { title: string, value: st
         </CardContent>
     </Card>
 );
+
+const RealtimeDatabaseCard = () => {
+    const [message, setMessage] = useState<string | null>('Connecting to database...');
+
+    useEffect(() => {
+        const db = getDatabase();
+        const messageRef = ref(db, 'message');
+
+        // onValue() sets up the listener.
+        // It's wrapped in 'unsubscribe' to clean up when the component is removed.
+        const unsubscribe = onValue(messageRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data && data.text) {
+                setMessage(data.text);
+            } else {
+                setMessage('No message set in database.');
+            }
+        }, (error) => {
+            console.error("Failed to read value.", error);
+            setMessage('Error reading from database.');
+        });
+
+        // Cleanup function: remove the listener when the component unmounts.
+        return () => unsubscribe();
+    }, []); // Empty dependency array means this runs once on mount.
+
+    return (
+        <Card className="col-span-1 lg:col-span-2 shadow-lg">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <Database className="h-5 w-5 text-amber-500" />
+                    Realtime Database Demo
+                </CardTitle>
+                <CardDescription>
+                    This card reads a value from the 'message' path in your Realtime Database and updates live.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <p className="text-lg font-mono bg-muted p-4 rounded-md">
+                    Value: <span className="font-bold">{message}</span>
+                </p>
+            </CardContent>
+        </Card>
+    );
+};
+
 
 const FruitDashboard = ({ stats, ledgerSummary, router }: { stats: DailyStats | null, ledgerSummary: LedgerEntry[], router: any }) => (
     <div className="space-y-8">
@@ -89,6 +139,7 @@ const FruitDashboard = ({ stats, ledgerSummary, router }: { stats: DailyStats | 
                     </button>
                 </CardContent>
             </Card>
+            <RealtimeDatabaseCard />
         </div>
          <div className="mt-8">
             <RateList />
