@@ -3,13 +3,15 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, PackagePlus, PackageMinus, Package, UserCheck, UserX, Leaf, Box, Apple, FlaskConical, Shapes, Calendar, Star, CreditCard, Database, TrendingUp, TrendingDown, IndianRupee, HandCoins } from 'lucide-react';
+import { Loader2, PackagePlus, PackageMinus, Package, UserCheck, UserX, Leaf, Box, Apple, FlaskConical, Shapes, Calendar, Star, CreditCard, Database, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import RateList from '@/components/RateList';
 import { Button } from '@/components/ui/button';
 import { getRealtimeDb } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 
 
 interface DailyStats {
@@ -34,6 +36,11 @@ interface YearlyStats {
 type LedgerEntry = {
     party: string;
     balance: number;
+}
+
+type GrowerProfit = {
+    name: string;
+    profit: number;
 }
 
 type AccessoryStats = {
@@ -99,7 +106,7 @@ const RealtimeDatabaseCard = () => {
 };
 
 
-const FruitDashboard = ({ stats, yearlyStats, ledgerSummary, router }: { stats: DailyStats | null, yearlyStats: YearlyStats | null, ledgerSummary: LedgerEntry[], router: any }) => (
+const FruitDashboard = ({ stats, yearlyStats, growerProfits }: { stats: DailyStats | null, yearlyStats: YearlyStats | null, growerProfits: GrowerProfit[] }) => (
     <div className="space-y-8">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
              <StatCard 
@@ -151,8 +158,40 @@ const FruitDashboard = ({ stats, yearlyStats, ledgerSummary, router }: { stats: 
                 color="text-purple-500"
             />
         </div>
-         <div className="mt-8">
+         <div className="grid gap-6 md:grid-cols-2">
             <RateList />
+             <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Trophy className="h-5 w-5 text-amber-400" /> Top Growers by Profit</CardTitle>
+                    <CardDescription>Ranking based on total commission earned this season.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                     {growerProfits.length > 0 ? (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Rank</TableHead>
+                                    <TableHead>Grower Name</TableHead>
+                                    <TableHead className="text-right">Total Profit</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {growerProfits.map((grower, index) => (
+                                    <TableRow key={grower.name}>
+                                        <TableCell>
+                                            <Badge variant={index < 3 ? "default" : "secondary"}>{index + 1}</Badge>
+                                        </TableCell>
+                                        <TableCell className="font-medium">{grower.name}</TableCell>
+                                        <TableCell className="text-right font-mono font-semibold">₹{grower.profit.toLocaleString('en-IN')}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    ) : (
+                        <p className="text-sm text-muted-foreground text-center py-4">No profit data available yet.</p>
+                    )}
+                </CardContent>
+             </Card>
          </div>
     </div>
 );
@@ -210,8 +249,8 @@ export default function DashboardPage() {
   const router = useRouter();
   const [stats, setStats] = useState<DailyStats | null>(null);
   const [yearlyStats, setYearlyStats] = useState<YearlyStats | null>(null);
-  const [ledgerSummary, setLedgerSummary] = useState<LedgerEntry[]>([]);
   const [accessoryStats, setAccessoryStats] = useState<AccessoryStats | null>(null);
+  const [growerProfits, setGrowerProfits] = useState<GrowerProfit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -236,7 +275,6 @@ export default function DashboardPage() {
     let totalDabbaPurchased = 0;
     let totalPattiSold = 0;
     let totalDabbaSold = 0;
-    const ledgers: {[party: string]: number} = {};
     
     // Yearly stats
     let yearlyTotalSales = 0;
@@ -244,6 +282,9 @@ export default function DashboardPage() {
     let yearlySentSales = 0;
     let monthlySales = 0;
     
+    // Grower Profit
+    const profitsByGrower: {[name: string]: number} = {};
+
     // Accessory Stats Calculation
     let accessorySalesToday = 0;
     let accessorySalesMonth = 0;
@@ -282,16 +323,17 @@ export default function DashboardPage() {
                     if (saleDate.getMonth() === currentMonth) {
                         monthlySales += sale.totals.netSale || 0;
                     }
-                }
-                
-                const party = sale.customerName;
-                if (!ledgers[party]) ledgers[party] = 0;
-                ledgers[party] += sale.totals.netSale || 0;
 
+                    // Profit calculation
+                    const grower = sale.customerName;
+                    if(grower && sale.totals.commissionAmount) {
+                         profitsByGrower[grower] = (profitsByGrower[grower] || 0) + sale.totals.commissionAmount;
+                    }
+                }
 
             } else if (key.startsWith('purchase-')) {
                 const purchase = JSON.parse(localStorage.getItem(key)!);
-                const isToday = purchase.date === todayStr;
+                 const isToday = purchase.date === todayStr;
 
                 purchase.entries.forEach((entry: any) => {
                     const qty = Number(entry.qty) || 0;
@@ -305,10 +347,6 @@ export default function DashboardPage() {
                 });
                 
                 if (isToday) totalPurchaseValueToday += purchase.totals.grandTotal || 0;
-
-                const party = purchase.growerName;
-                if (!ledgers[party]) ledgers[party] = 0;
-                ledgers[party] -= purchase.totals.grandTotal || 0;
 
             } else if (key.startsWith('accessory-ledger-')) {
                 const entry = JSON.parse(localStorage.getItem(key)!);
@@ -351,6 +389,13 @@ export default function DashboardPage() {
         sentSales: yearlySentSales,
         monthSales: monthlySales,
     });
+
+    const sortedGrowerProfits = Object.entries(profitsByGrower)
+        .map(([name, profit]) => ({ name, profit }))
+        .sort((a,b) => b.profit - a.profit)
+        .slice(0, 10); // Show top 10 growers
+
+    setGrowerProfits(sortedGrowerProfits);
     
     const topItem = Object.entries(itemQuantities).sort(([, a], [, b]) => b - a)[0]?.[0] || 'N/A';
 
@@ -361,11 +406,6 @@ export default function DashboardPage() {
         outstandingCredit: accessoryCredit,
     });
 
-    const summary = Object.entries(ledgers)
-        .map(([party, balance]) => ({ party, balance }))
-        .sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance))
-        .slice(0, 5);
-    setLedgerSummary(summary);
 
     setIsLoading(false);
   }, []);
@@ -387,7 +427,7 @@ export default function DashboardPage() {
             <TabsTrigger value="inventory"><Package className="w-4 h-4 mr-2" />Inventory</TabsTrigger>
         </TabsList>
         <TabsContent value="fruit">
-            <FruitDashboard stats={stats} yearlyStats={yearlyStats} ledgerSummary={ledgerSummary} router={router} />
+            <FruitDashboard stats={stats} yearlyStats={yearlyStats} growerProfits={growerProfits} />
         </TabsContent>
         <TabsContent value="accessories">
             <AccessoriesDashboard stats={accessoryStats} router={router} />
