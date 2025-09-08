@@ -163,7 +163,7 @@ export default function ExpensesPage() {
         }
 
         const allLabourExpenses: ExpenseEntry[] = [];
-        const allCompanyExpenses: ExpenseEntry[] = (manualExpensesData || []).map(d => ({ ...d, type: 'manual' }));
+        const allCompanyExpenses: ExpenseEntry[] = (manualExpensesData || []).map((d: any) => ({ ...d, type: 'manual' }));
         const allCommissionIncome: ExpenseEntry[] = [];
         
         let newCommissionStats: ExpenseStats = { totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 };

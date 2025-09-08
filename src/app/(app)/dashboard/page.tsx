@@ -263,6 +263,19 @@ export default function DashboardPage() {
     const todayStr = today.toISOString().split('T')[0];
     const currentMonth = today.getMonth();
     const currentYear = today.getFullYear();
+    
+    // Create an array of all items in localStorage to avoid iterating over it multiple times.
+    const allLocalItems: {key: string, value: any}[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key) continue;
+        try {
+            allLocalItems.push({key, value: JSON.parse(localStorage.getItem(key)!)});
+        } catch (error) {
+            console.error(`Failed to parse item from local storage: ${key}`, error);
+        }
+    }
+
 
     // Fruit Stats Calculation
     let pattiPurchasedToday = 0;
@@ -290,86 +303,78 @@ export default function DashboardPage() {
     let accessorySalesMonth = 0;
     let accessoryCredit = 0;
     const itemQuantities: {[name: string]: number} = {};
+    
+    allLocalItems.forEach(({key, value: doc}) => {
+        if (key.startsWith('invoice-')) { // This is a Watak/Sale
+            const sale = doc;
+            const saleDate = new Date(sale.date);
+            const isToday = sale.date === todayStr;
 
+            sale.entries.forEach((entry: any) => {
+                const qty = Number(entry.qty) || 0;
+                if (entry.type === 'Patti') {
+                    totalPattiSold += qty;
+                    if (isToday) pattiSoldToday += qty;
+                } else if (entry.type === 'Dabba') {
+                    totalDabbaSold += qty;
+                    if (isToday) dabbaSoldToday += qty;
+                }
+            });
+            
+            if (isToday) totalSaleValueToday += sale.totals.netSale || 0;
 
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (!key) continue;
+            if (saleDate.getFullYear() === currentYear) {
+                yearlyTotalSales += sale.totals.netSale || 0;
+                yearlyTotalExpenses += sale.totals.totalExpenses || 0;
+                yearlySentSales += sale.totals.grossSale || 0;
 
-        try {
-            if (key.startsWith('invoice-')) {
-                const sale = JSON.parse(localStorage.getItem(key)!);
-                const saleDate = new Date(sale.date);
-                const isToday = sale.date === todayStr;
-
-                sale.entries.forEach((entry: any) => {
-                    const qty = Number(entry.qty) || 0;
-                    if (entry.type === 'Patti') {
-                        totalPattiSold += qty;
-                        if (isToday) pattiSoldToday += qty;
-                    } else if (entry.type === 'Dabba') {
-                        totalDabbaSold += qty;
-                        if (isToday) dabbaSoldToday += qty;
-                    }
-                });
-                
-                if (isToday) totalSaleValueToday += sale.totals.netSale || 0;
-
-                if (saleDate.getFullYear() === currentYear) {
-                    yearlyTotalSales += sale.totals.netSale || 0;
-                    yearlyTotalExpenses += sale.totals.totalExpenses || 0;
-                    yearlySentSales += sale.totals.grossSale || 0;
-
-                    if (saleDate.getMonth() === currentMonth) {
-                        monthlySales += sale.totals.netSale || 0;
-                    }
-
-                    // Profit calculation
-                    const grower = sale.customerName;
-                    if(grower && sale.totals.commissionAmount) {
-                         profitsByGrower[grower] = (profitsByGrower[grower] || 0) + sale.totals.commissionAmount;
-                    }
+                if (saleDate.getMonth() === currentMonth) {
+                    monthlySales += sale.totals.netSale || 0;
                 }
 
-            } else if (key.startsWith('purchase-')) {
-                const purchase = JSON.parse(localStorage.getItem(key)!);
-                 const isToday = purchase.date === todayStr;
-
-                purchase.entries.forEach((entry: any) => {
-                    const qty = Number(entry.qty) || 0;
-                     if (entry.type === 'Patti') {
-                        totalPattiPurchased += qty;
-                        if (isToday) pattiPurchasedToday += qty;
-                    } else if (entry.type === 'Dabba') {
-                        totalDabbaPurchased += qty;
-                        if (isToday) dabbaPurchasedToday += qty;
-                    }
-                });
-                
-                if (isToday) totalPurchaseValueToday += purchase.totals.grandTotal || 0;
-
-            } else if (key.startsWith('accessory-ledger-')) {
-                const entry = JSON.parse(localStorage.getItem(key)!);
-                const entryDate = new Date(entry.date);
-                const amount = (entry.qty || 0) * (entry.rate || 0);
-
-                if (entry.date === todayStr) {
-                    accessorySalesToday += amount;
-                }
-                if(entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear) {
-                    accessorySalesMonth += amount;
-                }
-                if(entry.paymentMode === 'Khata' || entry.paymentMode === 'Credit') {
-                    accessoryCredit += amount;
-                }
-                if(entry.item){
-                    itemQuantities[entry.item] = (itemQuantities[entry.item] || 0) + (entry.qty || 0);
+                const grower = sale.customerName;
+                if(grower && sale.totals.commissionAmount) {
+                     profitsByGrower[grower] = (profitsByGrower[grower] || 0) + sale.totals.commissionAmount;
                 }
             }
-        } catch (error) {
-            console.error(`Failed to parse item from local storage: ${key}`, error);
+
+        } else if (key.startsWith('purchase-')) { // This is a Purchase
+            const purchase = doc;
+             const isToday = purchase.date === todayStr;
+
+            purchase.entries.forEach((entry: any) => {
+                const qty = Number(entry.qty) || 0;
+                 if (entry.type === 'Patti') {
+                    totalPattiPurchased += qty;
+                    if (isToday) pattiPurchasedToday += qty;
+                } else if (entry.type === 'Dabba') {
+                    totalDabbaPurchased += qty;
+                    if (isToday) dabbaPurchasedToday += qty;
+                }
+            });
+            
+            if (isToday) totalPurchaseValueToday += purchase.totals.grandTotal || 0;
+
+        } else if (key.startsWith('accessory-ledger-')) { // This is an Accessory sale
+            const entry = doc;
+            const entryDate = new Date(entry.date);
+            const amount = (entry.qty || 0) * (entry.rate || 0);
+
+            if (entry.date === todayStr) {
+                accessorySalesToday += amount;
+            }
+            if(entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear) {
+                accessorySalesMonth += amount;
+            }
+            if(entry.paymentMode === 'Khata' || entry.paymentMode === 'Credit') {
+                accessoryCredit += amount;
+            }
+            if(entry.item){
+                itemQuantities[entry.item] = (itemQuantities[entry.item] || 0) + (entry.qty || 0);
+            }
         }
-    }
+    });
+
     
     setStats({
       pattiPurchased: pattiPurchasedToday,

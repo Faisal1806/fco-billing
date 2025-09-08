@@ -72,40 +72,45 @@ export default function KhataLedgerPage() {
         setIsLoading(true);
         const allTransactions: Transaction[] = [];
 
+        // In a real app, this would be a single Firestore query.
+        // For localStorage, we have to iterate through all keys.
+        const allLocalItems: {key: string, value: any}[] = [];
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             if (!key) continue;
-
             try {
-                if (key.startsWith('invoice-')) {
-                    const sale = JSON.parse(localStorage.getItem(key)!);
-                    allTransactions.push({
-                        id: `sale-${sale.sNo}`,
-                        date: sale.date,
-                        type: 'Sale',
-                        amount: sale.totals.netSale,
-                        grossAmount: sale.totals.grossSale,
-                        expenses: sale.totals.totalExpenses,
-                        party: sale.customerName,
-                        docId: sale.sNo,
-                    });
-                } else if (key.startsWith('purchase-')) {
-                     const purchase = JSON.parse(localStorage.getItem(key)!);
-                     allTransactions.push({
-                        id: `purchase-${purchase.billNo}`,
-                        date: purchase.date,
-                        type: 'Purchase',
-                        amount: purchase.totals.grandTotal,
-                        grossAmount: purchase.totals.grandTotal, // In purchases, gross is the grand total
-                        expenses: 0, // No separate expenses recorded this way for purchases
-                        party: purchase.growerName,
-                        docId: purchase.billNo,
-                    });
-                }
+                allLocalItems.push({key, value: JSON.parse(localStorage.getItem(key)!)});
             } catch (error) {
                 console.error(`Failed to parse item from local storage: ${key}`, error);
             }
         }
+        
+        allLocalItems.forEach(({key, value: doc}) => {
+            if (key.startsWith('invoice-')) { // This is a Watak/Sale
+                 allTransactions.push({
+                    id: `sale-${doc.sNo}`,
+                    date: doc.date,
+                    type: 'Sale',
+                    amount: doc.totals.netSale,
+                    grossAmount: doc.totals.grossSale,
+                    expenses: doc.totals.totalExpenses,
+                    party: doc.customerName,
+                    docId: doc.sNo,
+                });
+            } else if (key.startsWith('purchase-')) { // This is a Purchase
+                 allTransactions.push({
+                    id: `purchase-${doc.billNo}`,
+                    date: doc.date,
+                    type: 'Purchase',
+                    amount: doc.totals.grandTotal,
+                    grossAmount: doc.totals.grandTotal,
+                    expenses: 0,
+                    party: doc.growerName,
+                    docId: doc.billNo,
+                });
+            }
+        });
+
 
         allTransactions.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         

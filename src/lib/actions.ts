@@ -11,6 +11,7 @@ const userId = 'default-user';
 export async function saveDocument(collectionName: string, id: string, data: any) {
   try {
     const db = getClientDb();
+    // The path is now correctly structured as users/{userId}/{collectionName}/{id}
     const docPath = `users/${userId}/${collectionName}/${id}`;
     await setDoc(doc(db, docPath), data, { merge: true });
     return { success: true };
