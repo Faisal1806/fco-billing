@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, PackagePlus, PackageMinus, Package, UserCheck, UserX, Leaf, Box, Apple, FlaskConical, Shapes, Calendar, Star, CreditCard, Database } from 'lucide-react';
+import { Loader2, PackagePlus, PackageMinus, Package, UserCheck, UserX, Leaf, Box, Apple, FlaskConical, Shapes, Calendar, Star, CreditCard, Database, TrendingUp, TrendingDown, IndianRupee, HandCoins } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import RateList from '@/components/RateList';
@@ -23,6 +23,14 @@ interface DailyStats {
   currentDabbaStock: number;
 }
 
+interface YearlyStats {
+    totalSales: number;
+    totalExpenses: number;
+    netProfit: number;
+    sentSales: number;
+    monthSales: number;
+}
+
 type LedgerEntry = {
     party: string;
     balance: number;
@@ -35,11 +43,11 @@ type AccessoryStats = {
     outstandingCredit: number;
 }
 
-const StatCard = ({ title, value, icon: Icon, note }: { title: string, value: string, icon: React.ElementType, note?: string }) => (
+const StatCard = ({ title, value, icon: Icon, note, color }: { title: string, value: string, icon: React.ElementType, note?: string, color?: string }) => (
     <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{title}</CardTitle>
-            <Icon className="h-5 w-5 text-muted-foreground" />
+            <Icon className={`h-5 w-5 ${color || 'text-muted-foreground'}`} />
         </CardHeader>
         <CardContent>
             <div className="text-2xl font-bold">{value}</div>
@@ -55,8 +63,6 @@ const RealtimeDatabaseCard = () => {
         const db = getRealtimeDb();
         const messageRef = ref(db, 'message');
 
-        // onValue() sets up the listener.
-        // It's wrapped in 'unsubscribe' to clean up when the component is removed.
         const unsubscribe = onValue(messageRef, (snapshot) => {
             const data = snapshot.val();
             if (data && data.text) {
@@ -69,9 +75,8 @@ const RealtimeDatabaseCard = () => {
             setMessage('Error reading from database.');
         });
 
-        // Cleanup function: remove the listener when the component unmounts.
         return () => unsubscribe();
-    }, []); // Empty dependency array means this runs once on mount.
+    }, []);
 
     return (
         <Card className="col-span-1 lg:col-span-2 shadow-lg">
@@ -94,7 +99,7 @@ const RealtimeDatabaseCard = () => {
 };
 
 
-const FruitDashboard = ({ stats, ledgerSummary, router }: { stats: DailyStats | null, ledgerSummary: LedgerEntry[], router: any }) => (
+const FruitDashboard = ({ stats, yearlyStats, ledgerSummary, router }: { stats: DailyStats | null, yearlyStats: YearlyStats | null, ledgerSummary: LedgerEntry[], router: any }) => (
     <div className="space-y-8">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
              <StatCard 
@@ -115,31 +120,36 @@ const FruitDashboard = ({ stats, ledgerSummary, router }: { stats: DailyStats | 
                 icon={Package}
                 note={`${stats?.currentPattiStock ?? 0} Patti / ${stats?.currentDabbaStock ?? 0} Dabba`}
              />
-            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Fruit Khata Summary</CardTitle>
-                    <UserCheck className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    {ledgerSummary.length > 0 ? (
-                        <ul className="space-y-2">
-                            {ledgerSummary.map(item => (
-                                <li key={item.party} className="flex justify-between items-center text-sm">
-                                    <span className="font-medium">{item.party}</span>
-                                    <span className={`font-bold ${item.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                        ₹{Math.abs(item.balance).toLocaleString('en-IN')}
-                                        {item.balance >= 0 ? <UserCheck className="h-4 w-4 inline ml-1" /> : <UserX className="h-4 w-4 inline ml-1" />}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : <p className="text-xs text-muted-foreground">No account balances to show.</p>}
-                     <button onClick={() => router.push('/khata')} className="text-sm text-primary hover:underline mt-4">
-                        View Full Fruit Ledger &rarr;
-                    </button>
-                </CardContent>
-            </Card>
-            <RealtimeDatabaseCard />
+            <StatCard
+                title="This Month's Sales"
+                value={`₹${yearlyStats?.monthSales.toLocaleString('en-IN') ?? '0'}`}
+                icon={Calendar}
+                color="text-blue-500"
+            />
+            <StatCard
+                title="This Year Total Sales"
+                value={`₹${yearlyStats?.totalSales.toLocaleString('en-IN') ?? '0'}`}
+                icon={TrendingUp}
+                color="text-green-500"
+            />
+             <StatCard
+                title="This Year Total Expenses"
+                value={`₹${yearlyStats?.totalExpenses.toLocaleString('en-IN') ?? '0'}`}
+                icon={TrendingDown}
+                color="text-orange-500"
+            />
+             <StatCard
+                title="This Year Net Profit"
+                value={`₹${yearlyStats?.netProfit.toLocaleString('en-IN') ?? '0'}`}
+                icon={IndianRupee}
+                color="text-red-500"
+            />
+             <StatCard
+                title="This Year Sent Sales (Gross)"
+                value={`₹${yearlyStats?.sentSales.toLocaleString('en-IN') ?? '0'}`}
+                icon={HandCoins}
+                color="text-purple-500"
+            />
         </div>
          <div className="mt-8">
             <RateList />
@@ -199,12 +209,12 @@ const InventoryDashboard = () => (
 export default function DashboardPage() {
   const router = useRouter();
   const [stats, setStats] = useState<DailyStats | null>(null);
+  const [yearlyStats, setYearlyStats] = useState<YearlyStats | null>(null);
   const [ledgerSummary, setLedgerSummary] = useState<LedgerEntry[]>([]);
   const [accessoryStats, setAccessoryStats] = useState<AccessoryStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // This function must run on the client side
     if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
         setIsLoading(false);
         return;
@@ -228,6 +238,12 @@ export default function DashboardPage() {
     let totalDabbaSold = 0;
     const ledgers: {[party: string]: number} = {};
     
+    // Yearly stats
+    let yearlyTotalSales = 0;
+    let yearlyTotalExpenses = 0;
+    let yearlySentSales = 0;
+    let monthlySales = 0;
+    
     // Accessory Stats Calculation
     let accessorySalesToday = 0;
     let accessorySalesMonth = 0;
@@ -242,6 +258,7 @@ export default function DashboardPage() {
         try {
             if (key.startsWith('invoice-')) {
                 const sale = JSON.parse(localStorage.getItem(key)!);
+                const saleDate = new Date(sale.date);
                 const isToday = sale.date === todayStr;
 
                 sale.entries.forEach((entry: any) => {
@@ -256,6 +273,16 @@ export default function DashboardPage() {
                 });
                 
                 if (isToday) totalSaleValueToday += sale.totals.netSale || 0;
+
+                if (saleDate.getFullYear() === currentYear) {
+                    yearlyTotalSales += sale.totals.netSale || 0;
+                    yearlyTotalExpenses += sale.totals.totalExpenses || 0;
+                    yearlySentSales += sale.totals.grossSale || 0;
+
+                    if (saleDate.getMonth() === currentMonth) {
+                        monthlySales += sale.totals.netSale || 0;
+                    }
+                }
                 
                 const party = sale.customerName;
                 if (!ledgers[party]) ledgers[party] = 0;
@@ -316,6 +343,14 @@ export default function DashboardPage() {
       currentPattiStock: totalPattiPurchased - totalPattiSold,
       currentDabbaStock: totalDabbaPurchased - totalDabbaSold,
     });
+
+    setYearlyStats({
+        totalSales: yearlyTotalSales,
+        totalExpenses: yearlyTotalExpenses,
+        netProfit: yearlyTotalSales - yearlyTotalExpenses,
+        sentSales: yearlySentSales,
+        monthSales: monthlySales,
+    });
     
     const topItem = Object.entries(itemQuantities).sort(([, a], [, b]) => b - a)[0]?.[0] || 'N/A';
 
@@ -328,8 +363,8 @@ export default function DashboardPage() {
 
     const summary = Object.entries(ledgers)
         .map(([party, balance]) => ({ party, balance }))
-        .sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance)) // Sort by absolute balance
-        .slice(0, 5); // Take top 5
+        .sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance))
+        .slice(0, 5);
     setLedgerSummary(summary);
 
     setIsLoading(false);
@@ -352,7 +387,7 @@ export default function DashboardPage() {
             <TabsTrigger value="inventory"><Package className="w-4 h-4 mr-2" />Inventory</TabsTrigger>
         </TabsList>
         <TabsContent value="fruit">
-            <FruitDashboard stats={stats} ledgerSummary={ledgerSummary} router={router} />
+            <FruitDashboard stats={stats} yearlyStats={yearlyStats} ledgerSummary={ledgerSummary} router={router} />
         </TabsContent>
         <TabsContent value="accessories">
             <AccessoriesDashboard stats={accessoryStats} router={router} />
