@@ -5,7 +5,7 @@ import { getMessaging, Messaging } from 'firebase/messaging';
 import { getDatabase, Database } from "firebase/database";
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
+  apiKey: "AIzaSyDPbM_i-g5T...Y87Fk",
   authDomain: "swiftsale-ewd7o.firebaseapp.com",
   projectId: "swiftsale-ewd7o",
   storageBucket: "swiftsale-ewd7o.appspot.com",
@@ -48,3 +48,4 @@ export const getClientMessaging = () => {
 
 
 export { app, firebaseConfig };
+

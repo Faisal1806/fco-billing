@@ -108,7 +108,6 @@ export default function SettingsPage() {
         let successCount = 0;
         let errorCount = 0;
         
-        // This is the definitive map of all data prefixes to their cloud collection names.
         const keyPrefixToCollectionMap: { [key: string]: string } = {
             'invoice-': 'invoices',
             'purchase-': 'purchases',
@@ -119,7 +118,7 @@ export default function SettingsPage() {
             'accessory-ledger-': 'accessory-ledgers',
             'expense-': 'expenses',
             'advance-': 'advances',
-            'cs-': 'cold-storage', // Using 'cs-' prefix for cold-storage
+            'cs-': 'cold-storage',
             'manual-fertilizer-rates-': 'manual-fertilizer-rates',
             'bikri-': 'bikris',
         };
@@ -134,7 +133,9 @@ export default function SettingsPage() {
 
             if (matchingPrefix) {
                 const collectionName = keyPrefixToCollectionMap[matchingPrefix];
-                const docId = key.replace(matchingPrefix, '');
+                // For most keys, the ID is what comes after the prefix.
+                // For 'cs-', the ID is just `cs-${timestamp}`, so we can use the whole key.
+                const docId = key;
                 
                 if (collectionName && docId) {
                     try {
@@ -151,8 +152,6 @@ export default function SettingsPage() {
                         errorCount++;
                     }
                 }
-            } else {
-                 // Safely ignore keys that are not in our map (e.g., userRole, activityLogs, etc.)
             }
         }
         
@@ -413,3 +412,4 @@ export default function SettingsPage() {
         </div>
     );
 }
+
