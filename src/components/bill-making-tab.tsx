@@ -68,7 +68,7 @@ export function BillMakingTab() {
     if (isClient) {
       fetchBills();
     }
-  }, [isClient]);
+  }, [isClient, toast]);
 
 
   // --- Calculations (ALL from your spec) ---
