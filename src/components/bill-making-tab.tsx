@@ -174,24 +174,22 @@ export function BillMakingTab() {
       },
     };
     
-    // Save to LocalStorage first as a backup/for offline
-    localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
-        
     try {
-        // Then save to Firestore
         const result = await saveDocument('invoices', billId, billData);
 
-        if (!result.success) {
+        if (result.success) {
+            localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
+            toast({
+              title: isEditing ? 'Bill Updated & Synced' : 'Bill Saved & Synced',
+              description: `The bill has been successfully saved to the cloud.`,
+            });
+        } else {
             throw new Error(result.error);
         }
 
-        toast({
-          title: isEditing ? 'Bill Updated & Synced' : 'Bill Saved & Synced',
-          description: `The bill has been successfully saved to the cloud.`,
-        });
-
     } catch (error) {
         console.error("Error saving bill to cloud:", error);
+        localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
         toast({
             variant: 'destructive',
             title: 'Cloud Sync Failed',
@@ -231,12 +229,9 @@ export function BillMakingTab() {
             return;
         }
 
-        // Delete from LocalStorage first
-        localStorage.removeItem(`invoice-${billId}`);
-
         try {
-            // Then delete from Firestore
             await deleteDocument('invoices', billId);
+            localStorage.removeItem(`invoice-${billId}`);
             
             toast({
                 title: "Bill Deleted",

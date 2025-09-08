@@ -7,10 +7,10 @@ import { collection, getDocs, doc, setDoc, deleteDoc, query, where } from 'fireb
 export async function saveDocument(collectionName: string, id: string, data: any) {
   try {
     const db = getClientDb();
-    await setDoc(doc(db, collectionName, id), data);
+    await setDoc(doc(db, collectionName, id), data, { merge: true });
     return { success: true };
   } catch (error) {
-    console.error("Error saving document:", error);
+    console.error(`Error saving document to ${collectionName}:`, error);
     return { success: false, error: (error as Error).message };
   }
 }
