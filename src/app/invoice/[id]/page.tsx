@@ -67,7 +67,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             
             try {
                 const db = getClientDb();
-                const docRef = doc(db, `users/${userId}/wataks`, params.id);
+                const docRef = doc(db, `users/${userId}/invoices`, params.id);
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {

@@ -55,7 +55,7 @@ export function BillMakingTab() {
 
   const fetchBills = async () => {
       setIsLoading(true);
-      const { success, data, error } = await getDocuments('wataks');
+      const { success, data, error } = await getDocuments('invoices');
       if(success && data) {
         setSavedBills(data.sort((a,b) => (Number(a.sNo) > Number(b.sNo)) ? -1 : 1));
       } else {
@@ -168,7 +168,7 @@ export function BillMakingTab() {
     };
     
     try {
-        const result = await saveDocument('wataks', billId, billData);
+        const result = await saveDocument('invoices', billId, billData);
 
         if (result.success) {
             toast({
@@ -221,7 +221,7 @@ export function BillMakingTab() {
         }
 
         try {
-            await deleteDocument('wataks', billId);
+            await deleteDocument('invoices', billId);
             toast({
                 title: "Watak Deleted",
                 description: `Watak #${billId} has been successfully deleted from cloud storage.`

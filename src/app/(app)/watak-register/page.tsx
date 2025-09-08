@@ -75,7 +75,7 @@ export default function WatakRegisterPage() {
   React.useEffect(() => {
     const fetchWataks = async () => {
         setIsLoading(true);
-        const { success, data, error } = await getDocuments('wataks');
+        const { success, data, error } = await getDocuments('invoices');
         if (success && data) {
             const formattedWataks = data.map((w: any) => ({...w, id: w.sNo})) as WatakEntry[];
             setWataks(formattedWataks);
@@ -188,7 +188,7 @@ export default function WatakRegisterPage() {
     }
     if(!window.confirm(`Are you sure you want to delete Bill #${sNo}? This cannot be undone.`)) return;
     
-    const { success, error } = await deleteDocument('wataks', sNo);
+    const { success, error } = await deleteDocument('invoices', sNo);
     if(success) {
       setWataks(prev => prev.filter(w => w.sNo !== sNo));
       toast({ title: "Bill Deleted", description: `Bill #${sNo} has been deleted.`});

@@ -155,7 +155,7 @@ export default function ExpensesPage() {
         setUserRole(localStorage.getItem('userRole'));
 
         const { success: manualSuccess, data: manualExpensesData } = await getDocuments('expenses');
-        const { success: invoiceSuccess, data: invoicesData } = await getDocuments('wataks');
+        const { success: invoiceSuccess, data: invoicesData } = await getDocuments('invoices');
 
         if(!manualSuccess || !invoiceSuccess) {
             toast({variant: 'destructive', title: 'Failed to fetch expense data'});
