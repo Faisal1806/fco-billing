@@ -34,6 +34,7 @@ import DocumentCard from '@/components/DocumentCard';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { getDocuments, deleteDocument } from '@/lib/actions';
 
 
 export interface WatakEntry {
@@ -74,25 +75,16 @@ export default function WatakRegisterPage() {
   React.useEffect(() => {
     const fetchWataks = async () => {
         setIsLoading(true);
-        try {
-            const savedWataks = [];
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && key.startsWith('invoice-')) {
-                    savedWataks.push(JSON.parse(localStorage.getItem(key)!));
-                }
-            }
-            
-            const formattedWataks = savedWataks.map(w => ({...w, id: w.sNo})) as WatakEntry[];
+        const { success, data, error } = await getDocuments('wataks');
+        if (success && data) {
+            const formattedWataks = data.map((w: any) => ({...w, id: w.sNo})) as WatakEntry[];
             setWataks(formattedWataks);
             const uniqueGrowers = ['All Growers', ...new Set(formattedWataks.map(w => w.customerName))];
             setGrowers(uniqueGrowers);
-        } catch (e) {
-            console.error("Could not fetch wataks from LocalStorage", e);
-            toast({ variant: "destructive", title: "Error", description: "Failed to load wataks."})
-        } finally {
-            setIsLoading(false);
+        } else {
+            toast({ variant: "destructive", title: "Error", description: `Failed to load wataks: ${error}`})
         }
+        setIsLoading(false);
     }
     fetchWataks();
   }, [toast]);
@@ -195,12 +187,13 @@ export default function WatakRegisterPage() {
       return;
     }
     if(!window.confirm(`Are you sure you want to delete Bill #${sNo}? This cannot be undone.`)) return;
-    try {
-      localStorage.removeItem(`invoice-${sNo}`);
+    
+    const { success, error } = await deleteDocument('wataks', sNo);
+    if(success) {
       setWataks(prev => prev.filter(w => w.sNo !== sNo));
       toast({ title: "Bill Deleted", description: `Bill #${sNo} has been deleted.`});
-    } catch(e) {
-      toast({ variant: "destructive", title: "Delete failed", description: "Could not delete bill."});
+    } else {
+      toast({ variant: "destructive", title: "Delete failed", description: `Could not delete bill: ${error}`});
     }
   }
 

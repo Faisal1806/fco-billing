@@ -53,6 +53,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
     const printRef = useRef<HTMLDivElement>(null);
+    const userId = 'default-user'; // As per the new structure
 
     useEffect(() => {
         const fetchBill = async () => {
@@ -63,57 +64,36 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             setLoading(true);
 
             let data: BillData | null = null;
-            let errorOccurred = false;
             
-            // --- New Robust Fetching Logic ---
-            
-            // 1. Try to fetch from the cloud (Firestore) first.
             try {
                 const db = getClientDb();
-                const docRef = doc(db, "invoices", params.id);
+                const docRef = doc(db, `users/${userId}/wataks`, params.id);
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {
                     data = docSnap.data() as BillData;
+                } else {
+                    toast({
+                        variant: "destructive",
+                        title: "Invoice Not Found",
+                        description: "The requested invoice was not found in the cloud."
+                    });
                 }
             } catch (error) {
-                console.error("Firestore fetch failed, will try localStorage.", error);
-                errorOccurred = true;
-            }
-
-            // 2. If not found in cloud OR if cloud fetch failed, fall back to localStorage.
-            if (!data) {
-                try {
-                     const storedBill = localStorage.getItem(`invoice-${params.id}`);
-                     if (storedBill) {
-                        data = JSON.parse(storedBill);
-                        if (errorOccurred) {
-                            toast({
-                                title: "Displaying Local Version",
-                                description: "Could not connect to the cloud. Showing the locally saved invoice."
-                            });
-                        }
-                    }
-                } catch (e) {
-                     console.error("Could not parse bill from localStorage", e);
-                }
+                console.error("Firestore fetch failed:", error);
+                 toast({
+                    variant: "destructive",
+                    title: "Cloud Error",
+                    description: "Could not connect to the cloud to fetch the invoice."
+                });
             }
             
-            // 3. Process the final data if it was found.
             if (data) {
-                // Normalize entries to ensure 'qty' is always present for calculations
                 data.entries = data.entries.map(e => ({
                     ...e, 
                     qty: e.qty || e.peti || e.daba || 0
                 }));
                 setBillData(data);
-            } else {
-                // 4. If not found anywhere, show error.
-                toast({
-                    variant: "destructive",
-                    title: "Invoice Not Found",
-                    description: "The requested invoice was not found online or on this device."
-                });
             }
             
             setLoading(false);

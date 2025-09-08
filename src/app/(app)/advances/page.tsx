@@ -25,9 +25,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlusCircle, Trash2, Banknote, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { saveDocument, deleteDocument } from '@/lib/actions';
+import { saveDocument, deleteDocument, getDocuments } from '@/lib/actions';
 import { Badge } from '@/components/ui/badge';
 
+const COLLECTION_NAME = 'advances';
 
 type AdvanceEntry = {
     id: string;
@@ -50,40 +51,29 @@ export default function AdvancesPage() {
     const { toast } = useToast();
     const [entries, setEntries] = useState<AdvanceEntry[]>([]);
     const [formState, setFormState] = useState(emptyFormState);
-    const [isClient, setIsClient] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [userRole, setUserRole] = useState<string | null>(null);
 
      useEffect(() => {
-        setIsClient(true);
         if (typeof window !== 'undefined') {
             setUserRole(localStorage.getItem('userRole'));
         }
     }, []);
 
-    const fetchEntries = () => {
-        if (typeof window === 'undefined') return;
+    const fetchEntries = async () => {
         setIsLoading(true);
-        const items: AdvanceEntry[] = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key?.startsWith('advance-')) {
-                try {
-                    items.push(JSON.parse(localStorage.getItem(key)!));
-                } catch (e) {
-                    console.error("Failed to parse advance entry", e);
-                }
-            }
+        const { success, data, error } = await getDocuments(COLLECTION_NAME);
+        if(success && data) {
+             setEntries(data.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        } else {
+            toast({variant: 'destructive', title: 'Error fetching data', description: error});
         }
-        setEntries(items.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         setIsLoading(false);
     };
 
     useEffect(() => {
-        if (isClient) {
-            fetchEntries();
-        }
-    }, [isClient]);
+        fetchEntries();
+    }, []);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string, name: keyof typeof formState) => {
          if (typeof e === 'string') {
@@ -107,19 +97,18 @@ export default function AdvancesPage() {
         const id = `advance-${Date.now()}`;
         const newEntry = { ...formState, id };
         
-        localStorage.setItem(id, JSON.stringify(newEntry));
-
-        try {
-            await saveDocument('advances', id, newEntry);
+        const { success, error } = await saveDocument(COLLECTION_NAME, id, newEntry);
+        
+        if (success) {
             toast({
                 title: 'Transaction Saved',
                 description: 'The advance/repayment has been recorded.',
             });
-        } catch (e) {
-            toast({
+        } else {
+             toast({
                 variant: 'destructive',
-                title: 'Cloud Sync Failed',
-                description: 'Entry is saved locally, but failed to sync to cloud.',
+                title: 'Save Failed',
+                description: error,
             });
         }
         
@@ -134,16 +123,14 @@ export default function AdvancesPage() {
         }
         if (!window.confirm('Are you sure you want to delete this transaction?')) return;
         
-        localStorage.removeItem(id);
-        
-        try {
-            await deleteDocument('advances', id);
+        const { success, error } = await deleteDocument(COLLECTION_NAME, id);
+        if (success) {
             toast({ title: 'Entry Deleted' });
-        } catch(e) {
+        } else {
              toast({
                 variant: 'destructive',
-                title: 'Cloud Delete Failed',
-                description: 'Could not delete from cloud, but it was removed locally.',
+                title: 'Delete Failed',
+                description: error,
             });
         }
         fetchEntries();

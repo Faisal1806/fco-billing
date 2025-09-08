@@ -38,6 +38,7 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
     const printRef = useRef<HTMLDivElement>(null);
+    const userId = 'default-user'; // As per the new structure
 
     useEffect(() => {
         const fetchBill = async () => {
@@ -45,45 +46,31 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
             setLoading(true);
             
             let data: PurchaseData | null = null;
-            let errorOccurred = false;
-
+            
             try {
                 const db = getClientDb();
-                const docRef = doc(db, "purchases", params.id);
+                const docRef = doc(db, `users/${userId}/purchases`, params.id);
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     data = docSnap.data() as PurchaseData;
+                } else {
+                     toast({
+                        variant: "destructive",
+                        title: "Not Found",
+                        description: "The requested purchase bill was not found in the cloud."
+                    });
                 }
             } catch (error) {
-                console.error("Firestore fetch failed, will try localStorage.", error);
-                errorOccurred = true;
-            }
-
-            if (!data) {
-                try {
-                    const storedBill = localStorage.getItem(`purchase-${params.id}`);
-                    if (storedBill) {
-                        data = JSON.parse(storedBill);
-                        if (errorOccurred) {
-                            toast({
-                                title: "Displaying Local Version",
-                                description: "Could not connect to the cloud. Showing the locally saved purchase."
-                            });
-                        }
-                    }
-                } catch (e) {
-                     console.error("Could not parse purchase from localStorage", e);
-                }
+                console.error("Firestore fetch failed:", error);
+                toast({
+                    variant: "destructive",
+                    title: "Cloud Error",
+                    description: "Could not connect to the cloud to fetch the purchase bill."
+                });
             }
 
             if (data) {
                 setBillData(data);
-            } else {
-                 toast({
-                    variant: "destructive",
-                    title: "Not Found",
-                    description: "The requested purchase bill was not found online or locally."
-                })
             }
             setLoading(false);
         };

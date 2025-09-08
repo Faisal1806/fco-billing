@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Separator } from './ui/separator';
 import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Share, FileText } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
-import { saveDocument, deleteDocument } from '@/lib/actions';
+import { saveDocument, deleteDocument, getDocuments } from '@/lib/actions';
 
 type Row = {
   type: 'Patti' | 'Dabba';
@@ -53,21 +53,14 @@ export function BillMakingTab() {
     setIsClient(true);
   }, []);
 
-  const fetchBills = () => {
+  const fetchBills = async () => {
       setIsLoading(true);
-      const bills = [];
-      for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && key.startsWith('invoice-')) {
-              try {
-                const bill = JSON.parse(localStorage.getItem(key)!);
-                bills.push(bill);
-              } catch(e) {
-                console.error("Failed to parse bill from local storage", e);
-              }
-          }
+      const { success, data, error } = await getDocuments('wataks');
+      if(success && data) {
+        setSavedBills(data.sort((a,b) => (Number(a.sNo) > Number(b.sNo)) ? -1 : 1));
+      } else {
+        toast({variant: 'destructive', title: 'Error fetching bills', description: error})
       }
-      setSavedBills(bills.sort((a,b) => (Number(a.sNo) > Number(b.sNo)) ? -1 : 1));
       setIsLoading(false);
   };
   
@@ -175,13 +168,12 @@ export function BillMakingTab() {
     };
     
     try {
-        const result = await saveDocument('invoices', billId, billData);
+        const result = await saveDocument('wataks', billId, billData);
 
         if (result.success) {
-            localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
             toast({
-              title: isEditing ? 'Bill Updated & Synced' : 'Bill Saved & Synced',
-              description: `The bill has been successfully saved to the cloud.`,
+              title: isEditing ? 'Watak Updated & Synced' : 'Watak Saved & Synced',
+              description: `The Watak has been successfully saved to the cloud.`,
             });
         } else {
             throw new Error(result.error);
@@ -189,11 +181,10 @@ export function BillMakingTab() {
 
     } catch (error) {
         console.error("Error saving bill to cloud:", error);
-        localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
         toast({
             variant: 'destructive',
             title: 'Cloud Sync Failed',
-            description: 'Could not save the bill to the cloud. It is saved locally on this device.',
+            description: (error as Error).message,
         });
     } finally {
         fetchBills(); // Re-fetch to update the list
@@ -225,25 +216,22 @@ export function BillMakingTab() {
             toast({ variant: "destructive", title: "Permission Denied", description: "You do not have permission to delete bills."});
             return;
         }
-        if(!window.confirm(`Are you sure you want to delete Bill #${billId}? This action cannot be undone.`)) {
+        if(!window.confirm(`Are you sure you want to delete Watak #${billId}? This action cannot be undone.`)) {
             return;
         }
 
         try {
-            await deleteDocument('invoices', billId);
-            localStorage.removeItem(`invoice-${billId}`);
-            
+            await deleteDocument('wataks', billId);
             toast({
-                title: "Bill Deleted",
-                description: `Bill #${billId} has been successfully deleted from local and cloud storage.`
-            })
-
+                title: "Watak Deleted",
+                description: `Watak #${billId} has been successfully deleted from cloud storage.`
+            });
         } catch (error) {
             console.error("Error deleting bill from cloud:", error);
             toast({
                 variant: "destructive",
                 title: "Cloud Delete Failed",
-                description: "Could not delete bill from cloud, but it was removed locally."
+                description: (error as Error).message,
             })
         } finally {
             fetchBills(); // Re-fetch to update list
@@ -255,7 +243,7 @@ export function BillMakingTab() {
 
   const navigateToPrint = () => {
     if (!isEditing || !sNo) {
-        toast({ variant: 'destructive', title: 'Cannot View', description: 'Please save the bill first to generate a printable version.'});
+        toast({ variant: 'destructive', title: 'Cannot View', description: 'Please save the Watak first to generate a printable version.'});
         return;
     }
     router.push(`/invoice/${sNo}`);
@@ -449,7 +437,7 @@ export function BillMakingTab() {
         </Card>
         <Card className="md:col-span-1 h-fit">
             <CardHeader>
-                <h3 className="text-lg font-medium">Recent Bills</h3>
+                <h3 className="text-lg font-medium">Recent Wataks</h3>
             </CardHeader>
             <CardContent>
                 <ScrollArea className="h-96">
@@ -464,7 +452,7 @@ export function BillMakingTab() {
                                 <div>
                                     <p className="font-medium">Bill #{bill.sNo}</p>
                                     <p className="text-sm text-muted-foreground">{bill.customerName}</p>
-                                    <p className="text-sm text-muted-foreground">{new Date(bill.date).toLocaleDateString()}</p>
+                                    <p className="text-xs text-muted-foreground">{new Date(bill.date).toLocaleDateString()}</p>
                                 </div>
                                 <div className="flex items-center">
                                     <Button variant="ghost" size="icon" onClick={() => loadBillForEdit(bill)}>
@@ -479,7 +467,7 @@ export function BillMakingTab() {
                             </div>
                             ))
                         ) : (
-                           <p className="text-sm text-muted-foreground text-center">No recent bills found.</p>
+                           <p className="text-sm text-muted-foreground text-center">No recent Wataks found.</p>
                         )}
                     </div>
                 </ScrollArea>

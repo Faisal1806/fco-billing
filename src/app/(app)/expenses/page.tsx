@@ -25,7 +25,7 @@ import { Label } from '@/components/ui/label';
 import { PlusCircle, Trash2, Receipt, Users, Building, Percent } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { saveDocument, deleteDocument } from '@/lib/actions';
+import { saveDocument, deleteDocument, getDocuments } from '@/lib/actions';
 
 
 type ExpenseEntry = {
@@ -149,20 +149,21 @@ export default function ExpensesPage() {
     const [companyStats, setCompanyStats] = useState<ExpenseStats>({ totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 });
     
     const [formState, setFormState] = useState(emptyFormState);
-    const [isClient, setIsClient] = useState(false);
     const [userRole, setUserRole] = useState<string | null>(null);
 
-    useEffect(() => {
-        setIsClient(true);
-    }, []);
-    
-    const fetchExpenses = () => {
-        if (typeof window === 'undefined') return;
-        
+    const fetchExpenses = async () => {
         setUserRole(localStorage.getItem('userRole'));
 
+        const { success: manualSuccess, data: manualExpensesData } = await getDocuments('expenses');
+        const { success: invoiceSuccess, data: invoicesData } = await getDocuments('wataks');
+
+        if(!manualSuccess || !invoiceSuccess) {
+            toast({variant: 'destructive', title: 'Failed to fetch expense data'});
+            return;
+        }
+
         const allLabourExpenses: ExpenseEntry[] = [];
-        const allCompanyExpenses: ExpenseEntry[] = [];
+        const allCompanyExpenses: ExpenseEntry[] = (manualExpensesData || []).map(d => ({ ...d, type: 'manual' }));
         const allCommissionIncome: ExpenseEntry[] = [];
         
         let newCommissionStats: ExpenseStats = { totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 };
@@ -172,87 +173,76 @@ export default function ExpensesPage() {
         const companyWataks = new Set<string>();
         const labourWataks = new Set<string>();
 
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key?.startsWith('expense-')) {
-                const expense = JSON.parse(localStorage.getItem(key)!);
-                allCompanyExpenses.push({ ...expense, type: 'manual' });
-            }
-        }
+        (invoicesData || []).forEach(sale => {
+            if(sale.totals) {
+                const pattiQty = sale.totals.pattiQty || 0;
+                const dabbaQty = sale.totals.dabbaQty || 0;
+                const totalNugs = pattiQty + dabbaQty;
 
-         for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key?.startsWith('invoice-')) {
-                const sale = JSON.parse(localStorage.getItem(key)!);
-                if(sale.totals) {
-                    const pattiQty = sale.totals.pattiQty || 0;
-                    const dabbaQty = sale.totals.dabbaQty || 0;
-                    const totalNugs = pattiQty + dabbaQty;
-
-                    if (sale.totals.labour > 0) {
-                        allLabourExpenses.push({
-                            id: `auto-labour-${sale.sNo}`,
-                            date: sale.date,
-                            category: 'Sales Deduction',
-                            description: `Labour charges for Bill #${sale.sNo}`,
-                            amount: sale.totals.labour,
-                            type: 'auto',
-                        });
-                        labourWataks.add(sale.sNo);
-                        newLabourStats.totalPatti += pattiQty;
-                        newLabourStats.totalDabba += dabbaQty;
-                        newLabourStats.totalNugs += totalNugs;
-                    }
-                    if (sale.totals.association > 0) {
-                         allCompanyExpenses.push({
-                            id: `auto-assoc-${sale.sNo}`,
-                            date: sale.date,
-                            category: 'Sales Deduction',
-                            description: `Association fee for Bill #${sale.sNo}`,
-                            amount: sale.totals.association,
-                            type: 'auto',
-                        });
-                        companyWataks.add(sale.sNo);
-                    }
-                    if (sale.totals.security > 0) {
-                         allCompanyExpenses.push({
-                            id: `auto-security-${sale.sNo}`,
-                            date: sale.date,
-                            category: 'Sales Deduction',
-                            description: `Security fee for Bill #${sale.sNo}`,
-                            amount: sale.totals.security,
-                            type: 'auto',
-                        });
-                        companyWataks.add(sale.sNo);
-                    }
-                     if (sale.totals.commissionAmount > 0) {
-                         allCommissionIncome.push({
-                            id: `auto-commission-${sale.sNo}`,
-                            date: sale.date,
-                            category: 'Sales Commission',
-                            description: `Commission from Bill #${sale.sNo}`,
-                            amount: sale.totals.commissionAmount,
-                            type: 'auto',
-                        });
-                        newCommissionStats.totalWataks += 1;
-                        newCommissionStats.totalPatti += pattiQty;
-                        newCommissionStats.totalDabba += dabbaQty;
-                        newCommissionStats.totalNugs += totalNugs;
-                    }
+                if (sale.totals.labour > 0) {
+                    allLabourExpenses.push({
+                        id: `auto-labour-${sale.sNo}`,
+                        date: sale.date,
+                        category: 'Sales Deduction',
+                        description: `Labour charges for Bill #${sale.sNo}`,
+                        amount: sale.totals.labour,
+                        type: 'auto',
+                    });
+                    labourWataks.add(sale.sNo);
+                    newLabourStats.totalPatti += pattiQty;
+                    newLabourStats.totalDabba += dabbaQty;
+                    newLabourStats.totalNugs += totalNugs;
+                }
+                if (sale.totals.association > 0) {
+                     allCompanyExpenses.push({
+                        id: `auto-assoc-${sale.sNo}`,
+                        date: sale.date,
+                        category: 'Sales Deduction',
+                        description: `Association fee for Bill #${sale.sNo}`,
+                        amount: sale.totals.association,
+                        type: 'auto',
+                    });
+                    companyWataks.add(sale.sNo);
+                }
+                if (sale.totals.security > 0) {
+                     allCompanyExpenses.push({
+                        id: `auto-security-${sale.sNo}`,
+                        date: sale.date,
+                        category: 'Sales Deduction',
+                        description: `Security fee for Bill #${sale.sNo}`,
+                        amount: sale.totals.security,
+                        type: 'auto',
+                    });
+                    companyWataks.add(sale.sNo);
+                }
+                 if (sale.totals.commissionAmount > 0) {
+                     allCommissionIncome.push({
+                        id: `auto-commission-${sale.sNo}`,
+                        date: sale.date,
+                        category: 'Sales Commission',
+                        description: `Commission from Bill #${sale.sNo}`,
+                        amount: sale.totals.commissionAmount,
+                        type: 'auto',
+                    });
+                    newCommissionStats.totalWataks += 1;
+                    newCommissionStats.totalPatti += pattiQty;
+                    newCommissionStats.totalDabba += dabbaQty;
+                    newCommissionStats.totalNugs += totalNugs;
                 }
             }
-        }
+        });
 
-        // Aggregate company stats for wataks that have either security or association fees
         const companyWatakIds = Array.from(companyWataks);
         newCompanyStats.totalWataks = companyWatakIds.length;
         companyWatakIds.forEach(sNo => {
-            const sale = JSON.parse(localStorage.getItem(`invoice-${sNo}`)!);
-            const pattiQty = sale.totals.pattiQty || 0;
-            const dabbaQty = sale.totals.dabbaQty || 0;
-            newCompanyStats.totalPatti += pattiQty;
-            newCompanyStats.totalDabba += dabbaQty;
-            newCompanyStats.totalNugs += pattiQty + dabbaQty;
+            const sale = invoicesData?.find(inv => inv.sNo === sNo);
+            if (sale) {
+                const pattiQty = sale.totals.pattiQty || 0;
+                const dabbaQty = sale.totals.dabbaQty || 0;
+                newCompanyStats.totalPatti += pattiQty;
+                newCompanyStats.totalDabba += dabbaQty;
+                newCompanyStats.totalNugs += pattiQty + dabbaQty;
+            }
         });
 
         newLabourStats.totalWataks = labourWataks.size;
@@ -267,10 +257,8 @@ export default function ExpensesPage() {
     }
 
     useEffect(() => {
-        if(isClient) {
-            fetchExpenses();
-        }
-    }, [isClient]);
+        fetchExpenses();
+    }, []);
     
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value, type } = e.target;
@@ -279,31 +267,18 @@ export default function ExpensesPage() {
 
     const handleSaveExpense = async () => {
         if (!formState.date || !formState.category || !formState.description || formState.amount <= 0) {
-            toast({
-                variant: 'destructive',
-                title: 'Missing Fields',
-                description: 'Please fill out all fields before saving.',
-            });
+            toast({ variant: 'destructive', title: 'Missing Fields', description: 'Please fill out all fields before saving.' });
             return;
         }
 
-        const id = formState.id || `expense-${Date.now()}`;
+        const id = `expense-${Date.now()}`;
         const expenseData = { ...formState, id };
         
-        localStorage.setItem(id, JSON.stringify(expenseData));
-
-        try {
-            await saveDocument('expenses', id, expenseData);
-             toast({
-                title: 'Expense Saved',
-                description: 'Your expense has been successfully recorded.',
-            });
-        } catch(e) {
-            toast({
-                variant: 'destructive',
-                title: 'Cloud Sync Failed',
-                description: 'Could not save expense to cloud, but it is saved locally.',
-            });
+        const { success, error } = await saveDocument('expenses', id, expenseData);
+        if (success) {
+            toast({ title: 'Expense Saved', description: 'Your expense has been successfully recorded.' });
+        } else {
+            toast({ variant: 'destructive', title: 'Cloud Sync Failed', description: error });
         }
         
         fetchExpenses();
@@ -317,37 +292,19 @@ export default function ExpensesPage() {
         }
         if (!window.confirm('Are you sure you want to delete this expense?')) return;
         
-        localStorage.removeItem(id);
-        
-        try {
-            await deleteDocument('expenses', id);
+        const { success, error } = await deleteDocument('expenses', id);
+        if (success) {
             toast({ title: 'Expense Deleted' });
-        } catch (e) {
-             toast({
-                variant: 'destructive',
-                title: 'Cloud Delete Failed',
-                description: 'Could not delete expense from cloud, but it was removed locally.',
-            });
+        } else {
+            toast({ variant: 'destructive', title: 'Cloud Delete Failed', description: error });
         }
         
         fetchExpenses();
     };
 
-    const totalLabourExpenses = useMemo(() => {
-        return labourExpenses.reduce((acc, exp) => acc + exp.amount, 0);
-    }, [labourExpenses]);
-
-    const totalCompanyExpenses = useMemo(() => {
-        return companyExpenses.reduce((acc, exp) => acc + exp.amount, 0);
-    }, [companyExpenses]);
-
-    const totalCommissionIncome = useMemo(() => {
-        return commissionIncome.reduce((acc, exp) => acc + exp.amount, 0);
-    }, [commissionIncome]);
-
-    if (!isClient) {
-        return null; // Render nothing on the server
-    }
+    const totalLabourExpenses = useMemo(() => labourExpenses.reduce((acc, exp) => acc + exp.amount, 0), [labourExpenses]);
+    const totalCompanyExpenses = useMemo(() => companyExpenses.reduce((acc, exp) => acc + exp.amount, 0), [companyExpenses]);
+    const totalCommissionIncome = useMemo(() => commissionIncome.reduce((acc, exp) => acc + exp.amount, 0), [commissionIncome]);
 
     return (
         <div className="space-y-8">

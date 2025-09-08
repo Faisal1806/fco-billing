@@ -25,11 +25,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlusCircle, Trash2, FileSignature, Loader2, Printer, FileDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { saveDocument, deleteDocument } from '@/lib/actions';
+import { saveDocument, deleteDocument, getDocuments } from '@/lib/actions';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import './../khata/print.css';
+
+const COLLECTION_NAME = 'accessory-ledgers';
 
 type LedgerEntry = {
     id: string;
@@ -63,40 +65,33 @@ export default function AccessoriesLedgerPage() {
     const { toast } = useToast();
     const [entries, setEntries] = useState<LedgerEntry[]>([]);
     const [formState, setFormState] = useState(emptyFormState);
-    const [isClient, setIsClient] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [userRole, setUserRole] = useState<string | null>(null);
 
      useEffect(() => {
-        setIsClient(true);
         if (typeof window !== 'undefined') {
             setUserRole(localStorage.getItem('userRole'));
         }
     }, []);
 
-    const fetchEntries = () => {
-        if (typeof window === 'undefined') return;
+    const fetchEntries = async () => {
         setIsLoading(true);
-        const items: LedgerEntry[] = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key?.startsWith('accessory-ledger-')) {
-                try {
-                    items.push(JSON.parse(localStorage.getItem(key)!));
-                } catch (e) {
-                    console.error("Failed to parse ledger entry", e);
-                }
-            }
+        const { success, data, error } = await getDocuments(COLLECTION_NAME);
+        if (success && data) {
+            setEntries(data.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'Error fetching ledger entries',
+                description: error,
+            });
         }
-        setEntries(items.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         setIsLoading(false);
     };
 
     useEffect(() => {
-        if (isClient) {
-            fetchEntries();
-        }
-    }, [isClient]);
+        fetchEntries();
+    }, []);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement> | string, name: keyof typeof formState) => {
          if (typeof e === 'string') {
@@ -117,58 +112,21 @@ export default function AccessoriesLedgerPage() {
             return;
         }
 
-        // --- Inventory Deduction Logic ---
-        let productToUpdate: Product | null = null;
-        let productKey: string | null = null;
-
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key?.startsWith('product-')) {
-                try {
-                    const product: Product = JSON.parse(localStorage.getItem(key)!);
-                    if (product.name.toLowerCase() === formState.item.toLowerCase()) {
-                        productToUpdate = product;
-                        productKey = key;
-                        break;
-                    }
-                } catch(e) {
-                    console.error("Failed to parse product for stock update", e);
-                }
-            }
-        }
-
-        if (productToUpdate && productKey) {
-             if (productToUpdate.stock < formState.qty) {
-                if (!window.confirm(`Warning: Stock for ${productToUpdate.name} is low (${productToUpdate.stock} available). Continue with sale?`)) {
-                    return; // Stop if user cancels
-                }
-            }
-            productToUpdate.stock -= formState.qty;
-            localStorage.setItem(productKey, JSON.stringify(productToUpdate));
-        } else {
-             if (!window.confirm(`Warning: "${formState.item}" is not found in your inventory. Stock will not be deducted. Continue anyway?`)) {
-                return; // Stop if user cancels
-            }
-        }
-        // --- End of Inventory Deduction Logic ---
-
-
         const id = `accessory-ledger-${Date.now()}`;
         const newEntry = { ...formState, id };
         
-        localStorage.setItem(id, JSON.stringify(newEntry));
+        const { success, error } = await saveDocument(COLLECTION_NAME, id, newEntry);
 
-        try {
-            await saveDocument('accessory-ledgers', id, newEntry);
-            toast({
+        if (success) {
+             toast({
                 title: 'Ledger Entry Saved',
-                description: 'Your entry has been recorded and stock updated.',
+                description: 'Your entry has been recorded.',
             });
-        } catch (e) {
-            toast({
+        } else {
+             toast({
                 variant: 'destructive',
-                title: 'Cloud Sync Failed',
-                description: 'Entry is saved locally, but failed to sync to cloud.',
+                title: 'Save Failed',
+                description: error,
             });
         }
         
@@ -181,18 +139,17 @@ export default function AccessoriesLedgerPage() {
             toast({variant: 'destructive', title: 'Permission Denied'});
             return;
         }
-        if (!window.confirm('Are you sure you want to delete this ledger entry? Note: This will not automatically add stock back.')) return;
+        if (!window.confirm('Are you sure you want to delete this ledger entry?')) return;
         
-        localStorage.removeItem(id);
+        const { success, error } = await deleteDocument(COLLECTION_NAME, id);
         
-        try {
-            await deleteDocument('accessory-ledgers', id);
+        if (success) {
             toast({ title: 'Entry Deleted' });
-        } catch(e) {
+        } else {
              toast({
                 variant: 'destructive',
-                title: 'Cloud Delete Failed',
-                description: 'Could not delete from cloud, but it was removed locally.',
+                title: 'Delete Failed',
+                description: error,
             });
         }
         fetchEntries();
@@ -381,5 +338,3 @@ export default function AccessoriesLedgerPage() {
     </div>
   );
 }
-
-    

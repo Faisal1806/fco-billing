@@ -1,13 +1,18 @@
+
 'use server';
 
 import { getClientDb } from './firebase';
 import { collection, getDocs, doc, setDoc, deleteDoc, query, where } from 'firebase/firestore';
 
-// Generic function to save a document
+// Hardcoded user ID for the single-tenant app structure.
+const userId = 'default-user';
+
+// Generic function to save a document under the user's collections
 export async function saveDocument(collectionName: string, id: string, data: any) {
   try {
     const db = getClientDb();
-    await setDoc(doc(db, collectionName, id), data, { merge: true });
+    const docPath = `users/${userId}/${collectionName}/${id}`;
+    await setDoc(doc(db, docPath), data, { merge: true });
     return { success: true };
   } catch (error) {
     console.error(`Error saving document to ${collectionName}:`, error);
@@ -15,11 +20,12 @@ export async function saveDocument(collectionName: string, id: string, data: any
   }
 }
 
-// Generic function to delete a document
+// Generic function to delete a document from the user's collections
 export async function deleteDocument(collectionName: string, id: string) {
     try {
         const db = getClientDb();
-        await deleteDoc(doc(db, collectionName, id));
+        const docPath = `users/${userId}/${collectionName}/${id}`;
+        await deleteDoc(doc(db, docPath));
         return { success: true };
     } catch (error) {
         console.error("Error deleting document:", error);
@@ -27,10 +33,12 @@ export async function deleteDocument(collectionName: string, id: string) {
     }
 }
 
+// Generic function to get documents from a user's collection
 export async function getDocuments(collectionName: string): Promise<{ success: boolean; data?: any[]; error?: string }> {
     try {
         const db = getClientDb();
-        const querySnapshot = await getDocs(collection(db, collectionName));
+        const collectionPath = `users/${userId}/${collectionName}`;
+        const querySnapshot = await getDocs(collection(db, collectionPath));
         const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         return { success: true, data };
     } catch (error) {
