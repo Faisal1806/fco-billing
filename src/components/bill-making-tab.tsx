@@ -76,16 +76,18 @@ export function BillMakingTab() {
     setIsClient(true);
   }, []);
 
-  const fetchBills = async () => {
-      setIsLoading(true);
-      
-      const { success, data, error } = await getDocuments('invoices');
-      if(success && data) {
-        setSavedBills(data.sort((a,b) => (Number(a.sNo) > Number(b.sNo)) ? -1 : 1));
-      } else {
-        toast({variant: 'destructive', title: 'Error fetching bills', description: error})
-      }
-      setIsLoading(false);
+  const fetchBills = () => {
+    setIsLoading(true);
+    const bills = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('invoice-')) {
+            const bill = JSON.parse(localStorage.getItem(key)!);
+            bills.push(bill);
+        }
+    }
+    setSavedBills(bills.sort((a,b) => (Number(a.sNo) > Number(b.sNo)) ? -1 : 1));
+    setIsLoading(false);
   };
   
   useEffect(() => {
@@ -224,6 +226,9 @@ export function BillMakingTab() {
       },
     };
     
+    // Save to local storage first
+    localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
+
     try {
         const result = await saveDocument('invoices', billId, billData);
 
@@ -241,7 +246,7 @@ export function BillMakingTab() {
         toast({
             variant: 'destructive',
             title: 'Cloud Sync Failed',
-            description: (error as Error).message,
+            description: 'Saved locally, but could not save to cloud. Please check your connection or Firebase setup.',
         });
     } finally {
         fetchBills(); // Re-fetch to update the list
@@ -277,19 +282,21 @@ export function BillMakingTab() {
         if(!window.confirm(`Are you sure you want to delete Watak #${billId}? This action cannot be undone.`)) {
             return;
         }
+        
+        localStorage.removeItem(`invoice-${billId}`);
 
         try {
             await deleteDocument('invoices', billId);
             toast({
                 title: "Watak Deleted",
-                description: `Watak #${billId} has been successfully deleted from cloud storage.`
-            });
+                description: `Watak #${billId} has been successfully deleted from local and cloud storage.`
+            })
         } catch (error) {
             console.error("Error deleting bill from cloud:", error);
             toast({
                 variant: "destructive",
                 title: "Cloud Delete Failed",
-                description: (error as Error).message,
+                description: "Could not delete Watak from the cloud, but it was removed locally."
             })
         } finally {
             fetchBills(); // Re-fetch to update list
@@ -439,10 +446,13 @@ export function BillMakingTab() {
                     <CardContent>
                          {storageError && (
                             <Alert variant="destructive" className="mb-4">
-                                <AlertTitle>Action Required: Enable Cloud Storage</AlertTitle>
+                                <AlertTitle className="flex items-center gap-2">
+                                  <AlertTriangle className="h-5 w-5" />
+                                  Action Required: Enable Cloud Storage
+                                </AlertTitle>
                                 <AlertDescription>
                                     <p className="mb-2">The AI feature needs Firebase Storage to analyze images, but it's not enabled yet. Please enable it to upload photos.</p>
-                                    <ol className="list-decimal list-inside space-y-1 mt-2">
+                                    <ol className="list-decimal list-inside space-y-1 mt-2 text-xs">
                                         <li>Click the button below to go to the Firebase Console.</li>
                                         <li>Click the **Get started** button.</li>
                                         <li>Follow the on-screen prompts to enable Storage (default settings are fine).</li>
@@ -451,7 +461,7 @@ export function BillMakingTab() {
                                 </AlertDescription>
                                 <Button asChild variant="secondary" className="mt-4 w-full bg-white text-black hover:bg-white/90">
                                     <a href="https://console.firebase.google.com/project/swiftsale-ewd7o/storage" target="_blank" rel="noopener noreferrer" className="gap-2">
-                                        <ExternalLink className="h-4 w-4" /> Enable Firebase Storage
+                                        <ExternalLink className="h-4 w-4" /> Go to Firebase Storage
                                     </a>
                                 </Button>
                             </Alert>
@@ -736,4 +746,4 @@ export function BillMakingTab() {
   );
 }
 
-
+    
