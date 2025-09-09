@@ -60,7 +60,7 @@ export function BillMakingTab() {
 
 
   const { toast } = useToast();
-  const useRouter = () => {}; // router isn't used, but it's here to avoid breaking changes if it was.
+  const router = useRouter();
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -90,7 +90,7 @@ export function BillMakingTab() {
     if (isClient) {
       fetchBills();
     }
-  }, [isClient]);
+  }, [isClient, toast]);
   
   useEffect(() => {
     if(isCameraOpen){
@@ -302,7 +302,7 @@ export function BillMakingTab() {
         toast({ variant: 'destructive', title: 'Cannot View', description: 'Please save the Watak first to generate a printable version.'});
         return;
     }
-    // router.push(`/invoice/${sNo}`);
+    router.push(`/invoice/${sNo}`);
   };
 
   const handleShare = () => {
@@ -436,7 +436,7 @@ export function BillMakingTab() {
                     </CardHeader>
                     <CardContent>
                          {storageError && (
-                            <Alert variant="destructive">
+                            <Alert variant="destructive" className="mb-4">
                                 <AlertTitle>Action Required: Enable Firebase Storage</AlertTitle>
                                 <AlertDescription>
                                     <p className="mb-2">{storageError}</p>
