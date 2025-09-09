@@ -437,8 +437,8 @@ export function BillMakingTab() {
                     <CardContent>
                          {storageError && (
                             <Alert variant="destructive" className="mb-4">
-                                <AlertTitle>Action Required: Enable Firebase Storage</AlertTitle>
-                                <AlertDescription>
+                                <AlertTitle className="text-base font-bold text-destructive-foreground">Action Required: Enable Firebase Storage</AlertTitle>
+                                <AlertDescription className="text-destructive-foreground">
                                     <p className="mb-2">{storageError}</p>
                                     <p>This is a free, one-time setup in your Firebase project.</p>
                                     <ol className="list-decimal list-inside space-y-1 mt-2">
@@ -448,7 +448,7 @@ export function BillMakingTab() {
                                         <li>Once enabled, come back here and try uploading your image again.</li>
                                     </ol>
                                 </AlertDescription>
-                                <Button asChild variant="secondary" className="mt-4 w-full">
+                                <Button asChild variant="secondary" className="mt-4 w-full bg-white text-black hover:bg-white/90">
                                     <a href="https://console.firebase.google.com/project/swiftsale-ewd7o/storage" target="_blank" rel="noopener noreferrer" className="gap-2">
                                         <ExternalLink className="h-4 w-4" /> Enable Firebase Storage
                                     </a>
@@ -608,7 +608,7 @@ export function BillMakingTab() {
                                 type="number"
                                 className="w-24 text-right"
                                 value={r.qty || ''}
-                                onChange={e => updateRow(i, { qty: Number(r.qty) })}
+                                onChange={e => updateRow(i, { qty: Number(e.target.value) })}
                                 />
                             </TableCell>
                             <TableCell>
@@ -616,7 +616,7 @@ export function BillMakingTab() {
                                 type="number"
                                 className="w-24 text-right"
                                 value={r.rate || ''}
-                                onChange={e => updateRow(i, { rate: Number(r.rate) })}
+                                onChange={e => updateRow(i, { rate: Number(e.target.value) })}
                                 />
                             </TableCell>
                             <TableCell className="text-right">{(totals.rowGross[i] || 0).toFixed(2)}</TableCell>
