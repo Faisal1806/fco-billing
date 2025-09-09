@@ -21,6 +21,9 @@ interface DailyStats {
 interface YearlyStats {
     monthSales: number;
     totalExpenses: number;
+    yearGrossSales: number;
+    yearNetSales: number;
+    yearTotalExpenses: number;
 }
 
 type GrowerProfit = {
@@ -68,39 +71,53 @@ const FruitDashboard = ({ stats, yearlyStats, accessoryStats, growerProfits, rou
                         </div>
                         <div>
                             <CardTitle>Business Dashboard</CardTitle>
-                            <CardDescription>Daily Operations Overview</CardDescription>
+                            <CardDescription>Daily, Monthly and Yearly Operations Overview</CardDescription>
                         </div>
                     </CardHeader>
                 </Card>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                      <StatCard 
-                        title="Today's Sales"
+                        title="Today's Sales (Net)"
                         value={`₹${stats?.totalSaleValue.toLocaleString('en-IN') ?? '0'}`}
                         icon={TrendingUp}
                         note={`From ${stats?.pattiSold ?? 0} Patti / ${stats?.dabbaSold ?? 0} Dabba`}
                         iconBgColor="bg-green-500"
                      />
                      <StatCard 
-                        title="Monthly Sales"
+                        title="This Month's Sales (Net)"
                         value={`₹${yearlyStats?.monthSales.toLocaleString('en-IN') ?? '0'}`}
                         icon={Calendar}
-                        note="From this calendar month"
+                        note="Current calendar month"
                         iconBgColor="bg-blue-500"
                      />
-                     <StatCard 
-                        title="Pending Khata (Credit)"
-                        value={`₹${accessoryStats?.outstandingCredit.toLocaleString('en-IN') ?? '0'}`}
-                        icon={CreditCard}
-                        note="From accessories sales"
-                        iconBgColor="bg-orange-500"
-                     />
                     <StatCard
-                        title="Monthly Expenses"
+                        title="This Month's Expenses"
                         value={`₹${yearlyStats?.totalExpenses.toLocaleString('en-IN') ?? '0'}`}
                         icon={TrendingDown}
-                        note="This month's total expenses"
+                        note="From Watak deductions"
                         iconBgColor="bg-red-500"
                     />
+                    <StatCard 
+                        title="This Year's Gross Sales"
+                        value={`₹${yearlyStats?.yearGrossSales.toLocaleString('en-IN') ?? '0'}`}
+                        icon={IndianRupee}
+                        note="Total sale value this year"
+                        iconBgColor="bg-sky-500"
+                     />
+                     <StatCard 
+                        title="This Year's Net Sales"
+                        value={`₹${yearlyStats?.yearNetSales.toLocaleString('en-IN') ?? '0'}`}
+                        icon={HandCoins}
+                        note="After all expenses"
+                        iconBgColor="bg-amber-500"
+                     />
+                      <StatCard 
+                        title="This Year's Expenses"
+                        value={`₹${yearlyStats?.yearTotalExpenses.toLocaleString('en-IN') ?? '0'}`}
+                        icon={TrendingDown}
+                        note="All Watak deductions this year"
+                        iconBgColor="bg-pink-500"
+                     />
                 </div>
                 
                 <div>
@@ -239,6 +256,9 @@ export default function DashboardPage() {
         // Yearly stats
         let monthlyTotalSales = 0;
         let monthlyTotalExpenses = 0;
+        let yearGrossSales = 0;
+        let yearNetSales = 0;
+        let yearTotalExpenses = 0;
         
         // Grower Profit
         const profitsByGrower: {[name: string]: number} = {};
@@ -268,6 +288,10 @@ export default function DashboardPage() {
             const saleMonth = saleDate.getMonth();
 
             if (saleYear === currentYear) {
+                yearGrossSales += sale.totals.grossSale || 0;
+                yearNetSales += sale.totals.netSale || 0;
+                yearTotalExpenses += sale.totals.totalExpenses || 0;
+
                  if (saleMonth === currentMonth) {
                     monthlyTotalSales += sale.totals.netSale || 0;
                     monthlyTotalExpenses += sale.totals.totalExpenses || 0;
@@ -309,6 +333,9 @@ export default function DashboardPage() {
         setYearlyStats({
             monthSales: monthlyTotalSales,
             totalExpenses: monthlyTotalExpenses,
+            yearGrossSales: yearGrossSales,
+            yearNetSales: yearNetSales,
+            yearTotalExpenses: yearTotalExpenses,
         });
 
         const sortedGrowerProfits = Object.entries(profitsByGrower)
@@ -361,3 +388,5 @@ export default function DashboardPage() {
     </Tabs>
   );
 }
+
+    
