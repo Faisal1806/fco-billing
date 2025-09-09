@@ -10,7 +10,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/language-context";
-import { LayoutDashboard, Settings, Receipt, BookCopy, Menu, Package, BarChart3, Users, Tags, FlaskConical, Phone } from 'lucide-react';
+import { LayoutDashboard, Settings, Receipt, BookCopy, Menu, Package, BarChart3, Users, Tags, FlaskConical, Phone, ShoppingCart } from 'lucide-react';
 import { Logo } from "./logo";
 import React from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -38,13 +38,8 @@ export function Header({ title }: { title: string }) {
 
     const navItems = [
       { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-      { href: '/watak-register', icon: Receipt, label: 'Wataks' },
-      { href: '/khata', icon: Users, label: 'Customers' },
+      { href: '/sales', icon: ShoppingCart, label: 'Sales' },
       { href: '/products', icon: Package, label: 'Products' },
-      { href: '/fertilizers', icon: FlaskConical, label: 'Fertilizers' },
-      { href: '/khata', icon: BookCopy, label: 'Khata Book' },
-      { href: '/expenses', icon: Tags, label: 'Expenses' },
-      { href: '/purchase-register', icon: BarChart3, label: 'Reports' },
     ];
 
 

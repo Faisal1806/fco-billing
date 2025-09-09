@@ -1,8 +1,9 @@
+
 'use client';
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, ShoppingCart, Package, Settings, Receipt, BookCopy, Tags, FlaskConical, BarChart3, Users, LogOut, Phone } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, Settings, Phone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Header } from '@/components/Header';
 import React from 'react';
@@ -37,13 +38,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const navItems = [
     { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { href: '/watak-register', icon: Receipt, label: 'Wataks' },
-    { href: '/khata', icon: Users, label: 'Customers' },
+    { href: '/sales', icon: ShoppingCart, label: 'Sales' },
     { href: '/products', icon: Package, label: 'Products' },
-    { href: '/fertilizers', icon: FlaskConical, label: 'Fertilizers' },
-    { href: '/khata', icon: BookCopy, label: 'Khata Book' },
-    { href: '/expenses', icon: Tags, label: 'Expenses' },
-    { href: '/purchase-register', icon: BarChart3, label: 'Reports' },
   ];
   
   const getPageTitle = () => {
