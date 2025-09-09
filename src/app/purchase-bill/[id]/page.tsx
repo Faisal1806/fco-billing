@@ -38,18 +38,20 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
     const printRef = useRef<HTMLDivElement>(null);
-    const userId = 'default-user'; // As per the new structure
 
     useEffect(() => {
         const fetchBill = async () => {
-            if (!params.id) return;
+            if (!params.id) {
+                setLoading(false);
+                return;
+            };
             setLoading(true);
-            
+
             let data: PurchaseData | null = null;
             
             try {
                 const db = getClientDb();
-                const docRef = doc(db, `users/${userId}/purchases`, params.id);
+                const docRef = doc(db, "purchases", params.id);
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     data = docSnap.data() as PurchaseData;

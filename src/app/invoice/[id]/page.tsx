@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Printer, Download } from "lucide-react";
+import { Printer, Download, QrCode } from "lucide-react";
 import { FaWhatsapp } from 'react-icons/fa';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -15,6 +15,7 @@ import { getClientDb } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import QRCode from 'qrcode.react';
 
 interface BillData {
     id: string;
@@ -54,6 +55,13 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     const { toast } = useToast();
     const printRef = useRef<HTMLDivElement>(null);
     const userId = 'default-user'; // As per the new structure
+    const [pageUrl, setPageUrl] = useState('');
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            setPageUrl(window.location.href);
+        }
+    }, []);
 
     useEffect(() => {
         const fetchBill = async () => {
@@ -135,19 +143,25 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
 
     const Controls = () => (
-        <div className="flex items-center gap-2 print:hidden">
-            <Button onClick={handleShare} variant="outline" size="sm" className="gap-2">
-                <FaWhatsapp className="h-4 w-4 text-green-500" />
-                Share
-            </Button>
-            <Button onClick={() => window.print()} variant="outline" size="sm" className="gap-2">
-                <Printer className="h-4 w-4" />
-                Print
-            </Button>
-             <Button onClick={handleDownloadPdf} size="sm" className="gap-2">
-                <Download className="h-4 w-4" />
-                Download PDF
-            </Button>
+        <div className="flex flex-col gap-2 print:hidden">
+             <div className="flex items-center gap-2">
+                <Button onClick={handleShare} variant="outline" size="sm" className="gap-2">
+                    <FaWhatsapp className="h-4 w-4 text-green-500" />
+                    Share
+                </Button>
+                <Button onClick={() => window.print()} variant="outline" size="sm" className="gap-2">
+                    <Printer className="h-4 w-4" />
+                    Print
+                </Button>
+                <Button onClick={handleDownloadPdf} size="sm" className="gap-2">
+                    <Download className="h-4 w-4" />
+                    PDF
+                </Button>
+             </div>
+             <div className="p-2 border rounded-md flex flex-col items-center">
+                <QRCode value={pageUrl} size={60} />
+                <p className="text-xs font-semibold mt-1">Scan to View Bill</p>
+            </div>
         </div>
     )
 
@@ -317,5 +331,3 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         </div>
     );
 }
-
-    
