@@ -3,12 +3,14 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, ShoppingCart, Package, Settings, Phone } from 'lucide-react';
+import { 
+    LayoutDashboard, ShoppingCart, Package, Settings, Phone, BookCopy, Globe, Receipt,
+    Banknote, Snowflake, Tags, FlaskConical, Shapes, History
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Header } from '@/components/Header';
 import React from 'react';
 import { Logo } from '@/components/logo';
-import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -39,7 +41,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { href: '/sales', icon: ShoppingCart, label: 'Sales' },
+    { href: '/purchases', icon: Package, label: 'Purchases' },
+    { href: '/purchase-register', icon: BookCopy, label: 'Purchase Register' },
+    { href: '/outside-sales', icon: Globe, label: 'Outside Sales' },
     { href: '/products', icon: Package, label: 'Products' },
+    { href: '/expenses', icon: Receipt, label: 'Expenses' },
+    { href: '/advances', icon: Banknote, label: 'Advances' },
+    { href: '/cold-storage', icon: Snowflake, label: 'Cold Storage' },
+    { href: '/watak-register', icon: BookCopy, label: 'Watak Register' },
+    { href: '/khata', icon: BookCopy, label: 'Khata Ledger' },
+    { href: '/rates', icon: Tags, label: 'Fruit Rates' },
+    { href: '/fertilizers', icon: FlaskConical, label: 'Fertilizers & Pesticides' },
+    { href: '/accessories', icon: Shapes, label: 'Accessories' },
+    { href: '/activity-log', icon: History, label: 'Activity Log' },
   ];
   
   const getPageTitle = () => {
@@ -49,7 +63,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (pathname.startsWith('/receipt/')) return 'Receipt';
     if (pathname.startsWith('/challan/')) return 'Challan';
     if (pathname.startsWith('/pesticide-invoice/')) return 'Pesticide Bill';
-    if (pathname.startsWith('/activity-log')) return 'Activity Log';
     
     const item = navItems.find(item => pathname.startsWith(item.href));
     return item ? item.label : 'SwiftSale';
@@ -86,11 +99,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   key={item.label}
                   href={item.href}
                   className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-3 text-muted-foreground transition-all hover:text-primary hover:bg-muted',
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted',
                     pathname.startsWith(item.href) && 'bg-muted text-primary'
                   )}
                 >
-                  <item.icon className="h-5 w-5" />
+                  <item.icon className="h-4 w-4" />
                   {item.label}
                 </Link>
               ))}
@@ -112,11 +125,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <Link
                     href="/settings"
                     className={cn(
-                        'flex items-center gap-3 rounded-lg px-3 py-3 text-muted-foreground transition-all hover:text-primary hover:bg-muted',
+                        'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted',
                         pathname.startsWith('/settings') && 'bg-muted text-primary'
                     )}
                     >
-                    <Settings className="h-5 w-5" />
+                    <Settings className="h-4 w-4" />
                     Settings
                 </Link>
               </div>

@@ -9,8 +9,9 @@ import { Sheet, SheetContent, SheetTrigger, SheetClose } from "./ui/sheet";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useLanguage } from "@/contexts/language-context";
-import { LayoutDashboard, Settings, Receipt, BookCopy, Menu, Package, BarChart3, Users, Tags, FlaskConical, Phone, ShoppingCart } from 'lucide-react';
+import { 
+    LayoutDashboard, Settings, Receipt, BookCopy, Menu, Package, BarChart3, Users, Tags, FlaskConical, Phone, ShoppingCart, Globe, Banknote, Snowflake, Shapes, History 
+} from 'lucide-react';
 import { Logo } from "./logo";
 import React from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -39,7 +40,19 @@ export function Header({ title }: { title: string }) {
     const navItems = [
       { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
       { href: '/sales', icon: ShoppingCart, label: 'Sales' },
+      { href: '/purchases', icon: Package, label: 'Purchases' },
+      { href: '/purchase-register', icon: BookCopy, label: 'Purchase Register' },
+      { href: '/outside-sales', icon: Globe, label: 'Outside Sales' },
       { href: '/products', icon: Package, label: 'Products' },
+      { href: '/expenses', icon: Receipt, label: 'Expenses' },
+      { href: '/advances', icon: Banknote, label: 'Advances' },
+      { href: '/cold-storage', icon: Snowflake, label: 'Cold Storage' },
+      { href: '/watak-register', icon: BookCopy, label: 'Watak Register' },
+      { href: '/khata', icon: BookCopy, label: 'Khata Ledger' },
+      { href: '/rates', icon: Tags, label: 'Fruit Rates' },
+      { href: '/fertilizers', icon: FlaskConical, label: 'Fertilizers & Pesticides' },
+      { href: '/accessories', icon: Shapes, label: 'Accessories' },
+      { href: '/activity-log', icon: History, label: 'Activity Log' },
     ];
 
 
@@ -71,7 +84,7 @@ export function Header({ title }: { title: string }) {
                     <Link
                       href={item.href}
                       className={cn(
-                        'flex items-center gap-3 rounded-lg px-3 py-3 text-muted-foreground transition-all hover:text-primary hover:bg-muted',
+                        'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted',
                         pathname.startsWith(item.href) && 'bg-muted text-primary'
                       )}
                     >
@@ -98,7 +111,7 @@ export function Header({ title }: { title: string }) {
                       <Link
                           href="/settings"
                           className={cn(
-                              'flex items-center gap-3 rounded-lg px-3 py-3 text-muted-foreground transition-all hover:text-primary hover:bg-muted',
+                              'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted',
                               pathname.startsWith('/settings') && 'bg-muted text-primary'
                           )}
                           >
