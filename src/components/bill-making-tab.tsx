@@ -11,9 +11,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Separator } from './ui/separator';
-import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Share, FileText } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Share, FileText, Camera, Wand2, Sparkles, Upload } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import { saveDocument, deleteDocument, getDocuments } from '@/lib/actions';
+import { extractWatakFromImage, WatakExtractOutput } from '@/ai/flows/extract-watak-flow';
+import Image from 'next/image';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
 
 type Row = {
   type: 'Patti' | 'Dabba';
@@ -35,6 +39,14 @@ export function BillMakingTab() {
   const [freight, setFreight] = useState<number>(0);
   const [rows, setRows] = useState<Row[]>(initialRows);
   const [isClient, setIsClient] = React.useState(false);
+
+
+  // AI Extraction State
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractedData, setExtractedData] = useState<WatakExtractOutput | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
 
   const { toast } = useToast();
@@ -129,6 +141,10 @@ export function BillMakingTab() {
         setFreight(0);
         setRows(initialRows);
         setIsEditing(false);
+        // also reset AI state
+        setSelectedImage(null);
+        setImagePreview(null);
+        setExtractedData(null);
     };
 
 
@@ -194,6 +210,7 @@ export function BillMakingTab() {
   };
 
   const loadBillForEdit = (bill: any) => {
+    resetForm(); // Clear everything first
     setSNo(bill.sNo);
     setMs(bill.customerName);
     setKhata(bill.khata || '');
@@ -259,6 +276,65 @@ export function BillMakingTab() {
     window.open(whatsappUrl, '_blank');
   };
 
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            setSelectedImage(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result as string);
+                setExtractedData(null); // Clear previous extractions
+            };
+            reader.readAsDataURL(file);
+        }
+  };
+
+  const handleExtract = async () => {
+        if (!imagePreview) {
+            toast({ variant: 'destructive', title: 'No Image', description: 'Please upload an image first.' });
+            return;
+        }
+        setIsExtracting(true);
+        setExtractedData(null);
+        try {
+            const result = await extractWatakFromImage({ photoDataUri: imagePreview });
+            setExtractedData(result);
+            toast({ title: 'Extraction Successful', description: 'Review the extracted data and apply it to the form.' });
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'AI Extraction Failed', description: (error as Error).message });
+            console.error(error);
+        } finally {
+            setIsExtracting(false);
+        }
+  };
+  
+  const applyExtractedData = () => {
+        if (!extractedData) return;
+        setSNo(extractedData.sNo);
+        setDate(extractedData.date);
+        setMs(extractedData.customerName);
+        setWatakNo(extractedData.watakNo);
+        setKhata(extractedData.khata || '');
+        setFreight(extractedData.freight || 0);
+
+        const newRows = extractedData.entries.map(entry => ({
+            type: entry.type,
+            qty: entry.qty,
+            variety: entry.variety,
+            rate: entry.rate,
+        }));
+        
+        // Add empty rows if needed to maintain a minimum length, or just use the extracted ones
+        if (newRows.length < 5) {
+             const emptyToAdd = 5 - newRows.length;
+             for (let i = 0; i < emptyToAdd; i++) {
+                 newRows.push({ ...emptyRow });
+             }
+        }
+        setRows(newRows);
+        toast({ title: 'Form Populated', description: 'The form has been filled with the extracted data.' });
+  };
+
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -276,6 +352,52 @@ export function BillMakingTab() {
                 </div>
             </CardHeader>
             <CardContent className="space-y-6">
+                 {/* AI Extractor */}
+                <Card className="bg-muted/50">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Wand2 className="text-primary"/> AI-Powered Watak Entry</CardTitle>
+                        <CardDescription>Upload a photo of a handwritten Watak to automatically fill the form.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                         <div className="space-y-4">
+                            <Input
+                                type="file"
+                                accept="image/*"
+                                ref={fileInputRef}
+                                onChange={handleImageSelect}
+                                className="hidden"
+                            />
+                            <Button onClick={() => fileInputRef.current?.click()} className="w-full gap-2">
+                                <Upload className="h-4 w-4" /> Upload Watak Photo
+                            </Button>
+                             {imagePreview && (
+                                <div className="relative aspect-video w-full rounded-md overflow-hidden border">
+                                    <Image src={imagePreview} alt="Watak Preview" layout="fill" objectFit="contain" />
+                                </div>
+                            )}
+                         </div>
+                         <div className="space-y-4">
+                            <Button onClick={handleExtract} disabled={!imagePreview || isExtracting} className="w-full gap-2">
+                                {isExtracting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Sparkles className="h-4 w-4" />}
+                                {isExtracting ? 'Analyzing Image...' : 'Extract Data with AI'}
+                            </Button>
+                            {extractedData && (
+                                <Alert>
+                                    <AlertTitle className="flex items-center gap-2">
+                                        <CheckCircle className="h-4 w-4 text-green-500" />
+                                        Extraction Complete
+                                    </AlertTitle>
+                                    <AlertDescription>
+                                        <p>Successfully extracted data for Watak #{extractedData.watakNo} for {extractedData.customerName}.</p>
+                                        <p className="mt-2"><strong>{extractedData.entries.length} items</strong> found with a net sale of <strong>₹{extractedData.totals.netSale.toFixed(2)}</strong>.</p>
+                                    </AlertDescription>
+                                    <Button onClick={applyExtractedData} className="w-full mt-4">Apply to Form</Button>
+                                </Alert>
+                            )}
+                         </div>
+                    </CardContent>
+                </Card>
+
                  {/* Header fields */}
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4 items-end">
                     <div className="md:col-span-2">
@@ -350,7 +472,7 @@ export function BillMakingTab() {
                                 type="number"
                                 className="w-24 text-right"
                                 value={r.qty || ''}
-                                onChange={e => updateRow(i, { qty: Number(e.target.value) })}
+                                onChange={e => updateRow(i, { qty: Number(r.qty) })}
                                 />
                             </TableCell>
                             <TableCell>
@@ -358,7 +480,7 @@ export function BillMakingTab() {
                                 type="number"
                                 className="w-24 text-right"
                                 value={r.rate || ''}
-                                onChange={e => updateRow(i, { rate: Number(e.target.value) })}
+                                onChange={e => updateRow(i, { rate: Number(r.rate) })}
                                 />
                             </TableCell>
                             <TableCell className="text-right">{(totals.rowGross[i] || 0).toFixed(2)}</TableCell>

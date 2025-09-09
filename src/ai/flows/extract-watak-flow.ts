@@ -10,6 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { CheckCircle } from "lucide-react";
 
 // Define the schema for a single item entry in the Watak
 const WatakItemSchema = z.object({
@@ -53,7 +54,7 @@ export const WatakExtractOutputSchema = z.object({
   customerName: z.string().describe("The full name of the customer or grower (M/s)."),
   watakNo: z.string().describe('The Watak number, if present.'),
   khata: z.string().optional().describe('The Khata (account) name, if present.'),
-  freight: z.number().optional().describe('The freight charges, if mentioned.'),
+  freight: z.number().optional().describe('The freight charges, if mentioned separately.'),
   entries: z.array(WatakItemSchema).describe('An array of all the line items in the Watak.'),
   totals: WatakTotalsSchema.describe('The calculated totals section of the Watak.'),
 });
