@@ -58,15 +58,16 @@ export function BillMakingTab() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-
+  // App State
   const { toast } = useToast();
   const router = useRouter();
-
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [savedBills, setSavedBills] = useState<any[]>([]);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [firestoreError, setFirestoreError] = useState<string | null>(null);
+
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -81,7 +82,11 @@ export function BillMakingTab() {
       if(success && data) {
         setSavedBills(data.sort((a,b) => (Number(a.sNo) > Number(b.sNo)) ? -1 : 1));
       } else {
-        toast({variant: 'destructive', title: 'Error fetching bills', description: error})
+        if (error && error.includes('firestore is not available')) {
+            setFirestoreError("Service firestore is not available. Please enable it in your Firebase project console.");
+        } else {
+            toast({variant: 'destructive', title: 'Error fetching bills', description: error})
+        }
       }
       setIsLoading(false);
   };
@@ -429,6 +434,25 @@ export function BillMakingTab() {
                 </div>
             </CardHeader>
             <CardContent className="space-y-6">
+                {firestoreError && (
+                    <Alert variant="destructive">
+                        <AlertTitle>Action Required: Enable Database</AlertTitle>
+                        <AlertDescription>
+                            <p className="mb-2">Your documents cannot be saved because the Firestore database is not enabled. Please enable it in your Firebase project.</p>
+                             <ol className="list-decimal list-inside space-y-1 mt-2">
+                                <li>Click the button below to go to the Firebase Console.</li>
+                                <li>Click the **Create database** button.</li>
+                                <li>Choose to start in **production mode** or **test mode**.</li>
+                                <li>Select a location and click **Enable**.</li>
+                            </ol>
+                        </AlertDescription>
+                         <Button asChild variant="secondary" className="mt-4 w-full bg-white text-black hover:bg-white/90">
+                            <a href="https://console.firebase.google.com/project/swiftsale-ewd7o/firestore" target="_blank" rel="noopener noreferrer" className="gap-2">
+                                <ExternalLink className="h-4 w-4" /> Enable Firestore Database
+                            </a>
+                        </Button>
+                    </Alert>
+                )}
                 <Card className="bg-muted/50">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Wand2 className="text-primary"/> AI-Powered Watak Entry</CardTitle>
@@ -437,15 +461,14 @@ export function BillMakingTab() {
                     <CardContent>
                          {storageError && (
                             <Alert variant="destructive" className="mb-4">
-                                <AlertTitle className="text-base font-bold text-destructive-foreground">Action Required: Enable Firebase Storage</AlertTitle>
-                                <AlertDescription className="text-destructive-foreground">
-                                    <p className="mb-2">{storageError}</p>
-                                    <p>This is a free, one-time setup in your Firebase project.</p>
+                                <AlertTitle>Action Required: Enable Cloud Storage</AlertTitle>
+                                <AlertDescription>
+                                    <p className="mb-2">The AI feature needs Firebase Storage to analyze images, but it's not enabled yet. Please enable it to upload photos.</p>
                                     <ol className="list-decimal list-inside space-y-1 mt-2">
                                         <li>Click the button below to go to the Firebase Console.</li>
-                                        <li>Click the "Get started" button.</li>
-                                        <li>Follow the on-screen prompts to enable the Storage service (the default settings are fine).</li>
-                                        <li>Once enabled, come back here and try uploading your image again.</li>
+                                        <li>Click the **Get started** button.</li>
+                                        <li>Follow the on-screen prompts to enable Storage (default settings are fine).</li>
+                                        <li>Come back here and refresh the page.</li>
                                     </ol>
                                 </AlertDescription>
                                 <Button asChild variant="secondary" className="mt-4 w-full bg-white text-black hover:bg-white/90">
@@ -465,12 +488,12 @@ export function BillMakingTab() {
                                         onChange={handleImageSelect}
                                         className="hidden"
                                     />
-                                    <Button onClick={() => fileInputRef.current?.click()} className="w-full gap-2" disabled={!!storageError}>
+                                    <Button onClick={() => fileInputRef.current?.click()} className="w-full gap-2" disabled={!!storageError || !!firestoreError}>
                                         <Upload className="h-4 w-4" /> Upload Photo
                                     </Button>
                                     <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
                                         <DialogTrigger asChild>
-                                            <Button variant="outline" className="w-full gap-2" disabled={!!storageError}>
+                                            <Button variant="outline" className="w-full gap-2" disabled={!!storageError || !!firestoreError}>
                                                 <Camera className="h-4 w-4" /> Use Camera
                                             </Button>
                                         </DialogTrigger>
@@ -512,7 +535,7 @@ export function BillMakingTab() {
                                 )}
                             </div>
                             <div className="space-y-4">
-                                <Button onClick={handleExtract} disabled={!selectedImage || isExtracting || !!storageError} className="w-full gap-2">
+                                <Button onClick={handleExtract} disabled={!selectedImage || isExtracting || !!storageError || !!firestoreError} className="w-full gap-2">
                                     {isExtracting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Sparkles className="h-4 w-4" />}
                                     {isExtracting ? 'Analyzing Image...' : 'Extract Data with AI'}
                                 </Button>
@@ -608,7 +631,7 @@ export function BillMakingTab() {
                                 type="number"
                                 className="w-24 text-right"
                                 value={r.qty || ''}
-                                onChange={e => updateRow(i, { qty: Number(e.target.value) })}
+                                onChange={e => updateRow(i, { qty: Number(e.target.value) || 0 })}
                                 />
                             </TableCell>
                             <TableCell>
@@ -616,7 +639,7 @@ export function BillMakingTab() {
                                 type="number"
                                 className="w-24 text-right"
                                 value={r.rate || ''}
-                                onChange={e => updateRow(i, { rate: Number(e.target.value) })}
+                                onChange={e => updateRow(i, { rate: Number(e.target.value) || 0 })}
                                 />
                             </TableCell>
                             <TableCell className="text-right">{(totals.rowGross[i] || 0).toFixed(2)}</TableCell>
@@ -680,14 +703,14 @@ export function BillMakingTab() {
             </CardContent>
             <CardFooter>
                 <div className="flex w-full justify-center flex-wrap gap-3">
-                    <Button onClick={saveBill} className="flex-1 min-w-[150px]" disabled={isSubmitting}>
+                    <Button onClick={saveBill} className="flex-1 min-w-[150px]" disabled={isSubmitting || !!firestoreError}>
                         {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                         {isEditing ? 'Update Watak' : 'Save Watak'}
                     </Button>
-                    <Button onClick={navigateToPrint} variant="secondary" className="flex-1 min-w-[150px] gap-2" disabled={!isEditing}>
+                    <Button onClick={navigateToPrint} variant="secondary" className="flex-1 min-w-[150px] gap-2" disabled={!isEditing || !!firestoreError}>
                        <FileText className="h-4 w-4" /> Print/View Invoice
                     </Button>
-                     <Button onClick={handleShare} variant="outline" className="flex-1 min-w-[150px] gap-2" disabled={!isEditing}>
+                     <Button onClick={handleShare} variant="outline" className="flex-1 min-w-[150px] gap-2" disabled={!isEditing || !!firestoreError}>
                        <Share className="h-4 w-4" /> Share
                     </Button>
                 </div>
