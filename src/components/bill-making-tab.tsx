@@ -311,10 +311,11 @@ export function BillMakingTab() {
             setExtractedData(result);
             toast({ title: 'Extraction Successful', description: 'Review the extracted data and apply it to the form.' });
         } catch (error: any) {
-            if (error.code === 'storage/unauthorized' || error.message.includes('storage/object-not-found')) {
-                setStorageError('Firebase Storage is not enabled or configured correctly for this project.');
+            const errorMessage = (error as Error).message;
+            if (errorMessage.includes('Service storage is not available')) {
+                 setStorageError('Firebase Storage is not enabled or configured correctly for this project.');
             } else {
-                 toast({ variant: 'destructive', title: 'AI Extraction Failed', description: (error as Error).message });
+                 toast({ variant: 'destructive', title: 'AI Extraction Failed', description: errorMessage });
             }
             console.error(error);
         } finally {
@@ -377,8 +378,9 @@ export function BillMakingTab() {
                             <Alert variant="destructive">
                                 <AlertTitle>Action Required: Enable Firebase Storage</AlertTitle>
                                 <AlertDescription>
-                                    <p className="mb-2">To upload images for AI extraction, you must first enable Firebase Storage for your project. This is a free, one-time setup.</p>
-                                    <ol className="list-decimal list-inside space-y-1">
+                                    <p className="mb-2">{storageError}</p>
+                                    <p>This is a free, one-time setup in your Firebase project.</p>
+                                    <ol className="list-decimal list-inside space-y-1 mt-2">
                                         <li>Click the button below to go to the Firebase Console.</li>
                                         <li>Click the "Get started" button.</li>
                                         <li>Follow the on-screen prompts to enable the Storage service (the default settings are fine).</li>
@@ -633,3 +635,5 @@ export function BillMakingTab() {
     </div>
   );
 }
+
+    
