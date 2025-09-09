@@ -2,8 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, ShoppingCart, Package, Settings, Receipt, BookUser, Truck, BookCopy, ScrollText, Tags, FlaskConical, Shapes, Globe, Banknote, Snowflake, History, LogOut } from 'lucide-react';
-import { useLanguage } from '@/contexts/language-context';
+import { LayoutDashboard, ShoppingCart, Package, Settings, Receipt, BookCopy, Tags, FlaskConical, BarChart3, Users, LogOut, Phone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Header } from '@/components/Header';
 import React from 'react';
@@ -13,7 +12,6 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { t } = useLanguage();
   const router = useRouter();
   const { toast } = useToast();
   const [userRole, setUserRole] = React.useState<string | null>(null);
@@ -37,28 +35,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     router.push('/login');
   };
 
-
   const navItems = [
-    { href: '/dashboard', icon: LayoutDashboard, label: t('dashboard'), role: ['admin', 'staff'] },
-    { href: '/sales', icon: ShoppingCart, label: t('sales'), role: ['admin', 'staff'] },
-    { href: '/purchases', icon: Truck, label: 'Purchases', role: ['admin', 'staff'] },
-    { href: '/purchase-register', icon: ScrollText, label: 'Purchase Register', role: ['admin', 'staff'] },
-    { href: '/outside-sales', icon: Globe, label: 'Outside Sales', role: ['admin', 'staff'] },
-    { href: '/products', icon: Package, label: t('products'), role: ['admin'] },
-    { href: '/expenses', icon: Receipt, label: 'Expenses', role: ['admin'] },
-    { href: '/advances', icon: Banknote, label: 'Advances', role: ['admin'] },
-    { href: '/cold-storage', icon: Snowflake, label: 'Cold Storage', role: ['admin'] },
-    { href: '/watak-register', icon: BookUser, label: t('watak_register'), role: ['admin', 'staff'] },
-    { href: '/khata', icon: BookCopy, label: 'Khata Ledger', role: ['admin', 'staff'] },
-    { href: '/rates', icon: Tags, label: 'Fruit Rates', role: ['admin', 'staff'] },
-    { href: '/fertilizers', icon: FlaskConical, label: 'Fertilizers & Pesticides', role: ['admin', 'staff'] },
-    { href: '/accessories', icon: Shapes, label: 'Accessories', role: ['admin', 'staff'] },
-    { href: '/activity-log', icon: History, label: 'Activity Log', role: ['admin'] },
-    { href: '/settings', icon: Settings, label: t('settings'), role: ['admin'] },
+    { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { href: '/watak-register', icon: Receipt, label: 'Wataks' },
+    { href: '/khata', icon: Users, label: 'Customers' },
+    { href: '/products', icon: Package, label: 'Products' },
+    { href: '/fertilizers', icon: FlaskConical, label: 'Fertilizers' },
+    { href: '/khata', icon: BookCopy, label: 'Khata Book' },
+    { href: '/expenses', icon: Tags, label: 'Expenses' },
+    { href: '/purchase-register', icon: BarChart3, label: 'Reports' },
   ];
-
-  const filteredNavItems = navItems.filter(item => userRole && item.role.includes(userRole));
-
+  
   const getPageTitle = () => {
     // A simple way to derive title for sub-pages like /invoice/[id]
     if (pathname.startsWith('/invoice/')) return 'Invoice';
@@ -82,42 +69,71 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <div className="hidden border-r bg-muted/40 md:block">
+      <div className="hidden border-r bg-background md:block">
         <div className="flex h-full max-h-screen flex-col gap-2">
-          <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <Link href="/" className="flex items-center gap-2 font-semibold text-foreground">
-              <Logo className="h-8 w-8" />
-              <span className="">{t('app_title')}</span>
+          <div className="flex h-24 items-center border-b px-4 lg:px-6">
+            <Link href="/" className="flex items-center gap-4 font-semibold text-foreground">
+              <div className="bg-primary/90 p-3 rounded-lg shadow-md">
+                 <Logo className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold">F.Co</h1>
+                <p className="text-xs text-muted-foreground">FIRDOUS AHMAD & COMPANY</p>
+                <p className="text-sm font-semibold text-primary/90">Sopore, Kashmir</p>
+              </div>
             </Link>
           </div>
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 overflow-auto py-2">
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-              {filteredNavItems.map((item) => (
+              {navItems.map((item) => (
                 <Link
                   key={item.label}
                   href={item.href}
                   className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-                    pathname.startsWith(item.href) && 'bg-primary text-primary-foreground hover:text-primary-foreground'
+                    'flex items-center gap-3 rounded-lg px-3 py-3 text-muted-foreground transition-all hover:text-primary hover:bg-muted',
+                    pathname.startsWith(item.href) && 'bg-muted text-primary'
                   )}
                 >
-                  <item.icon className="h-4 w-4" />
+                  <item.icon className="h-5 w-5" />
                   {item.label}
                 </Link>
               ))}
             </nav>
           </div>
-           <div className="mt-auto p-4">
-              <Button variant="ghost" className="w-full justify-start gap-3" onClick={handleLogout}>
-                  <LogOut className="h-4 w-4" />
-                  Logout
-              </Button>
+           <div className="mt-auto p-4 border-t">
+               <div className="px-4 mb-4">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Quick Contact</h3>
+                <div className="space-y-2 text-sm">
+                  <a href="tel:7006136330" className="flex items-center gap-3 text-muted-foreground hover:text-primary">
+                    <Phone className="h-4 w-4" />
+                    <span>7006136330</span>
+                  </a>
+                   <p className="text-xs text-muted-foreground">Apple Town, Sopore</p>
+                   <p className="text-xs font-semibold text-primary">Fruit Mandi Operations</p>
+                </div>
+              </div>
+              <div className="border-t pt-4">
+                <Link
+                    href="/settings"
+                    className={cn(
+                        'flex items-center gap-3 rounded-lg px-3 py-3 text-muted-foreground transition-all hover:text-primary hover:bg-muted',
+                        pathname.startsWith('/settings') && 'bg-muted text-primary'
+                    )}
+                    >
+                    <Settings className="h-5 w-5" />
+                    Settings
+                </Link>
+              </div>
+              <div className="text-center text-xs text-muted-foreground mt-4">
+                <p>© 2024 F.Co</p>
+                <p>Firdous Ahmad & Company</p>
+              </div>
             </div>
         </div>
       </div>
-      <div className="flex flex-col">
+      <div className="flex flex-col bg-muted/40">
         <Header title={getPageTitle()} />
-        <main className="flex-1 bg-background p-4 md:p-6 overflow-auto">
+        <main className="flex-1 overflow-auto p-4 md:p-6">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>
