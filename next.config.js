@@ -1,7 +1,6 @@
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
   serverActions: {
     bodySizeLimit: '4mb', // Allow larger image uploads for OCR
   },
