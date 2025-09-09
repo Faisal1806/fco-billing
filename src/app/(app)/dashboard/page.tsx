@@ -73,61 +73,98 @@ const QuickActionButton = ({ title, icon: Icon, onClick, className }: { title: s
 );
 
 
-const FruitDashboard = ({ stats, yearlyStats, accessoryStats, router }: { stats: DailyStats | null, yearlyStats: YearlyStats | null, accessoryStats: AccessoryStats | null, router: any }) => (
+const FruitDashboard = ({ stats, yearlyStats, accessoryStats, growerProfits, router }: { stats: DailyStats | null, yearlyStats: YearlyStats | null, accessoryStats: AccessoryStats | null, growerProfits: GrowerProfit[], router: any }) => (
     <div className="space-y-6">
-        <Card className="shadow-lg">
-            <CardHeader className="flex-row items-center gap-4">
-                <div className="p-3 bg-primary rounded-lg">
-                    <Apple className="h-8 w-8 text-primary-foreground" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+                <Card className="shadow-lg">
+                    <CardHeader className="flex-row items-center gap-4">
+                        <div className="p-3 bg-primary rounded-lg">
+                            <Apple className="h-8 w-8 text-primary-foreground" />
+                        </div>
+                        <div>
+                            <CardTitle>Business Dashboard</CardTitle>
+                            <CardDescription>Daily Operations Overview</CardDescription>
+                        </div>
+                    </CardHeader>
+                </Card>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+                     <StatCard 
+                        title="Today's Sales"
+                        value={`₹${stats?.totalSaleValue.toLocaleString('en-IN') ?? '0'}`}
+                        icon={TrendingUp}
+                        note={`From ${stats?.pattiSold ?? 0} Patti / ${stats?.dabbaSold ?? 0} Dabba`}
+                        iconBgColor="bg-green-500"
+                     />
+                     <StatCard 
+                        title="Monthly Sales"
+                        value={`₹${yearlyStats?.monthSales.toLocaleString('en-IN') ?? '0'}`}
+                        icon={Calendar}
+                        note="From this calendar month"
+                        iconBgColor="bg-blue-500"
+                     />
+                     <StatCard 
+                        title="Pending Khata (Credit)"
+                        value={`₹${accessoryStats?.outstandingCredit.toLocaleString('en-IN') ?? '0'}`}
+                        icon={CreditCard}
+                        note="From accessories sales"
+                        iconBgColor="bg-orange-500"
+                     />
+                    <StatCard
+                        title="Monthly Expenses"
+                        value={`₹${yearlyStats?.totalExpenses.toLocaleString('en-IN') ?? '0'}`}
+                        icon={TrendingDown}
+                        note="This month's total expenses"
+                        iconBgColor="bg-red-500"
+                    />
                 </div>
+                
                 <div>
-                    <CardTitle>Business Dashboard</CardTitle>
-                    <CardDescription>Daily Operations Overview</CardDescription>
+                    <h3 className="text-xl font-semibold mb-4">Quick Actions</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <QuickActionButton title="New Watak" icon={BookCopy} onClick={() => router.push('/sales')} className="bg-green-600 hover:bg-green-700" />
+                        <QuickActionButton title="Add Customer" icon={UserCheck} onClick={() => router.push('/khata')} className="bg-blue-600 hover:bg-blue-700" />
+                        <QuickActionButton title="Add Product" icon={PlusCircle} onClick={() => router.push('/products')} className="bg-purple-600 hover:bg-purple-700" />
+                        <QuickActionButton title="Record Expense" icon={FileText} onClick={() => router.push('/expenses')} className="bg-orange-600 hover:bg-orange-700" />
+                    </div>
                 </div>
-            </CardHeader>
-        </Card>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-             <StatCard 
-                title="Today's Sales"
-                value={`₹${stats?.totalSaleValue.toLocaleString('en-IN') ?? '0'}`}
-                icon={TrendingUp}
-                note={`From ${stats?.pattiSold ?? 0} Patti / ${stats?.dabbaSold ?? 0} Dabba`}
-                iconBgColor="bg-green-500"
-             />
-             <StatCard 
-                title="Monthly Sales"
-                value={`₹${yearlyStats?.monthSales.toLocaleString('en-IN') ?? '0'}`}
-                icon={Calendar}
-                note="From this calendar month"
-                iconBgColor="bg-blue-500"
-             />
-             <StatCard 
-                title="Pending Khata (Credit)"
-                value={`₹${accessoryStats?.outstandingCredit.toLocaleString('en-IN') ?? '0'}`}
-                icon={CreditCard}
-                note="From accessories sales"
-                iconBgColor="bg-orange-500"
-             />
-            <StatCard
-                title="Monthly Expenses"
-                value={`₹${yearlyStats?.totalExpenses.toLocaleString('en-IN') ?? '0'}`}
-                icon={TrendingDown}
-                note="This month's total expenses"
-                iconBgColor="bg-red-500"
-            />
-        </div>
-        
-        <div>
-            <h3 className="text-xl font-semibold mb-4">Quick Actions</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <QuickActionButton title="New Watak" icon={BookCopy} onClick={() => router.push('/sales')} className="bg-green-600 hover:bg-green-700" />
-                <QuickActionButton title="Add Customer" icon={UserCheck} onClick={() => router.push('/khata')} className="bg-blue-600 hover:bg-blue-700" />
-                <QuickActionButton title="Add Product" icon={PlusCircle} onClick={() => router.push('/products')} className="bg-purple-600 hover:bg-purple-700" />
-                <QuickActionButton title="Record Expense" icon={FileText} onClick={() => router.push('/expenses')} className="bg-orange-600 hover:bg-orange-700" />
             </div>
+             <Card className="lg:col-span-1 shadow-lg">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Trophy className="h-6 w-6 text-amber-500" /> Top Growers by Profit</CardTitle>
+                    <CardDescription>This session's top growers based on total net sales.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {growerProfits.length > 0 ? (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Grower</TableHead>
+                                    <TableHead className="text-right">Net Sales</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {growerProfits.map((grower, index) => (
+                                    <TableRow key={grower.name}>
+                                        <TableCell>
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-lg font-bold ${index < 3 ? 'text-amber-500' : 'text-muted-foreground'}`}>{index + 1}</span>
+                                                <span className="font-medium">{grower.name}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="text-right font-mono">₹{grower.profit.toLocaleString('en-IN')}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    ) : (
+                         <p className="text-sm text-muted-foreground text-center py-4">No sales data recorded this year to calculate grower profits.</p>
+                    )}
+                </CardContent>
+            </Card>
         </div>
 
-        <div>
+        <div className="mt-6">
             <h3 className="text-xl font-semibold mb-4">Recent Wataks</h3>
             <RateList />
         </div>
@@ -267,8 +304,8 @@ export default function DashboardPage() {
                 }
 
                 const grower = sale.customerName;
-                if(grower && sale.totals.commissionAmount) {
-                     profitsByGrower[grower] = (profitsByGrower[grower] || 0) + sale.totals.commissionAmount;
+                if(grower && sale.totals.netSale) {
+                     profitsByGrower[grower] = (profitsByGrower[grower] || 0) + sale.totals.netSale;
                 }
             }
         });
@@ -367,7 +404,7 @@ export default function DashboardPage() {
             <TabsTrigger value="inventory"><Package className="w-4 h-4 mr-2" />Inventory</TabsTrigger>
         </TabsList>
         <TabsContent value="fruit">
-            <FruitDashboard stats={stats} yearlyStats={yearlyStats} accessoryStats={accessoryStats} router={router} />
+            <FruitDashboard stats={stats} yearlyStats={yearlyStats} accessoryStats={accessoryStats} growerProfits={growerProfits} router={router} />
         </TabsContent>
         <TabsContent value="accessories">
             <AccessoriesDashboard stats={accessoryStats} router={router} />
