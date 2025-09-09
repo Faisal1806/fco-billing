@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,30 +21,32 @@ import { useToast } from '@/hooks/use-toast';
 import { useEffect } from 'react';
 
 const formSchema = z.object({
-  name: z.string().min(2, {
-    message: 'Name must be at least 2 characters.',
+  businessName: z.string().min(2, {
+    message: 'Business name must be at least 2 characters.',
   }),
-  email: z.string().email({
-    message: 'Please enter a valid email address.',
+  proprietorName: z.string().min(2, {
+    message: 'Proprietor name must be at least 2 characters.',
   }),
 });
 
-export function ProfileForm() {
+export function CompanyInfoForm() {
   const { toast } = useToast();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: 'Admin User',
-      email: 'lone07936@gmail.com',
+      businessName: 'Firdous Ahmad & Company',
+      proprietorName: 'Firdous Ahmad Lone',
     },
   });
 
   const { isDirty } = form.formState;
 
   function onSubmit(values: z.infer<typeof formSchema>) {
+    // Here you would typically save the data to your backend or state management
+    console.log(values);
     toast({
-      title: 'Profile Updated',
-      description: 'Your profile information has been saved.',
+      title: 'Company Information Updated',
+      description: 'Your company details have been saved.',
     });
     form.reset(values);
   }
@@ -51,20 +54,20 @@ export function ProfileForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Profile</CardTitle>
-        <CardDescription>Update your personal information.</CardDescription>
+        <CardTitle>Company Information</CardTitle>
+        <CardDescription>Update your company's details.</CardDescription>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
             <FormField
               control={form.control}
-              name="name"
+              name="businessName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>Business Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Your name" {...field} />
+                    <Input placeholder="Your business name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -72,12 +75,12 @@ export function ProfileForm() {
             />
             <FormField
               control={form.control}
-              name="email"
+              name="proprietorName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Proprietor Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Your email" {...field} />
+                    <Input placeholder="Owner/Proprietor name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -85,7 +88,7 @@ export function ProfileForm() {
             />
           </CardContent>
           <CardFooter className="border-t px-6 py-4">
-            <Button type="submit" disabled={!isDirty}>Save</Button>
+            <Button type="submit" disabled={!isDirty}>Save Changes</Button>
           </CardFooter>
         </form>
       </Form>

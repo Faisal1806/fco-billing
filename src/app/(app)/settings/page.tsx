@@ -9,7 +9,7 @@ import { Paintbrush, Palette, CheckCircle, Upload, Type, Move, QrCode, SlidersHo
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { ProfileForm } from "@/components/profile-form";
+import { CompanyInfoForm } from "@/components/profile-form";
 import { Factory, BellRing, CloudUpload } from 'lucide-react';
 import {
   AlertDialog,
@@ -347,7 +347,7 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
 
-            <ProfileForm />
+            <CompanyInfoForm />
 
             <Card>
                 <CardHeader>
