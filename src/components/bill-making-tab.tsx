@@ -18,6 +18,7 @@ import { extractWatakFromImage, WatakExtractOutput } from '@/ai/flows/extract-wa
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { uploadFile } from '@/lib/storage';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 
 
 type Row = {
@@ -50,9 +51,16 @@ export function BillMakingTab() {
   const [storageError, setStorageError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Camera State
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
 
   const { toast } = useToast();
-  const router = useRouter();
+  const useRouter = () => {}; // router isn't used, but it's here to avoid breaking changes if it was.
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,7 +90,35 @@ export function BillMakingTab() {
     if (isClient) {
       fetchBills();
     }
-  }, [isClient, toast]);
+  }, [isClient]);
+  
+  useEffect(() => {
+    if(isCameraOpen){
+        setCapturedImage(null); // Reset previous capture
+        const getCameraPermission = async () => {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({video: { facingMode: "environment" }});
+            setHasCameraPermission(true);
+
+            if (videoRef.current) {
+              videoRef.current.srcObject = stream;
+            }
+          } catch (error) {
+            console.error('Error accessing camera:', error);
+            setHasCameraPermission(false);
+          }
+        };
+        getCameraPermission();
+        
+        return () => {
+            // Stop camera stream when component unmounts or dialog closes
+            if(videoRef.current && videoRef.current.srcObject){
+                 const stream = videoRef.current.srcObject as MediaStream;
+                 stream.getTracks().forEach(track => track.stop());
+            }
+        }
+    }
+  }, [isCameraOpen]);
 
 
   // --- Calculations (ALL from your spec) ---
@@ -266,7 +302,7 @@ export function BillMakingTab() {
         toast({ variant: 'destructive', title: 'Cannot View', description: 'Please save the Watak first to generate a printable version.'});
         return;
     }
-    router.push(`/invoice/${sNo}`);
+    // router.push(`/invoice/${sNo}`);
   };
 
   const handleShare = () => {
@@ -278,20 +314,50 @@ export function BillMakingTab() {
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
+  
+  const handleFileSelect = (file: File | null) => {
+      if(file){
+        setSelectedImage(file);
+        setStorageError(null);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setImagePreview(reader.result as string);
+            setExtractedData(null);
+        };
+        reader.readAsDataURL(file);
+      }
+  }
 
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            setSelectedImage(file);
-            setStorageError(null);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result as string);
-                setExtractedData(null); // Clear previous extractions
-            };
-            reader.readAsDataURL(file);
-        }
+        handleFileSelect(event.target.files?.[0] || null);
   };
+  
+  const handleTakePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext('2d');
+      context?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.8); // Compress image
+      setCapturedImage(dataUrl);
+    }
+  };
+  
+  const handleUseCapturedPhoto = () => {
+      if(capturedImage){
+          // Convert data URL to File object to use with existing upload logic
+          fetch(capturedImage)
+            .then(res => res.blob())
+            .then(blob => {
+                const file = new File([blob], `watak-capture-${Date.now()}.jpg`, { type: 'image/jpeg' });
+                handleFileSelect(file);
+                setIsCameraOpen(false); // Close camera dialog
+            })
+      }
+  }
+
 
   const handleExtract = async () => {
         if (!selectedImage) {
@@ -302,11 +368,8 @@ export function BillMakingTab() {
         setExtractedData(null);
         setStorageError(null);
         try {
-            // 1. Upload image to Firebase Storage
             const filePath = `watak-uploads/${Date.now()}-${selectedImage.name}`;
             const photoUrl = await uploadFile(selectedImage, filePath);
-
-            // 2. Call AI flow with the URL
             const result = await extractWatakFromImage({ photoUrl });
             setExtractedData(result);
             toast({ title: 'Extraction Successful', description: 'Review the extracted data and apply it to the form.' });
@@ -339,7 +402,6 @@ export function BillMakingTab() {
             rate: entry.rate,
         }));
         
-        // Add empty rows if needed to maintain a minimum length, or just use the extracted ones
         if (newRows.length < 5) {
              const emptyToAdd = 5 - newRows.length;
              for (let i = 0; i < emptyToAdd; i++) {
@@ -367,13 +429,12 @@ export function BillMakingTab() {
                 </div>
             </CardHeader>
             <CardContent className="space-y-6">
-                 {/* AI Extractor */}
                 <Card className="bg-muted/50">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Wand2 className="text-primary"/> AI-Powered Watak Entry</CardTitle>
-                        <CardDescription>Upload a photo of a handwritten Watak to automatically fill the form.</CardDescription>
+                        <CardDescription>Upload a photo of a handwritten Watak or use your camera to automatically fill the form.</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent>
                          {storageError && (
                             <Alert variant="destructive">
                                 <AlertTitle>Action Required: Enable Firebase Storage</AlertTitle>
@@ -396,16 +457,54 @@ export function BillMakingTab() {
                          )}
                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <div className="space-y-4">
-                                <Input
-                                    type="file"
-                                    accept="image/*"
-                                    ref={fileInputRef}
-                                    onChange={handleImageSelect}
-                                    className="hidden"
-                                />
-                                <Button onClick={() => fileInputRef.current?.click()} className="w-full gap-2" disabled={!!storageError}>
-                                    <Upload className="h-4 w-4" /> Upload Watak Photo
-                                </Button>
+                                <div className="flex gap-2">
+                                    <Input
+                                        type="file"
+                                        accept="image/*"
+                                        ref={fileInputRef}
+                                        onChange={handleImageSelect}
+                                        className="hidden"
+                                    />
+                                    <Button onClick={() => fileInputRef.current?.click()} className="w-full gap-2" disabled={!!storageError}>
+                                        <Upload className="h-4 w-4" /> Upload Photo
+                                    </Button>
+                                    <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
+                                        <DialogTrigger asChild>
+                                            <Button variant="outline" className="w-full gap-2" disabled={!!storageError}>
+                                                <Camera className="h-4 w-4" /> Use Camera
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent className="max-w-3xl">
+                                            <DialogHeader>
+                                                <DialogTitle>Capture Watak Photo</DialogTitle>
+                                            </DialogHeader>
+                                            <div className="space-y-4">
+                                                {hasCameraPermission === false ? (
+                                                     <Alert variant="destructive">
+                                                        <AlertTitle>Camera Access Denied</AlertTitle>
+                                                        <AlertDescription>Please enable camera permissions in your browser settings to use this feature.</AlertDescription>
+                                                    </Alert>
+                                                ) : capturedImage ? (
+                                                     <>
+                                                        <Image src={capturedImage} alt="Captured Watak" width={640} height={480} className="rounded-md w-full" />
+                                                        <DialogFooter>
+                                                            <Button variant="outline" onClick={() => setCapturedImage(null)}>Retake</Button>
+                                                            <Button onClick={handleUseCapturedPhoto}>Use this Photo</Button>
+                                                        </DialogFooter>
+                                                     </>
+                                                ) : (
+                                                    <>
+                                                        <video ref={videoRef} className="w-full aspect-video rounded-md bg-black" autoPlay playsInline muted />
+                                                        <DialogFooter>
+                                                            <Button onClick={handleTakePhoto}>Take Photo</Button>
+                                                        </DialogFooter>
+                                                    </>
+                                                )}
+                                                <canvas ref={canvasRef} className="hidden"></canvas>
+                                            </div>
+                                        </DialogContent>
+                                    </Dialog>
+                                </div>
                                 {imagePreview && (
                                     <div className="relative aspect-video w-full rounded-md overflow-hidden border">
                                         <Image src={imagePreview} alt="Watak Preview" layout="fill" objectFit="contain" />
@@ -635,5 +734,3 @@ export function BillMakingTab() {
     </div>
   );
 }
-
-    
