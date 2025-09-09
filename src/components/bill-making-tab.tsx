@@ -66,7 +66,7 @@ export function BillMakingTab() {
   const [isLoading, setIsLoading] = useState(true);
   const [savedBills, setSavedBills] = useState<any[]>([]);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [firestoreError, setFirestoreError] = useState<string | null>(null);
+  
 
 
   useEffect(() => {
@@ -78,13 +78,10 @@ export function BillMakingTab() {
 
   const fetchBills = async () => {
       setIsLoading(true);
-      setFirestoreError(null);
+      
       const { success, data, error } = await getDocuments('invoices');
       if(success && data) {
         setSavedBills(data.sort((a,b) => (Number(a.sNo) > Number(b.sNo)) ? -1 : 1));
-      } else if (error?.includes('firestore is not available')) {
-          setFirestoreError(error);
-          setSavedBills([]); // Clear saved bills on this specific error
       } else {
         toast({variant: 'destructive', title: 'Error fetching bills', description: error})
       }
@@ -702,20 +699,6 @@ export function BillMakingTab() {
                 <h3 className="text-lg font-medium">Recent Wataks</h3>
             </CardHeader>
             <CardContent>
-                {firestoreError && (
-                    <Alert variant="destructive" className="mb-4">
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertTitle>Action Required: Enable Database</AlertTitle>
-                        <AlertDescription>
-                            <p>To save and load Wataks, you must enable the Firestore database in your Firebase project. This is a one-time setup.</p>
-                            <Button asChild size="sm" className="mt-3 w-full">
-                                <a href="https://console.firebase.google.com/project/swiftsale-ewd7o/firestore" target="_blank" rel="noopener noreferrer">
-                                    Enable Firestore Now
-                                </a>
-                            </Button>
-                        </AlertDescription>
-                    </Alert>
-                )}
                 <ScrollArea className="h-96">
                     <div className="space-y-2">
                         {isLoading ? (
@@ -743,7 +726,7 @@ export function BillMakingTab() {
                             </div>
                             ))
                         ) : (
-                           !firestoreError && <p className="text-sm text-muted-foreground text-center p-4">No recent Wataks found.</p>
+                           <p className="text-sm text-muted-foreground text-center p-4">No recent Wataks found.</p>
                         )}
                     </div>
                 </ScrollArea>
@@ -752,4 +735,5 @@ export function BillMakingTab() {
     </div>
   );
 }
+
 
