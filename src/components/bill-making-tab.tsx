@@ -66,7 +66,6 @@ export function BillMakingTab() {
   const [isLoading, setIsLoading] = useState(true);
   const [savedBills, setSavedBills] = useState<any[]>([]);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [firestoreError, setFirestoreError] = useState<string | null>(null);
 
 
   useEffect(() => {
@@ -82,11 +81,7 @@ export function BillMakingTab() {
       if(success && data) {
         setSavedBills(data.sort((a,b) => (Number(a.sNo) > Number(b.sNo)) ? -1 : 1));
       } else {
-        if (error && error.includes('firestore is not available')) {
-            setFirestoreError("Service firestore is not available. Please enable it in your Firebase project console.");
-        } else {
-            toast({variant: 'destructive', title: 'Error fetching bills', description: error})
-        }
+        toast({variant: 'destructive', title: 'Error fetching bills', description: error})
       }
       setIsLoading(false);
   };
@@ -434,25 +429,6 @@ export function BillMakingTab() {
                 </div>
             </CardHeader>
             <CardContent className="space-y-6">
-                {firestoreError && (
-                    <Alert variant="destructive">
-                        <AlertTitle>Action Required: Enable Database</AlertTitle>
-                        <AlertDescription>
-                            <p className="mb-2">Your documents cannot be saved because the Firestore database is not enabled. Please enable it in your Firebase project.</p>
-                             <ol className="list-decimal list-inside space-y-1 mt-2">
-                                <li>Click the button below to go to the Firebase Console.</li>
-                                <li>Click the **Create database** button.</li>
-                                <li>Choose to start in **production mode** or **test mode**.</li>
-                                <li>Select a location and click **Enable**.</li>
-                            </ol>
-                        </AlertDescription>
-                         <Button asChild variant="secondary" className="mt-4 w-full bg-white text-black hover:bg-white/90">
-                            <a href="https://console.firebase.google.com/project/swiftsale-ewd7o/firestore" target="_blank" rel="noopener noreferrer" className="gap-2">
-                                <ExternalLink className="h-4 w-4" /> Enable Firestore Database
-                            </a>
-                        </Button>
-                    </Alert>
-                )}
                 <Card className="bg-muted/50">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Wand2 className="text-primary"/> AI-Powered Watak Entry</CardTitle>
@@ -488,12 +464,12 @@ export function BillMakingTab() {
                                         onChange={handleImageSelect}
                                         className="hidden"
                                     />
-                                    <Button onClick={() => fileInputRef.current?.click()} className="w-full gap-2" disabled={!!storageError || !!firestoreError}>
+                                    <Button onClick={() => fileInputRef.current?.click()} className="w-full gap-2" disabled={!!storageError}>
                                         <Upload className="h-4 w-4" /> Upload Photo
                                     </Button>
                                     <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
                                         <DialogTrigger asChild>
-                                            <Button variant="outline" className="w-full gap-2" disabled={!!storageError || !!firestoreError}>
+                                            <Button variant="outline" className="w-full gap-2" disabled={!!storageError}>
                                                 <Camera className="h-4 w-4" /> Use Camera
                                             </Button>
                                         </DialogTrigger>
@@ -535,7 +511,7 @@ export function BillMakingTab() {
                                 )}
                             </div>
                             <div className="space-y-4">
-                                <Button onClick={handleExtract} disabled={!selectedImage || isExtracting || !!storageError || !!firestoreError} className="w-full gap-2">
+                                <Button onClick={handleExtract} disabled={!selectedImage || isExtracting || !!storageError} className="w-full gap-2">
                                     {isExtracting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Sparkles className="h-4 w-4" />}
                                     {isExtracting ? 'Analyzing Image...' : 'Extract Data with AI'}
                                 </Button>
@@ -703,14 +679,14 @@ export function BillMakingTab() {
             </CardContent>
             <CardFooter>
                 <div className="flex w-full justify-center flex-wrap gap-3">
-                    <Button onClick={saveBill} className="flex-1 min-w-[150px]" disabled={isSubmitting || !!firestoreError}>
+                    <Button onClick={saveBill} className="flex-1 min-w-[150px]" disabled={isSubmitting}>
                         {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                         {isEditing ? 'Update Watak' : 'Save Watak'}
                     </Button>
-                    <Button onClick={navigateToPrint} variant="secondary" className="flex-1 min-w-[150px] gap-2" disabled={!isEditing || !!firestoreError}>
+                    <Button onClick={navigateToPrint} variant="secondary" className="flex-1 min-w-[150px] gap-2" disabled={!isEditing}>
                        <FileText className="h-4 w-4" /> Print/View Invoice
                     </Button>
-                     <Button onClick={handleShare} variant="outline" className="flex-1 min-w-[150px] gap-2" disabled={!isEditing || !!firestoreError}>
+                     <Button onClick={handleShare} variant="outline" className="flex-1 min-w-[150px] gap-2" disabled={!isEditing}>
                        <Share className="h-4 w-4" /> Share
                     </Button>
                 </div>
