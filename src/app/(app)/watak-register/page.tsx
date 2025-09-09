@@ -72,20 +72,21 @@ export default function WatakRegisterPage() {
   }, []);
 
 
+  const fetchWataks = async () => {
+      setIsLoading(true);
+      const { success, data, error } = await getDocuments('invoices');
+      if (success && data) {
+          const formattedWataks = data.map((w: any) => ({...w, id: w.sNo})) as WatakEntry[];
+          setWataks(formattedWataks);
+          const uniqueGrowers = ['All Growers', ...new Set(formattedWataks.map(w => w.customerName))];
+          setGrowers(uniqueGrowers);
+      } else {
+          toast({ variant: "destructive", title: "Error", description: `Failed to load wataks: ${error}`})
+      }
+      setIsLoading(false);
+  }
+
   React.useEffect(() => {
-    const fetchWataks = async () => {
-        setIsLoading(true);
-        const { success, data, error } = await getDocuments('invoices');
-        if (success && data) {
-            const formattedWataks = data.map((w: any) => ({...w, id: w.sNo})) as WatakEntry[];
-            setWataks(formattedWataks);
-            const uniqueGrowers = ['All Growers', ...new Set(formattedWataks.map(w => w.customerName))];
-            setGrowers(uniqueGrowers);
-        } else {
-            toast({ variant: "destructive", title: "Error", description: `Failed to load wataks: ${error}`})
-        }
-        setIsLoading(false);
-    }
     fetchWataks();
   }, [toast]);
 
@@ -332,5 +333,3 @@ export default function WatakRegisterPage() {
     </Card>
   );
 }
-
-    

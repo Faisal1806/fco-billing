@@ -33,6 +33,7 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import './print.css';
+import { getDocuments } from '@/lib/actions';
 
 type TransactionType = 'Sale' | 'Purchase';
 
@@ -69,84 +70,80 @@ export default function KhataLedgerPage() {
     const [isLoading, setIsLoading] = React.useState(true);
 
     React.useEffect(() => {
-        setIsLoading(true);
-        const allTransactions: Transaction[] = [];
+        async function fetchLedgerData() {
+            setIsLoading(true);
+            const allTransactions: Transaction[] = [];
 
-        // In a real app, this would be a single Firestore query.
-        // For localStorage, we have to iterate through all keys.
-        const allLocalItems: {key: string, value: any}[] = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (!key) continue;
-            try {
-                allLocalItems.push({key, value: JSON.parse(localStorage.getItem(key)!)});
-            } catch (error) {
-                console.error(`Failed to parse item from local storage: ${key}`, error);
-            }
-        }
-        
-        allLocalItems.forEach(({key, value: doc}) => {
-            if (key.startsWith('invoice-')) { // This is a Watak/Sale
-                 allTransactions.push({
-                    id: `sale-${doc.sNo}`,
-                    date: doc.date,
-                    type: 'Sale',
-                    amount: doc.totals.netSale,
-                    grossAmount: doc.totals.grossSale,
-                    expenses: doc.totals.totalExpenses,
-                    party: doc.customerName,
-                    docId: doc.sNo,
-                });
-            } else if (key.startsWith('purchase-')) { // This is a Purchase
-                 allTransactions.push({
-                    id: `purchase-${doc.billNo}`,
-                    date: doc.date,
-                    type: 'Purchase',
-                    amount: doc.totals.grandTotal,
-                    grossAmount: doc.totals.grandTotal,
-                    expenses: 0,
-                    party: doc.growerName,
-                    docId: doc.billNo,
+            const invoicesRes = await getDocuments('invoices');
+            const purchasesRes = await getDocuments('purchases');
+
+            if (invoicesRes.success && invoicesRes.data) {
+                invoicesRes.data.forEach(doc => {
+                    allTransactions.push({
+                        id: `sale-${doc.sNo}`,
+                        date: doc.date,
+                        type: 'Sale',
+                        amount: doc.totals.netSale,
+                        grossAmount: doc.totals.grossSale,
+                        expenses: doc.totals.totalExpenses,
+                        party: doc.customerName,
+                        docId: doc.sNo,
+                    });
                 });
             }
-        });
 
-
-        allTransactions.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        
-        const calculatedLedgers: Ledger = {};
-
-        for (const trans of allTransactions) {
-            if (!calculatedLedgers[trans.party]) {
-                calculatedLedgers[trans.party] = { transactions: [], balance: 0, partyType: trans.type === 'Sale' ? 'customer' : 'supplier' };
+            if (purchasesRes.success && purchasesRes.data) {
+                purchasesRes.data.forEach(doc => {
+                    allTransactions.push({
+                        id: `purchase-${doc.billNo}`,
+                        date: doc.date,
+                        type: 'Purchase',
+                        amount: doc.totals.grandTotal,
+                        grossAmount: doc.totals.grandTotal,
+                        expenses: 0,
+                        party: doc.growerName,
+                        docId: doc.billNo,
+                    });
+                });
             }
+
+            allTransactions.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
             
-            const ledger = calculatedLedgers[trans.party];
-            ledger.transactions.push(trans);
-            
-            const newType = trans.type === 'Sale' ? 'customer' : 'supplier';
-            if(ledger.partyType !== 'both' && ledger.partyType !== newType) {
-                ledger.partyType = 'both';
-            }
-        }
-        
-        Object.keys(calculatedLedgers).forEach(party => {
-            let runningBalance = 0;
-            calculatedLedgers[party].transactions.forEach(trans => {
-                 if (trans.type === 'Sale') {
-                    runningBalance += trans.amount;
-                } else {
-                    runningBalance -= trans.amount;
+            const calculatedLedgers: Ledger = {};
+
+            for (const trans of allTransactions) {
+                if (!calculatedLedgers[trans.party]) {
+                    calculatedLedgers[trans.party] = { transactions: [], balance: 0, partyType: trans.type === 'Sale' ? 'customer' : 'supplier' };
                 }
+                
+                const ledger = calculatedLedgers[trans.party];
+                ledger.transactions.push(trans);
+                
+                const newType = trans.type === 'Sale' ? 'customer' : 'supplier';
+                if(ledger.partyType !== 'both' && ledger.partyType !== newType) {
+                    ledger.partyType = 'both';
+                }
+            }
+            
+            Object.keys(calculatedLedgers).forEach(party => {
+                let runningBalance = 0;
+                calculatedLedgers[party].transactions.forEach(trans => {
+                     if (trans.type === 'Sale') {
+                        runningBalance += trans.amount;
+                    } else {
+                        runningBalance -= trans.amount;
+                    }
+                });
+                calculatedLedgers[party].balance = runningBalance;
             });
-            calculatedLedgers[party].balance = runningBalance;
-        });
 
-        const sortedParties = Object.keys(calculatedLedgers).sort((a, b) => a.localeCompare(b));
-        
-        setLedgers(calculatedLedgers);
-        setAllParties(sortedParties);
-        setIsLoading(false);
+            const sortedParties = Object.keys(calculatedLedgers).sort((a, b) => a.localeCompare(b));
+            
+            setLedgers(calculatedLedgers);
+            setAllParties(sortedParties);
+            setIsLoading(false);
+        }
+        fetchLedgerData();
     }, []);
 
     React.useEffect(() => {
@@ -440,5 +437,3 @@ export default function KhataLedgerPage() {
     </>
   );
 }
-
-    

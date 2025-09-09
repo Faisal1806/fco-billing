@@ -12,6 +12,7 @@ import { getRealtimeDb } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { getDocuments } from '@/lib/actions';
 
 
 interface DailyStats {
@@ -254,59 +255,51 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
-        setIsLoading(false);
-        return;
-    }
-
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-    const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
+    async function fetchData() {
+        setIsLoading(true);
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        const currentMonth = today.getMonth();
+        const currentYear = today.getFullYear();
     
-    // Create an array of all items in localStorage to avoid iterating over it multiple times.
-    const allLocalItems: {key: string, value: any}[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (!key) continue;
-        try {
-            allLocalItems.push({key, value: JSON.parse(localStorage.getItem(key)!)});
-        } catch (error) {
-            console.error(`Failed to parse item from local storage: ${key}`, error);
-        }
-    }
+        // Fetch all necessary data from Firestore
+        const invoicesRes = await getDocuments('invoices');
+        const purchasesRes = await getDocuments('purchases');
+        const accessoriesRes = await getDocuments('accessory-ledgers');
+
+        const allInvoices = invoicesRes.success ? (invoicesRes.data || []) : [];
+        const allPurchases = purchasesRes.success ? (purchasesRes.data || []) : [];
+        const allAccessories = accessoriesRes.success ? (accessoriesRes.data || []) : [];
 
 
-    // Fruit Stats Calculation
-    let pattiPurchasedToday = 0;
-    let dabbaPurchasedToday = 0;
-    let totalPurchaseValueToday = 0;
-    let pattiSoldToday = 0;
-    let dabbaSoldToday = 0;
-    let totalSaleValueToday = 0;
-    let totalPattiPurchased = 0;
-    let totalDabbaPurchased = 0;
-    let totalPattiSold = 0;
-    let totalDabbaSold = 0;
-    
-    // Yearly stats
-    let yearlyTotalSales = 0;
-    let yearlyTotalExpenses = 0;
-    let yearlySentSales = 0;
-    let monthlySales = 0;
-    
-    // Grower Profit
-    const profitsByGrower: {[name: string]: number} = {};
+        // Fruit Stats Calculation
+        let pattiPurchasedToday = 0;
+        let dabbaPurchasedToday = 0;
+        let totalPurchaseValueToday = 0;
+        let pattiSoldToday = 0;
+        let dabbaSoldToday = 0;
+        let totalSaleValueToday = 0;
+        let totalPattiPurchased = 0;
+        let totalDabbaPurchased = 0;
+        let totalPattiSold = 0;
+        let totalDabbaSold = 0;
+        
+        // Yearly stats
+        let yearlyTotalSales = 0;
+        let yearlyTotalExpenses = 0;
+        let yearlySentSales = 0;
+        let monthlySales = 0;
+        
+        // Grower Profit
+        const profitsByGrower: {[name: string]: number} = {};
 
-    // Accessory Stats Calculation
-    let accessorySalesToday = 0;
-    let accessorySalesMonth = 0;
-    let accessoryCredit = 0;
-    const itemQuantities: {[name: string]: number} = {};
-    
-    allLocalItems.forEach(({key, value: doc}) => {
-        if (key.startsWith('invoice-')) { // This is a Watak/Sale
-            const sale = doc;
+        // Accessory Stats Calculation
+        let accessorySalesToday = 0;
+        let accessorySalesMonth = 0;
+        let accessoryCredit = 0;
+        const itemQuantities: {[name: string]: number} = {};
+        
+        allInvoices.forEach(sale => {
             const saleDate = new Date(sale.date);
             const isToday = sale.date === todayStr;
 
@@ -337,9 +330,9 @@ export default function DashboardPage() {
                      profitsByGrower[grower] = (profitsByGrower[grower] || 0) + sale.totals.commissionAmount;
                 }
             }
+        });
 
-        } else if (key.startsWith('purchase-')) { // This is a Purchase
-            const purchase = doc;
+        allPurchases.forEach(purchase => {
              const isToday = purchase.date === todayStr;
 
             purchase.entries.forEach((entry: any) => {
@@ -354,9 +347,9 @@ export default function DashboardPage() {
             });
             
             if (isToday) totalPurchaseValueToday += purchase.totals.grandTotal || 0;
+        });
 
-        } else if (key.startsWith('accessory-ledger-')) { // This is an Accessory sale
-            const entry = doc;
+        allAccessories.forEach(entry => {
             const entryDate = new Date(entry.date);
             const amount = (entry.qty || 0) * (entry.rate || 0);
 
@@ -372,47 +365,48 @@ export default function DashboardPage() {
             if(entry.item){
                 itemQuantities[entry.item] = (itemQuantities[entry.item] || 0) + (entry.qty || 0);
             }
-        }
-    });
+        });
 
-    
-    setStats({
-      pattiPurchased: pattiPurchasedToday,
-      dabbaPurchased: dabbaPurchasedToday,
-      totalPurchaseValue: totalPurchaseValueToday,
-      pattiSold: pattiSoldToday,
-      dabbaSold: dabbaSoldToday,
-      totalSaleValue: totalSaleValueToday,
-      currentPattiStock: totalPattiPurchased - totalPattiSold,
-      currentDabbaStock: totalDabbaPurchased - totalDabbaSold,
-    });
+        
+        setStats({
+          pattiPurchased: pattiPurchasedToday,
+          dabbaPurchased: dabbaPurchasedToday,
+          totalPurchaseValue: totalPurchaseValueToday,
+          pattiSold: pattiSoldToday,
+          dabbaSold: dabbaSoldToday,
+          totalSaleValue: totalSaleValueToday,
+          currentPattiStock: totalPattiPurchased - totalPattiSold,
+          currentDabbaStock: totalDabbaPurchased - totalDabbaSold,
+        });
 
-    setYearlyStats({
-        totalSales: yearlyTotalSales,
-        totalExpenses: yearlyTotalExpenses,
-        netProfit: yearlyTotalSales - yearlyTotalExpenses,
-        sentSales: yearlySentSales,
-        monthSales: monthlySales,
-    });
+        setYearlyStats({
+            totalSales: yearlyTotalSales,
+            totalExpenses: yearlyTotalExpenses,
+            netProfit: yearlyTotalSales - yearlyTotalExpenses,
+            sentSales: yearlySentSales,
+            monthSales: monthlySales,
+        });
 
-    const sortedGrowerProfits = Object.entries(profitsByGrower)
-        .map(([name, profit]) => ({ name, profit }))
-        .sort((a,b) => b.profit - a.profit)
-        .slice(0, 10); // Show top 10 growers
+        const sortedGrowerProfits = Object.entries(profitsByGrower)
+            .map(([name, profit]) => ({ name, profit }))
+            .sort((a,b) => b.profit - a.profit)
+            .slice(0, 10); // Show top 10 growers
 
-    setGrowerProfits(sortedGrowerProfits);
-    
-    const topItem = Object.entries(itemQuantities).sort(([, a], [, b]) => b - a)[0]?.[0] || 'N/A';
+        setGrowerProfits(sortedGrowerProfits);
+        
+        const topItem = Object.entries(itemQuantities).sort(([, a], [, b]) => b - a)[0]?.[0] || 'N/A';
 
-    setAccessoryStats({
-        todaySales: accessorySalesToday,
-        monthSales: accessorySalesMonth,
-        topItem: topItem,
-        outstandingCredit: accessoryCredit,
-    });
+        setAccessoryStats({
+            todaySales: accessorySalesToday,
+            monthSales: accessorySalesMonth,
+            topItem: topItem,
+            outstandingCredit: accessoryCredit,
+        });
 
 
-    setIsLoading(false);
+        setIsLoading(false);
+    }
+    fetchData();
   }, []);
 
   if (isLoading) {

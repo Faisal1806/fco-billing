@@ -173,7 +173,7 @@ export default function ExpensesPage() {
         const companyWataks = new Set<string>();
         const labourWataks = new Set<string>();
 
-        (invoicesData || []).forEach(sale => {
+        (invoicesData || []).forEach((sale: any) => {
             if(sale.totals) {
                 const pattiQty = sale.totals.pattiQty || 0;
                 const dabbaQty = sale.totals.dabbaQty || 0;
@@ -272,7 +272,7 @@ export default function ExpensesPage() {
         }
 
         const id = `expense-${Date.now()}`;
-        const expenseData = { ...formState, id };
+        const expenseData = { ...formState, id, type: 'manual' };
         
         const { success, error } = await saveDocument('expenses', id, expenseData);
         if (success) {
@@ -368,5 +368,3 @@ export default function ExpensesPage() {
         </div>
     );
 }
-
-    
