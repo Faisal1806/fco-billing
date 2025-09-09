@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, PackagePlus, PackageMinus, Package, UserCheck, UserX, Leaf, Box, Apple, FlaskConical, Shapes, Calendar, Star, CreditCard, Database, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, History, BookCopy, PlusCircle } from 'lucide-react';
+import { Loader2, PackagePlus, PackageMinus, Package, UserCheck, UserX, Leaf, Box, Apple, FlaskConical, Shapes, Calendar, Star, CreditCard, Database, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, History, BookCopy, PlusCircle, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import RateList from '@/components/RateList';
@@ -123,7 +123,7 @@ const FruitDashboard = ({ stats, yearlyStats, accessoryStats, router }: { stats:
                 <QuickActionButton title="New Watak" icon={BookCopy} onClick={() => router.push('/sales')} className="bg-green-600 hover:bg-green-700" />
                 <QuickActionButton title="Add Customer" icon={UserCheck} onClick={() => router.push('/khata')} className="bg-blue-600 hover:bg-blue-700" />
                 <QuickActionButton title="Add Product" icon={PlusCircle} onClick={() => router.push('/products')} className="bg-purple-600 hover:bg-purple-700" />
-                <QuickActionButton title="Record Expense" icon={Receipt} onClick={() => router.push('/expenses')} className="bg-orange-600 hover:bg-orange-700" />
+                <QuickActionButton title="Record Expense" icon={FileText} onClick={() => router.push('/expenses')} className="bg-orange-600 hover:bg-orange-700" />
             </div>
         </div>
 
