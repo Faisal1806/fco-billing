@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, PackagePlus, PackageMinus, Package, UserCheck, UserX, Leaf, Box, Apple, FlaskConical, Shapes, Calendar, Star, CreditCard, Database, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy } from 'lucide-react';
+import { Loader2, PackagePlus, PackageMinus, Package, UserCheck, UserX, Leaf, Box, Apple, FlaskConical, Shapes, Calendar, Star, CreditCard, Database, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, History, BookCopy, PlusCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import RateList from '@/components/RateList';
@@ -51,149 +51,86 @@ type AccessoryStats = {
     outstandingCredit: number;
 }
 
-const StatCard = ({ title, value, icon: Icon, note, color }: { title: string, value: string, icon: React.ElementType, note?: string, color?: string }) => (
-    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{title}</CardTitle>
-            <Icon className={`h-5 w-5 ${color || 'text-muted-foreground'}`} />
-        </CardHeader>
-        <CardContent>
-            <div className="text-2xl font-bold">{value}</div>
-            {note && <p className="text-xs text-muted-foreground">{note}</p>}
+const StatCard = ({ title, value, icon: Icon, note, iconBgColor }: { title: string, value: string, icon: React.ElementType, note?: string, iconBgColor?: string }) => (
+    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 relative overflow-hidden">
+        <CardContent className="p-4 z-10 relative">
+            <p className="text-sm text-muted-foreground">{title}</p>
+            <p className="text-2xl font-bold mt-1">{value}</p>
+            <p className="text-xs text-muted-foreground mt-1">{note}</p>
         </CardContent>
+        <div className={`absolute -right-4 -top-2 h-16 w-16 rounded-full ${iconBgColor || 'bg-gray-100'} opacity-30`}></div>
+         <div className={`absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full ${iconBgColor || 'bg-gray-100'}`}>
+            <Icon className="h-6 w-6 text-white" />
+        </div>
     </Card>
 );
 
-const RealtimeDatabaseCard = () => {
-    const [message, setMessage] = useState<string | null>('Connecting to database...');
+const QuickActionButton = ({ title, icon: Icon, onClick, className }: { title: string, icon: React.ElementType, onClick: () => void, className?: string }) => (
+    <Button onClick={onClick} className={`flex items-center justify-center flex-col h-24 text-lg gap-2 shadow-md hover:shadow-lg transition-shadow ${className}`}>
+        <Icon className="h-6 w-6" />
+        {title}
+    </Button>
+);
 
-    useEffect(() => {
-        const db = getRealtimeDb();
-        const messageRef = ref(db, 'message');
 
-        const unsubscribe = onValue(messageRef, (snapshot) => {
-            const data = snapshot.val();
-            if (data && data.text) {
-                setMessage(data.text);
-            } else {
-                setMessage('No message set in database.');
-            }
-        }, (error) => {
-            console.error("Failed to read value.", error);
-            setMessage('Error reading from database.');
-        });
-
-        return () => unsubscribe();
-    }, []);
-
-    return (
-        <Card className="col-span-1 lg:col-span-2 shadow-lg">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <Database className="h-5 w-5 text-amber-500" />
-                    Realtime Database Demo
-                </CardTitle>
-                <CardDescription>
-                    This card reads a value from the 'message' path in your Realtime Database and updates live.
-                </CardDescription>
+const FruitDashboard = ({ stats, yearlyStats, accessoryStats, router }: { stats: DailyStats | null, yearlyStats: YearlyStats | null, accessoryStats: AccessoryStats | null, router: any }) => (
+    <div className="space-y-6">
+        <Card className="shadow-lg">
+            <CardHeader className="flex-row items-center gap-4">
+                <div className="p-3 bg-primary rounded-lg">
+                    <Apple className="h-8 w-8 text-primary-foreground" />
+                </div>
+                <div>
+                    <CardTitle>Business Dashboard</CardTitle>
+                    <CardDescription>Daily Operations Overview</CardDescription>
+                </div>
             </CardHeader>
-            <CardContent>
-                <p className="text-lg font-mono bg-muted p-4 rounded-md">
-                    Value: <span className="font-bold">{message}</span>
-                </p>
-            </CardContent>
         </Card>
-    );
-};
-
-
-const FruitDashboard = ({ stats, yearlyStats, growerProfits }: { stats: DailyStats | null, yearlyStats: YearlyStats | null, growerProfits: GrowerProfit[] }) => (
-    <div className="space-y-8">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
              <StatCard 
-                title="Total Purchased Today"
-                value={`₹${stats?.totalPurchaseValue.toLocaleString('en-IN') ?? '0'}`}
-                icon={PackagePlus}
-                note={`${stats?.pattiPurchased ?? 0} Patti / ${stats?.dabbaPurchased ?? 0} Dabba`}
-             />
-             <StatCard 
-                title="Total Sold Today"
+                title="Today's Sales"
                 value={`₹${stats?.totalSaleValue.toLocaleString('en-IN') ?? '0'}`}
-                icon={PackageMinus}
-                 note={`${stats?.pattiSold ?? 0} Patti / ${stats?.dabbaSold ?? 0} Dabba`}
+                icon={TrendingUp}
+                note={`From ${stats?.pattiSold ?? 0} Patti / ${stats?.dabbaSold ?? 0} Dabba`}
+                iconBgColor="bg-green-500"
              />
              <StatCard 
-                title="Current Stock (Pending)"
-                value={`${(stats?.currentPattiStock ?? 0) + (stats?.currentDabbaStock ?? 0)} Boxes`}
-                icon={Package}
-                note={`${stats?.currentPattiStock ?? 0} Patti / ${stats?.currentDabbaStock ?? 0} Dabba`}
-             />
-            <StatCard
-                title="This Month's Sales"
+                title="Monthly Sales"
                 value={`₹${yearlyStats?.monthSales.toLocaleString('en-IN') ?? '0'}`}
                 icon={Calendar}
-                color="text-blue-500"
-            />
+                note="From this calendar month"
+                iconBgColor="bg-blue-500"
+             />
+             <StatCard 
+                title="Pending Khata (Credit)"
+                value={`₹${accessoryStats?.outstandingCredit.toLocaleString('en-IN') ?? '0'}`}
+                icon={CreditCard}
+                note="From accessories sales"
+                iconBgColor="bg-orange-500"
+             />
             <StatCard
-                title="This Year Total Sales"
-                value={`₹${yearlyStats?.totalSales.toLocaleString('en-IN') ?? '0'}`}
-                icon={TrendingUp}
-                color="text-green-500"
-            />
-             <StatCard
-                title="This Year Total Expenses"
+                title="Monthly Expenses"
                 value={`₹${yearlyStats?.totalExpenses.toLocaleString('en-IN') ?? '0'}`}
                 icon={TrendingDown}
-                color="text-orange-500"
-            />
-             <StatCard
-                title="This Year Net Profit"
-                value={`₹${yearlyStats?.netProfit.toLocaleString('en-IN') ?? '0'}`}
-                icon={IndianRupee}
-                color="text-red-500"
-            />
-             <StatCard
-                title="This Year Sent Sales (Gross)"
-                value={`₹${yearlyStats?.sentSales.toLocaleString('en-IN') ?? '0'}`}
-                icon={HandCoins}
-                color="text-purple-500"
+                note="This month's total expenses"
+                iconBgColor="bg-red-500"
             />
         </div>
-         <div className="grid gap-6 md:grid-cols-2">
+        
+        <div>
+            <h3 className="text-xl font-semibold mb-4">Quick Actions</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <QuickActionButton title="New Watak" icon={BookCopy} onClick={() => router.push('/sales')} className="bg-green-600 hover:bg-green-700" />
+                <QuickActionButton title="Add Customer" icon={UserCheck} onClick={() => router.push('/khata')} className="bg-blue-600 hover:bg-blue-700" />
+                <QuickActionButton title="Add Product" icon={PlusCircle} onClick={() => router.push('/products')} className="bg-purple-600 hover:bg-purple-700" />
+                <QuickActionButton title="Record Expense" icon={Receipt} onClick={() => router.push('/expenses')} className="bg-orange-600 hover:bg-orange-700" />
+            </div>
+        </div>
+
+        <div>
+            <h3 className="text-xl font-semibold mb-4">Recent Wataks</h3>
             <RateList />
-             <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Trophy className="h-5 w-5 text-amber-400" /> Top Growers by Profit</CardTitle>
-                    <CardDescription>Ranking based on total commission earned this season.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                     {growerProfits.length > 0 ? (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Rank</TableHead>
-                                    <TableHead>Grower Name</TableHead>
-                                    <TableHead className="text-right">Total Profit</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {growerProfits.map((grower, index) => (
-                                    <TableRow key={grower.name}>
-                                        <TableCell>
-                                            <Badge variant={index < 3 ? "default" : "secondary"}>{index + 1}</Badge>
-                                        </TableCell>
-                                        <TableCell className="font-medium">{grower.name}</TableCell>
-                                        <TableCell className="text-right font-mono font-semibold">₹{grower.profit.toLocaleString('en-IN')}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    ) : (
-                        <p className="text-sm text-muted-foreground text-center py-4">No profit data available yet.</p>
-                    )}
-                </CardContent>
-             </Card>
-         </div>
+        </div>
     </div>
 );
 
@@ -204,21 +141,25 @@ const AccessoriesDashboard = ({ stats, router }: { stats: AccessoryStats | null,
                 title="Today's Accessories Sale"
                 value={`₹${stats?.todaySales.toLocaleString('en-IN') ?? '0'}`}
                 icon={Package}
+                iconBgColor="bg-green-500"
              />
              <StatCard 
                 title="This Month's Accessories Sale"
                 value={`₹${stats?.monthSales.toLocaleString('en-IN') ?? '0'}`}
                 icon={Calendar}
+                 iconBgColor="bg-blue-500"
              />
              <StatCard 
                 title="Outstanding Khata (Credit)"
                 value={`₹${stats?.outstandingCredit.toLocaleString('en-IN') ?? '0'}`}
                 icon={CreditCard}
+                 iconBgColor="bg-orange-500"
              />
              <StatCard 
                 title="Top Selling Item"
                 value={stats?.topItem ?? 'N/A'}
                 icon={Star}
+                 iconBgColor="bg-purple-500"
              />
         </div>
          <div className="mt-8 text-center">
@@ -426,7 +367,7 @@ export default function DashboardPage() {
             <TabsTrigger value="inventory"><Package className="w-4 h-4 mr-2" />Inventory</TabsTrigger>
         </TabsList>
         <TabsContent value="fruit">
-            <FruitDashboard stats={stats} yearlyStats={yearlyStats} growerProfits={growerProfits} />
+            <FruitDashboard stats={stats} yearlyStats={yearlyStats} accessoryStats={accessoryStats} router={router} />
         </TabsContent>
         <TabsContent value="accessories">
             <AccessoriesDashboard stats={accessoryStats} router={router} />
