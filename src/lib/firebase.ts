@@ -3,6 +3,7 @@ import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getMessaging, Messaging } from 'firebase/messaging';
 import { getDatabase, Database } from "firebase/database";
+import { getStorage, FirebaseStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDPbM_i-g5T...Y87Fk",
@@ -20,6 +21,7 @@ const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseCon
 let db: Firestore | null = null;
 let rtdb: Database | null = null;
 let messaging: Messaging | null = null;
+let storage: FirebaseStorage | null = null;
 
 
 export function getClientDb(): Firestore {
@@ -27,6 +29,13 @@ export function getClientDb(): Firestore {
       db = getFirestore(app);
     }
     return db;
+}
+
+export function getClientStorage(): FirebaseStorage {
+    if (!storage) {
+        storage = getStorage(app);
+    }
+    return storage;
 }
 
 export function getRealtimeDb(): Database {
@@ -48,4 +57,3 @@ export const getClientMessaging = () => {
 
 
 export { app, firebaseConfig };
-

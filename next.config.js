@@ -1,9 +1,6 @@
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  serverActions: {
-    bodySizeLimit: '20mb', // Allow larger image uploads for OCR
-  },
   typescript: {
     ignoreBuildErrors: true,
   },

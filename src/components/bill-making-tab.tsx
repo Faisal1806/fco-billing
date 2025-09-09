@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useRef, useState, useEffect } from 'react';
@@ -10,12 +11,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Separator } from './ui/separator';
-import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Share, FileText, Camera, Wand2, Sparkles, Upload } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Share, FileText, Camera, Wand2, Sparkles, Upload, CheckCircle } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import { saveDocument, deleteDocument, getDocuments } from '@/lib/actions';
 import { extractWatakFromImage, WatakExtractOutput } from '@/ai/flows/extract-watak-flow';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { uploadFile } from '@/lib/storage';
 
 
 type Row = {
@@ -289,14 +291,19 @@ export function BillMakingTab() {
   };
 
   const handleExtract = async () => {
-        if (!imagePreview) {
+        if (!selectedImage) {
             toast({ variant: 'destructive', title: 'No Image', description: 'Please upload an image first.' });
             return;
         }
         setIsExtracting(true);
         setExtractedData(null);
         try {
-            const result = await extractWatakFromImage({ photoDataUri: imagePreview });
+            // 1. Upload image to Firebase Storage
+            const filePath = `watak-uploads/${Date.now()}-${selectedImage.name}`;
+            const photoUrl = await uploadFile(selectedImage, filePath);
+
+            // 2. Call AI flow with the URL
+            const result = await extractWatakFromImage({ photoUrl });
             setExtractedData(result);
             toast({ title: 'Extraction Successful', description: 'Review the extracted data and apply it to the form.' });
         } catch (error) {
@@ -376,7 +383,7 @@ export function BillMakingTab() {
                             )}
                          </div>
                          <div className="space-y-4">
-                            <Button onClick={handleExtract} disabled={!imagePreview || isExtracting} className="w-full gap-2">
+                            <Button onClick={handleExtract} disabled={!selectedImage || isExtracting} className="w-full gap-2">
                                 {isExtracting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Sparkles className="h-4 w-4" />}
                                 {isExtracting ? 'Analyzing Image...' : 'Extract Data with AI'}
                             </Button>
