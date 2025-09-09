@@ -72,7 +72,9 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             setLoading(true);
 
             let data: BillData | null = null;
+            let errorOccurred = false;
             
+            // 1. Try fetching from Firestore first
             try {
                 const db = getClientDb();
                 const docRef = doc(db, "invoices", params.id);
@@ -80,20 +82,28 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
                 if (docSnap.exists()) {
                     data = docSnap.data() as BillData;
-                } else {
-                    toast({
-                        variant: "destructive",
-                        title: "Invoice Not Found",
-                        description: "The requested invoice was not found in the cloud."
-                    });
                 }
             } catch (error) {
-                console.error("Firestore fetch failed:", error);
-                 toast({
-                    variant: "destructive",
-                    title: "Cloud Error",
-                    description: "Could not connect to the cloud to fetch the invoice."
-                });
+                console.error("Firestore fetch failed, will try localStorage.", error);
+                errorOccurred = true;
+            }
+
+            // 2. If Firestore fetch fails or document doesn't exist, try localStorage
+            if (!data) {
+                try {
+                     const storedBill = localStorage.getItem(`invoice-${params.id}`);
+                     if (storedBill) {
+                        data = JSON.parse(storedBill);
+                        if (errorOccurred) {
+                            toast({
+                                title: "Displaying Local Version",
+                                description: "Could not connect to the cloud. Showing the locally saved Watak."
+                            });
+                        }
+                    }
+                } catch (e) {
+                     console.error("Could not parse bill from localStorage", e);
+                }
             }
             
             if (data) {
@@ -102,6 +112,12 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                     qty: e.qty || e.peti || e.daba || 0
                 }));
                 setBillData(data);
+            } else {
+                 toast({
+                    variant: "destructive",
+                    title: "Invoice Not Found",
+                    description: "The requested invoice was not found online or on this device."
+                });
             }
             
             setLoading(false);
