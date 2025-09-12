@@ -3,13 +3,14 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Package, UserCheck, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, History, BookCopy, PlusCircle, FileText, Apple, Box, Calendar, Star } from 'lucide-react';
+import { Loader2, Package, UserCheck, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, History, BookCopy, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import RateList from '@/components/RateList';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { getDocuments } from '@/lib/actions';
+import { Badge } from '@/components/ui/badge';
 
 
 interface DailyStats {
@@ -37,6 +38,26 @@ type AccessoryStats = {
     topItem: string;
     outstandingCredit: number;
 }
+
+interface Product {
+  id: string;
+  name: string;
+  category: string;
+  stock: number;
+  reorderLevel?: number;
+}
+
+interface AccessoryLedgerEntry {
+    item: string;
+    qty: number;
+}
+
+interface CategorizedProducts {
+    fruits: Product[];
+    accessories: Product[];
+    fertilizers: Product[];
+}
+
 
 const StatCard = ({ title, value, icon: Icon, note, iconBgColor }: { title: string, value: string, icon: React.ElementType, note?: string, iconBgColor?: string }) => (
     <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 relative overflow-hidden">
@@ -208,21 +229,68 @@ const AccessoriesDashboard = ({ stats, router }: { stats: AccessoryStats | null,
     </div>
 );
 
-const InventoryDashboard = () => (
-    <Card>
-        <CardHeader>
-            <CardTitle>Inventory Analytics</CardTitle>
-            <CardDescription>A complete overview of your stock levels and product status.</CardDescription>
-        </CardHeader>
-        <CardContent>
-            <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
-                <Package className="mx-auto h-12 w-12" />
-                <h3 className="mt-4 text-lg font-semibold">Inventory Analytics Coming Soon!</h3>
-                <p className="mt-1 text-sm">Insights on stock levels, top-selling products, and expiry alerts will be available here.</p>
+const InventoryDashboard = ({ inventory, router }: { inventory: CategorizedProducts | null, router: any }) => {
+
+    const InventoryTable = ({ title, products, icon: Icon, iconColor }: { title: string, products: Product[], icon: React.ElementType, iconColor: string }) => (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <Icon className={`h-6 w-6 ${iconColor}`} />
+                    {title} ({products.length})
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                 {products.length > 0 ? (
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Product Name</TableHead>
+                                <TableHead>Category</TableHead>
+                                <TableHead className="text-right">Current Stock</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {products.map(p => (
+                                <TableRow key={p.id}>
+                                    <TableCell className="font-medium">{p.name}</TableCell>
+                                    <TableCell>{p.category}</TableCell>
+                                    <TableCell className="text-right font-bold">
+                                        <div className="flex items-center justify-end gap-2">
+                                        {p.reorderLevel && p.stock <= p.reorderLevel && <AlertCircle className="h-4 w-4 text-destructive" title={`Low stock! Reorder level is ${p.reorderLevel}`} />}
+                                        <span>{p.stock}</span>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                 ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">No products found in this category.</p>
+                 )}
+            </CardContent>
+        </Card>
+    );
+
+    return (
+        <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Inventory Analytics</CardTitle>
+                    <CardDescription>A complete overview of your stock levels and product status.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex justify-end">
+                     <Button onClick={() => router.push('/products')}>Manage Full Inventory</Button>
+                </CardContent>
+            </Card>
+
+            <div className="space-y-6">
+                <InventoryTable title="Fruit Products" products={inventory?.fruits ?? []} icon={Apple} iconColor="text-red-500" />
+                <InventoryTable title="Business Accessories" products={inventory?.accessories ?? []} icon={Box} iconColor="text-blue-500" />
+                <InventoryTable title="Fertilizers & Pesticides" products={inventory?.fertilizers ?? []} icon={FlaskConical} iconColor="text-green-500" />
             </div>
-        </CardContent>
-    </Card>
-);
+        </div>
+    );
+};
 
 
 export default function DashboardPage() {
@@ -231,11 +299,14 @@ export default function DashboardPage() {
   const [yearlyStats, setYearlyStats] = useState<YearlyStats | null>(null);
   const [accessoryStats, setAccessoryStats] = useState<AccessoryStats | null>(null);
   const [growerProfits, setGrowerProfits] = useState<GrowerProfit[]>([]);
+  const [inventory, setInventory] = useState<CategorizedProducts | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     function fetchData() {
         setIsLoading(true);
+        if (typeof window === 'undefined') return;
+
         const today = new Date();
         const todayStr = today.toISOString().split('T')[0];
         const currentMonth = today.getMonth();
@@ -257,7 +328,46 @@ export default function DashboardPage() {
         const accessoriesRes = getDocuments('accessory-ledgers'); // This can be async, handle it
         
         accessoriesRes.then(accessoriesRes => {
-            const allAccessories = accessoriesRes.success ? (accessoriesRes.data || []) : [];
+            const allAccessories: AccessoryLedgerEntry[] = accessoriesRes.success ? (accessoriesRes.data || []) : [];
+
+            // --- INVENTORY CALCULATION ---
+            const allProducts: Product[] = [];
+             for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key?.startsWith('product-')) {
+                    try {
+                        allProducts.push(JSON.parse(localStorage.getItem(key)!));
+                    } catch (e) { console.error(`Failed to parse product: ${key}`, e); }
+                }
+            }
+
+            const stockOut: { [productName: string]: number } = {};
+            allAccessories.forEach(sale => {
+                stockOut[sale.item] = (stockOut[sale.item] || 0) + sale.qty;
+            });
+            
+            const updatedProducts = allProducts.map(p => ({
+                ...p,
+                stock: (p.stock || 0) - (stockOut[p.name] || 0),
+            }));
+
+            const categorized: CategorizedProducts = { fruits: [], accessories: [], fertilizers: [] };
+            updatedProducts.forEach(p => {
+                const cat = p.category.toLowerCase();
+                if (['fruit', 'apple', 'pear', 'nakh', 'gosha', 'red delicious', 'american', 'gala mast', 'shimla'].some(fruitCat => cat.includes(fruitCat))) {
+                    categorized.fruits.push(p);
+                } else if (['dabba', 'patti', 'layer', 'tray', 'tape', 'packing', 'crate'].some(accCat => cat.includes(accCat))) {
+                    categorized.accessories.push(p);
+                } else if (['fertilizer', 'pesticide', 'urea', 'dap', 'fungicide', 'insecticide'].some(fertCat => cat.includes(fertCat))) {
+                    categorized.fertilizers.push(p);
+                } else {
+                     // Fallback for accessories if not explicitly matched
+                    categorized.accessories.push(p);
+                }
+            });
+            setInventory(categorized);
+            // --- END INVENTORY ---
+
 
             // Fruit Stats Calculation
             let pattiSoldToday = 0;
@@ -316,7 +426,7 @@ export default function DashboardPage() {
             });
 
 
-            allAccessories.forEach(entry => {
+            allAccessories.forEach((entry: any) => {
                 const entryDate = new Date(entry.date);
                 const amount = (entry.qty || 0) * (entry.rate || 0);
 
@@ -395,12 +505,10 @@ export default function DashboardPage() {
             <AccessoriesDashboard stats={accessoryStats} router={router} />
         </TabsContent>
         <TabsContent value="inventory">
-            <InventoryDashboard />
+            <InventoryDashboard inventory={inventory} router={router} />
         </TabsContent>
     </Tabs>
   );
 }
-
-    
 
     
