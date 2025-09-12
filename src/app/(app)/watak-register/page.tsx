@@ -34,7 +34,7 @@ import DocumentCard from '@/components/DocumentCard';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { getDocuments, deleteDocument } from '@/lib/actions';
+import { deleteDocument } from '@/lib/actions';
 
 
 export interface WatakEntry {
@@ -72,23 +72,29 @@ export default function WatakRegisterPage() {
   }, []);
 
 
-  const fetchWataks = async () => {
+  const fetchWataks = () => {
       setIsLoading(true);
-      const { success, data, error } = await getDocuments('invoices');
-      if (success && data) {
-          const formattedWataks = data.map((w: any) => ({...w, id: w.sNo})) as WatakEntry[];
-          setWataks(formattedWataks);
-          const uniqueGrowers = ['All Growers', ...new Set(formattedWataks.map(w => w.customerName))];
-          setGrowers(uniqueGrowers);
-      } else {
-          toast({ variant: "destructive", title: "Error", description: `Failed to load wataks: ${error}`})
+      const items: WatakEntry[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key?.startsWith('invoice-')) {
+          try {
+            const item = JSON.parse(localStorage.getItem(key)!);
+            items.push({ ...item, id: item.sNo });
+          } catch (e) {
+            console.error(`Failed to parse watak from localStorage: ${key}`, e);
+          }
+        }
       }
+      setWataks(items);
+      const uniqueGrowers = ['All Growers', ...new Set(items.map(w => w.customerName))];
+      setGrowers(uniqueGrowers);
       setIsLoading(false);
   }
 
   React.useEffect(() => {
     fetchWataks();
-  }, [toast]);
+  }, []);
 
   const filteredWataks = wataks
     .filter(w => selectedGrower === 'All Growers' || w.customerName === selectedGrower)
@@ -98,7 +104,7 @@ export default function WatakRegisterPage() {
       return (
         w.customerName.toLowerCase().includes(lowerCaseSearch) ||
         w.sNo.toLowerCase().includes(lowerCaseSearch) ||
-        w.watakNo.toLowerCase().includes(lowerCaseSearch)
+        (w.watakNo && w.watakNo.toLowerCase().includes(lowerCaseSearch))
       );
     });
 
@@ -189,12 +195,17 @@ export default function WatakRegisterPage() {
     }
     if(!window.confirm(`Are you sure you want to delete Bill #${sNo}? This cannot be undone.`)) return;
     
+    // First remove from local storage
+    localStorage.removeItem(`invoice-${sNo}`);
+    fetchWataks(); // Re-fetch from local storage to update UI immediately
+    toast({ title: "Bill Deleted Locally", description: `Bill #${sNo} has been removed from this device.`});
+
+    // Then try to remove from cloud
     const { success, error } = await deleteDocument('invoices', sNo);
     if(success) {
-      setWataks(prev => prev.filter(w => w.sNo !== sNo));
-      toast({ title: "Bill Deleted", description: `Bill #${sNo} has been deleted.`});
+      toast({ title: "Bill Deleted from Cloud", description: `Bill #${sNo} has also been deleted from the cloud.`});
     } else {
-      toast({ variant: "destructive", title: "Delete failed", description: `Could not delete bill: ${error}`});
+      toast({ variant: "destructive", title: "Cloud Delete Failed", description: `Could not delete bill from cloud: ${error}`});
     }
   }
 
@@ -333,3 +344,5 @@ export default function WatakRegisterPage() {
     </Card>
   );
 }
+
+    
