@@ -14,8 +14,6 @@ import BusinessCardQR from "@/components/BusinessCardQR";
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode.react';
-import { doc, getDoc } from "firebase/firestore";
-import { getClientDb } from "@/lib/firebase";
 
 interface BillData {
     id: string;
@@ -71,34 +69,9 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             setLoading(true);
 
             let data: BillData | null = null;
-            let errorOccurred = false;
-
-            // 1. Try fetching from Firestore first
-            try {
-                const db = getClientDb();
-                const docRef = doc(db, "invoices", params.id);
-                const docSnap = await getDoc(docRef);
-
-                if (docSnap.exists()) {
-                    data = docSnap.data() as BillData;
-                }
-            } catch (error) {
-                console.error("Firestore fetch failed, will try localStorage.", error);
-                errorOccurred = true;
-            }
-            
-            // 2. If Firestore fails or data is not there, fall back to local storage
-            if (!data) {
-                const localData = localStorage.getItem(`invoice-${params.id}`);
-                if (localData) {
-                    data = JSON.parse(localData);
-                     if (errorOccurred) {
-                        toast({
-                            title: "Displaying Local Version",
-                            description: "Could not connect to the cloud. Showing the locally saved invoice."
-                        });
-                    }
-                }
+            const localData = localStorage.getItem(`invoice-${params.id}`);
+            if (localData) {
+                data = JSON.parse(localData);
             }
 
             if (data) {
@@ -111,7 +84,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 toast({
                     variant: "destructive",
                     title: "Invoice Not Found",
-                    description: "The requested invoice was not found online or on this device."
+                    description: "The requested invoice was not found on this device."
                 });
             }
             

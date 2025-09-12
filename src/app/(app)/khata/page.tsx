@@ -33,7 +33,6 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import './print.css';
-import { getDocuments } from '@/lib/actions';
 
 type TransactionType = 'Sale' | 'Purchase';
 
@@ -70,41 +69,44 @@ export default function KhataLedgerPage() {
     const [isLoading, setIsLoading] = React.useState(true);
 
     React.useEffect(() => {
-        async function fetchLedgerData() {
+        function fetchLedgerData() {
+            if (typeof window === 'undefined') return;
             setIsLoading(true);
             const allTransactions: Transaction[] = [];
 
-            const invoicesRes = await getDocuments('invoices');
-            const purchasesRes = await getDocuments('purchases');
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (!key) continue;
 
-            if (invoicesRes.success && invoicesRes.data) {
-                invoicesRes.data.forEach(doc => {
-                    allTransactions.push({
-                        id: `sale-${doc.sNo}`,
-                        date: doc.date,
-                        type: 'Sale',
-                        amount: doc.totals.netSale,
-                        grossAmount: doc.totals.grossSale,
-                        expenses: doc.totals.totalExpenses,
-                        party: doc.customerName,
-                        docId: doc.sNo,
-                    });
-                });
-            }
-
-            if (purchasesRes.success && purchasesRes.data) {
-                purchasesRes.data.forEach(doc => {
-                    allTransactions.push({
-                        id: `purchase-${doc.billNo}`,
-                        date: doc.date,
-                        type: 'Purchase',
-                        amount: doc.totals.grandTotal,
-                        grossAmount: doc.totals.grandTotal,
-                        expenses: 0,
-                        party: doc.growerName,
-                        docId: doc.billNo,
-                    });
-                });
+                try {
+                    if (key.startsWith('invoice-')) {
+                        const doc = JSON.parse(localStorage.getItem(key)!);
+                         allTransactions.push({
+                            id: `sale-${doc.sNo}`,
+                            date: doc.date,
+                            type: 'Sale',
+                            amount: doc.totals.netSale,
+                            grossAmount: doc.totals.grossSale,
+                            expenses: doc.totals.totalExpenses,
+                            party: doc.customerName,
+                            docId: doc.sNo,
+                        });
+                    } else if (key.startsWith('purchase-')) {
+                        const doc = JSON.parse(localStorage.getItem(key)!);
+                        allTransactions.push({
+                            id: `purchase-${doc.billNo}`,
+                            date: doc.date,
+                            type: 'Purchase',
+                            amount: doc.totals.grandTotal,
+                            grossAmount: doc.totals.grandTotal,
+                            expenses: 0,
+                            party: doc.growerName,
+                            docId: doc.billNo,
+                        });
+                    }
+                } catch (e) {
+                    console.error("Failed to parse ledger data from local storage", e);
+                }
             }
 
             allTransactions.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -437,3 +439,5 @@ export default function KhataLedgerPage() {
     </>
   );
 }
+
+    

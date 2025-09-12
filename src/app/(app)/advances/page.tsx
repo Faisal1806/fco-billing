@@ -25,10 +25,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlusCircle, Trash2, Banknote, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { saveDocument, deleteDocument, getDocuments } from '@/lib/actions';
 import { Badge } from '@/components/ui/badge';
 
-const COLLECTION_NAME = 'advances';
+const STORAGE_PREFIX = 'advance-';
 
 type AdvanceEntry = {
     id: string;
@@ -60,13 +59,17 @@ export default function AdvancesPage() {
         }
     }, []);
 
-    const fetchEntries = async () => {
+    const fetchEntries = () => {
         setIsLoading(true);
-        const { success, data, error } = await getDocuments(COLLECTION_NAME);
-        if(success && data) {
-             setEntries(data.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-        } else {
-            toast({variant: 'destructive', title: 'Error fetching data', description: error});
+        if(typeof window !== 'undefined') {
+            const items = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key?.startsWith(STORAGE_PREFIX)) {
+                    items.push(JSON.parse(localStorage.getItem(key)!));
+                }
+            }
+             setEntries(items.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         }
         setIsLoading(false);
     };
@@ -94,23 +97,15 @@ export default function AdvancesPage() {
             return;
         }
 
-        const id = `advance-${Date.now()}`;
+        const id = `${STORAGE_PREFIX}${Date.now()}`;
         const newEntry = { ...formState, id };
         
-        const { success, error } = await saveDocument(COLLECTION_NAME, id, newEntry);
+        localStorage.setItem(id, JSON.stringify(newEntry));
         
-        if (success) {
-            toast({
-                title: 'Transaction Saved',
-                description: 'The advance/repayment has been recorded.',
-            });
-        } else {
-             toast({
-                variant: 'destructive',
-                title: 'Save Failed',
-                description: error,
-            });
-        }
+        toast({
+            title: 'Transaction Saved',
+            description: 'The advance/repayment has been recorded locally.',
+        });
         
         fetchEntries();
         setFormState(emptyFormState); // Reset form
@@ -123,16 +118,8 @@ export default function AdvancesPage() {
         }
         if (!window.confirm('Are you sure you want to delete this transaction?')) return;
         
-        const { success, error } = await deleteDocument(COLLECTION_NAME, id);
-        if (success) {
-            toast({ title: 'Entry Deleted' });
-        } else {
-             toast({
-                variant: 'destructive',
-                title: 'Delete Failed',
-                description: error,
-            });
-        }
+        localStorage.removeItem(id);
+        toast({ title: 'Entry Deleted' });
         fetchEntries();
     };
 
@@ -253,3 +240,5 @@ export default function AdvancesPage() {
     </div>
   );
 }
+
+    

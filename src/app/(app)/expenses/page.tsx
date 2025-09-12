@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -24,8 +25,6 @@ import { Label } from '@/components/ui/label';
 import { PlusCircle, Trash2, Receipt, Users, Building, Percent } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { saveDocument, deleteDocument, getDocuments } from '@/lib/actions';
-
 
 type ExpenseEntry = {
     id: string;
@@ -149,114 +148,116 @@ export default function ExpensesPage() {
     const [formState, setFormState] = useState(emptyFormState);
     const [userRole, setUserRole] = useState<string | null>(null);
 
-    const fetchExpenses = async () => {
+    const fetchExpenses = () => {
         if (typeof window !== 'undefined') {
             setUserRole(localStorage.getItem('userRole'));
+            
+            const manualExpensesData: any[] = [];
+            const invoicesData: any[] = [];
+
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key?.startsWith('expense-')) {
+                    manualExpensesData.push(JSON.parse(localStorage.getItem(key)!));
+                }
+                if (key?.startsWith('invoice-')) {
+                    invoicesData.push(JSON.parse(localStorage.getItem(key)!));
+                }
+            }
+
+            const allLabourExpenses: ExpenseEntry[] = [];
+            const allCompanyExpenses: ExpenseEntry[] = (manualExpensesData || []).map((d: any) => ({ ...d, type: 'manual' }));
+            const allCommissionIncome: ExpenseEntry[] = [];
+            
+            let newCommissionStats: ExpenseStats = { totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 };
+            let newLabourStats: ExpenseStats = { totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 };
+            let newCompanyStats: ExpenseStats = { totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 };
+            
+            const companyWataks = new Set<string>();
+            const labourWataks = new Set<string>();
+
+            (invoicesData || []).forEach((sale: any) => {
+                if(sale.totals) {
+                    const pattiQty = sale.totals.pattiQty || 0;
+                    const dabbaQty = sale.totals.dabbaQty || 0;
+                    const totalNugs = pattiQty + dabbaQty;
+
+                    if (sale.totals.labour > 0) {
+                        allLabourExpenses.push({
+                            id: `auto-labour-${sale.sNo}`,
+                            date: sale.date,
+                            category: 'Sales Deduction',
+                            description: `Labour charges for Bill #${sale.sNo}`,
+                            amount: sale.totals.labour,
+                            type: 'auto',
+                        });
+                        labourWataks.add(sale.sNo);
+                        newLabourStats.totalPatti += pattiQty;
+                        newLabourStats.totalDabba += dabbaQty;
+                        newLabourStats.totalNugs += totalNugs;
+                    }
+                    if (sale.totals.association > 0) {
+                        allCompanyExpenses.push({
+                            id: `auto-assoc-${sale.sNo}`,
+                            date: sale.date,
+                            category: 'Sales Deduction',
+                            description: `Association fee for Bill #${sale.sNo}`,
+                            amount: sale.totals.association,
+                            type: 'auto',
+                        });
+                        companyWataks.add(sale.sNo);
+                    }
+                    if (sale.totals.security > 0) {
+                        allCompanyExpenses.push({
+                            id: `auto-security-${sale.sNo}`,
+                            date: sale.date,
+                            category: 'Sales Deduction',
+                            description: `Security fee for Bill #${sale.sNo}`,
+                            amount: sale.totals.security,
+                            type: 'auto',
+                        });
+                        companyWataks.add(sale.sNo);
+                    }
+                    if (sale.totals.commissionAmount > 0) {
+                        allCommissionIncome.push({
+                            id: `auto-commission-${sale.sNo}`,
+                            date: sale.date,
+                            category: 'Sales Commission',
+                            description: `Commission from Bill #${sale.sNo}`,
+                            amount: sale.totals.commissionAmount,
+                            type: 'auto',
+                        });
+                        newCommissionStats.totalWataks += 1;
+                        newCommissionStats.totalPatti += pattiQty;
+                        newCommissionStats.totalDabba += dabbaQty;
+                        newCommissionStats.totalNugs += totalNugs;
+                    }
+                }
+            });
+
+            const companyWatakIds = Array.from(companyWataks);
+            newCompanyStats.totalWataks = companyWatakIds.length;
+            companyWatakIds.forEach(sNo => {
+                const sale = invoicesData?.find(inv => inv.sNo === sNo);
+                if (sale) {
+                    const pattiQty = sale.totals.pattiQty || 0;
+                    const dabbaQty = sale.totals.dabbaQty || 0;
+                    newCompanyStats.totalPatti += pattiQty;
+                    newCompanyStats.totalDabba += dabbaQty;
+                    newCompanyStats.totalNugs += pattiQty + dabbaQty;
+                }
+            });
+
+            newLabourStats.totalWataks = labourWataks.size;
+            
+            setLabourExpenses(allLabourExpenses.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+            setCompanyExpenses(allCompanyExpenses.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+            setCommissionIncome(allCommissionIncome.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+            
+            setCommissionStats(newCommissionStats);
+            setLabourStats(newLabourStats);
+            setCompanyStats(newCompanyStats);
         }
-
-        const [manualExpensesRes, invoicesRes] = await Promise.all([
-            getDocuments('expenses'),
-            getDocuments('invoices')
-        ]);
-        
-        const manualExpensesData: any[] = manualExpensesRes.success ? (manualExpensesRes.data || []) : [];
-        const invoicesData: any[] = invoicesRes.success ? (invoicesRes.data || []) : [];
-        
-        if (!manualExpensesRes.success) toast({variant: 'destructive', title: 'Error fetching manual expenses', description: manualExpensesRes.error});
-        if (!invoicesRes.success) toast({variant: 'destructive', title: 'Error fetching invoices', description: invoicesRes.error});
-
-        const allLabourExpenses: ExpenseEntry[] = [];
-        const allCompanyExpenses: ExpenseEntry[] = (manualExpensesData || []).map((d: any) => ({ ...d, type: 'manual' }));
-        const allCommissionIncome: ExpenseEntry[] = [];
-        
-        let newCommissionStats: ExpenseStats = { totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 };
-        let newLabourStats: ExpenseStats = { totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 };
-        let newCompanyStats: ExpenseStats = { totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 };
-        
-        const companyWataks = new Set<string>();
-        const labourWataks = new Set<string>();
-
-        (invoicesData || []).forEach((sale: any) => {
-            if(sale.totals) {
-                const pattiQty = sale.totals.pattiQty || 0;
-                const dabbaQty = sale.totals.dabbaQty || 0;
-                const totalNugs = pattiQty + dabbaQty;
-
-                if (sale.totals.labour > 0) {
-                    allLabourExpenses.push({
-                        id: `auto-labour-${sale.sNo}`,
-                        date: sale.date,
-                        category: 'Sales Deduction',
-                        description: `Labour charges for Bill #${sale.sNo}`,
-                        amount: sale.totals.labour,
-                        type: 'auto',
-                    });
-                    labourWataks.add(sale.sNo);
-                    newLabourStats.totalPatti += pattiQty;
-                    newLabourStats.totalDabba += dabbaQty;
-                    newLabourStats.totalNugs += totalNugs;
-                }
-                if (sale.totals.association > 0) {
-                     allCompanyExpenses.push({
-                        id: `auto-assoc-${sale.sNo}`,
-                        date: sale.date,
-                        category: 'Sales Deduction',
-                        description: `Association fee for Bill #${sale.sNo}`,
-                        amount: sale.totals.association,
-                        type: 'auto',
-                    });
-                    companyWataks.add(sale.sNo);
-                }
-                if (sale.totals.security > 0) {
-                     allCompanyExpenses.push({
-                        id: `auto-security-${sale.sNo}`,
-                        date: sale.date,
-                        category: 'Sales Deduction',
-                        description: `Security fee for Bill #${sale.sNo}`,
-                        amount: sale.totals.security,
-                        type: 'auto',
-                    });
-                    companyWataks.add(sale.sNo);
-                }
-                 if (sale.totals.commissionAmount > 0) {
-                     allCommissionIncome.push({
-                        id: `auto-commission-${sale.sNo}`,
-                        date: sale.date,
-                        category: 'Sales Commission',
-                        description: `Commission from Bill #${sale.sNo}`,
-                        amount: sale.totals.commissionAmount,
-                        type: 'auto',
-                    });
-                    newCommissionStats.totalWataks += 1;
-                    newCommissionStats.totalPatti += pattiQty;
-                    newCommissionStats.totalDabba += dabbaQty;
-                    newCommissionStats.totalNugs += totalNugs;
-                }
-            }
-        });
-
-        const companyWatakIds = Array.from(companyWataks);
-        newCompanyStats.totalWataks = companyWatakIds.length;
-        companyWatakIds.forEach(sNo => {
-            const sale = invoicesData?.find(inv => inv.sNo === sNo);
-            if (sale) {
-                const pattiQty = sale.totals.pattiQty || 0;
-                const dabbaQty = sale.totals.dabbaQty || 0;
-                newCompanyStats.totalPatti += pattiQty;
-                newCompanyStats.totalDabba += dabbaQty;
-                newCompanyStats.totalNugs += pattiQty + dabbaQty;
-            }
-        });
-
-        newLabourStats.totalWataks = labourWataks.size;
-        
-        setLabourExpenses(allLabourExpenses.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-        setCompanyExpenses(allCompanyExpenses.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-        setCommissionIncome(allCommissionIncome.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-        
-        setCommissionStats(newCommissionStats);
-        setLabourStats(newLabourStats);
-        setCompanyStats(newCompanyStats);
     }
 
     useEffect(() => {
@@ -277,12 +278,8 @@ export default function ExpensesPage() {
         const id = `expense-${Date.now()}`;
         const expenseData = { ...formState, id, type: 'manual' };
         
-        const { success, error } = await saveDocument('expenses', id, expenseData);
-        if (success) {
-            toast({ title: 'Expense Saved', description: 'Your expense has been successfully recorded.' });
-        } else {
-            toast({ variant: 'destructive', title: 'Cloud Sync Failed', description: error });
-        }
+        localStorage.setItem(id, JSON.stringify(expenseData));
+        toast({ title: 'Expense Saved', description: 'Your expense has been successfully recorded locally.' });
         
         fetchExpenses();
         setFormState(emptyFormState);
@@ -295,12 +292,8 @@ export default function ExpensesPage() {
         }
         if (!window.confirm('Are you sure you want to delete this expense?')) return;
         
-        const { success, error } = await deleteDocument('expenses', id);
-        if (success) {
-            toast({ title: 'Expense Deleted' });
-        } else {
-            toast({ variant: 'destructive', title: 'Cloud Delete Failed', description: error });
-        }
+        localStorage.removeItem(id);
+        toast({ title: 'Expense Deleted' });
         
         fetchExpenses();
     };
@@ -371,3 +364,5 @@ export default function ExpensesPage() {
         </div>
     );
 }
+
+    

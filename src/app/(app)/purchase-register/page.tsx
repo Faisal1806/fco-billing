@@ -33,8 +33,6 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { FaWhatsapp } from 'react-icons/fa';
-import { getDocuments, deleteDocument } from '@/lib/actions';
-
 
 export interface PurchaseEntry {
     billNo: string;
@@ -68,19 +66,24 @@ export default function PurchaseRegisterPage() {
   }, []);
 
 
-  React.useEffect(() => {
-    const fetchPurchases = async () => {
-        setIsLoading(true);
-        const { success, data, error } = await getDocuments('purchases');
-        if (success && data) {
-            setPurchases(data);
-            const uniqueGrowers = ['All Growers', ...new Set(data.map(p => p.growerName))];
-            setGrowers(uniqueGrowers);
-        } else {
-            toast({ variant: "destructive", title: "Error", description: `Failed to load purchases: ${error}`})
+  const fetchPurchases = () => {
+    setIsLoading(true);
+    if (typeof window !== 'undefined') {
+        const items = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key?.startsWith('purchase-')) {
+                items.push(JSON.parse(localStorage.getItem(key)!));
+            }
         }
-        setIsLoading(false);
+        setPurchases(items);
+        const uniqueGrowers = ['All Growers', ...new Set(items.map(p => p.growerName))];
+        setGrowers(uniqueGrowers);
     }
+    setIsLoading(false);
+  }
+
+  React.useEffect(() => {
     fetchPurchases();
   }, [toast]);
 
@@ -109,19 +112,16 @@ export default function PurchaseRegisterPage() {
     router.push(`/purchase-bill/${id}`);
   }
 
-  const handleDelete = async (billNo: string) => {
+  const handleDelete = (billNo: string) => {
     if (userRole !== 'admin') {
       toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to delete purchase bills.' });
       return;
     }
     if(!window.confirm(`Are you sure you want to delete Purchase Bill #${billNo}? This cannot be undone.`)) return;
-    const { success, error } = await deleteDocument('purchases', billNo);
-    if(success) {
-      setPurchases(prev => prev.filter(p => p.billNo !== billNo));
-      toast({ title: "Purchase Bill Deleted", description: `Bill #${billNo} has been deleted.`});
-    } else {
-      toast({ variant: "destructive", title: "Delete failed", description: `Could not delete bill: ${error}`});
-    }
+
+    localStorage.removeItem(`purchase-${billNo}`);
+    fetchPurchases();
+    toast({ title: "Purchase Bill Deleted", description: `Bill #${billNo} has been deleted locally.`});
   }
 
   const exportToPDF = () => {
@@ -322,3 +322,5 @@ export default function PurchaseRegisterPage() {
     </Card>
   );
 }
+
+    

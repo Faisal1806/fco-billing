@@ -10,8 +10,6 @@ import { FaWhatsapp } from 'react-icons/fa';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/logo";
-import { doc, getDoc } from "firebase/firestore";
-import { getClientDb } from "@/lib/firebase";
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
@@ -40,7 +38,7 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
     const printRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const fetchReceipt = async () => {
+        const fetchReceipt = () => {
             if (!params.id) {
                 setLoading(false);
                 return;
@@ -48,35 +46,9 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
             setLoading(true);
 
             let data: ReceiptData | null = null;
-            let errorOccurred = false;
-
-            try {
-                const db = getClientDb();
-                const docRef = doc(db, "receipts", params.id);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    data = docSnap.data() as ReceiptData;
-                }
-            } catch (error) {
-                console.error("Firestore fetch failed, will try localStorage.", error);
-                errorOccurred = true;
-            }
-
-            if (!data) {
-                try {
-                    const storedReceipt = localStorage.getItem(`receipt-${params.id}`);
-                    if (storedReceipt) {
-                        data = JSON.parse(storedReceipt);
-                         if (errorOccurred) {
-                            toast({
-                                title: "Displaying Local Version",
-                                description: "Could not connect to the cloud. Showing the locally saved receipt."
-                            });
-                        }
-                    }
-                } catch (e) {
-                     console.error("Could not parse receipt from localStorage", e);
-                }
+            const storedReceipt = localStorage.getItem(`receipt-${params.id}`);
+            if (storedReceipt) {
+                data = JSON.parse(storedReceipt);
             }
             
             if (data) {
@@ -85,7 +57,7 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
                  toast({
                     variant: "destructive",
                     title: "Receipt Not Found",
-                    description: "The requested receipt was not found online or on this device."
+                    description: "The requested receipt was not found on this device."
                 });
             }
             
@@ -254,3 +226,5 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
         </div>
     );
 }
+
+    

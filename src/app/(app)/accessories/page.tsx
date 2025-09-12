@@ -25,13 +25,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlusCircle, Trash2, FileSignature, Loader2, Printer, FileDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { saveDocument, deleteDocument, getDocuments } from '@/lib/actions';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import './../khata/print.css';
 
-const COLLECTION_NAME = 'accessory-ledgers';
+const STORAGE_PREFIX = 'accessory-ledger-';
 
 type LedgerEntry = {
     id: string;
@@ -74,17 +73,17 @@ export default function AccessoriesLedgerPage() {
         }
     }, []);
 
-    const fetchEntries = async () => {
+    const fetchEntries = () => {
         setIsLoading(true);
-        const { success, data, error } = await getDocuments(COLLECTION_NAME);
-        if (success && data) {
-            setEntries(data.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-        } else {
-            toast({
-                variant: 'destructive',
-                title: 'Error fetching ledger entries',
-                description: error,
-            });
+        if (typeof window !== 'undefined') {
+            const items = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key?.startsWith(STORAGE_PREFIX)) {
+                    items.push(JSON.parse(localStorage.getItem(key)!));
+                }
+            }
+            setEntries(items.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         }
         setIsLoading(false);
     };
@@ -112,23 +111,15 @@ export default function AccessoriesLedgerPage() {
             return;
         }
 
-        const id = `accessory-ledger-${Date.now()}`;
+        const id = `${STORAGE_PREFIX}${Date.now()}`;
         const newEntry = { ...formState, id };
         
-        const { success, error } = await saveDocument(COLLECTION_NAME, id, newEntry);
+        localStorage.setItem(id, JSON.stringify(newEntry));
 
-        if (success) {
-             toast({
-                title: 'Ledger Entry Saved',
-                description: 'Your entry has been recorded.',
-            });
-        } else {
-             toast({
-                variant: 'destructive',
-                title: 'Save Failed',
-                description: error,
-            });
-        }
+        toast({
+            title: 'Ledger Entry Saved',
+            description: 'Your entry has been recorded locally.',
+        });
         
         fetchEntries();
         setFormState(emptyFormState); // Reset form
@@ -141,17 +132,10 @@ export default function AccessoriesLedgerPage() {
         }
         if (!window.confirm('Are you sure you want to delete this ledger entry?')) return;
         
-        const { success, error } = await deleteDocument(COLLECTION_NAME, id);
+        localStorage.removeItem(id);
         
-        if (success) {
-            toast({ title: 'Entry Deleted' });
-        } else {
-             toast({
-                variant: 'destructive',
-                title: 'Delete Failed',
-                description: error,
-            });
-        }
+        toast({ title: 'Entry Deleted' });
+        
         fetchEntries();
     };
 
@@ -338,3 +322,5 @@ export default function AccessoriesLedgerPage() {
     </div>
   );
 }
+
+    

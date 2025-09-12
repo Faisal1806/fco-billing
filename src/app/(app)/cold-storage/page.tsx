@@ -33,7 +33,8 @@ import {
 import { PlusCircle, ArrowUpRightFromSquare, Snowflake, Loader2, Trash2, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { saveDocument, deleteDocument, getDocuments } from '@/lib/actions';
+
+const STORAGE_PREFIX = 'cs-';
 
 type StockItem = {
   id: string;
@@ -73,13 +74,17 @@ export default function ColdStoragePage() {
     }
   }, []);
 
-  const fetchStock = async () => {
+  const fetchStock = () => {
     setIsLoading(true);
-    const result = await getDocuments('cold-storage');
-    if (result.success && result.data) {
-        setStock(result.data.sort((a,b) => new Date(b.dateIn).getTime() - new Date(a.dateIn).getTime()));
-    } else {
-        toast({variant: 'destructive', title: 'Error fetching stock', description: result.error});
+    if(typeof window !== 'undefined') {
+        const items = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if(key?.startsWith(STORAGE_PREFIX)) {
+                items.push(JSON.parse(localStorage.getItem(key)!));
+            }
+        }
+        setStock(items.sort((a,b) => new Date(b.dateIn).getTime() - new Date(a.dateIn).getTime()));
     }
     setIsLoading(false);
   }
@@ -93,7 +98,7 @@ export default function ColdStoragePage() {
     setFormState(prev => ({ ...prev, [name]: type === 'number' ? (value ? Number(value) : '') : value }));
   };
 
-  const handleSaveStock = async () => {
+  const handleSaveStock = () => {
     const { dateIn, grower, item, chamberNo, initialQty } = formState;
     if (!dateIn || !grower || !item || !chamberNo || !initialQty || Number(initialQty) <= 0) {
       toast({ variant: 'destructive', title: 'Missing Fields', description: 'Please fill out all fields.' });
@@ -101,7 +106,7 @@ export default function ColdStoragePage() {
     }
     const qtyNum = Number(initialQty);
 
-    const id = `cs-${Date.now()}`;
+    const id = `${STORAGE_PREFIX}${Date.now()}`;
     const newStockItem: StockItem = {
       id,
       dateIn,
@@ -114,18 +119,14 @@ export default function ColdStoragePage() {
       outwardHistory: [],
     };
 
-    const result = await saveDocument('cold-storage', id, newStockItem);
-    if(result.success) {
-      toast({ title: 'Stock Added', description: `${qtyNum} units of ${item} have been logged.` });
-      fetchStock();
-      setIsDialogOpen(false);
-      setFormState(emptyFormState);
-    } else {
-      toast({ variant: 'destructive', title: 'Save Failed', description: result.error });
-    }
+    localStorage.setItem(id, JSON.stringify(newStockItem));
+    toast({ title: 'Stock Added', description: `${qtyNum} units of ${item} have been logged.` });
+    fetchStock();
+    setIsDialogOpen(false);
+    setFormState(emptyFormState);
   };
 
-  const handleRecordOutward = async () => {
+  const handleRecordOutward = () => {
     if (!selectedStock || outwardQty <= 0) {
         toast({variant: 'destructive', title: 'Invalid Quantity', description: 'Please enter a valid quantity.'});
         return;
@@ -147,33 +148,25 @@ export default function ColdStoragePage() {
         updatedStock.status = 'Released';
     }
 
-    const result = await saveDocument('cold-storage', updatedStock.id, updatedStock);
-    if(result.success) {
-        toast({title: 'Stock Released', description: `${outwardQty} units of ${updatedStock.item} have been released.`});
-        fetchStock();
-        setIsOutwardDialogOpen(false);
-        setSelectedStock(null);
-        setOutwardQty(0);
-        setOutwardNotes('');
-    } else {
-        toast({variant: 'destructive', title: 'Update Failed', description: result.error});
-    }
+    localStorage.setItem(updatedStock.id, JSON.stringify(updatedStock));
+    toast({title: 'Stock Released', description: `${outwardQty} units of ${updatedStock.item} have been released.`});
+    fetchStock();
+    setIsOutwardDialogOpen(false);
+    setSelectedStock(null);
+    setOutwardQty(0);
+    setOutwardNotes('');
   };
   
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (userRole !== 'admin') {
         toast({variant: 'destructive', title: 'Permission Denied'});
         return;
     }
     if(!window.confirm('Are you sure? This will delete the entire stock record.')) return;
     
-    const result = await deleteDocument('cold-storage', id);
-    if (result.success) {
-        toast({title: 'Record Deleted'});
-        fetchStock();
-    } else {
-        toast({variant: 'destructive', title: 'Delete Failed', description: result.error});
-    }
+    localStorage.removeItem(id);
+    toast({title: 'Record Deleted'});
+    fetchStock();
   }
 
   return (
@@ -314,3 +307,4 @@ export default function ColdStoragePage() {
   );
 }
 
+    

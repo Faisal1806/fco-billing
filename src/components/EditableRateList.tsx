@@ -9,7 +9,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { PlusCircle, Trash2, Sparkles, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { categorizePesticide } from '@/ai/flows/categorize-pesticide-flow';
-import { getDocuments, saveDocument, deleteDocument } from '@/lib/actions';
 
 interface ManualRate {
     id: string;
@@ -19,79 +18,61 @@ interface ManualRate {
 }
 
 interface EditableRateListProps {
-    storageKeyPrefix: string; // This will now be used as the collection name
+    storageKeyPrefix: string;
     title: string;
     defaultRates: ManualRate[];
 }
 
-export default function EditableRateList({ storageKeyPrefix: collectionName, title, defaultRates }: EditableRateListProps) {
+export default function EditableRateList({ storageKeyPrefix, title, defaultRates }: EditableRateListProps) {
     const { toast } = useToast();
-    const [rates, setRates] = useState<ManualRate[]>([]);
+    const [rates, setRates] = useState<ManualRate[]>(defaultRates);
     const [isLoading, setIsLoading] = useState(true);
     const [isCategorizing, setIsCategorizing] = useState<string | null>(null);
 
     useEffect(() => {
-        const fetchRates = async () => {
+        const fetchRates = () => {
             setIsLoading(true);
-            const result = await getDocuments(collectionName);
-
-            if (result.success && result.data) {
-                if (result.data.length === 0) {
-                    // If no data in cloud, load defaults and save them
-                    setRates(defaultRates);
-                    // Optionally, you could pre-populate Firestore with default rates here
-                    // for (const rate of defaultRates) {
-                    //     await saveDocument(collectionName, rate.id, rate);
-                    // }
-                } else {
-                    setRates(result.data.sort((a,b) => a.id.localeCompare(b.id)));
+            if (typeof window !== 'undefined') {
+                const loadedRates: ManualRate[] = [];
+                let hasSavedRates = false;
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key?.startsWith(storageKeyPrefix)) {
+                        loadedRates.push(JSON.parse(localStorage.getItem(key)!));
+                        hasSavedRates = true;
+                    }
                 }
-            } else {
-                toast({
-                    variant: 'destructive',
-                    title: 'Error fetching rates',
-                    description: result.error || 'Could not load rates from the cloud.',
-                });
-                // Fallback to default rates on error
-                setRates(defaultRates);
+                setRates(hasSavedRates ? loadedRates.sort((a,b) => a.id.localeCompare(b.id)) : defaultRates);
             }
             setIsLoading(false);
         };
         
         fetchRates();
-    }, [collectionName, defaultRates, toast]);
+    }, [storageKeyPrefix, defaultRates]);
 
     const handleUpdate = (id: string, field: keyof ManualRate, value: string) => {
         const newRates = rates.map(r => r.id === id ? { ...r, [field]: value } : r);
         setRates(newRates);
     };
     
-    const handleSave = async () => {
-        let successCount = 0;
-        for (const rate of rates) {
+    const handleSave = () => {
+        rates.forEach(rate => {
             if (rate.id && rate.variety && rate.rate) {
-                 const result = await saveDocument(collectionName, rate.id, rate);
-                 if (result.success) {
-                    successCount++;
-                 }
+                 localStorage.setItem(rate.id, JSON.stringify(rate));
             }
-        }
-        toast({ title: 'Rates Saved', description: `Successfully saved ${successCount} rates to the cloud.` });
+        });
+        toast({ title: 'Rates Saved', description: 'Your manual rates have been saved locally.' });
     };
 
     const addRate = () => {
-        const newId = `manual-${Date.now()}`;
+        const newId = `${storageKeyPrefix}${Date.now()}`;
         setRates([...rates, { id: newId, category: '', variety: '', rate: '' }]);
     };
     
-    const removeRate = async (id: string) => {
-        const result = await deleteDocument(collectionName, id);
-        if (result.success) {
-            setRates(rates.filter(r => r.id !== id));
-            toast({ title: 'Rate Deleted' });
-        } else {
-             toast({ variant: 'destructive', title: 'Delete Failed', description: result.error });
-        }
+    const removeRate = (id: string) => {
+        localStorage.removeItem(id);
+        setRates(rates.filter(r => r.id !== id));
+        toast({ title: 'Rate Deleted' });
     };
 
     const handleAutoCategory = async (rateId: string, variety: string) => {
@@ -186,3 +167,5 @@ export default function EditableRateList({ storageKeyPrefix: collectionName, tit
         </Card>
     );
 }
+
+    

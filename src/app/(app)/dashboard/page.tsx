@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useState, useEffect } from 'react';
@@ -8,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import RateList from '@/components/RateList';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { getDocuments } from '@/lib/actions';
 import { Badge } from '@/components/ui/badge';
 
 
@@ -318,25 +318,30 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchData() {
+    function fetchData() {
+        if (typeof window === 'undefined') return;
         setIsLoading(true);
 
         const today = new Date();
         const todayStr = today.toISOString().split('T')[0];
         const currentMonth = today.getMonth();
         const currentYear = today.getFullYear();
+
+        const allInvoices: Invoice[] = [];
+        const allAccessories: AccessoryLedgerEntry[] = [];
+        const allProducts: Product[] = [];
+
+        for(let i=0; i<localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key?.startsWith('invoice-')) {
+                allInvoices.push(JSON.parse(localStorage.getItem(key)!));
+            } else if (key?.startsWith('accessory-ledger-')) {
+                allAccessories.push(JSON.parse(localStorage.getItem(key)!));
+            } else if (key?.startsWith('product-')) {
+                allProducts.push(JSON.parse(localStorage.getItem(key)!));
+            }
+        }
     
-        const [invoicesRes, accessoriesRes, productsRes] = await Promise.all([
-            getDocuments('invoices'),
-            getDocuments('accessory-ledgers'),
-            getDocuments('products')
-        ]);
-        
-        const allInvoices: Invoice[] = invoicesRes.success ? (invoicesRes.data as Invoice[] || []) : [];
-        const allAccessories: AccessoryLedgerEntry[] = accessoriesRes.success ? (accessoriesRes.data as AccessoryLedgerEntry[] || []) : [];
-        const allProducts: Product[] = productsRes.success ? (productsRes.data as Product[] || []) : [];
-
-
         // --- INVENTORY CALCULATION ---
         const stockOut: { [productName: string]: number } = {};
         allAccessories.forEach(sale => {

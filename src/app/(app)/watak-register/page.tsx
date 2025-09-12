@@ -34,8 +34,6 @@ import DocumentCard from '@/components/DocumentCard';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { getDocuments, deleteDocument } from '@/lib/actions';
-
 
 export interface WatakEntry {
     id: string;
@@ -71,15 +69,23 @@ export default function WatakRegisterPage() {
     }
   }, []);
 
-  const fetchWataks = async () => {
+  const fetchWataks = () => {
     setIsLoading(true);
-    const { success, data, error } = await getDocuments('invoices');
-    if (success && data) {
-        setWataks(data as WatakEntry[]);
-        const uniqueGrowers = ['All Growers', ...new Set(data.map(w => w.customerName))];
+    if(typeof window !== 'undefined') {
+        const items = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key?.startsWith('invoice-')) {
+                try {
+                    items.push(JSON.parse(localStorage.getItem(key)!));
+                } catch(e) {
+                    console.error("Failed to parse watak from local storage", e);
+                }
+            }
+        }
+        setWataks(items);
+        const uniqueGrowers = ['All Growers', ...new Set(items.map(w => w.customerName))];
         setGrowers(uniqueGrowers);
-    } else {
-        toast({ variant: 'destructive', title: 'Error fetching Wataks', description: error });
     }
     setIsLoading(false);
   }
@@ -188,13 +194,9 @@ export default function WatakRegisterPage() {
     }
     if(!window.confirm(`Are you sure you want to delete Bill #${sNo}? This cannot be undone.`)) return;
     
-    const { success, error } = await deleteDocument('invoices', sNo);
-    if(success) {
-      toast({ title: "Bill Deleted from Cloud", description: `Bill #${sNo} has been deleted.`});
-      fetchWataks(); // Re-fetch from cloud
-    } else {
-      toast({ variant: "destructive", title: "Cloud Delete Failed", description: `Could not delete bill from cloud: ${error}`});
-    }
+    localStorage.removeItem(`invoice-${sNo}`);
+    toast({ title: "Bill Deleted", description: `Bill #${sNo} has been deleted locally.`});
+    fetchWataks();
   }
 
   return (

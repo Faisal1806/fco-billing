@@ -10,8 +10,6 @@ import { FaWhatsapp } from 'react-icons/fa';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/logo";
-import { doc, getDoc } from "firebase/firestore";
-import { getClientDb } from "@/lib/firebase";
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
@@ -40,7 +38,7 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
     const printRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const fetchBill = async () => {
+        const fetchBill = () => {
             if (!params.id) {
                 setLoading(false);
                 return;
@@ -48,31 +46,19 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
             setLoading(true);
 
             let data: PurchaseData | null = null;
-            
-            try {
-                const db = getClientDb();
-                const docRef = doc(db, "purchases", params.id);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    data = docSnap.data() as PurchaseData;
-                } else {
-                     toast({
-                        variant: "destructive",
-                        title: "Not Found",
-                        description: "The requested purchase bill was not found in the cloud."
-                    });
-                }
-            } catch (error) {
-                console.error("Firestore fetch failed:", error);
-                toast({
-                    variant: "destructive",
-                    title: "Cloud Error",
-                    description: "Could not connect to the cloud to fetch the purchase bill."
-                });
+            const localData = localStorage.getItem(`purchase-${params.id}`);
+            if(localData) {
+                data = JSON.parse(localData);
             }
 
             if (data) {
                 setBillData(data);
+            } else {
+                 toast({
+                    variant: "destructive",
+                    title: "Not Found",
+                    description: "The requested purchase bill was not found on this device."
+                });
             }
             setLoading(false);
         };
@@ -277,3 +263,5 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
         </div>
     );
 }
+
+    
