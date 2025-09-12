@@ -334,6 +334,4 @@ export default function WatakRegisterPage() {
     </Card>
   );
 }
-
-    
     
