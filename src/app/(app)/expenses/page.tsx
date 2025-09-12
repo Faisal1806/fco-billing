@@ -25,7 +25,7 @@ import { Label } from '@/components/ui/label';
 import { PlusCircle, Trash2, Receipt, Users, Building, Percent } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { saveDocument, deleteDocument, getDocuments } from '@/lib/actions';
+import { saveDocument, deleteDocument } from '@/lib/actions';
 
 
 type ExpenseEntry = {
@@ -151,16 +151,28 @@ export default function ExpensesPage() {
     const [formState, setFormState] = useState(emptyFormState);
     const [userRole, setUserRole] = useState<string | null>(null);
 
-    const fetchExpenses = async () => {
+    const fetchExpenses = () => {
+        if (typeof window === 'undefined') return;
         setUserRole(localStorage.getItem('userRole'));
 
-        const { success: manualSuccess, data: manualExpensesData } = await getDocuments('expenses');
-        const { success: invoiceSuccess, data: invoicesData } = await getDocuments('invoices');
+        const manualExpensesData: any[] = [];
+        const invoicesData: any[] = [];
 
-        if(!manualSuccess || !invoiceSuccess) {
-            toast({variant: 'destructive', title: 'Failed to fetch expense data'});
-            return;
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key) {
+                try {
+                    if (key.startsWith('expense-')) {
+                        manualExpensesData.push(JSON.parse(localStorage.getItem(key)!));
+                    } else if (key.startsWith('invoice-')) {
+                        invoicesData.push(JSON.parse(localStorage.getItem(key)!));
+                    }
+                } catch (e) {
+                    console.error(`Failed to parse item from localStorage: ${key}`, e);
+                }
+            }
         }
+
 
         const allLabourExpenses: ExpenseEntry[] = [];
         const allCompanyExpenses: ExpenseEntry[] = (manualExpensesData || []).map((d: any) => ({ ...d, type: 'manual' }));
