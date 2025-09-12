@@ -67,6 +67,7 @@ export default function WatakRegisterPage() {
     if (typeof window !== 'undefined') {
       setUserRole(localStorage.getItem('userRole'));
     }
+    fetchWataks();
   }, []);
 
   const fetchWataks = () => {
@@ -93,7 +94,7 @@ export default function WatakRegisterPage() {
 
   React.useEffect(() => {
     fetchWataks();
-  }, []);
+  }, [toast]);
 
   const filteredWataks = wataks
     .filter(w => selectedGrower === 'All Growers' || w.customerName === selectedGrower)
@@ -334,4 +335,3 @@ export default function WatakRegisterPage() {
     </Card>
   );
 }
-    
