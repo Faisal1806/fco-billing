@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useEffect, useState, useRef } from "react";
@@ -72,9 +73,10 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             let data: BillData | null = null;
             let errorOccurred = false;
 
+            // 1. Try fetching from Firestore first
             try {
                 const db = getClientDb();
-                const docRef = doc(db, `users/default-user/invoices/${params.id}`);
+                const docRef = doc(db, "invoices", params.id);
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {
@@ -85,23 +87,31 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 errorOccurred = true;
             }
             
+            // 2. If Firestore fails or data is not there, fall back to local storage
+            if (!data) {
+                const localData = localStorage.getItem(`invoice-${params.id}`);
+                if (localData) {
+                    data = JSON.parse(localData);
+                     if (errorOccurred) {
+                        toast({
+                            title: "Displaying Local Version",
+                            description: "Could not connect to the cloud. Showing the locally saved invoice."
+                        });
+                    }
+                }
+            }
+
             if (data) {
                 data.entries = data.entries.map(e => ({
                     ...e, 
                     qty: e.qty || e.peti || e.daba || 0
                 }));
                 setBillData(data);
-                 if (errorOccurred) {
-                    toast({
-                        title: "Displaying Potentially Stale Data",
-                        description: "Could not connect to the cloud. Showing the last synced version of the invoice."
-                    });
-                }
             } else {
                 toast({
                     variant: "destructive",
                     title: "Invoice Not Found",
-                    description: "The requested invoice was not found online."
+                    description: "The requested invoice was not found online or on this device."
                 });
             }
             
@@ -332,3 +342,5 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         </div>
     );
 }
+
+    
