@@ -1,4 +1,3 @@
-
 'use client'
 
 import { useEffect, useState, useRef } from "react";
@@ -14,6 +13,8 @@ import BusinessCardQR from "@/components/BusinessCardQR";
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode.react';
+import { doc, getDoc } from "firebase/firestore";
+import { getClientDb } from "@/lib/firebase";
 
 interface BillData {
     id: string;
@@ -61,38 +62,52 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     }, []);
 
     useEffect(() => {
-        if (!params.id) {
-            setLoading(false);
-            return;
-        };
-        setLoading(true);
+        const fetchBill = async () => {
+            if (!params.id) {
+                setLoading(false);
+                return;
+            };
+            setLoading(true);
 
-        let data: BillData | null = null;
-        try {
-            // Only fetch from local storage to ensure it works offline and without Firestore enabled.
-            const storedBill = localStorage.getItem(`invoice-${params.id}`);
-            if (storedBill) {
-            data = JSON.parse(storedBill);
+            let data: BillData | null = null;
+            let errorOccurred = false;
+
+            try {
+                const db = getClientDb();
+                const docRef = doc(db, `users/default-user/invoices/${params.id}`);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    data = docSnap.data() as BillData;
+                }
+            } catch (error) {
+                console.error("Firestore fetch failed, will try localStorage.", error);
+                errorOccurred = true;
             }
-        } catch (e) {
-            console.error("Could not parse bill from localStorage", e);
-        }
-
-        if (data) {
-            data.entries = data.entries.map(e => ({
-                ...e, 
-                qty: e.qty || e.peti || e.daba || 0
-            }));
-            setBillData(data);
-        } else {
-            toast({
-                variant: "destructive",
-                title: "Invoice Not Found",
-                description: "The requested invoice was not found on this device."
-            });
-        }
-        
-        setLoading(false);
+            
+            if (data) {
+                data.entries = data.entries.map(e => ({
+                    ...e, 
+                    qty: e.qty || e.peti || e.daba || 0
+                }));
+                setBillData(data);
+                 if (errorOccurred) {
+                    toast({
+                        title: "Displaying Potentially Stale Data",
+                        description: "Could not connect to the cloud. Showing the last synced version of the invoice."
+                    });
+                }
+            } else {
+                toast({
+                    variant: "destructive",
+                    title: "Invoice Not Found",
+                    description: "The requested invoice was not found online."
+                });
+            }
+            
+            setLoading(false);
+        };
+        fetchBill();
     }, [params.id, toast]);
 
 

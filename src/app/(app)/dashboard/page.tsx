@@ -1,4 +1,3 @@
-
 'use client'
 
 import { useState, useEffect } from 'react';
@@ -50,6 +49,22 @@ interface Product {
 interface AccessoryLedgerEntry {
     item: string;
     qty: number;
+    date: string;
+    paymentMode: 'Cash' | 'Credit' | 'Khata';
+    rate: number;
+}
+
+interface Invoice {
+    date: string;
+    totals: {
+        netSale: number;
+        grossSale: number;
+        totalExpenses: number;
+        pattiQty: number;
+        dabbaQty: number;
+    };
+    entries: any[];
+    customerName: string;
 }
 
 interface CategorizedProducts {
@@ -303,181 +318,160 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    function fetchData() {
+    async function fetchData() {
         setIsLoading(true);
-        if (typeof window === 'undefined') return;
 
         const today = new Date();
         const todayStr = today.toISOString().split('T')[0];
         const currentMonth = today.getMonth();
         const currentYear = today.getFullYear();
     
-        // Fetch all necessary data from localStorage
-        const allInvoices = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key?.startsWith('invoice-')) {
-                try {
-                    allInvoices.push(JSON.parse(localStorage.getItem(key)!));
-                } catch (e) {
-                    console.error(`Failed to parse invoice from local storage with key: ${key}`, e);
-                }
-            }
-        }
+        const [invoicesRes, accessoriesRes, productsRes] = await Promise.all([
+            getDocuments('invoices'),
+            getDocuments('accessory-ledgers'),
+            getDocuments('products')
+        ]);
         
-        const accessoriesRes = getDocuments('accessory-ledgers'); // This can be async, handle it
-        
-        accessoriesRes.then(accessoriesRes => {
-            const allAccessories: AccessoryLedgerEntry[] = accessoriesRes.success ? (accessoriesRes.data || []) : [];
-
-            // --- INVENTORY CALCULATION ---
-            const allProducts: Product[] = [];
-             for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key?.startsWith('product-')) {
-                    try {
-                        allProducts.push(JSON.parse(localStorage.getItem(key)!));
-                    } catch (e) { console.error(`Failed to parse product: ${key}`, e); }
-                }
-            }
-
-            const stockOut: { [productName: string]: number } = {};
-            allAccessories.forEach(sale => {
-                stockOut[sale.item] = (stockOut[sale.item] || 0) + sale.qty;
-            });
-            
-            const updatedProducts = allProducts.map(p => ({
-                ...p,
-                stock: (p.stock || 0) - (stockOut[p.name] || 0),
-            }));
-
-            const categorized: CategorizedProducts = { fruits: [], accessories: [], fertilizers: [] };
-            updatedProducts.forEach(p => {
-                const cat = p.category.toLowerCase();
-                if (['fruit', 'apple', 'pear', 'nakh', 'gosha', 'red delicious', 'american', 'gala mast', 'shimla'].some(fruitCat => cat.includes(fruitCat))) {
-                    categorized.fruits.push(p);
-                } else if (['dabba', 'patti', 'layer', 'tray', 'tape', 'packing', 'crate'].some(accCat => cat.includes(accCat))) {
-                    categorized.accessories.push(p);
-                } else if (['fertilizer', 'pesticide', 'urea', 'dap', 'fungicide', 'insecticide'].some(fertCat => cat.includes(fertCat))) {
-                    categorized.fertilizers.push(p);
-                } else {
-                     // Fallback for accessories if not explicitly matched
-                    categorized.accessories.push(p);
-                }
-            });
-            setInventory(categorized);
-            // --- END INVENTORY ---
+        const allInvoices: Invoice[] = invoicesRes.success ? (invoicesRes.data as Invoice[] || []) : [];
+        const allAccessories: AccessoryLedgerEntry[] = accessoriesRes.success ? (accessoriesRes.data as AccessoryLedgerEntry[] || []) : [];
+        const allProducts: Product[] = productsRes.success ? (productsRes.data as Product[] || []) : [];
 
 
-            // Fruit Stats Calculation
-            let pattiSoldToday = 0;
-            let dabbaSoldToday = 0;
-            let totalSaleValueToday = 0;
-            
-            // Yearly stats
-            let monthlyTotalSales = 0;
-            let monthlyTotalExpenses = 0;
-            let yearGrossSales = 0;
-            let yearNetSales = 0;
-            let yearTotalExpenses = 0;
-            
-            // Grower Profit
-            const profitsByGrower: {[name: string]: number} = {};
-
-            // Accessory Stats Calculation
-            let accessorySalesToday = 0;
-            let accessorySalesMonth = 0;
-            let accessoryCredit = 0;
-            const itemQuantities: {[name: string]: number} = {};
-            
-            allInvoices.forEach(sale => {
-                const saleDate = new Date(sale.date);
-                const isToday = sale.date === todayStr;
-
-                sale.entries.forEach((entry: any) => {
-                    const qty = Number(entry.qty) || 0;
-                    if (entry.type === 'Patti') {
-                        if (isToday) pattiSoldToday += qty;
-                    } else if (entry.type === 'Dabba') {
-                        if (isToday) dabbaSoldToday += qty;
-                    }
-                });
-                
-                if (isToday) totalSaleValueToday += sale.totals.netSale || 0;
-                
-                const saleYear = saleDate.getFullYear();
-                const saleMonth = saleDate.getMonth();
-
-                if (saleYear === currentYear) {
-                    yearGrossSales += sale.totals.grossSale || 0;
-                    yearNetSales += sale.totals.netSale || 0;
-                    yearTotalExpenses += sale.totals.totalExpenses || 0;
-
-                     if (saleMonth === currentMonth) {
-                        monthlyTotalSales += sale.totals.netSale || 0;
-                        monthlyTotalExpenses += sale.totals.totalExpenses || 0;
-                    }
-
-                    const grower = sale.customerName;
-                    if(grower && sale.totals.netSale) {
-                         profitsByGrower[grower] = (profitsByGrower[grower] || 0) + sale.totals.netSale;
-                    }
-                }
-            });
-
-
-            allAccessories.forEach((entry: any) => {
-                const entryDate = new Date(entry.date);
-                const amount = (entry.qty || 0) * (entry.rate || 0);
-
-                if (entry.date === todayStr) {
-                    accessorySalesToday += amount;
-                }
-                if(entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear) {
-                    accessorySalesMonth += amount;
-                }
-                if(entry.paymentMode === 'Khata' || entry.paymentMode === 'Credit') {
-                    accessoryCredit += amount;
-                }
-                if(entry.item){
-                    itemQuantities[entry.item] = (itemQuantities[entry.item] || 0) + (entry.qty || 0);
-                }
-            });
-
-            
-            setStats({
-              pattiSold: pattiSoldToday,
-              dabbaSold: dabbaSoldToday,
-              totalSaleValue: totalSaleValueToday,
-            });
-
-            setYearlyStats({
-                monthSales: monthlyTotalSales,
-                totalExpenses: monthlyTotalExpenses,
-                yearGrossSales: yearGrossSales,
-                yearNetSales: yearNetSales,
-                yearTotalExpenses: yearTotalExpenses,
-            });
-
-            const sortedGrowerProfits = Object.entries(profitsByGrower)
-                .map(([name, profit]) => ({ name, profit }))
-                .sort((a,b) => b.profit - a.profit)
-                .slice(0, 10); 
-
-            setGrowerProfits(sortedGrowerProfits);
-            
-            const topItem = Object.entries(itemQuantities).sort(([, a], [, b]) => b - a)[0]?.[0] || 'N/A';
-
-            setAccessoryStats({
-                todaySales: accessorySalesToday,
-                monthSales: accessorySalesMonth,
-                topItem: topItem,
-                outstandingCredit: accessoryCredit,
-            });
-
-
-            setIsLoading(false);
+        // --- INVENTORY CALCULATION ---
+        const stockOut: { [productName: string]: number } = {};
+        allAccessories.forEach(sale => {
+            stockOut[sale.item] = (stockOut[sale.item] || 0) + sale.qty;
         });
+        
+        const updatedProducts = allProducts.map(p => ({
+            ...p,
+            stock: (p.stock || 0) - (stockOut[p.name] || 0),
+        }));
+
+        const categorized: CategorizedProducts = { fruits: [], accessories: [], fertilizers: [] };
+        updatedProducts.forEach(p => {
+            const cat = p.category.toLowerCase();
+            if (['fruit', 'apple', 'pear', 'nakh', 'gosha', 'red delicious', 'american', 'gala mast', 'shimla'].some(fruitCat => cat.includes(fruitCat))) {
+                categorized.fruits.push(p);
+            } else if (['dabba', 'patti', 'layer', 'tray', 'tape', 'packing', 'crate'].some(accCat => cat.includes(accCat))) {
+                categorized.accessories.push(p);
+            } else if (['fertilizer', 'pesticide', 'urea', 'dap', 'fungicide', 'insecticide'].some(fertCat => cat.includes(fertCat))) {
+                categorized.fertilizers.push(p);
+            } else {
+                 // Fallback for accessories if not explicitly matched
+                categorized.accessories.push(p);
+            }
+        });
+        setInventory(categorized);
+        // --- END INVENTORY ---
+
+
+        // Fruit Stats Calculation
+        let pattiSoldToday = 0;
+        let dabbaSoldToday = 0;
+        let totalSaleValueToday = 0;
+        
+        // Yearly stats
+        let monthlyTotalSales = 0;
+        let monthlyTotalExpenses = 0;
+        let yearGrossSales = 0;
+        let yearNetSales = 0;
+        let yearTotalExpenses = 0;
+        
+        // Grower Profit
+        const profitsByGrower: {[name: string]: number} = {};
+
+        // Accessory Stats Calculation
+        let accessorySalesToday = 0;
+        let accessorySalesMonth = 0;
+        let accessoryCredit = 0;
+        const itemQuantities: {[name: string]: number} = {};
+        
+        allInvoices.forEach(sale => {
+            const saleDate = new Date(sale.date);
+            const isToday = sale.date === todayStr;
+
+            const pattiQty = sale.totals.pattiQty || 0;
+            const dabbaQty = sale.totals.dabbaQty || 0;
+
+            if (isToday) {
+                pattiSoldToday += pattiQty;
+                dabbaSoldToday += dabbaQty;
+                totalSaleValueToday += sale.totals.netSale || 0;
+            }
+            
+            const saleYear = saleDate.getFullYear();
+            const saleMonth = saleDate.getMonth();
+
+            if (saleYear === currentYear) {
+                yearGrossSales += sale.totals.grossSale || 0;
+                yearNetSales += sale.totals.netSale || 0;
+                yearTotalExpenses += sale.totals.totalExpenses || 0;
+
+                 if (saleMonth === currentMonth) {
+                    monthlyTotalSales += sale.totals.netSale || 0;
+                    monthlyTotalExpenses += sale.totals.totalExpenses || 0;
+                }
+
+                const grower = sale.customerName;
+                if(grower && sale.totals.netSale) {
+                     profitsByGrower[grower] = (profitsByGrower[grower] || 0) + sale.totals.netSale;
+                }
+            }
+        });
+
+
+        allAccessories.forEach((entry: AccessoryLedgerEntry) => {
+            const entryDate = new Date(entry.date);
+            const amount = (entry.qty || 0) * (entry.rate || 0);
+
+            if (entry.date === todayStr) {
+                accessorySalesToday += amount;
+            }
+            if(entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear) {
+                accessorySalesMonth += amount;
+            }
+            if(entry.paymentMode === 'Khata' || entry.paymentMode === 'Credit') {
+                accessoryCredit += amount;
+            }
+            if(entry.item){
+                itemQuantities[entry.item] = (itemQuantities[entry.item] || 0) + (entry.qty || 0);
+            }
+        });
+
+        
+        setStats({
+          pattiSold: pattiSoldToday,
+          dabbaSold: dabbaSoldToday,
+          totalSaleValue: totalSaleValueToday,
+        });
+
+        setYearlyStats({
+            monthSales: monthlyTotalSales,
+            totalExpenses: monthlyTotalExpenses,
+            yearGrossSales: yearGrossSales,
+            yearNetSales: yearNetSales,
+            yearTotalExpenses: yearTotalExpenses,
+        });
+
+        const sortedGrowerProfits = Object.entries(profitsByGrower)
+            .map(([name, profit]) => ({ name, profit }))
+            .sort((a,b) => b.profit - a.profit)
+            .slice(0, 10); 
+
+        setGrowerProfits(sortedGrowerProfits);
+        
+        const topItem = Object.entries(itemQuantities).sort(([, a], [, b]) => b - a)[0]?.[0] || 'N/A';
+
+        setAccessoryStats({
+            todaySales: accessorySalesToday,
+            monthSales: accessorySalesMonth,
+            topItem: topItem,
+            outstandingCredit: accessoryCredit,
+        });
+
+
+        setIsLoading(false);
     }
     fetchData();
   }, []);

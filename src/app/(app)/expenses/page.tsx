@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -25,7 +24,7 @@ import { Label } from '@/components/ui/label';
 import { PlusCircle, Trash2, Receipt, Users, Building, Percent } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { saveDocument, deleteDocument } from '@/lib/actions';
+import { saveDocument, deleteDocument, getDocuments } from '@/lib/actions';
 
 
 type ExpenseEntry = {
@@ -45,8 +44,7 @@ type ExpenseStats = {
 }
 
 const emptyFormState = {
-    id: '',
-    date: '',
+    date: new Date().toISOString().split('T')[0],
     category: '',
     description: '',
     amount: 0,
@@ -151,28 +149,21 @@ export default function ExpensesPage() {
     const [formState, setFormState] = useState(emptyFormState);
     const [userRole, setUserRole] = useState<string | null>(null);
 
-    const fetchExpenses = () => {
-        if (typeof window === 'undefined') return;
-        setUserRole(localStorage.getItem('userRole'));
-
-        const manualExpensesData: any[] = [];
-        const invoicesData: any[] = [];
-
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key) {
-                try {
-                    if (key.startsWith('expense-')) {
-                        manualExpensesData.push(JSON.parse(localStorage.getItem(key)!));
-                    } else if (key.startsWith('invoice-')) {
-                        invoicesData.push(JSON.parse(localStorage.getItem(key)!));
-                    }
-                } catch (e) {
-                    console.error(`Failed to parse item from localStorage: ${key}`, e);
-                }
-            }
+    const fetchExpenses = async () => {
+        if (typeof window !== 'undefined') {
+            setUserRole(localStorage.getItem('userRole'));
         }
 
+        const [manualExpensesRes, invoicesRes] = await Promise.all([
+            getDocuments('expenses'),
+            getDocuments('invoices')
+        ]);
+        
+        const manualExpensesData: any[] = manualExpensesRes.success ? (manualExpensesRes.data || []) : [];
+        const invoicesData: any[] = invoicesRes.success ? (invoicesRes.data || []) : [];
+        
+        if (!manualExpensesRes.success) toast({variant: 'destructive', title: 'Error fetching manual expenses', description: manualExpensesRes.error});
+        if (!invoicesRes.success) toast({variant: 'destructive', title: 'Error fetching invoices', description: invoicesRes.error});
 
         const allLabourExpenses: ExpenseEntry[] = [];
         const allCompanyExpenses: ExpenseEntry[] = (manualExpensesData || []).map((d: any) => ({ ...d, type: 'manual' }));
