@@ -12,7 +12,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Separator } from './ui/separator';
 import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Share, FileText, Camera, Wand2, Sparkles, Upload, CheckCircle, ExternalLink, AlertTriangle } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
-import { saveDocument, deleteDocument, getDocuments } from '@/lib/actions';
 import { extractWatakFromImage, WatakExtractOutput } from '@/ai/flows/extract-watak-flow';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -64,8 +63,6 @@ export function BillMakingTab() {
   const [isLoading, setIsLoading] = useState(true);
   const [savedBills, setSavedBills] = useState<any[]>([]);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [firestoreError, setFirestoreError] = useState<string | null>(null);
-  
 
 
   useEffect(() => {
@@ -75,19 +72,21 @@ export function BillMakingTab() {
     fetchBills();
   }, []);
 
-  const fetchBills = async () => {
+  const fetchBills = () => {
     setIsLoading(true);
-    const { success, data, error } = await getDocuments('invoices');
-    if (success && data) {
-      setSavedBills(data.sort((a,b) => (Number(a.sNo) > Number(b.sNo)) ? -1 : 1));
-      setFirestoreError(null);
-    } else if (error) {
-       if (error.includes('firestore is not available')) {
-         setFirestoreError("The database is not enabled. Please go to the Firebase Console to enable Firestore.");
-       } else {
-         toast({ variant: 'destructive', title: 'Error fetching bills', description: error });
-       }
+    const bills = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('invoice-')) {
+            try {
+                const bill = JSON.parse(localStorage.getItem(key)!);
+                bills.push(bill);
+            } catch(e) {
+                console.error("Failed to parse bill from local storage", e);
+            }
+        }
     }
+    setSavedBills(bills.sort((a,b) => (Number(a.sNo) > Number(b.sNo)) ? -1 : 1));
     setIsLoading(false);
   };
   
@@ -221,20 +220,12 @@ export function BillMakingTab() {
       },
     };
     
-    const { success, error } = await saveDocument('invoices', billId, billData);
-
-    if (success) {
-        toast({
-            title: isEditing ? 'Watak Updated' : 'Watak Saved',
-            description: `The Watak has been successfully saved to the cloud.`,
-        });
-    } else {
-        toast({
-            variant: 'destructive',
-            title: 'Save Failed',
-            description: `Could not save to cloud: ${error}`,
-        });
-    }
+    localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
+    
+    toast({
+        title: isEditing ? 'Watak Updated' : 'Watak Saved',
+        description: `The Watak has been successfully saved to this device.`,
+    });
     
     fetchBills(); // Re-fetch to update the list
     setIsEditing(true); // Ensure form stays in editing mode for the current bill
@@ -269,20 +260,12 @@ export function BillMakingTab() {
             return;
         }
         
-        const { success, error } = await deleteDocument('invoices', billId);
+        localStorage.removeItem(`invoice-${billId}`);
         
-        if (success) {
-             toast({
-                title: "Watak Deleted",
-                description: `Watak #${billId} has been successfully deleted.`
-            })
-        } else {
-            toast({
-                variant: "destructive",
-                title: "Delete Failed",
-                description: `Could not delete Watak: ${error}`
-            })
-        }
+        toast({
+            title: "Watak Deleted",
+            description: `Watak #${billId} has been successfully deleted.`
+        });
         
         fetchBills(); // Re-fetch to update list
         if (sNo === billId) {
@@ -693,20 +676,6 @@ export function BillMakingTab() {
                 <h3 className="text-lg font-medium">Recent Wataks</h3>
             </CardHeader>
             <CardContent>
-                {firestoreError && (
-                    <Alert variant="destructive">
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertTitle>Database Connection Error</AlertTitle>
-                        <AlertDescription>
-                            <p>{firestoreError}</p>
-                            <Button asChild variant="secondary" className="mt-2 text-xs h-8">
-                                <a href="https://console.firebase.google.com/project/swiftsale-ewd7o/firestore" target="_blank" rel="noopener noreferrer">
-                                    Enable Firestore
-                                </a>
-                            </Button>
-                        </AlertDescription>
-                    </Alert>
-                )}
                 <ScrollArea className="h-96">
                     <div className="space-y-2">
                         {isLoading ? (
@@ -715,7 +684,7 @@ export function BillMakingTab() {
                              </div>
                         ) : savedBills.length > 0 ? (
                             savedBills.map(bill => (
-                            <div key={bill.sNo} className="flex justify-between items-center p-2 border rounded-md">
+                            <div key={bill.sNo} className="flex justify-between items-center p-2 border rounded-md hover:bg-muted">
                                 <div>
                                     <p className="font-medium">Bill #{bill.sNo}</p>
                                     <p className="text-sm text-muted-foreground">{bill.customerName}</p>
