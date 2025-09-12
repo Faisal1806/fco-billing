@@ -133,9 +133,7 @@ export default function SettingsPage() {
 
             if (matchingPrefix) {
                 const collectionName = keyPrefixToCollectionMap[matchingPrefix];
-                // For most keys, the ID is what comes after the prefix.
-                // For 'cs-', the ID is just `cs-${timestamp}`, so we can use the whole key.
-                const docId = key;
+                const docId = key.substring(matchingPrefix.length);
                 
                 if (collectionName && docId) {
                     try {
@@ -413,3 +411,5 @@ export default function SettingsPage() {
     );
 }
 
+
+    
