@@ -24,6 +24,8 @@ interface YearlyStats {
     yearGrossSales: number;
     yearNetSales: number;
     yearTotalExpenses: number;
+    yearTotalPatti: number;
+    yearTotalDabba: number;
 }
 
 type GrowerProfit = {
@@ -153,6 +155,20 @@ const FruitDashboard = ({ stats, yearlyStats, accessoryStats, growerProfits, rou
                         icon={TrendingDown}
                         note="All Watak deductions this year"
                         iconBgColor="bg-pink-500"
+                     />
+                     <StatCard 
+                        title="Total Patti Sold (This Year)"
+                        value={yearlyStats?.yearTotalPatti.toLocaleString('en-IN') ?? '0'}
+                        icon={Box}
+                        note="Total patti volume this year"
+                        iconBgColor="bg-indigo-500"
+                     />
+                     <StatCard 
+                        title="Total Dabba Sold (This Year)"
+                        value={yearlyStats?.yearTotalDabba.toLocaleString('en-IN') ?? '0'}
+                        icon={Package}
+                        note="Total dabba volume this year"
+                        iconBgColor="bg-cyan-500"
                      />
                 </div>
                 
@@ -382,6 +398,8 @@ export default function DashboardPage() {
         let yearGrossSales = 0;
         let yearNetSales = 0;
         let yearTotalExpenses = 0;
+        let yearTotalPatti = 0;
+        let yearTotalDabba = 0;
         
         // Grower Profit
         const profitsByGrower: {[name: string]: number} = {};
@@ -412,6 +430,8 @@ export default function DashboardPage() {
                 yearGrossSales += sale.totals.grossSale || 0;
                 yearNetSales += sale.totals.netSale || 0;
                 yearTotalExpenses += sale.totals.totalExpenses || 0;
+                yearTotalPatti += pattiQty;
+                yearTotalDabba += dabbaQty;
 
                  if (saleMonth === currentMonth) {
                     monthlyTotalSales += sale.totals.netSale || 0;
@@ -457,6 +477,8 @@ export default function DashboardPage() {
             yearGrossSales: yearGrossSales,
             yearNetSales: yearNetSales,
             yearTotalExpenses: yearTotalExpenses,
+            yearTotalPatti,
+            yearTotalDabba,
         });
 
         const sortedGrowerProfits = Object.entries(profitsByGrower)
@@ -509,5 +531,3 @@ export default function DashboardPage() {
     </Tabs>
   );
 }
-
-    
