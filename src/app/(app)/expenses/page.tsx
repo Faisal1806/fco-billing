@@ -22,7 +22,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, Trash2, Receipt, Users, Building, Percent } from 'lucide-react';
+import { PlusCircle, Trash2, Receipt, Users, Building, Percent, Truck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 
@@ -140,10 +140,13 @@ export default function ExpensesPage() {
     const [labourExpenses, setLabourExpenses] = useState<ExpenseEntry[]>([]);
     const [companyExpenses, setCompanyExpenses] = useState<ExpenseEntry[]>([]);
     const [commissionIncome, setCommissionIncome] = useState<ExpenseEntry[]>([]);
+    const [freightExpenses, setFreightExpenses] = useState<ExpenseEntry[]>([]);
     
     const [commissionStats, setCommissionStats] = useState<ExpenseStats>({ totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 });
     const [labourStats, setLabourStats] = useState<ExpenseStats>({ totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 });
     const [companyStats, setCompanyStats] = useState<ExpenseStats>({ totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 });
+    const [freightStats, setFreightStats] = useState<ExpenseStats>({ totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 });
+
     
     const [formState, setFormState] = useState(emptyFormState);
     const [userRole, setUserRole] = useState<string | null>(null);
@@ -168,13 +171,16 @@ export default function ExpensesPage() {
             const allLabourExpenses: ExpenseEntry[] = [];
             const allCompanyExpenses: ExpenseEntry[] = (manualExpensesData || []).map((d: any) => ({ ...d, type: 'manual' }));
             const allCommissionIncome: ExpenseEntry[] = [];
+            const allFreightExpenses: ExpenseEntry[] = [];
             
             let newCommissionStats: ExpenseStats = { totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 };
             let newLabourStats: ExpenseStats = { totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 };
             let newCompanyStats: ExpenseStats = { totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 };
+            let newFreightStats: ExpenseStats = { totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 };
             
             const companyWataks = new Set<string>();
             const labourWataks = new Set<string>();
+            const freightWataks = new Set<string>();
 
             (invoicesData || []).forEach((sale: any) => {
                 if(sale.totals) {
@@ -195,6 +201,20 @@ export default function ExpensesPage() {
                         newLabourStats.totalPatti += pattiQty;
                         newLabourStats.totalDabba += dabbaQty;
                         newLabourStats.totalNugs += totalNugs;
+                    }
+                    if (sale.freight > 0) {
+                         allFreightExpenses.push({
+                            id: `auto-freight-${sale.sNo}`,
+                            date: sale.date,
+                            category: 'Sales Deduction',
+                            description: `Freight charges for Bill #${sale.sNo}`,
+                            amount: sale.freight,
+                            type: 'auto',
+                        });
+                        freightWataks.add(sale.sNo);
+                        newFreightStats.totalPatti += pattiQty;
+                        newFreightStats.totalDabba += dabbaQty;
+                        newFreightStats.totalNugs += totalNugs;
                     }
                     if (sale.totals.association > 0) {
                         allCompanyExpenses.push({
@@ -249,14 +269,17 @@ export default function ExpensesPage() {
             });
 
             newLabourStats.totalWataks = labourWataks.size;
+            newFreightStats.totalWataks = freightWataks.size;
             
             setLabourExpenses(allLabourExpenses.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
             setCompanyExpenses(allCompanyExpenses.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
             setCommissionIncome(allCommissionIncome.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+            setFreightExpenses(allFreightExpenses.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
             
             setCommissionStats(newCommissionStats);
             setLabourStats(newLabourStats);
             setCompanyStats(newCompanyStats);
+            setFreightStats(newFreightStats);
         }
     }
 
@@ -301,6 +324,8 @@ export default function ExpensesPage() {
     const totalLabourExpenses = useMemo(() => labourExpenses.reduce((acc, exp) => acc + exp.amount, 0), [labourExpenses]);
     const totalCompanyExpenses = useMemo(() => companyExpenses.reduce((acc, exp) => acc + exp.amount, 0), [companyExpenses]);
     const totalCommissionIncome = useMemo(() => commissionIncome.reduce((acc, exp) => acc + exp.amount, 0), [commissionIncome]);
+    const totalFreightExpenses = useMemo(() => freightExpenses.reduce((acc, exp) => acc + exp.amount, 0), [freightExpenses]);
+
 
     return (
         <div className="space-y-8">
@@ -319,6 +344,15 @@ export default function ExpensesPage() {
                 description={<StatsDescription text="Expenses paid out to company laborers, automatically calculated from sales deductions." stats={labourStats} />}
                 expenses={labourExpenses}
                 total={totalLabourExpenses}
+                showActions={false}
+            />
+
+            <ExpenseTable 
+                title="Freight Expenses"
+                icon={<Truck className="h-6 w-6 text-primary"/>}
+                description={<StatsDescription text="Freight charges automatically deducted from sales invoices (wataks)." stats={freightStats} />}
+                expenses={freightExpenses}
+                total={totalFreightExpenses}
                 showActions={false}
             />
 
