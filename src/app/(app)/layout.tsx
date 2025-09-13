@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
     LayoutDashboard, ShoppingCart, Package, Settings, Phone, BookCopy, Globe, Receipt,
-    Banknote, Snowflake, Tags, FlaskConical, Shapes, History
+    Banknote, Snowflake, Tags, FlaskConical, Shapes, History, Hash
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Header } from '@/components/Header';

@@ -10,7 +10,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { 
-    LayoutDashboard, Settings, Receipt, BookCopy, Menu, Package, BarChart3, Users, Tags, FlaskConical, Phone, ShoppingCart, Globe, Banknote, Snowflake, Shapes, History 
+    LayoutDashboard, Settings, Receipt, BookCopy, Menu, Package, BarChart3, Users, Tags, FlaskConical, Phone, ShoppingCart, Globe, Banknote, Snowflake, Shapes, History, Hash 
 } from 'lucide-react';
 import { Logo } from "./logo";
 import React from "react";

@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Package, UserCheck, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, History, BookCopy, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical } from 'lucide-react';
+import { Loader2, Package, UserCheck, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, History, BookCopy, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Hash } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import RateList from '@/components/RateList';
@@ -26,6 +26,7 @@ interface YearlyStats {
     yearTotalExpenses: number;
     yearTotalPatti: number;
     yearTotalDabba: number;
+    yearTotalNugs: number;
 }
 
 type GrowerProfit = {
@@ -169,6 +170,13 @@ const FruitDashboard = ({ stats, yearlyStats, accessoryStats, growerProfits, rou
                         icon={Package}
                         note="Total dabba volume this year"
                         iconBgColor="bg-cyan-500"
+                     />
+                     <StatCard 
+                        title="Total Nugs Sold (This Year)"
+                        value={yearlyStats?.yearTotalNugs.toLocaleString('en-IN') ?? '0'}
+                        icon={Hash}
+                        note="Patti + Dabba"
+                        iconBgColor="bg-slate-500"
                      />
                 </div>
                 
@@ -471,6 +479,8 @@ export default function DashboardPage() {
           totalSaleValue: totalSaleValueToday,
         });
 
+        const yearTotalNugs = yearTotalPatti + yearTotalDabba;
+
         setYearlyStats({
             monthSales: monthlyTotalSales,
             totalExpenses: monthlyTotalExpenses,
@@ -479,6 +489,7 @@ export default function DashboardPage() {
             yearTotalExpenses: yearTotalExpenses,
             yearTotalPatti,
             yearTotalDabba,
+            yearTotalNugs,
         });
 
         const sortedGrowerProfits = Object.entries(profitsByGrower)
