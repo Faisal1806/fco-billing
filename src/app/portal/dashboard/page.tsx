@@ -26,7 +26,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { useToast } from '@/hooks/use-toast';
-import './../(app)/khata/print.css'; // Reuse styles
+import '@/app/(app)/khata/print.css'; // Reuse styles
 import { addLog } from '@/lib/logger';
 
 type TransactionType = 'Sale' | 'Purchase';
