@@ -108,27 +108,29 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     const handleDownloadPdf = async () => {
         const element = printRef.current;
         if (!element || !billData) return;
-
-        // Use the selected print style to determine PDF size
+    
         const isThermal = printStyle === 'thermal';
-        const format = isThermal ? [80, 297] : 'a5'; // 80mm width for thermal, a5 for normal
+        const format = isThermal ? [80, 297] : 'a5';
         const orientation = 'portrait';
-
+    
         const canvas = await html2canvas(element, {
-            scale: 2,
-            width: isThermal ? 302 : (148 * 2.83), // A5 width in pixels at ~72dpi
-            windowWidth: isThermal ? 302 : (148 * 2.83),
+            scale: 2, // Higher scale for better quality
+            useCORS: true,
+            width: element.scrollWidth,
+            height: element.scrollHeight,
+            windowWidth: element.scrollWidth,
+            windowHeight: element.scrollHeight,
         });
-
+    
         const pdf = new jsPDF({
             orientation,
             unit: 'mm',
             format,
         });
-        
+    
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-        
+    
         pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
         pdf.save(`Invoice-${billData.sNo}_${billData.customerName}.pdf`);
     };
