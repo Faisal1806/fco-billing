@@ -111,13 +111,13 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
         // Use the selected print style to determine PDF size
         const isThermal = printStyle === 'thermal';
-        const format = isThermal ? [80, 297] : 'a4'; // 80mm width for thermal
+        const format = isThermal ? [80, 297] : 'a5'; // 80mm width for thermal, a5 for normal
         const orientation = 'portrait';
 
         const canvas = await html2canvas(element, {
             scale: 2,
-            width: isThermal ? 302 : undefined, // 80mm at 96dpi is ~302px
-            windowWidth: isThermal ? 302 : window.innerWidth,
+            width: isThermal ? 302 : (148 * 2.83), // A5 width in pixels at ~72dpi
+            windowWidth: isThermal ? 302 : (148 * 2.83),
         });
 
         const pdf = new jsPDF({
@@ -130,7 +130,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
         
         pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save(`Invoice-${billData.sNo}.pdf`);
+        pdf.save(`Invoice-${billData.sNo}_${billData.customerName}.pdf`);
     };
 
 
@@ -155,7 +155,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 </Button>
                 <Button onClick={handleDownloadPdf} size="sm" className="gap-2">
                     <Download className="h-4 w-4" />
-                    PDF
+                    Download PDF
                 </Button>
              </div>
              <div className="p-2 border rounded-md flex flex-col items-center">
