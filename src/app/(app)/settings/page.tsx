@@ -5,7 +5,7 @@ import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { Paintbrush, Palette, CheckCircle, Upload, Type, Move, QrCode, SlidersHorizontal, List, Truck, User, Phone, Box, TreePine, Banknote, Percent, Package, Pencil, Building, Snowflake, Weight, Signature, Lock, MessageSquare, Hash, FileText } from 'lucide-react';
+import { Paintbrush, Palette, CheckCircle, Upload, Type, Move, QrCode, SlidersHorizontal, List, Truck, User, Phone, Box, TreePine, Banknote, Percent, Package, Pencil, Building, Snowflake, Weight, Signature, Lock, MessageSquare, Hash, FileText, DownloadCloud } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
@@ -30,6 +30,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import * as XLSX from 'xlsx';
 
 
 const InvoicePreview = ({ title, colors, logoPosition, qrPosition, font, footer, features, children }: {
@@ -98,78 +99,96 @@ export default function SettingsPage() {
         }
     }
 
-    const handleSyncOldData = async () => {
-        setIsSyncing(true);
-        toast({
-            title: "Syncing Local Data...",
-            description: "Please do not close this window. This may take a moment."
-        });
+    const handleBackupAllData = () => {
+        toast({ title: 'Generating Backup', description: 'Please wait while we gather all your data.' });
 
-        let successCount = 0;
-        let errorCount = 0;
-        
-        const keyPrefixToCollectionMap: { [key: string]: string } = {
-            'invoice-': 'invoices',
-            'purchase-': 'purchases',
-            'receipt-': 'receipts',
-            'challan-': 'challans',
-            'pesticide-invoice-': 'pesticide-invoices',
-            'product-': 'products',
-            'accessory-ledger-': 'accessory-ledgers',
-            'expense-': 'expenses',
-            'advance-': 'advances',
-            'cs-': 'cold-storage',
-            'manual-fertilizer-rates-': 'manual-fertilizer-rates',
-            'bikri-': 'bikris',
-        };
+        try {
+            const allData: { [key: string]: any[] } = {
+                'Wataks (Invoices)': [],
+                'Purchases': [],
+                'Receipts': [],
+                'Challans': [],
+                'Pesticide_Invoices': [],
+                'Products': [],
+                'Accessory_Ledger': [],
+                'Expenses': [],
+                'Advances': [],
+                'Cold_Storage': [],
+                'Manual_Fertilizer_Rates': [],
+                'Outside_Sales (Bikri)': [],
+                'Activity_Log': [],
+            };
 
-        const prefixes = Object.keys(keyPrefixToCollectionMap);
+            const keyPrefixToSheetMap: { [key: string]: keyof typeof allData } = {
+                'invoice-': 'Wataks (Invoices)',
+                'purchase-': 'Purchases',
+                'receipt-': 'Receipts',
+                'challan-': 'Challans',
+                'pesticide-invoice-': 'Pesticide_Invoices',
+                'product-': 'Products',
+                'accessory-ledger-': 'Accessory_Ledger',
+                'expense-': 'Expenses',
+                'advance-': 'Advances',
+                'cs-': 'Cold_Storage',
+                'manual-fertilizer-rates-': 'Manual_Fertilizer_Rates',
+                'bikri-': 'Outside_Sales (Bikri)',
+                'activityLogs': 'Activity_Log',
+            };
+            
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (!key) continue;
 
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (!key) continue;
+                // Special case for activity log which doesn't have a prefix
+                if (key === 'activityLogs') {
+                    allData['Activity_Log'] = JSON.parse(localStorage.getItem(key)!);
+                    continue;
+                }
 
-            const matchingPrefix = prefixes.find(prefix => key.startsWith(prefix));
-
-            if (matchingPrefix) {
-                const collectionName = keyPrefixToCollectionMap[matchingPrefix];
-                const docId = key.substring(matchingPrefix.length);
-                
-                if (collectionName && docId) {
-                    try {
-                        const data = JSON.parse(localStorage.getItem(key)!);
-                        const result = await saveDocument(collectionName, docId, data);
-                        if (result.success) {
-                            successCount++;
-                        } else {
-                            errorCount++;
-                            console.error(`Failed to sync item ${key} to ${collectionName}:`, result.error);
-                        }
-                    } catch (e) {
-                        console.error(`Failed to parse or sync item ${key}:`, e);
-                        errorCount++;
-                    }
+                const matchingPrefix = Object.keys(keyPrefixToSheetMap).find(prefix => key.startsWith(prefix));
+                if (matchingPrefix) {
+                    const sheetName = keyPrefixToSheetMap[matchingPrefix];
+                    allData[sheetName].push(JSON.parse(localStorage.getItem(key)!));
                 }
             }
-        }
-        
-        setIsSyncing(false);
-        if (errorCount > 0) {
-             toast({
-                variant: "destructive",
-                title: "Sync Partially Failed",
-                description: `${successCount} records synced, but ${errorCount} failed. Check console for details.`,
-            });
-        } else if (successCount === 0) {
-            toast({
-                title: "No New Data to Sync",
-                description: "Your local data is already up-to-date with the cloud.",
-            });
-        } else {
-            toast({
-                title: "Sync Complete!",
-                description: `Successfully synced ${successCount} local records to the cloud.`,
-            });
+
+            const wb = XLSX.utils.book_new();
+
+            for (const sheetName in allData) {
+                if (allData[sheetName].length > 0) {
+                    // Flatten nested objects like 'totals' and 'entries' for better readability
+                    const flattenedData = allData[sheetName].map((item: any) => {
+                       const flatItem: {[key: string]: any} = {};
+                       for(const prop in item){
+                           if(typeof item[prop] === 'object' && item[prop] !== null && !Array.isArray(item[prop])){
+                               for(const nestedProp in item[prop]){
+                                   flatItem[`${prop}_${nestedProp}`] = item[prop][nestedProp];
+                               }
+                           } else if(Array.isArray(item[prop])){
+                               flatItem[prop] = JSON.stringify(item[prop]);
+                           } else {
+                               flatItem[prop] = item[prop];
+                           }
+                       }
+                       return flatItem;
+                    });
+                    const ws = XLSX.utils.json_to_sheet(flattenedData);
+                    XLSX.utils.book_append_sheet(wb, ws, sheetName.replace(/_/g, ' '));
+                }
+            }
+
+            if (wb.SheetNames.length === 0) {
+                toast({ variant: 'destructive', title: 'No Data Found', description: 'There is no data to back up.' });
+                return;
+            }
+
+            XLSX.writeFile(wb, `SwiftSale-Backup-${new Date().toISOString().split('T')[0]}.xlsx`);
+
+            toast({ title: 'Backup Successful', description: 'Your data has been exported to an Excel file.' });
+
+        } catch (error) {
+            console.error("Backup failed:", error);
+            toast({ variant: 'destructive', title: 'Backup Failed', description: 'An unexpected error occurred during backup.' });
         }
     };
 
@@ -349,17 +368,20 @@ export default function SettingsPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Cloud Data Sync</CardTitle>
+                    <CardTitle>Data Portability & Backup</CardTitle>
                     <CardDescription>
-                        First-time setup: Upload all data saved on this device to the cloud. Run this on each of your devices once to sync everything.
+                        Export all your application data into a single Excel file for backup or use in other applications.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                     <Button onClick={handleSyncOldData} className="gap-2" disabled={isSyncing}>
-                        <CloudUpload className="h-4 w-4" />
-                        {isSyncing ? "Syncing..." : "Sync Local Data to Cloud"}
+                     <Button onClick={handleBackupAllData} className="gap-2" disabled={isSyncing}>
+                        <DownloadCloud className="h-4 w-4" />
+                        Backup All Data to Excel
                     </Button>
                 </CardContent>
+                 <CardFooter>
+                    <p className="text-xs text-muted-foreground">A restore feature will be added in a future update.</p>
+                </CardFooter>
             </Card>
 
             <Card>
@@ -381,7 +403,7 @@ export default function SettingsPage() {
                 <CardHeader>
                     <CardTitle>Factory Reset</CardTitle>
                     <CardDescription>
-                        This will permanently delete all your data, including sales, products, and expenses. This action cannot be undone.
+                        This will permanently delete all your data from this device's local storage. This action cannot be undone.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -410,3 +432,5 @@ export default function SettingsPage() {
         </div>
     );
 }
+
+    
