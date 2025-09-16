@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Separator } from './ui/separator';
 import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Share, FileText, Camera, Wand2, Sparkles, Upload, CheckCircle, ExternalLink, AlertTriangle } from 'lucide-react';
+import { FaWhatsapp } from 'react-icons/fa';
 import { ScrollArea } from './ui/scroll-area';
 import { extractWatakFromImage, WatakExtractOutput } from '@/ai/flows/extract-watak-flow';
 import Image from 'next/image';
@@ -286,7 +287,7 @@ export function BillMakingTab() {
       toast({ variant: 'destructive', title: 'Cannot Share', description: 'Please save the bill first.' });
       return;
     }
-    const message = `Check out this Invoice (#${sNo}) for ${ms}: ${window.location.origin}/invoice/${sNo}`;
+    const message = `Dear ${ms}, Watak No. ${watakNo || sNo}, Net Sale ₹${totals.netSale.toFixed(2)}. Thank you – F.Co`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
@@ -651,7 +652,7 @@ export function BillMakingTab() {
                         <div>💰 Gross Sale: <b>{totals.totalGrossSale.toFixed(2)}</b></div>
                         <div>Commission (12%): <b>{totals.commission.toFixed(2)}</b></div>
                         <div className="font-bold">📉 Total Exp: <b>{totals.totalExp.toFixed(2)}</b></div>
-                        <div className="text-lg font-bold mt-2 border-t pt-2">🔻 Net Sale: <b>{totals.netSale.toFixed(2)}</b></div>
+                        <div className="text-lg font-bold mt-2 border-t pt-2">🧾 Net Sale: <b>{totals.netSale.toFixed(2)}</b></div>
                     </div>
                 </div>
 
@@ -666,7 +667,7 @@ export function BillMakingTab() {
                        <FileText className="h-4 w-4" /> Print/View Invoice
                     </Button>
                      <Button onClick={handleShare} variant="outline" className="flex-1 min-w-[150px] gap-2" disabled={!isEditing}>
-                       <Share className="h-4 w-4" /> Share
+                       <FaWhatsapp className="h-4 w-4 text-green-500" /> Share on WhatsApp
                     </Button>
                 </div>
             </CardFooter>
