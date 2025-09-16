@@ -82,9 +82,9 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
                 <Printer className="h-4 w-4" />
                 Print
             </Button>
-             <Button onClick={handleDownloadPdf} size="sm" className="gap-2">
+             <Button onClick={handleDownloadPdf} size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700">
                 <Download className="h-4 w-4" />
-                Download PDF
+                Save to Device
             </Button>
         </div>
     )
@@ -205,5 +205,3 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
         </div>
     );
 }
-
-    
