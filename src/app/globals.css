@@ -63,3 +63,9 @@
     font-family: 'Noto Nastaliq Urdu', serif;
   }
 }
+
+@media print {
+  .print-area-a4, .print-area-thermal {
+    display: none;
+  }
+}
