@@ -120,9 +120,9 @@ export default function CustomerDashboardPage() {
 
         let runningBalance = 0;
         allTransactions.forEach(trans => {
-            if (trans.type === 'Sale' || trans.type === 'Advance') {
+            if (trans.type === 'Sale' || trans.type === 'Purchase' || trans.type === 'Repayment') {
                 runningBalance += trans.amount;
-            } else { // Purchase or Repayment
+            } else { // Advance
                 runningBalance -= trans.amount;
             }
         });
@@ -134,9 +134,9 @@ export default function CustomerDashboardPage() {
     const getLedgerWithRunningBalance = (): LedgerEntryWithRunningBalance[] => {
         let runningBalance = 0;
         return transactions.map(tx => {
-            if(tx.type === 'Sale' || tx.type === 'Advance') {
+            if(tx.type === 'Sale' || tx.type === 'Purchase' || tx.type === 'Repayment') {
                 runningBalance += tx.amount;
-            } else { // Purchase or Repayment
+            } else { // Advance
                 runningBalance -= tx.amount;
             }
             return {...tx, runningBalance};
@@ -168,8 +168,8 @@ export default function CustomerDashboardPage() {
                 new Date(tx.date).toLocaleDateString('en-GB'),
                 (tx.type === 'Sale' || tx.type === 'Purchase') ? `#${tx.docId}` : tx.notes || tx.type,
                 tx.type,
-                (tx.type === 'Sale' || tx.type === 'Advance') ? `₹${tx.amount.toFixed(2)}` : '-',
-                (tx.type === 'Purchase' || tx.type === 'Repayment') ? `₹${tx.amount.toFixed(2)}` : '-',
+                 (tx.type === 'Advance') ? `₹${tx.amount.toFixed(2)}` : '-',
+                (tx.type === 'Sale' || tx.type === 'Purchase' || tx.type === 'Repayment') ? `₹${tx.amount.toFixed(2)}` : '-',
                 `₹${tx.runningBalance.toFixed(2)}`
             ]),
             foot: [
@@ -192,8 +192,8 @@ export default function CustomerDashboardPage() {
             Date: new Date(tx.date).toLocaleDateString('en-GB'),
             'Document/Details': (tx.type === 'Sale' || tx.type === 'Purchase') ? `#${tx.docId}` : tx.notes || tx.type,
             Type: tx.type,
-            Debit: (tx.type === 'Sale' || tx.type === 'Advance') ? tx.amount : '',
-            Credit: (tx.type === 'Purchase' || tx.type === 'Repayment') ? tx.amount : '',
+            Debit: (tx.type === 'Advance') ? tx.amount : '',
+            Credit: (tx.type === 'Sale' || tx.type === 'Purchase' || tx.type === 'Repayment') ? tx.amount : '',
             'Running Balance': tx.runningBalance,
         }));
         
@@ -278,10 +278,10 @@ export default function CustomerDashboardPage() {
                                    <Badge variant={getBadgeVariant(tx.type)}>{tx.type}</Badge>
                                 </TableCell>
                                 <TableCell className="text-right font-mono text-red-500">
-                                    {(tx.type === 'Sale' || tx.type === 'Advance') ? `₹${tx.amount.toFixed(2)}` : '-'}
+                                    {(tx.type === 'Advance') ? `₹${tx.amount.toFixed(2)}` : '-'}
                                 </TableCell>
                                 <TableCell className="text-right font-mono text-green-600">
-                                    {(tx.type === 'Purchase' || tx.type === 'Repayment') ? `₹${tx.amount.toFixed(2)}` : '-'}
+                                    {(tx.type === 'Sale' || tx.type === 'Purchase' || tx.type === 'Repayment') ? `₹${tx.amount.toFixed(2)}` : '-'}
                                 </TableCell>
                                 <TableCell className="text-right font-mono">₹{tx.runningBalance.toFixed(2)}</TableCell>
                             </TableRow>
@@ -293,7 +293,7 @@ export default function CustomerDashboardPage() {
                                 <TableCell className={`text-right ${balance >= 0 ? 'text-green-700' : 'text-red-700'}`}>
                                     ₹{Math.abs(balance).toFixed(2)}
                                     <span className="text-xs text-muted-foreground ml-1">
-                                        {balance >= 0 ? '(Receivable)' : '(Payable)'}
+                                        {balance >= 0 ? '(Payable)' : '(Receivable)'}
                                     </span>
                                 </TableCell>
                             </TableRow>
