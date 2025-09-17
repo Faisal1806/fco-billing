@@ -26,7 +26,8 @@ const mockPlugin: Plugin<any> = {
 
 export const ai = genkit({
   plugins: [googleAI({
-    apiVersion: 'v1'
+    apiVersion: 'v1',
+    apiKey: process.env.GEMINI_API_KEY,
   })],
   logLevel: 'debug',
   enableTracing: true,
