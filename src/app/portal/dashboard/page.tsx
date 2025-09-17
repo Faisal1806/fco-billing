@@ -29,7 +29,7 @@ import { useToast } from '@/hooks/use-toast';
 import '@/app/(app)/khata/print.css'; // Reuse styles
 import { addLog } from '@/lib/logger';
 
-type TransactionType = 'Sale' | 'Purchase';
+type TransactionType = 'Sale' | 'Purchase' | 'Advance' | 'Repayment';
 
 type Transaction = {
     id: string;
@@ -39,6 +39,7 @@ type Transaction = {
     grossAmount: number; 
     expenses: number; 
     docId: string;
+    notes?: string;
 };
 
 type LedgerEntryWithRunningBalance = Transaction & { runningBalance: number };
@@ -94,6 +95,20 @@ export default function CustomerDashboardPage() {
                             docId: purchase.billNo,
                         });
                      }
+                } else if (key.startsWith('advance-')) {
+                    const advance = JSON.parse(localStorage.getItem(key)!);
+                    if (advance.partyName.toLowerCase() === name.toLowerCase()) {
+                        allTransactions.push({
+                            id: advance.id,
+                            date: advance.date,
+                            type: advance.type === 'Advance Given' ? 'Advance' : 'Repayment',
+                            amount: advance.amount,
+                            grossAmount: advance.amount,
+                            expenses: 0,
+                            docId: advance.id,
+                            notes: advance.notes,
+                        });
+                    }
                 }
             } catch (error) {
                 console.error(`Failed to parse item from local storage: ${key}`, error);
@@ -105,9 +120,9 @@ export default function CustomerDashboardPage() {
 
         let runningBalance = 0;
         allTransactions.forEach(trans => {
-             if (trans.type === 'Sale') {
+            if (trans.type === 'Sale' || trans.type === 'Advance') {
                 runningBalance += trans.amount;
-            } else {
+            } else { // Purchase or Repayment
                 runningBalance -= trans.amount;
             }
         });
@@ -119,9 +134,9 @@ export default function CustomerDashboardPage() {
     const getLedgerWithRunningBalance = (): LedgerEntryWithRunningBalance[] => {
         let runningBalance = 0;
         return transactions.map(tx => {
-            if(tx.type === 'Sale') {
+            if(tx.type === 'Sale' || tx.type === 'Advance') {
                 runningBalance += tx.amount;
-            } else {
+            } else { // Purchase or Repayment
                 runningBalance -= tx.amount;
             }
             return {...tx, runningBalance};
@@ -148,18 +163,17 @@ export default function CustomerDashboardPage() {
 
         autoTable(doc, {
             startY: 35,
-            head: [['Date', 'Doc ID', 'Type', 'Gross', 'Expenses', 'Net', 'Balance']],
+            head: [['Date', 'Doc ID', 'Type', 'Debit', 'Credit', 'Balance']],
             body: ledgerForExport.map(tx => [
                 new Date(tx.date).toLocaleDateString('en-GB'),
-                `#${tx.docId}`,
+                (tx.type === 'Sale' || tx.type === 'Purchase') ? `#${tx.docId}` : tx.notes || tx.type,
                 tx.type,
-                `₹${tx.grossAmount.toFixed(2)}`,
-                tx.type === 'Sale' ? `₹${tx.expenses.toFixed(2)}` : '-',
-                tx.type === 'Sale' ? `₹${tx.amount.toFixed(2)}` : `(₹${tx.amount.toFixed(2)})`,
+                (tx.type === 'Sale' || tx.type === 'Advance') ? `₹${tx.amount.toFixed(2)}` : '-',
+                (tx.type === 'Purchase' || tx.type === 'Repayment') ? `₹${tx.amount.toFixed(2)}` : '-',
                 `₹${tx.runningBalance.toFixed(2)}`
             ]),
             foot: [
-                [{ content: 'Final Balance', colSpan: 6, styles: { halign: 'right', fontStyle: 'bold' } }, 
+                [{ content: 'Final Balance', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, 
                  { content: `₹${balance.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold' } }]
             ],
             theme: 'striped',
@@ -176,11 +190,10 @@ export default function CustomerDashboardPage() {
 
         const worksheetData = ledgerForExport.map(tx => ({
             Date: new Date(tx.date).toLocaleDateString('en-GB'),
-            'Document ID': `#${tx.docId}`,
+            'Document/Details': (tx.type === 'Sale' || tx.type === 'Purchase') ? `#${tx.docId}` : tx.notes || tx.type,
             Type: tx.type,
-            'Gross Amount': tx.grossAmount,
-            'Expenses': tx.type === 'Sale' ? tx.expenses : 0,
-            'Net Amount': tx.type === 'Sale' ? tx.amount : -tx.amount,
+            Debit: (tx.type === 'Sale' || tx.type === 'Advance') ? tx.amount : '',
+            Credit: (tx.type === 'Purchase' || tx.type === 'Repayment') ? tx.amount : '',
             'Running Balance': tx.runningBalance,
         }));
         
@@ -189,11 +202,22 @@ export default function CustomerDashboardPage() {
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Ledger');
         
         XLSX.utils.sheet_add_aoa(worksheet, [
-            ["", "", "", "", "", "Final Balance", balance]
+            ["", "", "", "", "Final Balance", balance]
         ], { origin: -1 });
 
         XLSX.writeFile(workbook, `Ledger-${customerName}.xlsx`);
     };
+
+    const getBadgeVariant = (type: TransactionType) => {
+        switch (type) {
+            case 'Sale': return 'default';
+            case 'Purchase': return 'secondary';
+            case 'Advance': return 'destructive';
+            case 'Repayment': return 'outline';
+            default: return 'default';
+        }
+    }
+
 
     if (isLoading) {
         return (
@@ -238,11 +262,10 @@ export default function CustomerDashboardPage() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Date</TableHead>
-                                <TableHead>Doc ID</TableHead>
+                                <TableHead>Particulars</TableHead>
                                 <TableHead>Type</TableHead>
-                                <TableHead className="text-right">Gross</TableHead>
-                                <TableHead className="text-right">Expenses</TableHead>
-                                <TableHead className="text-right">Net</TableHead>
+                                <TableHead className="text-right">Debit</TableHead>
+                                <TableHead className="text-right">Credit</TableHead>
                                 <TableHead className="text-right">Balance</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -250,14 +273,15 @@ export default function CustomerDashboardPage() {
                             {getLedgerWithRunningBalance().map((tx) => (
                             <TableRow key={tx.id}>
                                 <TableCell>{new Date(tx.date).toLocaleDateString('en-GB')}</TableCell>
-                                <TableCell>#{tx.docId}</TableCell>
+                                <TableCell>{(tx.type === 'Sale' || tx.type === 'Purchase') ? `Bill #${tx.docId}` : tx.notes || tx.type}</TableCell>
                                 <TableCell>
-                                   <Badge variant={tx.type === 'Sale' ? 'default' : 'secondary'}>{tx.type}</Badge>
+                                   <Badge variant={getBadgeVariant(tx.type)}>{tx.type}</Badge>
                                 </TableCell>
-                                <TableCell className="text-right font-mono">₹{tx.grossAmount.toFixed(2)}</TableCell>
-                                <TableCell className="text-right font-mono text-red-500">{tx.type === 'Sale' ? `₹${tx.expenses.toFixed(2)}` : '-'}</TableCell>
-                                <TableCell className={`text-right font-mono ${tx.type === 'Sale' ? 'text-green-600' : 'text-red-600'}`}>
-                                    {tx.type === 'Sale' ? `₹${tx.amount.toFixed(2)}` : `(₹${tx.amount.toFixed(2)})`}
+                                <TableCell className="text-right font-mono text-red-500">
+                                    {(tx.type === 'Sale' || tx.type === 'Advance') ? `₹${tx.amount.toFixed(2)}` : '-'}
+                                </TableCell>
+                                <TableCell className="text-right font-mono text-green-600">
+                                    {(tx.type === 'Purchase' || tx.type === 'Repayment') ? `₹${tx.amount.toFixed(2)}` : '-'}
                                 </TableCell>
                                 <TableCell className="text-right font-mono">₹{tx.runningBalance.toFixed(2)}</TableCell>
                             </TableRow>
@@ -265,7 +289,7 @@ export default function CustomerDashboardPage() {
                         </TableBody>
                         <TableFooter>
                              <TableRow className="font-bold text-lg bg-muted">
-                                <TableCell colSpan={6} className="text-right">Final Balance</TableCell>
+                                <TableCell colSpan={5} className="text-right">Final Balance</TableCell>
                                 <TableCell className={`text-right ${balance >= 0 ? 'text-green-700' : 'text-red-700'}`}>
                                     ₹{Math.abs(balance).toFixed(2)}
                                     <span className="text-xs text-muted-foreground ml-1">

@@ -19,7 +19,7 @@ import {
   TableFooter
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, FileDown, User, Users, Plus, ChevronDown, Leaf, Printer, UserCheck, UserX, ShoppingCart } from 'lucide-react';
+import { Loader2, FileDown, User, Users, Plus, ChevronDown, Leaf, Printer, UserCheck, UserX, ShoppingCart, Banknote } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,17 +34,18 @@ import * as XLSX from 'xlsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import './print.css';
 
-type TransactionType = 'Sale' | 'Purchase';
+type TransactionType = 'Sale' | 'Purchase' | 'Advance' | 'Repayment';
 
 type Transaction = {
     id: string;
     date: string;
     type: TransactionType;
-    amount: number; // For purchase this is grandTotal, for sale this is netSale
-    grossAmount: number; // For sale this is grossSale
-    expenses: number; // For sale this is totalExpenses
+    amount: number; 
+    grossAmount: number; 
+    expenses: number; 
     party: string;
     docId: string;
+    notes?: string;
 };
 
 type PartyType = 'customer' | 'supplier' | 'both';
@@ -63,7 +64,7 @@ type LedgerEntryWithRunningBalance = Transaction & { runningBalance: number };
 const normalizeName = (name: string): string => {
     if (!name) return '';
     
-    const suffixes = ["S/P", "B/P", "K/P", "(LAMA)"];
+    const suffixes = ["(LAMA)", "B/P", "K/P", "S/P"];
     let mainName = name.toUpperCase();
     let suffix = '';
 
@@ -128,6 +129,19 @@ export default function KhataLedgerPage() {
                             party: doc.growerName,
                             docId: doc.billNo,
                         });
+                    } else if (key.startsWith('advance-')) {
+                        const doc = JSON.parse(localStorage.getItem(key)!);
+                        allTransactions.push({
+                            id: doc.id,
+                            date: doc.date,
+                            type: doc.type === 'Advance Given' ? 'Advance' : 'Repayment',
+                            amount: doc.amount,
+                            grossAmount: doc.amount,
+                            expenses: 0,
+                            party: doc.partyName,
+                            docId: doc.id.replace('advance-',''),
+                            notes: doc.notes,
+                        });
                     }
                 } catch (e) {
                     console.error("Failed to parse ledger data from local storage", e);
@@ -144,7 +158,7 @@ export default function KhataLedgerPage() {
                     calculatedLedgers[normalizedName] = { 
                         transactions: [], 
                         balance: 0, 
-                        partyType: trans.type === 'Sale' ? 'customer' : 'supplier',
+                        partyType: (trans.type === 'Sale' || trans.type === 'Advance') ? 'customer' : 'supplier',
                         displayName: trans.party // Store the first-seen display name
                     };
                 }
@@ -152,7 +166,7 @@ export default function KhataLedgerPage() {
                 const ledger = calculatedLedgers[normalizedName];
                 ledger.transactions.push(trans);
                 
-                const newType = trans.type === 'Sale' ? 'customer' : 'supplier';
+                const newType = (trans.type === 'Sale' || trans.type === 'Advance') ? 'customer' : 'supplier';
                 if(ledger.partyType !== 'both' && ledger.partyType !== newType) {
                     ledger.partyType = 'both';
                 }
@@ -161,9 +175,9 @@ export default function KhataLedgerPage() {
             Object.keys(calculatedLedgers).forEach(partyKey => {
                 let runningBalance = 0;
                 calculatedLedgers[partyKey].transactions.forEach(trans => {
-                     if (trans.type === 'Sale') {
+                     if (trans.type === 'Sale' || trans.type === 'Advance') {
                         runningBalance += trans.amount;
-                    } else {
+                    } else { // Purchase or Repayment
                         runningBalance -= trans.amount;
                     }
                 });
@@ -209,17 +223,21 @@ export default function KhataLedgerPage() {
     const selectedLedger = selectedParty ? ledgers[normalizeName(selectedParty)] : null;
 
     const navigateToDoc = (type: TransactionType, docId: string) => {
-        const path = type === 'Sale' ? `/invoice/${docId}` : `/purchase-bill/${docId}`;
-        router.push(path);
+        let path = '';
+        if (type === 'Sale') path = `/invoice/${docId}`;
+        else if (type === 'Purchase') path = `/purchase-bill/${docId}`;
+        else if (type === 'Advance' || type === 'Repayment') path = '/advances';
+        
+        if (path) router.push(path);
     };
 
     const getLedgerWithRunningBalance = (): LedgerEntryWithRunningBalance[] => {
         if (!selectedLedger) return [];
         let runningBalance = 0;
         return selectedLedger.transactions.map(tx => {
-            if(tx.type === 'Sale') {
+            if(tx.type === 'Sale' || tx.type === 'Advance') {
                 runningBalance += tx.amount;
-            } else {
+            } else { // Purchase or Repayment
                 runningBalance -= tx.amount;
             }
             return {...tx, runningBalance};
@@ -253,7 +271,7 @@ export default function KhataLedgerPage() {
                 tx.type,
                 `₹${tx.grossAmount.toFixed(2)}`,
                 tx.type === 'Sale' ? `₹${tx.expenses.toFixed(2)}` : '-',
-                tx.type === 'Sale' ? `₹${tx.amount.toFixed(2)}` : `(₹${tx.amount.toFixed(2)})`,
+                (tx.type === 'Sale' || tx.type === 'Advance') ? `₹${tx.amount.toFixed(2)}` : `(₹${tx.amount.toFixed(2)})`,
                 `₹${tx.runningBalance.toFixed(2)}`
             ]),
             foot: [
@@ -284,8 +302,9 @@ export default function KhataLedgerPage() {
             Type: tx.type,
             'Gross Amount': tx.grossAmount,
             'Expenses': tx.type === 'Sale' ? tx.expenses : 0,
-            'Net Amount': tx.type === 'Sale' ? tx.amount : -tx.amount,
+            'Net Amount': (tx.type === 'Sale' || tx.type === 'Advance') ? tx.amount : -tx.amount,
             'Running Balance': tx.runningBalance,
+            'Notes': tx.notes || '',
         }));
         
         const worksheet = XLSX.utils.json_to_sheet(worksheetData);
@@ -312,9 +331,9 @@ export default function KhataLedgerPage() {
     const totals = React.useMemo(() => {
         if (!selectedLedger) return { debit: 0, credit: 0 };
         return selectedLedger.transactions.reduce((acc, tx) => {
-            if (tx.type === 'Sale') {
+            if (tx.type === 'Sale' || tx.type === 'Advance') {
                 acc.debit += tx.amount;
-            } else {
+            } else { // Purchase or Repayment
                 acc.credit += tx.amount;
             }
             return acc;
@@ -335,9 +354,22 @@ export default function KhataLedgerPage() {
                  <DropdownMenuItem onSelect={() => router.push('/purchases')}>
                     New Purchase
                 </DropdownMenuItem>
+                 <DropdownMenuItem onSelect={() => router.push('/advances')}>
+                    New Advance/Repayment
+                </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
     );
+    
+    const getBadgeVariant = (type: TransactionType) => {
+        switch (type) {
+            case 'Sale': return 'default';
+            case 'Purchase': return 'secondary';
+            case 'Advance': return 'destructive';
+            case 'Repayment': return 'outline';
+            default: return 'default';
+        }
+    }
 
     return (
     <>
@@ -412,11 +444,10 @@ export default function KhataLedgerPage() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Date</TableHead>
-                                <TableHead>Doc ID</TableHead>
+                                <TableHead>Particulars</TableHead>
                                 <TableHead>Type</TableHead>
-                                <TableHead className="text-right">Gross</TableHead>
-                                <TableHead className="text-right">Expenses</TableHead>
-                                <TableHead className="text-right">Net</TableHead>
+                                <TableHead className="text-right">Debit</TableHead>
+                                <TableHead className="text-right">Credit</TableHead>
                                 <TableHead className="text-right">Balance</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -426,17 +457,18 @@ export default function KhataLedgerPage() {
                                 <TableCell>{new Date(tx.date).toLocaleDateString('en-GB')}</TableCell>
                                 <TableCell>
                                     <Button variant="link" className="p-0 h-auto print-hidden" onClick={() => navigateToDoc(tx.type, tx.docId)}>
-                                        #{tx.docId}
+                                        {tx.type === 'Sale' ? `Bill #${tx.docId}` : tx.type === 'Purchase' ? `Purchase #${tx.docId}` : tx.notes || tx.type}
                                     </Button>
-                                    <span className="hidden print:inline">#{tx.docId}</span>
+                                    <span className="hidden print:inline">{tx.type === 'Sale' ? `Bill #${tx.docId}` : tx.type === 'Purchase' ? `Purchase #${tx.docId}` : tx.notes || tx.type}</span>
                                 </TableCell>
                                 <TableCell>
-                                   <Badge variant={tx.type === 'Sale' ? 'default' : 'secondary'}>{tx.type}</Badge>
+                                   <Badge variant={getBadgeVariant(tx.type)}>{tx.type}</Badge>
                                 </TableCell>
-                                <TableCell className="text-right font-mono">₹{tx.grossAmount.toFixed(2)}</TableCell>
-                                <TableCell className="text-right font-mono text-red-500">{tx.type === 'Sale' ? `₹${tx.expenses.toFixed(2)}` : '-'}</TableCell>
-                                <TableCell className={`text-right font-mono ${tx.type === 'Sale' ? 'text-green-600' : 'text-red-600'}`}>
-                                    {tx.type === 'Sale' ? `₹${tx.amount.toFixed(2)}` : `(₹${tx.amount.toFixed(2)})`}
+                                <TableCell className="text-right font-mono text-red-500">
+                                    {(tx.type === 'Sale' || tx.type === 'Advance') ? `₹${tx.amount.toFixed(2)}` : '-'}
+                                </TableCell>
+                                <TableCell className="text-right font-mono text-green-600">
+                                    {(tx.type === 'Purchase' || tx.type === 'Repayment') ? `₹${tx.amount.toFixed(2)}` : '-'}
                                 </TableCell>
                                 <TableCell className="text-right font-mono">₹{tx.runningBalance.toFixed(2)}</TableCell>
                             </TableRow>
@@ -445,13 +477,12 @@ export default function KhataLedgerPage() {
                         <TableFooter>
                             <TableRow className="font-bold">
                                 <TableCell colSpan={3} className="text-right">Totals</TableCell>
-                                <TableCell className="text-right text-green-600">₹{totals.debit.toFixed(2)}</TableCell>
-                                <TableCell colSpan={1}></TableCell>
-                                <TableCell className="text-right text-red-600">(₹{totals.credit.toFixed(2)})</TableCell>
+                                <TableCell className="text-right text-red-500">₹{totals.debit.toFixed(2)}</TableCell>
+                                <TableCell className="text-right text-green-600">₹{totals.credit.toFixed(2)}</TableCell>
                                 <TableCell></TableCell>
                             </TableRow>
                              <TableRow className="font-bold text-lg bg-muted">
-                                <TableCell colSpan={6} className="text-right">Final Balance</TableCell>
+                                <TableCell colSpan={5} className="text-right">Final Balance</TableCell>
                                 <TableCell className={`text-right ${selectedLedger.balance >= 0 ? 'text-green-700' : 'text-red-700'}`}>
                                     ₹{Math.abs(selectedLedger.balance).toFixed(2)}
                                     <span className="text-xs text-muted-foreground ml-1">
@@ -473,5 +504,3 @@ export default function KhataLedgerPage() {
     </>
   );
 }
-
-    
