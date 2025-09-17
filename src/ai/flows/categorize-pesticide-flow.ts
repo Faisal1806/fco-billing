@@ -13,6 +13,7 @@ import {z} from 'genkit';
 
 const PesticideCategoryInputSchema = z.object({
   name: z.string().describe('The name of the pesticide or fertilizer product.'),
+  apiKey: z.string().optional().describe('The Gemini API key.'),
 });
 export type PesticideCategoryInput = z.infer<typeof PesticideCategoryInputSchema>;
 
@@ -27,16 +28,6 @@ export async function categorizePesticide(input: PesticideCategoryInput): Promis
 }
 
 
-const prompt = ai.definePrompt({
-  name: 'categorizePesticidePrompt',
-  model: 'googleai/gemini-1.5-flash-preview',
-  input: {schema: PesticideCategoryInputSchema},
-  output: {schema: PesticideCategoryOutputSchema},
-  prompt: `You are an expert in agricultural products. Your task is to categorize the given product name into one of the following categories: Fungicide, Insecticide, Herbicide, Fertilizer, Plant Growth Regulator, or Other.
-
-Product Name: {{{name}}}`,
-});
-
 const categorizePesticideFlow = ai.defineFlow(
   {
     name: 'categorizePesticideFlow',
@@ -44,7 +35,20 @@ const categorizePesticideFlow = ai.defineFlow(
     outputSchema: PesticideCategoryOutputSchema,
   },
   async (input) => {
-    const {output} = await prompt(input);
+    const prompt = ai.definePrompt({
+      name: 'categorizePesticidePrompt',
+      model: 'googleai/gemini-1.5-flash-preview',
+      input: {schema: z.object({name: z.string()})},
+      output: {schema: PesticideCategoryOutputSchema},
+      prompt: `You are an expert in agricultural products. Your task is to categorize the given product name into one of the following categories: Fungicide, Insecticide, Herbicide, Fertilizer, Plant Growth Regulator, or Other.
+
+    Product Name: {{{name}}}`,
+      config: {
+        apiKey: input.apiKey,
+      },
+    });
+
+    const {output} = await prompt({ name: input.name });
     return output!;
   }
 );

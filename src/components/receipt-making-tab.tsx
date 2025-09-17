@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
-import { PlusCircle, Trash2, FilePenLine, FilePlus, FileText, Wand2, Upload, Camera, Sparkles, CheckCircle, ExternalLink, AlertTriangle, Loader2 } from 'lucide-react';
+import { PlusCircle, Trash2, FilePenLine, FilePlus, FileText, Wand2, Upload, Camera, Sparkles, CheckCircle, ExternalLink, AlertTriangle, Loader2, KeyRound } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
 import { saveDocument, deleteDocument } from '@/lib/actions';
@@ -24,6 +24,7 @@ import { uploadFile } from '@/lib/storage';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { useApiKey } from '@/hooks/use-api-key';
 
 type ReceiptEntry = {
   khata: string;
@@ -109,6 +110,8 @@ export function ReceiptMakingTab() {
   const [isExtracting, setIsExtracting] = React.useState(false);
   const [extractedData, setExtractedData] = React.useState<ReceiptExtractOutput | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const { apiKey, setApiKey, isApiKeySet } = useApiKey();
+  const [tempApiKey, setTempApiKey] = React.useState('');
 
   // Camera State
   const [isCameraOpen, setIsCameraOpen] = React.useState(false);
@@ -121,7 +124,8 @@ export function ReceiptMakingTab() {
     if (typeof window !== 'undefined') {
         setUserRole(localStorage.getItem('userRole'));
     }
-  }, []);
+    setTempApiKey(apiKey);
+  }, [apiKey]);
 
   const fetchReceipts = () => {
     const receipts = [];
@@ -329,10 +333,14 @@ export function ReceiptMakingTab() {
             toast({ variant: 'destructive', title: 'No Image', description: 'Please upload an image first.' });
             return;
         }
+         if (!isApiKeySet) {
+            toast({ variant: 'destructive', title: 'API Key Required', description: 'Please set your Gemini API key below to use AI features.' });
+            return;
+        }
         setIsExtracting(true);
         setExtractedData(null);
         try {
-            const result = await extractReceiptFromImage({ photoDataUri: imagePreview });
+            const result = await extractReceiptFromImage({ apiKey, photoDataUri: imagePreview });
             setExtractedData(result);
             toast({ title: 'Extraction Successful', description: 'Review the extracted data and apply it to the form.' });
         } catch (error: any) {
@@ -421,7 +429,21 @@ export function ReceiptMakingTab() {
                                 )}
                             </div>
                             <div className="space-y-4">
-                                <Button onClick={handleExtract} disabled={!imagePreview || isExtracting} className="w-full gap-2">
+                                 <div className="space-y-2">
+                                    <Label htmlFor="apiKey" className="flex items-center gap-2"><KeyRound className="h-4 w-4" /> Gemini API Key</Label>
+                                    <Input
+                                        id="apiKey"
+                                        type="password"
+                                        placeholder="Paste your API key here"
+                                        value={tempApiKey}
+                                        onChange={(e) => setTempApiKey(e.target.value)}
+                                    />
+                                    <Button onClick={() => setApiKey(tempApiKey)} size="sm" disabled={!tempApiKey}>Save Key</Button>
+                                     <p className="text-xs text-muted-foreground">
+                                        Needed for AI features. Your key is saved only in your browser. Get one from <a href="https://aistudio.google.com/keys" target="_blank" rel="noopener noreferrer" className="underline">Google AI Studio</a>.
+                                    </p>
+                                </div>
+                                <Button onClick={handleExtract} disabled={!imagePreview || isExtracting || !isApiKeySet} className="w-full gap-2">
                                     {isExtracting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Sparkles className="h-4 w-4" />}
                                     {isExtracting ? 'Analyzing...' : 'Extract Data with AI'}
                                 </Button>
