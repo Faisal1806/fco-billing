@@ -58,6 +58,7 @@ export async function extractReceiptFromImage(input: ReceiptExtractInput): Promi
 // Define the AI prompt for the OCR and data extraction task
 const prompt = ai.definePrompt({
   name: 'extractReceiptPrompt',
+  model: 'googleai/gemini-1.5-flash-preview',
   input: {schema: ReceiptExtractInputSchema},
   output: {schema: ReceiptExtractOutputSchema},
   prompt: `You are an expert data entry specialist for a fruit commission agency in Kashmir. Your task is to meticulously analyze the provided image of a "Goods Receipt" and extract all the relevant information into a structured JSON format.

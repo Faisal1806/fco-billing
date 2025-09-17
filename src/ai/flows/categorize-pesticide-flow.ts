@@ -29,6 +29,7 @@ export async function categorizePesticide(input: PesticideCategoryInput): Promis
 
 const prompt = ai.definePrompt({
   name: 'categorizePesticidePrompt',
+  model: 'googleai/gemini-1.5-flash-preview',
   input: {schema: PesticideCategoryInputSchema},
   output: {schema: PesticideCategoryOutputSchema},
   prompt: `You are an expert in agricultural products. Your task is to categorize the given product name into one of the following categories: Fungicide, Insecticide, Herbicide, Fertilizer, Plant Growth Regulator, or Other.

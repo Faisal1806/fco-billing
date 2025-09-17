@@ -73,6 +73,7 @@ export async function extractWatakFromImage(input: WatakExtractInput): Promise<W
 // Define the AI prompt for the OCR and data extraction task
 const prompt = ai.definePrompt({
   name: 'extractWatakPrompt',
+  model: 'googleai/gemini-1.5-flash-preview',
   input: {schema: WatakExtractInputSchema},
   output: {schema: WatakExtractOutputSchema},
   prompt: `You are an expert data entry specialist for a fruit commission agency in Kashmir. Your task is to meticulously analyze the provided image of a "Watak" (a type of invoice or bill) and extract all the relevant information into a structured JSON format.
