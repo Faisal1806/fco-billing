@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
-import { PlusCircle, Trash2, FilePenLine, FilePlus, FlaskConical } from 'lucide-react';
+import { PlusCircle, Trash2, FilePenLine, FilePlus, FlaskConical, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
 
@@ -138,7 +138,7 @@ export function PesticideBillTab() {
     setIsEditing(false);
   };
 
-  const handleCreateBill = () => {
+  const handleSaveBill = () => {
     if (!billDetails.no || !billDetails.date || !billDetails.customerName) {
         toast({
             variant: 'destructive',
@@ -162,7 +162,15 @@ export function PesticideBillTab() {
       title: isEditing ? 'Pesticide Bill Updated' : 'Pesticide Bill Saved',
       description: 'The bill has been successfully saved.',
     });
-    router.push(`/pesticide-invoice/${billId}`);
+    setIsEditing(true);
+  };
+
+  const handleViewBill = () => {
+    if (!isEditing || !billDetails.no) {
+        toast({ variant: 'destructive', title: 'Cannot View', description: 'Please save the bill first.'});
+        return;
+    }
+    router.push(`/pesticide-invoice/${billDetails.no}`);
   };
 
    const loadBillForEdit = (bill: any) => {
@@ -279,7 +287,12 @@ export function PesticideBillTab() {
                 </div>
             </CardContent>
             <CardFooter className="flex-col items-center gap-2">
-                <Button onClick={handleCreateBill} className="w-full max-w-sm">{isEditing ? 'Update & View Bill' : 'Save & View Bill'}</Button>
+                 <div className="flex justify-center gap-4 w-full">
+                    <Button onClick={handleSaveBill} className="w-full max-w-xs">{isEditing ? 'Update Bill' : 'Save Bill'}</Button>
+                    <Button onClick={handleViewBill} variant="secondary" className="w-full max-w-xs gap-2" disabled={!isEditing}>
+                        <FileText className="h-4 w-4" /> View Bill
+                    </Button>
+                </div>
                 <p className="text-xs text-muted-foreground">Goods once sold can not be taken back.</p>
             </CardFooter>
         </Card>

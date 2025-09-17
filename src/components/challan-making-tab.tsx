@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
-import { PlusCircle, Trash2, FilePenLine, FilePlus } from 'lucide-react';
+import { PlusCircle, Trash2, FilePenLine, FilePlus, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
 import { saveDocument, deleteDocument } from '@/lib/actions';
@@ -139,7 +139,7 @@ export function ChallanMakingTab() {
     setIsEditing(false);
   };
 
-  const handleCreateChallan = async () => {
+  const handleSaveChallan = async () => {
     if (!details.challanNo || !details.date || !details.toMs) {
         toast({
             variant: 'destructive',
@@ -174,7 +174,15 @@ export function ChallanMakingTab() {
     }
 
     fetchChallans(); // Re-fetch to update list
-    router.push(`/challan/${challanId}`);
+    setIsEditing(true);
+  };
+
+   const handleViewChallan = () => {
+      if (!isEditing || !details.challanNo) {
+          toast({ variant: 'destructive', title: 'Cannot View', description: 'Please save the challan first.'});
+          return;
+      }
+      router.push(`/challan/${details.challanNo}`);
   };
 
   const loadChallanForEdit = (challan: any) => {
@@ -324,8 +332,11 @@ export function ChallanMakingTab() {
                 </div>
 
             </CardContent>
-            <CardFooter className="flex justify-center">
-                <Button onClick={handleCreateChallan} className="w-full max-w-sm">{isEditing ? 'Update & View Challan' : 'Save & View Challan'}</Button>
+            <CardFooter className="flex justify-center gap-4">
+                 <Button onClick={handleSaveChallan} className="w-full max-w-xs">{isEditing ? 'Update Challan' : 'Save Challan'}</Button>
+                <Button onClick={handleViewChallan} variant="secondary" className="w-full max-w-xs gap-2" disabled={!isEditing}>
+                    <FileText className="h-4 w-4" /> View Challan
+                </Button>
             </CardFooter>
         </Card>
         <Card className="lg:col-span-1 h-fit">
