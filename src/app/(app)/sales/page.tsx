@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -10,15 +11,17 @@ import { ChallanMakingTab } from '@/components/challan-making-tab';
 
 export default function SalesPage() {
   const { t } = useLanguage();
+  const [outerTab, setOuterTab] = React.useState("bill-making");
+  const [innerTab, setInnerTab] = React.useState("wataks");
 
   return (
-    <Tabs defaultValue="bill-making" className="w-full">
+    <Tabs value={outerTab} onValueChange={setOuterTab} className="w-full">
       <TabsList className="grid w-full grid-cols-2">
         <TabsTrigger value="bill-making">Bill Making</TabsTrigger>
         <TabsTrigger value="receipt-making">Receipt Making</TabsTrigger>
       </TabsList>
       <TabsContent value="bill-making">
-        <Tabs defaultValue="wataks" className="w-full">
+        <Tabs value={innerTab} onValueChange={setInnerTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="wataks">Wataks</TabsTrigger>
                 <TabsTrigger value="challan">Challan</TabsTrigger>
