@@ -6,13 +6,13 @@ import { getDatabase, Database } from "firebase/database";
 import { getStorage, FirebaseStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDPbM_i-g5T...Y87Fk",
-  authDomain: "swiftsale-ewd7o.firebaseapp.com",
-  projectId: "swiftsale-ewd7o",
-  storageBucket: "swiftsale-ewd7o.appspot.com",
-  messagingSenderId: "596325992913",
-  appId: "1:596325992913:web:e37529452a3637a898b31d",
-  databaseURL: "https://swiftsale-ewd7o-default-rtdb.firebaseio.com"
+  "projectId": "swiftsale-ewd7o",
+  "appId": "1:693507183352:web:62935a0e75eb4a261e610d",
+  "storageBucket": "swiftsale-ewd7o.appspot.com",
+  "apiKey": "AIzaSyDreV3-idwKsbpZI8UL9MT_GHssbLaEUo4",
+  "authDomain": "swiftsale-ewd7o.firebaseapp.com",
+  "measurementId": "G-F7TTL0TYRC",
+  "messagingSenderId": "693507183352"
 };
 
 
@@ -57,3 +57,4 @@ export const getClientMessaging = () => {
 
 
 export { app, firebaseConfig };
+
