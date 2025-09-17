@@ -57,4 +57,3 @@ export const getClientMessaging = () => {
 
 
 export { app, firebaseConfig };
-
