@@ -38,10 +38,10 @@ const WatakTotalsSchema = z.object({
 
 // Define the input schema for the AI flow
 export const WatakExtractInputSchema = z.object({
-  photoUrl: z
+  photoDataUri: z
     .string()
     .describe(
-      "A publicly accessible URL to a photo of a handwritten or printed Watak."
+      "A photo of a handwritten or printed Watak, as a data URI."
     ),
 });
 export type WatakExtractInput = z.infer<typeof WatakExtractInputSchema>;
@@ -80,7 +80,7 @@ const prompt = ai.definePrompt({
 
 The Watak may be handwritten or printed. Pay close attention to details.
 
-Analyze the image: {{media url=photoUrl}}
+Analyze the image: {{media url=photoDataUri}}
 
 Extract the following fields and provide them in the specified JSON format. If a field is not present, you may omit it from the output unless it is required.
 - sNo (Bill No.)

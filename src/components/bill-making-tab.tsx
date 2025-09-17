@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useRef, useState, useEffect } from 'react';
@@ -46,7 +47,6 @@ export function BillMakingTab() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractedData, setExtractedData] = useState<WatakExtractOutput | null>(null);
-  const [storageError, setStorageError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Camera State
@@ -182,7 +182,6 @@ export function BillMakingTab() {
         setSelectedImage(null);
         setImagePreview(null);
         setExtractedData(null);
-        setStorageError(null);
     };
 
 
@@ -295,7 +294,6 @@ export function BillMakingTab() {
   const handleFileSelect = (file: File | null) => {
       if(file){
         setSelectedImage(file);
-        setStorageError(null);
         const reader = new FileReader();
         reader.onloadend = () => {
             setImagePreview(reader.result as string);
@@ -337,26 +335,18 @@ export function BillMakingTab() {
 
 
   const handleExtract = async () => {
-        if (!selectedImage) {
+        if (!imagePreview) {
             toast({ variant: 'destructive', title: 'No Image', description: 'Please upload an image first.' });
             return;
         }
         setIsExtracting(true);
         setExtractedData(null);
-        setStorageError(null);
         try {
-            const filePath = `watak-uploads/${Date.now()}-${selectedImage.name}`;
-            const photoUrl = await uploadFile(selectedImage, filePath);
-            const result = await extractWatakFromImage({ photoUrl });
+            const result = await extractWatakFromImage({ photoDataUri: imagePreview });
             setExtractedData(result);
             toast({ title: 'Extraction Successful', description: 'Review the extracted data and apply it to the form.' });
         } catch (error: any) {
-            const errorMessage = (error as Error).message;
-            if (errorMessage.includes('storage is not available')) {
-                 setStorageError('Firebase Storage is not enabled or configured correctly for this project.');
-            } else {
-                 toast({ variant: 'destructive', title: 'AI Extraction Failed', description: errorMessage });
-            }
+            toast({ variant: 'destructive', title: 'AI Extraction Failed', description: (error as Error).message });
             console.error(error);
         } finally {
             setIsExtracting(false);
@@ -412,28 +402,6 @@ export function BillMakingTab() {
                         <CardDescription>Upload a photo of a handwritten Watak or use your camera to automatically fill the form.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                         {storageError && (
-                            <Alert variant="destructive" className="mb-4">
-                                <AlertTitle className="flex items-center gap-2">
-                                  <AlertTriangle className="h-5 w-5" />
-                                  Action Required: Enable Cloud Storage
-                                </AlertTitle>
-                                <AlertDescription>
-                                    <p className="mb-2">The AI feature needs Firebase Storage to analyze images, but it's not enabled yet. Please enable it to upload photos.</p>
-                                    <ol className="list-decimal list-inside space-y-1 mt-2 text-xs">
-                                        <li>Click the button below to go to the Firebase Console.</li>
-                                        <li>Click the **Get started** button.</li>
-                                        <li>Follow the on-screen prompts to enable Storage (default settings are fine).</li>
-                                        <li>Come back here and refresh the page.</li>
-                                    </ol>
-                                </AlertDescription>
-                                <Button asChild variant="secondary" className="mt-4 w-full bg-white text-black hover:bg-white/90">
-                                    <a href="https://console.firebase.google.com/project/swiftsale-ewd7o/storage" target="_blank" rel="noopener noreferrer" className="gap-2">
-                                        <ExternalLink className="h-4 w-4" /> Go to Firebase Storage
-                                    </a>
-                                </Button>
-                            </Alert>
-                         )}
                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <div className="space-y-4">
                                 <div className="flex gap-2">
@@ -444,12 +412,12 @@ export function BillMakingTab() {
                                         onChange={handleImageSelect}
                                         className="hidden"
                                     />
-                                    <Button onClick={() => fileInputRef.current?.click()} className="w-full gap-2" disabled={!!storageError}>
+                                    <Button onClick={() => fileInputRef.current?.click()} className="w-full gap-2">
                                         <Upload className="h-4 w-4" /> Upload Photo
                                     </Button>
                                     <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
                                         <DialogTrigger asChild>
-                                            <Button variant="outline" className="w-full gap-2" disabled={!!storageError}>
+                                            <Button variant="outline" className="w-full gap-2">
                                                 <Camera className="h-4 w-4" /> Use Camera
                                             </Button>
                                         </DialogTrigger>
@@ -491,7 +459,7 @@ export function BillMakingTab() {
                                 )}
                             </div>
                             <div className="space-y-4">
-                                <Button onClick={handleExtract} disabled={!selectedImage || isExtracting || !!storageError} className="w-full gap-2">
+                                <Button onClick={handleExtract} disabled={!imagePreview || isExtracting} className="w-full gap-2">
                                     {isExtracting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Sparkles className="h-4 w-4" />}
                                     {isExtracting ? 'Analyzing Image...' : 'Extract Data with AI'}
                                 </Button>

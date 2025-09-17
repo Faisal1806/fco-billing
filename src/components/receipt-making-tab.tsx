@@ -108,7 +108,6 @@ export function ReceiptMakingTab() {
   const [imagePreview, setImagePreview] = React.useState<string | null>(null);
   const [isExtracting, setIsExtracting] = React.useState(false);
   const [extractedData, setExtractedData] = React.useState<ReceiptExtractOutput | null>(null);
-  const [storageError, setStorageError] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Camera State
@@ -200,7 +199,6 @@ export function ReceiptMakingTab() {
     setSelectedImage(null);
     setImagePreview(null);
     setExtractedData(null);
-    setStorageError(null);
   };
 
   const handleSaveReceipt = async () => {
@@ -288,7 +286,6 @@ export function ReceiptMakingTab() {
     const handleFileSelect = (file: File | null) => {
       if(file){
         setSelectedImage(file);
-        setStorageError(null);
         const reader = new FileReader();
         reader.onloadend = () => {
             setImagePreview(reader.result as string);
@@ -328,26 +325,18 @@ export function ReceiptMakingTab() {
   }
 
   const handleExtract = async () => {
-        if (!selectedImage) {
+        if (!imagePreview) {
             toast({ variant: 'destructive', title: 'No Image', description: 'Please upload an image first.' });
             return;
         }
         setIsExtracting(true);
         setExtractedData(null);
-        setStorageError(null);
         try {
-            const filePath = `receipt-uploads/${Date.now()}-${selectedImage.name}`;
-            const photoUrl = await uploadFile(selectedImage, filePath);
-            const result = await extractReceiptFromImage({ photoUrl });
+            const result = await extractReceiptFromImage({ photoDataUri: imagePreview });
             setExtractedData(result);
             toast({ title: 'Extraction Successful', description: 'Review the extracted data and apply it to the form.' });
         } catch (error: any) {
-            const errorMessage = (error as Error).message;
-            if (errorMessage.includes('storage is not available')) {
-                 setStorageError('Firebase Storage is not enabled or configured correctly for this project.');
-            } else {
-                 toast({ variant: 'destructive', title: 'AI Extraction Failed', description: errorMessage });
-            }
+            toast({ variant: 'destructive', title: 'AI Extraction Failed', description: (error as Error).message });
             console.error(error);
         } finally {
             setIsExtracting(false);
@@ -394,23 +383,14 @@ export function ReceiptMakingTab() {
                         <CardDescription>Upload a photo of a handwritten receipt or use your camera to automatically fill the form.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                         {storageError && (
-                            <Alert variant="destructive" className="mb-4">
-                                <AlertTitle className="flex items-center gap-2"><AlertTriangle className="h-5 w-5" />Action Required: Enable Cloud Storage</AlertTitle>
-                                <AlertDescription>
-                                    <p>Please enable Firebase Storage to upload and analyze receipt images.</p>
-                                    <Button asChild variant="secondary" className="mt-2"><a href="https://console.firebase.google.com/project/swiftsale-ewd7o/storage" target="_blank" rel="noopener noreferrer">Enable Storage</a></Button>
-                                </AlertDescription>
-                            </Alert>
-                         )}
                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <div className="space-y-4">
                                 <div className="flex gap-2">
                                     <Input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageSelect} className="hidden" />
-                                    <Button onClick={() => fileInputRef.current?.click()} className="w-full gap-2" disabled={!!storageError}><Upload className="h-4 w-4" /> Upload Photo</Button>
+                                    <Button onClick={() => fileInputRef.current?.click()} className="w-full gap-2"><Upload className="h-4 w-4" /> Upload Photo</Button>
                                     <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
                                         <DialogTrigger asChild>
-                                            <Button variant="outline" className="w-full gap-2" disabled={!!storageError}><Camera className="h-4 w-4" /> Use Camera</Button>
+                                            <Button variant="outline" className="w-full gap-2"><Camera className="h-4 w-4" /> Use Camera</Button>
                                         </DialogTrigger>
                                         <DialogContent className="max-w-3xl">
                                             <DialogHeader><DialogTitle>Capture Receipt Photo</DialogTitle></DialogHeader>
@@ -441,7 +421,7 @@ export function ReceiptMakingTab() {
                                 )}
                             </div>
                             <div className="space-y-4">
-                                <Button onClick={handleExtract} disabled={!selectedImage || isExtracting || !!storageError} className="w-full gap-2">
+                                <Button onClick={handleExtract} disabled={!imagePreview || isExtracting} className="w-full gap-2">
                                     {isExtracting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Sparkles className="h-4 w-4" />}
                                     {isExtracting ? 'Analyzing...' : 'Extract Data with AI'}
                                 </Button>

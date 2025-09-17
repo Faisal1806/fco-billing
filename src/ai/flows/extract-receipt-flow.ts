@@ -22,10 +22,10 @@ const ReceiptItemSchema = z.object({
 
 // Define the input schema for the AI flow
 export const ReceiptExtractInputSchema = z.object({
-  photoUrl: z
+  photoDataUri: z
     .string()
     .describe(
-      "A publicly accessible URL to a photo of a handwritten or printed Goods Receipt."
+      "A photo of a handwritten or printed Goods Receipt, as a data URI."
     ),
 });
 export type ReceiptExtractInput = z.infer<typeof ReceiptExtractInputSchema>;
@@ -64,7 +64,7 @@ const prompt = ai.definePrompt({
 
 The Receipt may be handwritten or printed. Pay close attention to details.
 
-Analyze the image: {{media url=photoUrl}}
+Analyze the image: {{media url=photoDataUri}}
 
 Extract the following fields and provide them in the specified JSON format. If a field is not present, you may omit it from the output.
 - no (Receipt No.)
