@@ -50,6 +50,18 @@ export interface WatakEntry {
     }
 }
 
+const normalizeName = (name: string): string => {
+    if (!name) return '';
+    return name
+        .toLowerCase()
+        .replace(/\b(mohammad|mohd|md)\b/g, 'mohammad')
+        .replace(/\b(ahmad|ah)\b/g, 'ahmad')
+        .replace(/\./g, '') // Remove dots
+        .replace(/\s+/g, ' ') // Collapse multiple spaces
+        .trim();
+};
+
+
 export default function WatakRegisterPage() {
   const { t } = useLanguage();
   const router = useRouter();
@@ -85,7 +97,15 @@ export default function WatakRegisterPage() {
             }
         }
         setWataks(items);
-        const uniqueGrowers = ['All Growers', ...new Set(items.map(w => w.customerName))];
+        
+        const growerMap = new Map<string, string>();
+        items.forEach(w => {
+            const normalized = normalizeName(w.customerName);
+            if (!growerMap.has(normalized)) {
+                growerMap.set(normalized, w.customerName);
+            }
+        });
+        const uniqueGrowers = ['All Growers', ...Array.from(growerMap.values()).sort()];
         setGrowers(uniqueGrowers);
     }
     setIsLoading(false);
@@ -97,7 +117,10 @@ export default function WatakRegisterPage() {
   }, [toast]);
 
   const filteredWataks = wataks
-    .filter(w => selectedGrower === 'All Growers' || w.customerName === selectedGrower)
+    .filter(w => {
+        if (selectedGrower === 'All Growers') return true;
+        return normalizeName(w.customerName) === normalizeName(selectedGrower);
+    })
     .filter(w => {
       if (!searchTerm) return true;
       const lowerCaseSearch = searchTerm.toLowerCase();

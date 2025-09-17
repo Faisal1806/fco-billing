@@ -50,14 +50,26 @@ type Transaction = {
 type PartyType = 'customer' | 'supplier' | 'both';
 
 type Ledger = {
-    [partyName: string]: {
+    [normalizedPartyName: string]: {
         transactions: Transaction[];
         balance: number; // positive means we are owed (receivable), negative means we owe (payable)
         partyType: PartyType;
+        displayName: string; // The original, non-normalized name to display
     }
 }
 
 type LedgerEntryWithRunningBalance = Transaction & { runningBalance: number };
+
+const normalizeName = (name: string): string => {
+    if (!name) return '';
+    return name
+        .toLowerCase()
+        .replace(/\b(mohammad|mohd|md)\b/g, 'mohammad')
+        .replace(/\b(ahmad|ah)\b/g, 'ahmad')
+        .replace(/\./g, '') // Remove dots
+        .replace(/\s+/g, ' ') // Collapse multiple spaces
+        .trim();
+};
 
 export default function KhataLedgerPage() {
     const router = useRouter();
@@ -114,11 +126,17 @@ export default function KhataLedgerPage() {
             const calculatedLedgers: Ledger = {};
 
             for (const trans of allTransactions) {
-                if (!calculatedLedgers[trans.party]) {
-                    calculatedLedgers[trans.party] = { transactions: [], balance: 0, partyType: trans.type === 'Sale' ? 'customer' : 'supplier' };
+                const normalizedName = normalizeName(trans.party);
+                if (!calculatedLedgers[normalizedName]) {
+                    calculatedLedgers[normalizedName] = { 
+                        transactions: [], 
+                        balance: 0, 
+                        partyType: trans.type === 'Sale' ? 'customer' : 'supplier',
+                        displayName: trans.party // Store the first-seen display name
+                    };
                 }
                 
-                const ledger = calculatedLedgers[trans.party];
+                const ledger = calculatedLedgers[normalizedName];
                 ledger.transactions.push(trans);
                 
                 const newType = trans.type === 'Sale' ? 'customer' : 'supplier';
@@ -127,19 +145,21 @@ export default function KhataLedgerPage() {
                 }
             }
             
-            Object.keys(calculatedLedgers).forEach(party => {
+            Object.keys(calculatedLedgers).forEach(partyKey => {
                 let runningBalance = 0;
-                calculatedLedgers[party].transactions.forEach(trans => {
+                calculatedLedgers[partyKey].transactions.forEach(trans => {
                      if (trans.type === 'Sale') {
                         runningBalance += trans.amount;
                     } else {
                         runningBalance -= trans.amount;
                     }
                 });
-                calculatedLedgers[party].balance = runningBalance;
+                calculatedLedgers[partyKey].balance = runningBalance;
             });
 
-            const sortedParties = Object.keys(calculatedLedgers).sort((a, b) => a.localeCompare(b));
+            const sortedParties = Object.values(calculatedLedgers)
+                .map(l => l.displayName)
+                .sort((a, b) => a.localeCompare(b));
             
             setLedgers(calculatedLedgers);
             setAllParties(sortedParties);
@@ -152,7 +172,8 @@ export default function KhataLedgerPage() {
         const filterAndSetParties = (type: PartyType | 'all') => {
             const parties = allParties.filter(p => {
                 if (type === 'all') return true;
-                const ledger = ledgers[p];
+                const ledger = ledgers[normalizeName(p)];
+                if (!ledger) return false;
                 if (type === 'customer') return ledger.partyType === 'customer' || ledger.partyType === 'both';
                 if (type === 'supplier') return ledger.partyType === 'supplier' || ledger.partyType === 'both';
                 return false;
@@ -172,7 +193,7 @@ export default function KhataLedgerPage() {
         }
     }, [activeTab, allParties, ledgers]);
 
-    const selectedLedger = selectedParty ? ledgers[selectedParty] : null;
+    const selectedLedger = selectedParty ? ledgers[normalizeName(selectedParty)] : null;
 
     const navigateToDoc = (type: TransactionType, docId: string) => {
         const path = type === 'Sale' ? `/invoice/${docId}` : `/purchase-bill/${docId}`;
@@ -352,7 +373,7 @@ export default function KhataLedgerPage() {
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="outline" className="flex items-center gap-2 min-w-[250px]">
-                                {selectedParty && ledgers[selectedParty] && <PartyIcon type={ledgers[selectedParty].partyType} />}
+                                {selectedParty && ledgers[normalizeName(selectedParty)] && <PartyIcon type={ledgers[normalizeName(selectedParty)].partyType} />}
                                 <span className="flex-1 text-left">{selectedParty || 'Select a Party'}</span>
                                 <ChevronDown className="h-4 w-4" />
                                 </Button>
@@ -360,7 +381,7 @@ export default function KhataLedgerPage() {
                             <DropdownMenuContent align="start" className="max-h-96 overflow-y-auto">
                                 {filteredParties.map(party => (
                                     <DropdownMenuItem key={party} onSelect={() => setSelectedParty(party)}>
-                                        <PartyIcon type={ledgers[party].partyType} />
+                                        <PartyIcon type={ledgers[normalizeName(party)].partyType} />
                                         {party}
                                     </DropdownMenuItem>
                                 ))}
@@ -439,5 +460,3 @@ export default function KhataLedgerPage() {
     </>
   );
 }
-
-    

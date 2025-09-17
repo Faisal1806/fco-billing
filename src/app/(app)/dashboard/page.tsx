@@ -76,6 +76,17 @@ interface CategorizedProducts {
     fertilizers: Product[];
 }
 
+const normalizeName = (name: string): string => {
+    if (!name) return '';
+    return name
+        .toLowerCase()
+        .replace(/\b(mohammad|mohd|md)\b/g, 'mohammad')
+        .replace(/\b(ahmad|ah)\b/g, 'ahmad')
+        .replace(/\./g, '') // Remove dots
+        .replace(/\s+/g, ' ') // Collapse multiple spaces
+        .trim();
+};
+
 
 const StatCard = ({ title, value, icon: Icon, note, iconBgColor }: { title: string, value: string, icon: React.ElementType, note?: string, iconBgColor?: string }) => (
     <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 relative overflow-hidden">
@@ -410,7 +421,7 @@ export default function DashboardPage() {
         let yearTotalDabba = 0;
         
         // Grower Profit
-        const profitsByGrower: {[name: string]: number} = {};
+        const profitsByGrower: {[normalizedName: string]: { name: string, profit: number }} = {};
 
         // Accessory Stats Calculation
         let accessorySalesToday = 0;
@@ -448,7 +459,11 @@ export default function DashboardPage() {
 
                 const grower = sale.customerName;
                 if(grower && sale.totals.netSale) {
-                     profitsByGrower[grower] = (profitsByGrower[grower] || 0) + sale.totals.netSale;
+                     const normalized = normalizeName(grower);
+                     if (!profitsByGrower[normalized]) {
+                        profitsByGrower[normalized] = { name: grower, profit: 0 };
+                     }
+                     profitsByGrower[normalized].profit += sale.totals.netSale;
                 }
             }
         });
@@ -492,8 +507,8 @@ export default function DashboardPage() {
             yearTotalNugs,
         });
 
-        const sortedGrowerProfits = Object.entries(profitsByGrower)
-            .map(([name, profit]) => ({ name, profit }))
+        const sortedGrowerProfits = Object.values(profitsByGrower)
+            .map(({ name, profit }) => ({ name, profit }))
             .sort((a,b) => b.profit - a.profit)
             .slice(0, 10); 
 
