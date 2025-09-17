@@ -21,18 +21,18 @@ const ReceiptItemSchema = z.object({
 });
 
 // Define the input schema for the AI flow
-export const ReceiptExtractInputSchema = z.object({
+const ReceiptExtractInputSchema = z.object({
   photoDataUri: z
     .string()
     .describe(
-      "A photo of a handwritten or printed Goods Receipt, as a data URI."
+      "A photo of a handwritten or printed Goods Receipt, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
 });
 export type ReceiptExtractInput = z.infer<typeof ReceiptExtractInputSchema>;
 
 
 // Define the output schema for the AI flow - this is the structured digital Receipt
-export const ReceiptExtractOutputSchema = z.object({
+const ReceiptExtractOutputSchema = z.object({
   no: z.string().describe('The serial number of the receipt.'),
   date: z.string().describe('The date of the receipt in YYYY-MM-DD format.'),
   customerName: z.string().describe("The full name of the customer or grower (M/s)."),

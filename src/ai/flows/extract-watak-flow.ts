@@ -10,7 +10,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { CheckCircle } from "lucide-react";
 
 // Define the schema for a single item entry in the Watak
 const WatakItemSchema = z.object({
@@ -37,18 +36,18 @@ const WatakTotalsSchema = z.object({
 
 
 // Define the input schema for the AI flow
-export const WatakExtractInputSchema = z.object({
+const WatakExtractInputSchema = z.object({
   photoDataUri: z
     .string()
     .describe(
-      "A photo of a handwritten or printed Watak, as a data URI."
+      "A photo of a handwritten or printed Watak, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
 });
 export type WatakExtractInput = z.infer<typeof WatakExtractInputSchema>;
 
 
 // Define the output schema for the AI flow - this is the structured digital Watak
-export const WatakExtractOutputSchema = z.object({
+const WatakExtractOutputSchema = z.object({
   sNo: z.string().describe('The serial number or Bill Number of the Watak.'),
   date: z.string().describe('The date of the Watak in YYYY-MM-DD format.'),
   customerName: z.string().describe("The full name of the customer or grower (M/s)."),

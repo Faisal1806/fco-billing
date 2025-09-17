@@ -11,12 +11,12 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const PesticideCategoryInputSchema = z.object({
+const PesticideCategoryInputSchema = z.object({
   name: z.string().describe('The name of the pesticide or fertilizer product.'),
 });
 export type PesticideCategoryInput = z.infer<typeof PesticideCategoryInputSchema>;
 
-export const PesticideCategoryOutputSchema = z.object({
+const PesticideCategoryOutputSchema = z.object({
   category: z.string().describe('The suggested category for the product. Should be one of: Fungicide, Insecticide, Herbicide, Fertilizer, Plant Growth Regulator, or Other.'),
 });
 export type PesticideCategoryOutput = z.infer<typeof PesticideCategoryOutputSchema>;
