@@ -78,13 +78,26 @@ interface CategorizedProducts {
 
 const normalizeName = (name: string): string => {
     if (!name) return '';
-    return name
+    
+    const suffixes = ["S/P", "B/P", "K/P", "(Lama)"];
+    let mainName = name;
+    let suffix = '';
+
+    for (const s of suffixes) {
+        if (name.toUpperCase().endsWith(s)) {
+            mainName = name.substring(0, name.length - s.length).trim();
+            suffix = ` ${s}`;
+            break;
+        }
+    }
+    
+    return mainName
         .toLowerCase()
         .replace(/\b(mohammad|mohd|md)\b/g, 'mohammad')
         .replace(/\b(ahmad|ah)\b/g, 'ahmad')
         .replace(/\./g, '') // Remove dots
         .replace(/\s+/g, ' ') // Collapse multiple spaces
-        .trim();
+        .trim() + suffix.toUpperCase();
 };
 
 

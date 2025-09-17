@@ -52,14 +52,27 @@ export interface WatakEntry {
 
 const normalizeName = (name: string): string => {
     if (!name) return '';
-    return name
-        .toLowerCase()
-        .replace(/\b(mohammad|mohd|md)\b/g, 'mohammad')
-        .replace(/\b(ahmad|ah)\b/g, 'ahmad')
+    
+    const suffixes = ["S/P", "B/P", "K/P", "(LAMA)"];
+    let mainName = name.toUpperCase();
+    let suffix = '';
+
+    for (const s of suffixes) {
+        if (mainName.endsWith(s)) {
+            mainName = mainName.substring(0, mainName.length - s.length).trim();
+            suffix = ` ${s}`;
+            break;
+        }
+    }
+    
+    return mainName
+        .replace(/\b(MOHAMMAD|MOHD|MD)\b/g, 'MOHAMMAD')
+        .replace(/\b(AHMAD|AH)\b/g, 'AHMAD')
         .replace(/\./g, '') // Remove dots
         .replace(/\s+/g, ' ') // Collapse multiple spaces
-        .trim();
+        .trim() + suffix;
 };
+
 
 
 export default function WatakRegisterPage() {
