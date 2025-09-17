@@ -17,7 +17,6 @@ import { ScrollArea } from './ui/scroll-area';
 import { extractWatakFromImage, WatakExtractOutput } from '@/ai/flows/extract-watak-flow';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { uploadFile } from '@/lib/storage';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { useApiKey } from '@/hooks/use-api-key';
 

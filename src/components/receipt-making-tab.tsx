@@ -18,9 +18,7 @@ import { Separator } from '@/components/ui/separator';
 import { PlusCircle, Trash2, FilePenLine, FilePlus, FileText, Wand2, Upload, Camera, Sparkles, CheckCircle, ExternalLink, AlertTriangle, Loader2, KeyRound } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
-import { saveDocument, deleteDocument } from '@/lib/actions';
 import { extractReceiptFromImage, ReceiptExtractOutput } from '@/ai/flows/extract-receipt-flow';
-import { uploadFile } from '@/lib/storage';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
@@ -267,21 +265,12 @@ export function ReceiptMakingTab() {
     
     localStorage.removeItem(`receipt-${receiptId}`);
 
-    try {
-        await deleteDocument('receipts', receiptId);
-        toast({
-            title: "Receipt Deleted",
-            description: `Receipt #${receiptId} has been successfully deleted from local and cloud storage.`
-        });
-    } catch (error) {
-        toast({
-            variant: "destructive",
-            title: "Cloud Delete Failed",
-            description: "Could not delete receipt from cloud, but it was removed locally."
-        });
-    }
-
-    fetchReceipts(); // Re-fetch to update list
+    fetchReceipts();
+    toast({
+        title: "Receipt Deleted",
+        description: `Receipt #${receiptId} has been successfully deleted.`
+    });
+    
     if (receiptDetails.no === receiptId) {
         resetForm();
     }
@@ -430,9 +419,9 @@ export function ReceiptMakingTab() {
                             </div>
                             <div className="space-y-4">
                                  <div className="space-y-2">
-                                    <Label htmlFor="apiKey" className="flex items-center gap-2"><KeyRound className="h-4 w-4" /> Gemini API Key</Label>
+                                    <Label htmlFor="apiKeyReceipt" className="flex items-center gap-2"><KeyRound className="h-4 w-4" /> Gemini API Key</Label>
                                     <Input
-                                        id="apiKey"
+                                        id="apiKeyReceipt"
                                         type="password"
                                         placeholder="Paste your API key here"
                                         value={tempApiKey}
