@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
-import { PlusCircle, Trash2, FilePenLine, FilePlus } from 'lucide-react';
+import { PlusCircle, Trash2, FilePenLine, FilePlus, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
 import { saveDocument, deleteDocument } from '@/lib/actions';
@@ -150,7 +150,7 @@ export function ReceiptMakingTab() {
     setIsEditing(false);
   };
 
-  const handleCreateReceipt = async () => {
+  const handleSaveReceipt = async () => {
     if (!receiptDetails.no || !receiptDetails.date || !receiptDetails.customerName) {
         toast({
             variant: 'destructive',
@@ -167,23 +167,22 @@ export function ReceiptMakingTab() {
     };
     
     localStorage.setItem(`receipt-${receiptId}`, JSON.stringify(receiptData));
-
-    try {
-        await saveDocument('receipts', receiptId, receiptData);
-        toast({
-            title: isEditing ? 'Receipt Updated & Synced' : 'Receipt Saved & Synced',
-            description: 'The receipt has been successfully saved to the cloud.',
-        });
-    } catch (error) {
-         toast({
-            variant: 'destructive',
-            title: 'Cloud Sync Failed',
-            description: 'Could not save the receipt to the cloud. It is saved locally.',
-        });
-    }
-
+    
     fetchReceipts(); // Re-fetch to update list
-    router.push(`/receipt/${receiptId}`);
+    setIsEditing(true);
+
+    toast({
+      title: isEditing ? 'Receipt Updated' : 'Receipt Saved',
+      description: 'The receipt has been successfully saved to this device.',
+    });
+  };
+
+  const handleViewReceipt = () => {
+      if (!isEditing || !receiptDetails.no) {
+          toast({ variant: 'destructive', title: 'Cannot View', description: 'Please save the receipt first.'});
+          return;
+      }
+      router.push(`/receipt/${receiptDetails.no}`);
   };
 
   const loadReceiptForEdit = (receipt: any) => {
@@ -319,8 +318,11 @@ export function ReceiptMakingTab() {
                     </div>
                 </div>
             </CardContent>
-            <CardFooter className="flex justify-center">
-                <Button onClick={handleCreateReceipt} className="w-full max-w-sm">{isEditing ? 'Update & View Receipt' : 'Save & View Receipt'}</Button>
+            <CardFooter className="flex justify-center gap-4">
+                <Button onClick={handleSaveReceipt} className="w-full max-w-xs">{isEditing ? 'Update Receipt' : 'Save Receipt'}</Button>
+                <Button onClick={handleViewReceipt} variant="secondary" className="w-full max-w-xs gap-2" disabled={!isEditing}>
+                    <FileText className="h-4 w-4" /> View Receipt
+                </Button>
             </CardFooter>
         </Card>
         <Card className="md:col-span-1 h-fit">
