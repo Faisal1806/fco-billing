@@ -7,16 +7,23 @@ import {
   CardContent,
   CardFooter,
   CardHeader,
+  CardTitle,
+  CardDescription,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
-import { PlusCircle, Trash2, FilePenLine, FilePlus, FileText } from 'lucide-react';
+import { PlusCircle, Trash2, FilePenLine, FilePlus, FileText, Wand2, Upload, Camera, Sparkles, CheckCircle, ExternalLink, AlertTriangle, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
 import { saveDocument, deleteDocument } from '@/lib/actions';
+import { extractReceiptFromImage, ReceiptExtractOutput } from '@/ai/flows/extract-receipt-flow';
+import { uploadFile } from '@/lib/storage';
+import Image from 'next/image';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 
 type ReceiptEntry = {
   khata: string;
@@ -95,6 +102,21 @@ export function ReceiptMakingTab() {
   const [isEditing, setIsEditing] = React.useState(false);
   const [savedReceipts, setSavedReceipts] = React.useState<any[]>([]);
   const [userRole, setUserRole] = React.useState<string | null>(null);
+  
+  // AI State
+  const [selectedImage, setSelectedImage] = React.useState<File | null>(null);
+  const [imagePreview, setImagePreview] = React.useState<string | null>(null);
+  const [isExtracting, setIsExtracting] = React.useState(false);
+  const [extractedData, setExtractedData] = React.useState<ReceiptExtractOutput | null>(null);
+  const [storageError, setStorageError] = React.useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Camera State
+  const [isCameraOpen, setIsCameraOpen] = React.useState(false);
+  const [hasCameraPermission, setHasCameraPermission] = React.useState<boolean | null>(null);
+  const [capturedImage, setCapturedImage] = React.useState<string | null>(null);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -117,6 +139,33 @@ export function ReceiptMakingTab() {
   React.useEffect(() => {
     fetchReceipts();
   }, []);
+  
+   React.useEffect(() => {
+    if(isCameraOpen){
+        setCapturedImage(null);
+        const getCameraPermission = async () => {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({video: { facingMode: "environment" }});
+            setHasCameraPermission(true);
+
+            if (videoRef.current) {
+              videoRef.current.srcObject = stream;
+            }
+          } catch (error) {
+            console.error('Error accessing camera:', error);
+            setHasCameraPermission(false);
+          }
+        };
+        getCameraPermission();
+        
+        return () => {
+            if(videoRef.current && videoRef.current.srcObject){
+                 const stream = videoRef.current.srcObject as MediaStream;
+                 stream.getTracks().forEach(track => track.stop());
+            }
+        }
+    }
+  }, [isCameraOpen]);
 
   const handleEntryUpdate = (
     index: number,
@@ -148,6 +197,10 @@ export function ReceiptMakingTab() {
     setReceiptDetails(initialReceiptDetails);
     setEntries(initialEntries);
     setIsEditing(false);
+    setSelectedImage(null);
+    setImagePreview(null);
+    setExtractedData(null);
+    setStorageError(null);
   };
 
   const handleSaveReceipt = async () => {
@@ -186,6 +239,7 @@ export function ReceiptMakingTab() {
   };
 
   const loadReceiptForEdit = (receipt: any) => {
+    resetForm();
     setReceiptDetails({
       no: receipt.no,
       date: receipt.date,
@@ -230,6 +284,95 @@ export function ReceiptMakingTab() {
         resetForm();
     }
   };
+  
+    const handleFileSelect = (file: File | null) => {
+      if(file){
+        setSelectedImage(file);
+        setStorageError(null);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setImagePreview(reader.result as string);
+            setExtractedData(null);
+        };
+        reader.readAsDataURL(file);
+      }
+  }
+
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+        handleFileSelect(event.target.files?.[0] || null);
+  };
+  
+  const handleTakePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext('2d');
+      context?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      setCapturedImage(dataUrl);
+    }
+  };
+  
+  const handleUseCapturedPhoto = () => {
+      if(capturedImage){
+          fetch(capturedImage)
+            .then(res => res.blob())
+            .then(blob => {
+                const file = new File([blob], `receipt-capture-${Date.now()}.jpg`, { type: 'image/jpeg' });
+                handleFileSelect(file);
+                setIsCameraOpen(false);
+            })
+      }
+  }
+
+  const handleExtract = async () => {
+        if (!selectedImage) {
+            toast({ variant: 'destructive', title: 'No Image', description: 'Please upload an image first.' });
+            return;
+        }
+        setIsExtracting(true);
+        setExtractedData(null);
+        setStorageError(null);
+        try {
+            const filePath = `receipt-uploads/${Date.now()}-${selectedImage.name}`;
+            const photoUrl = await uploadFile(selectedImage, filePath);
+            const result = await extractReceiptFromImage({ photoUrl });
+            setExtractedData(result);
+            toast({ title: 'Extraction Successful', description: 'Review the extracted data and apply it to the form.' });
+        } catch (error: any) {
+            const errorMessage = (error as Error).message;
+            if (errorMessage.includes('storage is not available')) {
+                 setStorageError('Firebase Storage is not enabled or configured correctly for this project.');
+            } else {
+                 toast({ variant: 'destructive', title: 'AI Extraction Failed', description: errorMessage });
+            }
+            console.error(error);
+        } finally {
+            setIsExtracting(false);
+        }
+  };
+  
+  const applyExtractedData = () => {
+        if (!extractedData) return;
+        setReceiptDetails({
+            no: extractedData.no,
+            date: extractedData.date,
+            customerName: extractedData.customerName,
+            ro: extractedData.ro || '',
+            freightPaid: extractedData.freightPaid || 0,
+            wattakReadyOn: extractedData.wattakReadyOn || '',
+        });
+
+        const newRows = extractedData.entries.map(entry => ({
+            ...entry,
+        }));
+        
+        setEntries(newRows.length > 0 ? newRows : initialEntries);
+        toast({ title: 'Form Populated', description: 'The form has been filled with the extracted data.' });
+  };
+
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -242,19 +385,90 @@ export function ReceiptMakingTab() {
                         <p className="text-sm text-muted-foreground">Goods Receipt</p>
                     </div>
                     <div className="text-sm font-bold">🍎 F.Co</div>
-                     {isEditing && (
-                        <Button variant="outline" size="sm" onClick={resetForm} className="gap-2 ml-4">
-                            <FilePlus className="h-4 w-4" />
-                            New Receipt
-                        </Button>
-                    )}
                 </div>
             </CardHeader>
             <CardContent className="space-y-6">
+                <Card className="bg-muted/50">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Wand2 className="text-primary"/> AI-Powered Receipt Entry</CardTitle>
+                        <CardDescription>Upload a photo of a handwritten receipt or use your camera to automatically fill the form.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                         {storageError && (
+                            <Alert variant="destructive" className="mb-4">
+                                <AlertTitle className="flex items-center gap-2"><AlertTriangle className="h-5 w-5" />Action Required: Enable Cloud Storage</AlertTitle>
+                                <AlertDescription>
+                                    <p>Please enable Firebase Storage to upload and analyze receipt images.</p>
+                                    <Button asChild variant="secondary" className="mt-2"><a href="https://console.firebase.google.com/project/swiftsale-ewd7o/storage" target="_blank" rel="noopener noreferrer">Enable Storage</a></Button>
+                                </AlertDescription>
+                            </Alert>
+                         )}
+                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div className="space-y-4">
+                                <div className="flex gap-2">
+                                    <Input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageSelect} className="hidden" />
+                                    <Button onClick={() => fileInputRef.current?.click()} className="w-full gap-2" disabled={!!storageError}><Upload className="h-4 w-4" /> Upload Photo</Button>
+                                    <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
+                                        <DialogTrigger asChild>
+                                            <Button variant="outline" className="w-full gap-2" disabled={!!storageError}><Camera className="h-4 w-4" /> Use Camera</Button>
+                                        </DialogTrigger>
+                                        <DialogContent className="max-w-3xl">
+                                            <DialogHeader><DialogTitle>Capture Receipt Photo</DialogTitle></DialogHeader>
+                                            {hasCameraPermission === false ? (
+                                                 <Alert variant="destructive"><AlertTitle>Camera Access Denied</AlertTitle><AlertDescription>Please enable camera permissions in your browser settings.</AlertDescription></Alert>
+                                            ) : capturedImage ? (
+                                                 <>
+                                                    <Image src={capturedImage} alt="Captured Receipt" width={640} height={480} className="rounded-md w-full" />
+                                                    <DialogFooter>
+                                                        <Button variant="outline" onClick={() => setCapturedImage(null)}>Retake</Button>
+                                                        <Button onClick={handleUseCapturedPhoto}>Use this Photo</Button>
+                                                    </DialogFooter>
+                                                 </>
+                                            ) : (
+                                                <>
+                                                    <video ref={videoRef} className="w-full aspect-video rounded-md bg-black" autoPlay playsInline muted />
+                                                    <DialogFooter><Button onClick={handleTakePhoto}>Take Photo</Button></DialogFooter>
+                                                </>
+                                            )}
+                                            <canvas ref={canvasRef} className="hidden"></canvas>
+                                        </DialogContent>
+                                    </Dialog>
+                                </div>
+                                {imagePreview && (
+                                    <div className="relative aspect-video w-full rounded-md overflow-hidden border">
+                                        <Image src={imagePreview} alt="Receipt Preview" layout="fill" objectFit="contain" />
+                                    </div>
+                                )}
+                            </div>
+                            <div className="space-y-4">
+                                <Button onClick={handleExtract} disabled={!selectedImage || isExtracting || !!storageError} className="w-full gap-2">
+                                    {isExtracting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Sparkles className="h-4 w-4" />}
+                                    {isExtracting ? 'Analyzing...' : 'Extract Data with AI'}
+                                </Button>
+                                {extractedData && (
+                                    <Alert>
+                                        <AlertTitle className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" />Extraction Complete</AlertTitle>
+                                        <AlertDescription>
+                                            <p>Successfully extracted data for Receipt #{extractedData.no}.</p>
+                                        </AlertDescription>
+                                        <Button onClick={applyExtractedData} className="w-full mt-4">Apply to Form</Button>
+                                    </Alert>
+                                )}
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
                         <Label>No.</Label>
+                        <div className="flex items-center gap-2">
                         <Input value={receiptDetails.no} onChange={e => handleDetailChange('no', e.target.value)} disabled={isEditing} />
+                         {isEditing && (
+                            <Button variant="outline" size="icon" onClick={resetForm} title="Create a new receipt">
+                                <FilePlus className="h-4 w-4" />
+                            </Button>
+                        )}
+                        </div>
                     </div>
                     <div className="space-y-2">
                         <Label>Dated</Label>
