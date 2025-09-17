@@ -5,13 +5,14 @@ import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Printer, Download } from "lucide-react";
+import { Printer, Download, FileText, Receipt } from "lucide-react";
 import { FaWhatsapp } from 'react-icons/fa';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/logo";
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import QRCode from 'qrcode.react';
 
 interface ReceiptData {
     no: string;
@@ -36,8 +37,13 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
     const printRef = useRef<HTMLDivElement>(null);
+    const [pageUrl, setPageUrl] = useState('');
+    const [printStyle, setPrintStyle] = useState<'a4' | 'thermal'>('a4');
 
     useEffect(() => {
+        if(typeof window !== 'undefined'){
+            setPageUrl(window.location.href);
+        }
         const fetchReceipt = () => {
             if (!params.id) {
                 setLoading(false);
@@ -81,37 +87,60 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
         const element = printRef.current;
         if (!element || !receiptData) return;
 
+        const isThermal = printStyle === 'thermal';
+        const format = isThermal ? [80, 297] : 'a5';
+        const orientation = 'portrait';
+    
         const canvas = await html2canvas(element, {
             scale: 2, // Higher scale for better quality
+            useCORS: true,
+            width: element.scrollWidth,
+            height: element.scrollHeight,
+            windowWidth: element.scrollWidth,
+            windowHeight: element.scrollHeight,
         });
 
         const pdf = new jsPDF({
-            orientation: 'portrait',
+            orientation,
             unit: 'mm',
-            format: 'a5'
+            format,
         });
         
         const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
         
         pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
         pdf.save(`Receipt-${receiptData.no}.pdf`);
     };
 
     const Controls = () => (
-        <div className="flex items-center gap-2 print:hidden">
-            <Button onClick={handleShare} variant="outline" size="sm" className="gap-2">
-                <FaWhatsapp className="h-4 w-4 text-green-500" />
-                Share
-            </Button>
-            <Button onClick={() => window.print()} variant="outline" size="sm" className="gap-2">
-                <Printer className="h-4 w-4" />
-                Print
-            </Button>
-             <Button onClick={handleDownloadPdf} size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700">
-                <Download className="h-4 w-4" />
-                Save to Device
-            </Button>
+        <div className="flex flex-col gap-4 print:hidden">
+            <div className="flex items-center gap-2">
+                 <Button onClick={() => setPrintStyle('a4')} variant={printStyle === 'a4' ? 'default' : 'outline'} size="sm" className="gap-2">
+                    <FileText className="h-4 w-4" /> A4
+                </Button>
+                <Button onClick={() => setPrintStyle('thermal')} variant={printStyle === 'thermal' ? 'default' : 'outline'} size="sm" className="gap-2">
+                    <Receipt className="h-4 w-4" /> Thermal
+                </Button>
+            </div>
+            <div className="flex items-center gap-2">
+                <Button onClick={handleShare} variant="outline" size="sm" className="gap-2">
+                    <FaWhatsapp className="h-4 w-4 text-green-500" />
+                    Share
+                </Button>
+                <Button onClick={() => window.print()} variant="outline" size="sm" className="gap-2">
+                    <Printer className="h-4 w-4" />
+                    Print
+                </Button>
+                 <Button onClick={handleDownloadPdf} size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700">
+                    <Download className="h-4 w-4" />
+                    Save to Device
+                </Button>
+            </div>
+             <div className="p-2 border rounded-md flex flex-col items-center">
+                <QRCode value={pageUrl} size={60} />
+                <p className="text-xs font-semibold mt-1">Scan to View</p>
+            </div>
         </div>
     )
 
@@ -141,26 +170,9 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
         no, date, customerName, ro, entries,
         totalNugs, freightPaid, wattakReadyOn
     } = receiptData;
-
-    return (
-        <div className="bg-gray-100 dark:bg-gray-900 font-sans print:bg-white">
-            <style jsx global>{`
-                @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
-                .font-signature {
-                    font-family: 'Dancing Script', cursive;
-                }
-                @media print {
-                    @page {
-                        size: A5 portrait;
-                        margin: 0;
-                    }
-                    body {
-                        -webkit-print-color-adjust: exact;
-                        print-color-adjust: exact;
-                    }
-                }
-            `}</style>
-            <div ref={printRef} className="w-[148mm] min-h-[210mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-6 flex flex-col">
+    
+    const A4Layout = () => (
+         <div className="w-[148mm] min-h-[210mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-6 flex flex-col">
                 <header className="bg-gradient-to-r from-yellow-400 via-orange-500 to-amber-600 text-white p-4 rounded-t-xl shadow-md flex justify-between items-center">
                     <div className="text-sm font-bold">🍎 F.Co</div>
                     <div className="text-center">
@@ -222,6 +234,103 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
                         <p className="font-bold">Sign. Of Manager</p>
                      </div>
                 </footer>
+            </div>
+    );
+    
+    const ThermalLayout = () => (
+        <div className="w-[80mm] bg-white text-black p-2 font-mono text-[10px] leading-tight">
+            <header className="text-center space-y-1">
+                <h1 className="text-sm font-bold">Firdous Ahmad & Company</h1>
+                <p>Sopore</p>
+                <p className="border-t border-dashed border-black mt-1 pt-1 font-bold">Goods Receipt</p>
+            </header>
+             <main className="my-2 border-t border-b border-dashed border-black py-2 space-y-1">
+                <div className="flex justify-between"><span>No: {no}</span> <span>Date: {new Date(date).toLocaleDateString('en-GB')}</span></div>
+                <div>M/s: {customerName}</div>
+                <div>R/o: {ro}</div>
+            </main>
+             <table className="w-full">
+                <thead>
+                    <tr className="border-b border-dashed border-black">
+                        <th className="text-left">Item</th>
+                        <th className="text-right">Peti</th>
+                        <th className="text-right">Daba</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {entries.map((entry, i) => (
+                        <tr key={i}>
+                            <td className="text-left">{entry.kind} ({entry.khata})</td>
+                            <td className="text-right">{entry.peti || 0}</td>
+                            <td className="text-right">{entry.daba || 0}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+             <div className="my-2 border-t-2 border-black pt-1 space-y-1 text-xs font-bold">
+                <div className="flex justify-between"><span>Total Nugs:</span><span>{totalNugs}</span></div>
+            </div>
+             <div className="text-xs mt-2 space-y-1 border-t border-dashed pt-2">
+                <p>Freight Paid: {freightPaid > 0 ? `₹${freightPaid.toFixed(2)}` : 'N/A'}</p>
+                <p>Watak Ready On: {wattakReadyOn}</p>
+            </div>
+            <footer className="text-center pt-4">
+                <p>For: Firdous Ahmad & Co.</p>
+            </footer>
+        </div>
+    );
+
+    return (
+        <div className="bg-gray-100 dark:bg-gray-900 font-sans print:bg-white flex flex-col md:flex-row gap-8 justify-center p-4 md:p-8">
+            <style jsx global>{`
+                @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
+                .font-signature {
+                    font-family: 'Dancing Script', cursive;
+                }
+                @media print {
+                    body {
+                        background: white !important;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                    .print-container {
+                        margin: 0;
+                        padding: 0;
+                        display: block !important;
+                        width: 100%;
+                        height: 100%;
+                    }
+                    .print-area-a4 {
+                        display: ${printStyle === 'a4' ? 'flex !important' : 'none !important'};
+                        width: 100%;
+                        height: 100%;
+                        box-shadow: none;
+                        border: none;
+                    }
+                     .print-area-thermal {
+                        display: ${printStyle === 'thermal' ? 'block !important' : 'none !important'};
+                         box-shadow: none;
+                        border: none;
+                    }
+
+                    @page {
+                        size: ${printStyle === 'a4' ? 'A5 portrait' : '80mm 297mm'};
+                        margin: 0;
+                    }
+                }
+            `}</style>
+            
+            <Controls />
+
+            <div className="print-container">
+                <div ref={printRef}>
+                    <div className="print-area-a4">
+                        <A4Layout />
+                    </div>
+                     <div className="print-area-thermal">
+                        <ThermalLayout />
+                    </div>
+                </div>
             </div>
         </div>
     );
