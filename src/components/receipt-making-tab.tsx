@@ -35,38 +35,38 @@ const ReceiptEntryRow = ({
   onUpdate: (field: keyof ReceiptEntry, value: string | number) => void;
   onRemove: () => void;
 }) => (
-  <div className="flex items-center gap-2">
+  <div className="grid grid-cols-1 md:grid-cols-6 gap-2 items-center">
     <Input
       placeholder="Khata"
       value={entry.khata}
       onChange={(e) => onUpdate('khata', e.target.value)}
-      className="flex-1"
+      className="md:col-span-2"
     />
      <Input
       placeholder="Kind"
       value={entry.kind}
       onChange={(e) => onUpdate('kind', e.target.value)}
-      className="flex-1"
+      className="md:col-span-1"
     />
     <Input
       type="number"
       placeholder="Peti"
       value={entry.peti || ''}
       onChange={(e) => onUpdate('peti', Number(e.target.value))}
-      className="w-20"
+      className="md:col-span-1"
     />
     <Input
       type="number"
       placeholder="Daba"
       value={entry.daba || ''}
       onChange={(e) => onUpdate('daba', Number(e.target.value))}
-      className="w-20"
+      className="md:col-span-1"
     />
     <Input
       placeholder="Freight"
       value={entry.freight}
       onChange={(e) => onUpdate('freight', e.target.value)}
-      className="w-28"
+      className="md:col-span-1"
     />
     <Button variant="ghost" size="icon" onClick={onRemove}>
       <Trash2 className="h-4 w-4 text-destructive" />
@@ -275,26 +275,22 @@ export function ReceiptMakingTab() {
 
                 <div className="space-y-4">
                 <div className="space-y-2">
-                    <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
-                        <Label className="w-10">S.No.</Label>
-                        <Label className="flex-1">KHATA</Label>
-                        <Label className="flex-1">KIND</Label>
-                        <Label className="w-20">PETI</Label>
-                        <Label className="w-20">DABA</Label>
-                        <Label className="w-28">FREIGHT</Label>
-                        <div className="w-10"></div>
+                    <div className="hidden md:grid grid-cols-6 items-center gap-2 text-sm text-muted-foreground">
+                        <Label className="md:col-span-2">KHATA</Label>
+                        <Label className="md:col-span-1">KIND</Label>
+                        <Label className="md:col-span-1">PETI</Label>
+                        <Label className="md:col-span-1">DABA</Label>
+                        <Label className="md:col-span-1">FREIGHT</Label>
                     </div>
                     {entries.map((entry, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                        <span className="w-10 text-center">{index + 1}</span>
-                        <ReceiptEntryRow
-                            entry={entry}
-                            onUpdate={(field, value) => handleEntryUpdate(index, field, value)}
-                            onRemove={() => removeSlot(index)}
-                        />
-                    </div>
+                    <ReceiptEntryRow
+                        key={index}
+                        entry={entry}
+                        onUpdate={(field, value) => handleEntryUpdate(index, field, value)}
+                        onRemove={() => removeSlot(index)}
+                    />
                     ))}
-                    <Button variant="outline" size="sm" className="gap-1" onClick={addSlot}>
+                    <Button variant="outline" size="sm" className="gap-1 mt-2" onClick={addSlot}>
                     <PlusCircle className="h-3.5 w-3.5" />
                     Add Item
                     </Button>
