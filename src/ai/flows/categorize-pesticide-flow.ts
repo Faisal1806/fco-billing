@@ -13,6 +13,7 @@ import {z} from 'genkit';
 
 const PesticideCategoryInputSchema = z.object({
   name: z.string().describe('The name of the pesticide or fertilizer product.'),
+  apiKey: z.string().optional().describe('The Gemini API Key'),
 });
 export type PesticideCategoryInput = z.infer<typeof PesticideCategoryInputSchema>;
 
@@ -36,6 +37,9 @@ Product Name: ${input.name}`,
             output: {
                 schema: PesticideCategoryOutputSchema,
             },
+            config: {
+                apiKey: input.apiKey,
+            }
         });
         if (!output) {
             throw new Error('AI failed to categorize the product.');

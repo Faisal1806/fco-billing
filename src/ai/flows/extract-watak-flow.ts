@@ -40,8 +40,9 @@ const WatakExtractInputSchema = z.object({
   photoDataUri: z
     .string()
     .describe(
-      "A photo of a handwritten or printed Watak, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+      "A photo of a handwritten or printed Watak, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'"
     ),
+    apiKey: z.string().optional().describe('The Gemini API Key'),
 });
 export type WatakExtractInput = z.infer<typeof WatakExtractInputSchema>;
 
@@ -88,6 +89,9 @@ Extract the following fields and provide them in the specified JSON format. If a
             output: {
                 schema: WatakExtractOutputSchema,
             },
+            config: {
+                apiKey: input.apiKey,
+            }
         });
         if (!output) {
             throw new Error('AI failed to extract data from the Watak image.');

@@ -1,7 +1,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, Package, UserCheck, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, History, BookCopy, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Hash } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -358,11 +358,9 @@ const InventoryDashboard = ({ inventory, router }: { inventory: CategorizedProdu
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [stats, setStats] = useState<DailyStats | null>(null);
-  const [yearlyStats, setYearlyStats] = useState<YearlyStats | null>(null);
-  const [accessoryStats, setAccessoryStats] = useState<AccessoryStats | null>(null);
-  const [growerProfits, setGrowerProfits] = useState<GrowerProfit[]>([]);
-  const [inventory, setInventory] = useState<CategorizedProducts | null>(null);
+  const [allInvoices, setAllInvoices] = useState<Invoice[]>([]);
+  const [allAccessories, setAllAccessories] = useState<AccessoryLedgerEntry[]>([]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -370,177 +368,187 @@ export default function DashboardPage() {
         if (typeof window === 'undefined') return;
         setIsLoading(true);
 
-        const today = new Date();
-        const todayStr = today.toISOString().split('T')[0];
-        const currentMonth = today.getMonth();
-        const currentYear = today.getFullYear();
-
-        const allInvoices: Invoice[] = [];
-        const allAccessories: AccessoryLedgerEntry[] = [];
-        const allProducts: Product[] = [];
+        const invoices: Invoice[] = [];
+        const accessories: AccessoryLedgerEntry[] = [];
+        const products: Product[] = [];
 
         for(let i=0; i<localStorage.length; i++) {
             const key = localStorage.key(i);
             if (key?.startsWith('invoice-')) {
-                allInvoices.push(JSON.parse(localStorage.getItem(key)!));
+                invoices.push(JSON.parse(localStorage.getItem(key)!));
             } else if (key?.startsWith('accessory-ledger-')) {
-                allAccessories.push(JSON.parse(localStorage.getItem(key)!));
+                accessories.push(JSON.parse(localStorage.getItem(key)!));
             } else if (key?.startsWith('product-')) {
-                allProducts.push(JSON.parse(localStorage.getItem(key)!));
+                products.push(JSON.parse(localStorage.getItem(key)!));
             }
         }
-    
-        // --- INVENTORY CALCULATION ---
-        const stockOut: { [productName: string]: number } = {};
-        allAccessories.forEach(sale => {
-            stockOut[sale.item] = (stockOut[sale.item] || 0) + sale.qty;
-        });
-        
-        const updatedProducts = allProducts.map(p => ({
-            ...p,
-            stock: (p.stock || 0) - (stockOut[p.name] || 0),
-        }));
-
-        const categorized: CategorizedProducts = { fruits: [], accessories: [], fertilizers: [] };
-        updatedProducts.forEach(p => {
-            const cat = p.category.toLowerCase();
-            if (['fruit', 'apple', 'pear', 'nakh', 'gosha', 'red delicious', 'american', 'gala mast', 'shimla'].some(fruitCat => cat.includes(fruitCat))) {
-                categorized.fruits.push(p);
-            } else if (['dabba', 'patti', 'layer', 'tray', 'tape', 'packing', 'crate'].some(accCat => cat.includes(accCat))) {
-                categorized.accessories.push(p);
-            } else if (['fertilizer', 'pesticide', 'urea', 'dap', 'fungicide', 'insecticide'].some(fertCat => cat.includes(fertCat))) {
-                categorized.fertilizers.push(p);
-            } else {
-                 // Fallback for accessories if not explicitly matched
-                categorized.accessories.push(p);
-            }
-        });
-        setInventory(categorized);
-        // --- END INVENTORY ---
-
-
-        // Fruit Stats Calculation
-        let pattiSoldToday = 0;
-        let dabbaSoldToday = 0;
-        let totalSaleValueToday = 0;
-        
-        // Yearly stats
-        let monthlyTotalSales = 0;
-        let monthlyTotalExpenses = 0;
-        let yearGrossSales = 0;
-        let yearNetSales = 0;
-        let yearTotalExpenses = 0;
-        let yearTotalPatti = 0;
-        let yearTotalDabba = 0;
-        
-        // Grower Profit
-        const profitsByGrower: {[normalizedName: string]: { name: string, profit: number }} = {};
-
-        // Accessory Stats Calculation
-        let accessorySalesToday = 0;
-        let accessorySalesMonth = 0;
-        let accessoryCredit = 0;
-        const itemQuantities: {[name: string]: number} = {};
-        
-        allInvoices.forEach(sale => {
-            const saleDate = new Date(sale.date);
-            const isToday = sale.date === todayStr;
-
-            const pattiQty = sale.totals.pattiQty || 0;
-            const dabbaQty = sale.totals.dabbaQty || 0;
-
-            if (isToday) {
-                pattiSoldToday += pattiQty;
-                dabbaSoldToday += dabbaQty;
-                totalSaleValueToday += sale.totals.netSale || 0;
-            }
-            
-            const saleYear = saleDate.getFullYear();
-            const saleMonth = saleDate.getMonth();
-
-            if (saleYear === currentYear) {
-                yearGrossSales += sale.totals.grossSale || 0;
-                yearNetSales += sale.totals.netSale || 0;
-                yearTotalExpenses += sale.totals.totalExpenses || 0;
-                yearTotalPatti += pattiQty;
-                yearTotalDabba += dabbaQty;
-
-                 if (saleMonth === currentMonth) {
-                    monthlyTotalSales += sale.totals.netSale || 0;
-                    monthlyTotalExpenses += sale.totals.totalExpenses || 0;
-                }
-
-                const grower = sale.customerName;
-                if(grower && sale.totals.netSale) {
-                     const normalized = normalizeName(grower);
-                     if (!profitsByGrower[normalized]) {
-                        profitsByGrower[normalized] = { name: grower, profit: 0 };
-                     }
-                     profitsByGrower[normalized].profit += sale.totals.netSale;
-                }
-            }
-        });
-
-
-        allAccessories.forEach((entry: AccessoryLedgerEntry) => {
-            const entryDate = new Date(entry.date);
-            const amount = (entry.qty || 0) * (entry.rate || 0);
-
-            if (entry.date === todayStr) {
-                accessorySalesToday += amount;
-            }
-            if(entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear) {
-                accessorySalesMonth += amount;
-            }
-            if(entry.paymentMode === 'Khata' || entry.paymentMode === 'Credit') {
-                accessoryCredit += amount;
-            }
-            if(entry.item){
-                itemQuantities[entry.item] = (itemQuantities[entry.item] || 0) + (entry.qty || 0);
-            }
-        });
-
-        
-        setStats({
-          pattiSold: pattiSoldToday,
-          dabbaSold: dabbaSoldToday,
-          totalSaleValue: totalSaleValueToday,
-        });
-
-        const yearTotalNugs = yearTotalPatti + yearTotalDabba;
-
-        setYearlyStats({
-            monthSales: monthlyTotalSales,
-            totalExpenses: monthlyTotalExpenses,
-            yearGrossSales: yearGrossSales,
-            yearNetSales: yearNetSales,
-            yearTotalExpenses: yearTotalExpenses,
-            yearTotalPatti,
-            yearTotalDabba,
-            yearTotalNugs,
-        });
-
-        const sortedGrowerProfits = Object.values(profitsByGrower)
-            .map(({ name, profit }) => ({ name, profit }))
-            .sort((a,b) => b.profit - a.profit)
-            .slice(0, 10); 
-
-        setGrowerProfits(sortedGrowerProfits);
-        
-        const topItem = Object.entries(itemQuantities).sort(([, a], [, b]) => b - a)[0]?.[0] || 'N/A';
-
-        setAccessoryStats({
-            todaySales: accessorySalesToday,
-            monthSales: accessorySalesMonth,
-            topItem: topItem,
-            outstandingCredit: accessoryCredit,
-        });
-
-
+        setAllInvoices(invoices);
+        setAllAccessories(accessories);
+        setAllProducts(products);
         setIsLoading(false);
     }
     fetchData();
   }, []);
+
+  const stats = useMemo(() => {
+    if (isLoading) return null;
+    const todayStr = new Date().toISOString().split('T')[0];
+    let pattiSoldToday = 0;
+    let dabbaSoldToday = 0;
+    let totalSaleValueToday = 0;
+
+    allInvoices.forEach(sale => {
+        if (sale.date === todayStr) {
+            pattiSoldToday += sale.totals.pattiQty || 0;
+            dabbaSoldToday += sale.totals.dabbaQty || 0;
+            totalSaleValueToday += sale.totals.netSale || 0;
+        }
+    });
+
+    return {
+        pattiSold: pattiSoldToday,
+        dabbaSold: dabbaSoldToday,
+        totalSaleValue: totalSaleValueToday,
+    };
+  }, [allInvoices, isLoading]);
+
+  const yearlyStats = useMemo(() => {
+    if (isLoading) return null;
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    
+    let monthlyTotalSales = 0;
+    let monthlyTotalExpenses = 0;
+    let yearGrossSales = 0;
+    let yearNetSales = 0;
+    let yearTotalExpenses = 0;
+    let yearTotalPatti = 0;
+    let yearTotalDabba = 0;
+
+    allInvoices.forEach(sale => {
+        const saleDate = new Date(sale.date);
+        const saleYear = saleDate.getFullYear();
+        const saleMonth = saleDate.getMonth();
+
+        if (saleYear === currentYear) {
+            yearGrossSales += sale.totals.grossSale || 0;
+            yearNetSales += sale.totals.netSale || 0;
+            yearTotalExpenses += sale.totals.totalExpenses || 0;
+            yearTotalPatti += sale.totals.pattiQty || 0;
+            yearTotalDabba += sale.totals.dabbaQty || 0;
+
+             if (saleMonth === currentMonth) {
+                monthlyTotalSales += sale.totals.netSale || 0;
+                monthlyTotalExpenses += sale.totals.totalExpenses || 0;
+            }
+        }
+    });
+    
+    return {
+        monthSales: monthlyTotalSales,
+        totalExpenses: monthlyTotalExpenses,
+        yearGrossSales: yearGrossSales,
+        yearNetSales: yearNetSales,
+        yearTotalExpenses: yearTotalExpenses,
+        yearTotalPatti,
+        yearTotalDabba,
+        yearTotalNugs: yearTotalPatti + yearTotalDabba,
+    };
+  }, [allInvoices, isLoading]);
+
+  const growerProfits = useMemo(() => {
+    if (isLoading) return [];
+    const profitsByGrower: {[normalizedName: string]: { name: string, profit: number }} = {};
+    const currentYear = new Date().getFullYear();
+
+    allInvoices.forEach(sale => {
+        const saleYear = new Date(sale.date).getFullYear();
+        if (saleYear === currentYear) {
+            const grower = sale.customerName;
+            if(grower && sale.totals.netSale) {
+                 const normalized = normalizeName(grower);
+                 if (!profitsByGrower[normalized]) {
+                    profitsByGrower[normalized] = { name: grower, profit: 0 };
+                 }
+                 profitsByGrower[normalized].profit += sale.totals.netSale;
+            }
+        }
+    });
+
+    return Object.values(profitsByGrower)
+        .sort((a,b) => b.profit - a.profit)
+        .slice(0, 10);
+  }, [allInvoices, isLoading]);
+
+  const accessoryStats = useMemo(() => {
+    if (isLoading) return null;
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    
+    let accessorySalesToday = 0;
+    let accessorySalesMonth = 0;
+    let accessoryCredit = 0;
+    const itemQuantities: {[name: string]: number} = {};
+
+    allAccessories.forEach((entry) => {
+        const entryDate = new Date(entry.date);
+        const amount = (entry.qty || 0) * (entry.rate || 0);
+
+        if (entry.date === todayStr) {
+            accessorySalesToday += amount;
+        }
+        if(entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear) {
+            accessorySalesMonth += amount;
+        }
+        if(entry.paymentMode === 'Khata' || entry.paymentMode === 'Credit') {
+            accessoryCredit += amount;
+        }
+        if(entry.item){
+            itemQuantities[entry.item] = (itemQuantities[entry.item] || 0) + (entry.qty || 0);
+        }
+    });
+    
+    const topItem = Object.entries(itemQuantities).sort(([, a], [, b]) => b - a)[0]?.[0] || 'N/A';
+
+    return {
+        todaySales: accessorySalesToday,
+        monthSales: accessorySalesMonth,
+        topItem: topItem,
+        outstandingCredit: accessoryCredit,
+    };
+  }, [allAccessories, isLoading]);
+  
+  const inventory = useMemo(() => {
+    if (isLoading) return null;
+    const stockOut: { [productName: string]: number } = {};
+    allAccessories.forEach(sale => {
+        stockOut[sale.item] = (stockOut[sale.item] || 0) + sale.qty;
+    });
+    
+    const updatedProducts = allProducts.map(p => ({
+        ...p,
+        stock: (p.stock || 0) - (stockOut[p.name] || 0),
+    }));
+
+    const categorized: CategorizedProducts = { fruits: [], accessories: [], fertilizers: [] };
+    updatedProducts.forEach(p => {
+        const cat = p.category.toLowerCase();
+        if (['fruit', 'apple', 'pear', 'nakh', 'gosha', 'red delicious', 'american', 'gala mast', 'shimla'].some(fruitCat => cat.includes(fruitCat))) {
+            categorized.fruits.push(p);
+        } else if (['dabba', 'patti', 'layer', 'tray', 'tape', 'packing', 'crate'].some(accCat => cat.includes(accCat))) {
+            categorized.accessories.push(p);
+        } else if (['fertilizer', 'pesticide', 'urea', 'dap', 'fungicide', 'insecticide'].some(fertCat => cat.includes(fertCat))) {
+            categorized.fertilizers.push(p);
+        } else {
+             categorized.accessories.push(p);
+        }
+    });
+    return categorized;
+  }, [allProducts, allAccessories, isLoading]);
+
 
   if (isLoading) {
     return (

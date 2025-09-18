@@ -18,7 +18,7 @@ import { extractWatakFromImage, WatakExtractOutput } from '@/ai/flows/extract-wa
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
-
+import { useApiKey } from '@/hooks/use-api-key';
 
 type Row = {
   type: 'Patti' | 'Dabba';
@@ -42,6 +42,8 @@ export function BillMakingTab() {
 
 
   // AI Extraction State
+  const { apiKey, setApiKey, isApiKeySet } = useApiKey();
+  const [tempApiKey, setTempApiKey] = useState('');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
@@ -334,6 +336,14 @@ export function BillMakingTab() {
 
 
   const handleExtract = async () => {
+        if (!isApiKeySet) {
+            toast({
+                variant: 'destructive',
+                title: 'API Key Required',
+                description: 'Please set your Gemini API key before using AI extraction.',
+            });
+            return;
+        }
         if (!imagePreview) {
             toast({ variant: 'destructive', title: 'No Image', description: 'Please upload an image first.' });
             return;
@@ -341,7 +351,7 @@ export function BillMakingTab() {
         setIsExtracting(true);
         setExtractedData(null);
         try {
-            const result = await extractWatakFromImage({ photoDataUri: imagePreview });
+            const result = await extractWatakFromImage({ photoDataUri: imagePreview, apiKey });
             setExtractedData(result);
             toast({ title: 'Extraction Successful', description: 'Review the extracted data and apply it to the form.' });
         } catch (error: any) {
@@ -401,6 +411,32 @@ export function BillMakingTab() {
                         <CardDescription>Upload a photo of a handwritten Watak or use your camera to automatically fill the form.</CardDescription>
                     </CardHeader>
                     <CardContent>
+                        {!isApiKeySet ? (
+                            <Alert variant="destructive">
+                                <AlertTriangle className="h-4 w-4" />
+                                <AlertTitle>Gemini API Key Not Set</AlertTitle>
+                                <AlertDescription>
+                                    To use the AI extraction feature, please set your Google Gemini API key. You can get a free key from Google AI Studio.
+                                </AlertDescription>
+                                <div className="flex items-center gap-2 mt-4">
+                                    <Input
+                                        type="password"
+                                        placeholder="Paste your API Key here"
+                                        value={tempApiKey}
+                                        onChange={(e) => setTempApiKey(e.target.value)}
+                                    />
+                                    <Button onClick={() => {
+                                        setApiKey(tempApiKey);
+                                        toast({ title: "API Key Saved", description: "Your Gemini API key has been saved in your browser." });
+                                    }}>
+                                        Save Key
+                                    </Button>
+                                    <Button variant="link" asChild>
+                                        <a href="https://aistudio.google.com/keys" target="_blank" rel="noopener noreferrer">Get a Key <ExternalLink className="h-3 w-3 ml-1"/></a>
+                                    </Button>
+                                </div>
+                            </Alert>
+                        ) : (
                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <div className="space-y-4">
                                 <div className="flex gap-2">
@@ -477,6 +513,7 @@ export function BillMakingTab() {
                                 )}
                             </div>
                         </div>
+                        )}
                     </CardContent>
                 </Card>
 

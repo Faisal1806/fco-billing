@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { PlusCircle, Trash2, Sparkles, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { categorizePesticide } from '@/ai/flows/categorize-pesticide-flow';
+import { useApiKey } from '@/hooks/use-api-key';
 
 interface ManualRate {
     id: string;
@@ -25,6 +26,7 @@ interface EditableRateListProps {
 
 export default function EditableRateList({ storageKeyPrefix, title, defaultRates }: EditableRateListProps) {
     const { toast } = useToast();
+    const { apiKey, isApiKeySet } = useApiKey();
     const [rates, setRates] = useState<ManualRate[]>(defaultRates);
     const [isLoading, setIsLoading] = useState(true);
     const [isCategorizing, setIsCategorizing] = useState<string | null>(null);
@@ -76,13 +78,17 @@ export default function EditableRateList({ storageKeyPrefix, title, defaultRates
     };
 
     const handleAutoCategory = async (rateId: string, variety: string) => {
+        if (!isApiKeySet) {
+            toast({ variant: 'destructive', title: 'API Key Not Set', description: 'Please set your Gemini API key in the Sales tab to use this feature.'});
+            return;
+        }
         if (!variety) {
             toast({ variant: 'destructive', title: 'Missing Item Name', description: 'Please enter a name before categorizing.'});
             return;
         }
         setIsCategorizing(rateId);
         try {
-            const result = await categorizePesticide({ name: variety });
+            const result = await categorizePesticide({ name: variety, apiKey });
             handleUpdate(rateId, 'category', result.category);
             toast({ title: 'Category Identified', description: `Set category for ${variety} to "${result.category}".`});
         } catch (e) {
@@ -135,7 +141,7 @@ export default function EditableRateList({ storageKeyPrefix, title, defaultRates
                                         value={rate.category} 
                                         onChange={e => handleUpdate(rate.id, 'category', e.target.value)} 
                                     />
-                                    <Button size="icon" variant="ghost" onClick={() => handleAutoCategory(rate.id, rate.variety)} disabled={isCategorizing === rate.id}>
+                                    <Button size="icon" variant="ghost" onClick={() => handleAutoCategory(rate.id, rate.variety)} disabled={isCategorizing === rate.id || !isApiKeySet}>
                                        {isCategorizing === rate.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-accent-foreground" />}
                                     </Button>
                                     </div>
@@ -167,5 +173,3 @@ export default function EditableRateList({ storageKeyPrefix, title, defaultRates
         </Card>
     );
 }
-
-    
