@@ -23,7 +23,6 @@ export type PesticideCategoryOutput = z.infer<typeof PesticideCategoryOutputSche
 
 const categorizePesticidePrompt = ai.definePrompt({
   name: 'categorizePesticidePrompt',
-  model: 'googleai/gemini-pro',
   input: {schema: z.object({name: z.string()})},
   output: {schema: PesticideCategoryOutputSchema},
   prompt: `You are an expert in agricultural products. Your task is to categorize the given product name into one of the following categories: Fungicide, Insecticide, Herbicide, Fertilizer, Plant Growth Regulator, or Other.
@@ -31,10 +30,30 @@ const categorizePesticidePrompt = ai.definePrompt({
 Product Name: {{{name}}}`,
 });
 
+const categorizePesticideFlow = ai.defineFlow(
+    {
+        name: 'categorizePesticideFlow',
+        inputSchema: PesticideCategoryInputSchema,
+        outputSchema: PesticideCategoryOutputSchema,
+    },
+    async (input) => {
+        const {output} = await ai.generate({
+            model: 'gemini-pro',
+            prompt: `You are an expert in agricultural products. Your task is to categorize the given product name into one of the following categories: Fungicide, Insecticide, Herbicide, Fertilizer, Plant Growth Regulator, or Other.
+
+Product Name: ${input.name}`,
+            output: {
+                schema: PesticideCategoryOutputSchema,
+            },
+        });
+        if (!output) {
+            throw new Error('AI failed to categorize the product.');
+        }
+        return output;
+    }
+);
+
+
 export async function categorizePesticide(input: PesticideCategoryInput): Promise<PesticideCategoryOutput> {
-  const {output} = await categorizePesticidePrompt(input);
-  if (!output) {
-    throw new Error('AI failed to categorize the product.');
-  }
-  return output;
+    return await categorizePesticideFlow(input);
 }
