@@ -15,14 +15,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
-import { PlusCircle, Trash2, FilePenLine, FilePlus, FileText, Wand2, Upload, Camera, Sparkles, CheckCircle, ExternalLink, AlertTriangle, Loader2, KeyRound } from 'lucide-react';
+import { PlusCircle, Trash2, FilePenLine, FilePlus, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
-import { extractReceiptFromImage, ReceiptExtractOutput } from '@/ai/flows/extract-receipt-flow';
-import Image from 'next/image';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { useApiKey } from '@/hooks/use-api-key';
 
 type ReceiptEntry = {
   khata: string;
@@ -102,22 +97,6 @@ export function ReceiptMakingTab() {
   const [savedReceipts, setSavedReceipts] = React.useState<any[]>([]);
   const [userRole, setUserRole] = React.useState<string | null>(null);
   
-  // AI State
-  const { apiKey, setApiKey, isApiKeySet } = useApiKey();
-  const [tempApiKey, setTempApiKey] = React.useState('');
-  const [selectedImage, setSelectedImage] = React.useState<File | null>(null);
-  const [imagePreview, setImagePreview] = React.useState<string | null>(null);
-  const [isExtracting, setIsExtracting] = React.useState(false);
-  const [extractedData, setExtractedData] = React.useState<ReceiptExtractOutput | null>(null);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-
-  // Camera State
-  const [isCameraOpen, setIsCameraOpen] = React.useState(false);
-  const [hasCameraPermission, setHasCameraPermission] = React.useState<boolean | null>(null);
-  const [capturedImage, setCapturedImage] = React.useState<string | null>(null);
-  const videoRef = React.useRef<HTMLVideoElement>(null);
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
-
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
         setUserRole(localStorage.getItem('userRole'));
@@ -140,32 +119,6 @@ export function ReceiptMakingTab() {
     fetchReceipts();
   }, []);
   
-   React.useEffect(() => {
-    if(isCameraOpen){
-        setCapturedImage(null);
-        const getCameraPermission = async () => {
-          try {
-            const stream = await navigator.mediaDevices.getUserMedia({video: { facingMode: "environment" }});
-            setHasCameraPermission(true);
-
-            if (videoRef.current) {
-              videoRef.current.srcObject = stream;
-            }
-          } catch (error) {
-            console.error('Error accessing camera:', error);
-            setHasCameraPermission(false);
-          }
-        };
-        getCameraPermission();
-        
-        return () => {
-            if(videoRef.current && videoRef.current.srcObject){
-                 const stream = videoRef.current.srcObject as MediaStream;
-                 stream.getTracks().forEach(track => track.stop());
-            }
-        }
-    }
-  }, [isCameraOpen]);
 
   const handleEntryUpdate = (
     index: number,
@@ -197,9 +150,6 @@ export function ReceiptMakingTab() {
     setReceiptDetails(initialReceiptDetails);
     setEntries(initialEntries);
     setIsEditing(false);
-    setSelectedImage(null);
-    setImagePreview(null);
-    setExtractedData(null);
   };
 
   const handleSaveReceipt = async () => {
@@ -274,94 +224,6 @@ export function ReceiptMakingTab() {
         resetForm();
     }
   };
-  
-    const handleFileSelect = (file: File | null) => {
-      if(file){
-        setSelectedImage(file);
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            setImagePreview(reader.result as string);
-            setExtractedData(null);
-        };
-        reader.readAsDataURL(file);
-      }
-  }
-
-  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-        handleFileSelect(event.target.files?.[0] || null);
-  };
-  
-  const handleTakePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const context = canvas.getContext('2d');
-      context?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-      setCapturedImage(dataUrl);
-    }
-  };
-  
-  const handleUseCapturedPhoto = () => {
-      if(capturedImage){
-          fetch(capturedImage)
-            .then(res => res.blob())
-            .then(blob => {
-                const file = new File([blob], `receipt-capture-${Date.now()}.jpg`, { type: 'image/jpeg' });
-                handleFileSelect(file);
-                setIsCameraOpen(false);
-            })
-      }
-  }
-
-  const handleExtract = async () => {
-        if (!isApiKeySet) {
-            toast({
-                variant: 'destructive',
-                title: 'API Key Required',
-                description: 'Please set your Gemini API key before using AI extraction.',
-            });
-            return;
-        }
-        if (!imagePreview) {
-            toast({ variant: 'destructive', title: 'No Image', description: 'Please upload an image first.' });
-            return;
-        }
-        setIsExtracting(true);
-        setExtractedData(null);
-        try {
-            const result = await extractReceiptFromImage({ photoDataUri: imagePreview, apiKey });
-            setExtractedData(result);
-            toast({ title: 'Extraction Successful', description: 'Review the extracted data and apply it to the form.' });
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'AI Extraction Failed', description: (error as Error).message });
-            console.error(error);
-        } finally {
-            setIsExtracting(false);
-        }
-  };
-  
-  const applyExtractedData = () => {
-        if (!extractedData) return;
-        setReceiptDetails({
-            no: extractedData.no,
-            date: extractedData.date,
-            customerName: extractedData.customerName,
-            ro: extractedData.ro || '',
-            freightPaid: extractedData.freightPaid || 0,
-            wattakReadyOn: extractedData.wattakReadyOn || '',
-        });
-
-        const newRows = extractedData.entries.map(entry => ({
-            ...entry,
-        }));
-        
-        setEntries(newRows.length > 0 ? newRows : initialEntries);
-        toast({ title: 'Form Populated', description: 'The form has been filled with the extracted data.' });
-  };
-
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -377,94 +239,6 @@ export function ReceiptMakingTab() {
                 </div>
             </CardHeader>
             <CardContent className="space-y-6">
-                <Card className="bg-muted/50">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Wand2 className="text-primary"/> AI-Powered Receipt Entry</CardTitle>
-                        <CardDescription>Upload a photo of a handwritten receipt or use your camera to automatically fill the form.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {!isApiKeySet ? (
-                            <Alert variant="destructive">
-                                <AlertTriangle className="h-4 w-4" />
-                                <AlertTitle>Gemini API Key Not Set</AlertTitle>
-                                <AlertDescription>
-                                    To use the AI extraction feature, please set your Google Gemini API key. You can get a free key from Google AI Studio.
-                                </AlertDescription>
-                                <div className="flex items-center gap-2 mt-4">
-                                    <Input
-                                        type="password"
-                                        placeholder="Paste your API Key here"
-                                        value={tempApiKey}
-                                        onChange={(e) => setTempApiKey(e.target.value)}
-                                    />
-                                    <Button onClick={() => {
-                                        setApiKey(tempApiKey);
-                                        toast({ title: "API Key Saved", description: "Your Gemini API key has been saved in your browser." });
-                                    }}>
-                                        Save Key
-                                    </Button>
-                                    <Button variant="link" asChild>
-                                        <a href="https://aistudio.google.com/keys" target="_blank" rel="noopener noreferrer">Get a Key <ExternalLink className="h-3 w-3 ml-1"/></a>
-                                    </Button>
-                                </div>
-                            </Alert>
-                        ) : (
-                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div className="space-y-4">
-                                <div className="flex gap-2">
-                                    <Input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageSelect} className="hidden" />
-                                    <Button onClick={() => fileInputRef.current?.click()} className="w-full gap-2"><Upload className="h-4 w-4" /> Upload Photo</Button>
-                                    <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
-                                        <DialogTrigger asChild>
-                                            <Button variant="outline" className="w-full gap-2"><Camera className="h-4 w-4" /> Use Camera</Button>
-                                        </DialogTrigger>
-                                        <DialogContent className="max-w-3xl">
-                                            <DialogHeader><DialogTitle>Capture Receipt Photo</DialogTitle></DialogHeader>
-                                            {hasCameraPermission === false ? (
-                                                 <Alert variant="destructive"><AlertTitle>Camera Access Denied</AlertTitle><AlertDescription>Please enable camera permissions in your browser settings.</AlertDescription></Alert>
-                                            ) : capturedImage ? (
-                                                 <>
-                                                    <Image src={capturedImage} alt="Captured Receipt" width={640} height={480} className="rounded-md w-full" />
-                                                    <DialogFooter>
-                                                        <Button variant="outline" onClick={() => setCapturedImage(null)}>Retake</Button>
-                                                        <Button onClick={handleUseCapturedPhoto}>Use this Photo</Button>
-                                                    </DialogFooter>
-                                                 </>
-                                            ) : (
-                                                <>
-                                                    <video ref={videoRef} className="w-full aspect-video rounded-md bg-black" autoPlay playsInline muted />
-                                                    <DialogFooter><Button onClick={handleTakePhoto}>Take Photo</Button></DialogFooter>
-                                                </>
-                                            )}
-                                            <canvas ref={canvasRef} className="hidden"></canvas>
-                                        </DialogContent>
-                                    </Dialog>
-                                </div>
-                                {imagePreview && (
-                                    <div className="relative aspect-video w-full rounded-md overflow-hidden border">
-                                        <Image src={imagePreview} alt="Receipt Preview" layout="fill" objectFit="contain" />
-                                    </div>
-                                )}
-                            </div>
-                            <div className="space-y-4">
-                                <Button onClick={handleExtract} disabled={!imagePreview || isExtracting} className="w-full gap-2">
-                                    {isExtracting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Sparkles className="h-4 w-4" />}
-                                    {isExtracting ? 'Analyzing...' : 'Extract Data with AI'}
-                                </Button>
-                                {extractedData && (
-                                    <Alert>
-                                        <AlertTitle className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" />Extraction Complete</AlertTitle>
-                                        <AlertDescription>
-                                            <p>Successfully extracted data for Receipt #{extractedData.no}.</p>
-                                        </AlertDescription>
-                                        <Button onClick={applyExtractedData} className="w-full mt-4">Apply to Form</Button>
-                                    </Alert>
-                                )}
-                            </div>
-                        </div>
-                        )}
-                    </CardContent>
-                </Card>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
                         <Label>No.</Label>

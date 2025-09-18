@@ -4,21 +4,16 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Separator } from './ui/separator';
-import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Share, FileText, Camera, Wand2, Sparkles, Upload, CheckCircle, ExternalLink, AlertTriangle, KeyRound } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Share, FileText } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { ScrollArea } from './ui/scroll-area';
-import { extractWatakFromImage, WatakExtractOutput } from '@/ai/flows/extract-watak-flow';
-import Image from 'next/image';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { useApiKey } from '@/hooks/use-api-key';
 
 type Row = {
   type: 'Patti' | 'Dabba';
@@ -39,23 +34,6 @@ export function BillMakingTab() {
   const [date, setDate] = useState('');
   const [freight, setFreight] = useState<number>(0);
   const [rows, setRows] = useState<Row[]>(initialRows);
-
-
-  // AI Extraction State
-  const { apiKey, setApiKey, isApiKeySet } = useApiKey();
-  const [tempApiKey, setTempApiKey] = useState('');
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [isExtracting, setIsExtracting] = useState(false);
-  const [extractedData, setExtractedData] = useState<WatakExtractOutput | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Camera State
-  const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // App State
   const { toast } = useToast();
@@ -92,34 +70,6 @@ export function BillMakingTab() {
     setIsLoading(false);
   };
   
-  useEffect(() => {
-    if(isCameraOpen){
-        setCapturedImage(null); // Reset previous capture
-        const getCameraPermission = async () => {
-          try {
-            const stream = await navigator.mediaDevices.getUserMedia({video: { facingMode: "environment" }});
-            setHasCameraPermission(true);
-
-            if (videoRef.current) {
-              videoRef.current.srcObject = stream;
-            }
-          } catch (error) {
-            console.error('Error accessing camera:', error);
-            setHasCameraPermission(false);
-          }
-        };
-        getCameraPermission();
-        
-        return () => {
-            // Stop camera stream when component unmounts or dialog closes
-            if(videoRef.current && videoRef.current.srcObject){
-                 const stream = videoRef.current.srcObject as MediaStream;
-                 stream.getTracks().forEach(track => track.stop());
-            }
-        }
-    }
-  }, [isCameraOpen]);
-
 
   // --- Calculations (ALL from your spec) ---
   const totals = useMemo(() => {
@@ -179,10 +129,6 @@ export function BillMakingTab() {
         setFreight(0);
         setRows(initialRows);
         setIsEditing(false);
-        // also reset AI state
-        setSelectedImage(null);
-        setImagePreview(null);
-        setExtractedData(null);
     };
 
 
@@ -292,103 +238,6 @@ export function BillMakingTab() {
     window.open(whatsappUrl, '_blank');
   };
   
-  const handleFileSelect = (file: File | null) => {
-      if(file){
-        setSelectedImage(file);
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            setImagePreview(reader.result as string);
-            setExtractedData(null);
-        };
-        reader.readAsDataURL(file);
-      }
-  }
-
-  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-        handleFileSelect(event.target.files?.[0] || null);
-  };
-  
-  const handleTakePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const context = canvas.getContext('2d');
-      context?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.8); // Compress image
-      setCapturedImage(dataUrl);
-    }
-  };
-  
-  const handleUseCapturedPhoto = () => {
-      if(capturedImage){
-          // Convert data URL to File object to use with existing upload logic
-          fetch(capturedImage)
-            .then(res => res.blob())
-            .then(blob => {
-                const file = new File([blob], `watak-capture-${Date.now()}.jpg`, { type: 'image/jpeg' });
-                handleFileSelect(file);
-                setIsCameraOpen(false); // Close camera dialog
-            })
-      }
-  }
-
-
-  const handleExtract = async () => {
-        if (!isApiKeySet) {
-            toast({
-                variant: 'destructive',
-                title: 'API Key Required',
-                description: 'Please set your Gemini API key before using AI extraction.',
-            });
-            return;
-        }
-        if (!imagePreview) {
-            toast({ variant: 'destructive', title: 'No Image', description: 'Please upload an image first.' });
-            return;
-        }
-        setIsExtracting(true);
-        setExtractedData(null);
-        try {
-            const result = await extractWatakFromImage({ photoDataUri: imagePreview, apiKey });
-            setExtractedData(result);
-            toast({ title: 'Extraction Successful', description: 'Review the extracted data and apply it to the form.' });
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'AI Extraction Failed', description: (error as Error).message });
-            console.error(error);
-        } finally {
-            setIsExtracting(false);
-        }
-  };
-  
-  const applyExtractedData = () => {
-        if (!extractedData) return;
-        setSNo(extractedData.sNo);
-        setDate(extractedData.date);
-        setMs(extractedData.customerName);
-        setWatakNo(extractedData.watakNo);
-        setKhata(extractedData.khata || '');
-        setFreight(extractedData.freight || 0);
-
-        const newRows = extractedData.entries.map(entry => ({
-            type: entry.type,
-            qty: entry.qty,
-            variety: entry.variety,
-            rate: entry.rate,
-        }));
-        
-        if (newRows.length < 5) {
-             const emptyToAdd = 5 - newRows.length;
-             for (let i = 0; i < emptyToAdd; i++) {
-                 newRows.push({ ...emptyRow });
-             }
-        }
-        setRows(newRows);
-        toast({ title: 'Form Populated', description: 'The form has been filled with the extracted data.' });
-  };
-
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="md:col-span-2">
@@ -405,118 +254,6 @@ export function BillMakingTab() {
                 </div>
             </CardHeader>
             <CardContent className="space-y-6">
-                <Card className="bg-muted/50">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Wand2 className="text-primary"/> AI-Powered Watak Entry</CardTitle>
-                        <CardDescription>Upload a photo of a handwritten Watak or use your camera to automatically fill the form.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {!isApiKeySet ? (
-                            <Alert variant="destructive">
-                                <AlertTriangle className="h-4 w-4" />
-                                <AlertTitle>Gemini API Key Not Set</AlertTitle>
-                                <AlertDescription>
-                                    To use the AI extraction feature, please set your Google Gemini API key. You can get a free key from Google AI Studio.
-                                </AlertDescription>
-                                <div className="flex items-center gap-2 mt-4">
-                                    <Input
-                                        type="password"
-                                        placeholder="Paste your API Key here"
-                                        value={tempApiKey}
-                                        onChange={(e) => setTempApiKey(e.target.value)}
-                                    />
-                                    <Button onClick={() => {
-                                        setApiKey(tempApiKey);
-                                        toast({ title: "API Key Saved", description: "Your Gemini API key has been saved in your browser." });
-                                    }}>
-                                        Save Key
-                                    </Button>
-                                    <Button variant="link" asChild>
-                                        <a href="https://aistudio.google.com/keys" target="_blank" rel="noopener noreferrer">Get a Key <ExternalLink className="h-3 w-3 ml-1"/></a>
-                                    </Button>
-                                </div>
-                            </Alert>
-                        ) : (
-                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div className="space-y-4">
-                                <div className="flex gap-2">
-                                    <Input
-                                        type="file"
-                                        accept="image/*"
-                                        ref={fileInputRef}
-                                        onChange={handleImageSelect}
-                                        className="hidden"
-                                    />
-                                    <Button onClick={() => fileInputRef.current?.click()} className="w-full gap-2">
-                                        <Upload className="h-4 w-4" /> Upload Photo
-                                    </Button>
-                                    <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
-                                        <DialogTrigger asChild>
-                                            <Button variant="outline" className="w-full gap-2">
-                                                <Camera className="h-4 w-4" /> Use Camera
-                                            </Button>
-                                        </DialogTrigger>
-                                        <DialogContent className="max-w-3xl">
-                                            <DialogHeader>
-                                                <DialogTitle>Capture Watak Photo</DialogTitle>
-                                            </DialogHeader>
-                                            <div className="space-y-4">
-                                                {hasCameraPermission === false ? (
-                                                     <Alert variant="destructive">
-                                                        <AlertTitle>Camera Access Denied</AlertTitle>
-                                                        <AlertDescription>Please enable camera permissions in your browser settings to use this feature.</AlertDescription>
-                                                    </Alert>
-                                                ) : capturedImage ? (
-                                                     <>
-                                                        <Image src={capturedImage} alt="Captured Watak" width={640} height={480} className="rounded-md w-full" />
-                                                        <DialogFooter>
-                                                            <Button variant="outline" onClick={() => setCapturedImage(null)}>Retake</Button>
-                                                            <Button onClick={handleUseCapturedPhoto}>Use this Photo</Button>
-                                                        </DialogFooter>
-                                                     </>
-                                                ) : (
-                                                    <>
-                                                        <video ref={videoRef} className="w-full aspect-video rounded-md bg-black" autoPlay playsInline muted />
-                                                        <DialogFooter>
-                                                            <Button onClick={handleTakePhoto}>Take Photo</Button>
-                                                        </DialogFooter>
-                                                    </>
-                                                )}
-                                                <canvas ref={canvasRef} className="hidden"></canvas>
-                                            </div>
-                                        </DialogContent>
-                                    </Dialog>
-                                </div>
-                                {imagePreview && (
-                                    <div className="relative aspect-video w-full rounded-md overflow-hidden border">
-                                        <Image src={imagePreview} alt="Watak Preview" layout="fill" objectFit="contain" />
-                                    </div>
-                                )}
-                            </div>
-                            <div className="space-y-4">
-                                <Button onClick={handleExtract} disabled={!imagePreview || isExtracting} className="w-full gap-2">
-                                    {isExtracting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Sparkles className="h-4 w-4" />}
-                                    {isExtracting ? 'Analyzing Image...' : 'Extract Data with AI'}
-                                </Button>
-                                {extractedData && (
-                                    <Alert>
-                                        <AlertTitle className="flex items-center gap-2">
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                            Extraction Complete
-                                        </AlertTitle>
-                                        <AlertDescription>
-                                            <p>Successfully extracted data for Watak #{extractedData.watakNo} for {extractedData.customerName}.</p>
-                                            <p className="mt-2"><strong>{extractedData.entries.length} items</strong> found with a net sale of <strong>₹{extractedData.totals.netSale.toFixed(2)}</strong>.</p>
-                                        </AlertDescription>
-                                        <Button onClick={applyExtractedData} className="w-full mt-4">Apply to Form</Button>
-                                    </Alert>
-                                )}
-                            </div>
-                        </div>
-                        )}
-                    </CardContent>
-                </Card>
-
                  {/* Header fields */}
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4 items-end">
                     <div className="md:col-span-2">
