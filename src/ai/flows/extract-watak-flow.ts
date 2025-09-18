@@ -62,7 +62,6 @@ export type WatakExtractOutput = z.infer<typeof WatakExtractOutputSchema>;
 // Define the AI prompt for the OCR and data extraction task
 const extractWatakPrompt = ai.definePrompt({
   name: 'extractWatakPrompt',
-  model: 'gemini-pro-vision',
   input: {schema: WatakExtractInputSchema},
   output: {schema: WatakExtractOutputSchema},
   prompt: `You are an expert data entry specialist for a fruit commission agency in Kashmir. Your task is to meticulously analyze the provided image of a "Watak" (a type of invoice or bill) and extract all the relevant information into a structured JSON format.
@@ -88,7 +87,7 @@ Extract the following fields and provide them in the specified JSON format. If a
  * @returns A promise that resolves to the structured Watak data.
  */
 export async function extractWatakFromImage(input: WatakExtractInput): Promise<WatakExtractOutput> {
-  const {output} = await extractWatakPrompt(input);
+  const {output} = await extractWatakPrompt(input, {model: 'gemini-pro-vision'});
   if (!output) {
     throw new Error('AI failed to extract data from the Watak image.');
   }
