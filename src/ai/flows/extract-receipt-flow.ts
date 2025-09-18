@@ -53,8 +53,7 @@ const extractReceiptFlow = ai.defineFlow(
     async (input) => {
         const {output} = await ai.generate({
             model: 'gemini-pro-vision',
-            prompt: {
-                text: `You are an expert data entry specialist for a fruit commission agency in Kashmir. Your task is to meticulously analyze the provided image of a "Goods Receipt" and extract all the relevant information into a structured JSON format.
+            prompt: `You are an expert data entry specialist for a fruit commission agency in Kashmir. Your task is to meticulously analyze the provided image of a "Goods Receipt" and extract all the relevant information into a structured JSON format.
 
 The Receipt may be handwritten or printed. Pay close attention to details.
 
@@ -66,11 +65,11 @@ Extract the following fields and provide them in the specified JSON format. If a
 - entries: A list of all items. Each item must have a khata, kind, peti, and daba.
 - totalNugs: Calculate the sum of all peti and daba quantities.
 - freightPaid: The total freight amount paid in cash.
-- wattakReadyOn: The date the Watak is expected to be ready.`,
-                media: {
-                    url: input.photoDataUri,
-                }
-            },
+- wattakReadyOn: The date the Watak is expected to be ready.
+
+[START IMAGE]
+{{media url=photoDataUri}}
+[END IMAGE]`,
             output: {
                 schema: ReceiptExtractOutputSchema,
             },

@@ -68,8 +68,7 @@ const extractWatakFlow = ai.defineFlow(
     async (input) => {
         const {output} = await ai.generate({
             model: 'gemini-pro-vision',
-            prompt: {
-                text: `You are an expert data entry specialist for a fruit commission agency in Kashmir. Your task is to meticulously analyze the provided image of a "Watak" (a type of invoice or bill) and extract all the relevant information into a structured JSON format.
+            prompt: `You are an expert data entry specialist for a fruit commission agency in Kashmir. Your task is to meticulously analyze the provided image of a "Watak" (a type of invoice or bill) and extract all the relevant information into a structured JSON format.
 
 The Watak may be handwritten or printed. Pay close attention to details.
 
@@ -81,11 +80,11 @@ Extract the following fields and provide them in the specified JSON format. If a
 - khata (Account Name, if different from customerName)
 - freight (if mentioned separately)
 - entries: A list of all items. Each item must have a type ('Patti' or 'Dabba'), quantity, variety, rate, and total.
-- totals: The summary section of the bill. You must calculate and fill all sub-fields like grossSale, all expenses (labour, commission, etc.), and netSale based on the values in the Watak. If formulas are mentioned on the Watak (e.g., Labour = Qty * 3), use them. The standard commission is 12% of the gross sale.`,
-                media: {
-                    url: input.photoDataUri,
-                }
-            },
+- totals: The summary section of the bill. You must calculate and fill all sub-fields like grossSale, all expenses (labour, commission, etc.), and netSale based on the values in the Watak. If formulas are mentioned on the Watak (e.g., Labour = Qty * 3), use them. The standard commission is 12% of the gross sale.
+
+[START IMAGE]
+{{media url=photoDataUri}}
+[END IMAGE]`,
             output: {
                 schema: WatakExtractOutputSchema,
             },
