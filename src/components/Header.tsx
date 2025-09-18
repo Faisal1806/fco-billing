@@ -121,7 +121,7 @@ export function Header({ title }: { title: string }) {
                     </SheetClose>
                 </div>
                 <div className="text-center text-xs text-muted-foreground mt-4">
-                    <p>© 2024 F.Co</p>
+                    <p>© 2025 F.Co</p>
                     <p>Firdous Ahmad & Company</p>
               </div>
               </div>

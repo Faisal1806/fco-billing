@@ -134,7 +134,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </Link>
               </div>
               <div className="text-center text-xs text-muted-foreground mt-4">
-                <p>© 2024 F.Co</p>
+                <p>© 2025 F.Co</p>
                 <p>Firdous Ahmad & Company</p>
               </div>
             </div>
