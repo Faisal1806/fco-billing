@@ -45,20 +45,9 @@ const ReceiptExtractOutputSchema = z.object({
 });
 export type ReceiptExtractOutput = z.infer<typeof ReceiptExtractOutputSchema>;
 
-
-/**
- * Takes an image of a Goods Receipt and returns a structured digital version.
- * @param input The image data as a data URI.
- * @returns A promise that resolves to the structured Receipt data.
- */
-export async function extractReceiptFromImage(input: ReceiptExtractInput): Promise<ReceiptExtractOutput> {
-  return extractReceiptFlow(input);
-}
-
-
 const extractReceiptPrompt = ai.definePrompt({
   name: 'extractReceiptPrompt',
-  model: 'googleai/gemini-1.5-flash-preview',
+  model: 'googleai/gemini-pro-vision',
   input: {schema: z.object({ photoDataUri: z.string() })},
   output: {schema: ReceiptExtractOutputSchema},
   prompt: `You are an expert data entry specialist for a fruit commission agency in Kashmir. Your task is to meticulously analyze the provided image of a "Goods Receipt" and extract all the relevant information into a structured JSON format.
@@ -76,30 +65,35 @@ Extract the following fields and provide them in the specified JSON format. If a
 - totalNugs: Calculate the sum of all peti and daba quantities.
 - freightPaid: The total freight amount paid in cash.
 - wattakReadyOn: The date the Watak is expected to be ready.`,
-  config: {
-    // The API key will be passed dynamically in the flow.
-  },
 });
 
-// Define the main Genkit flow
-const extractReceiptFlow = ai.defineFlow(
-  {
-    name: 'extractReceiptFlow',
-    inputSchema: ReceiptExtractInputSchema,
-    outputSchema: ReceiptExtractOutputSchema,
-  },
-  async (input) => {
-    const {output} = await extractReceiptPrompt(
-      {photoDataUri: input.photoDataUri},
-      {
-        config: {
-          apiKey: input.apiKey,
-        },
+
+/**
+ * Takes an image of a Goods Receipt and returns a structured digital version.
+ * @param input The image data as a data URI.
+ * @returns A promise that resolves to the structured Receipt data.
+ */
+export async function extractReceiptFromImage(input: ReceiptExtractInput): Promise<ReceiptExtractOutput> {
+  const extractReceiptFlow = ai.defineFlow(
+    {
+      name: 'extractReceiptFlow',
+      inputSchema: ReceiptExtractInputSchema,
+      outputSchema: ReceiptExtractOutputSchema,
+    },
+    async (input) => {
+      const {output} = await extractReceiptPrompt(
+        {photoDataUri: input.photoDataUri},
+        {
+          config: {
+            apiKey: input.apiKey,
+          },
+        }
+      );
+      if (!output) {
+        throw new Error('AI failed to extract data from the Receipt image.');
       }
-    );
-    if (!output) {
-      throw new Error('AI failed to extract data from the Receipt image.');
+      return output;
     }
-    return output;
-  }
-);
+  );
+  return extractReceiptFlow(input);
+}

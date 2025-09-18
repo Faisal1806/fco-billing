@@ -22,39 +22,34 @@ const PesticideCategoryOutputSchema = z.object({
 });
 export type PesticideCategoryOutput = z.infer<typeof PesticideCategoryOutputSchema>;
 
-
-export async function categorizePesticide(input: PesticideCategoryInput): Promise<PesticideCategoryOutput> {
-  return categorizePesticideFlow(input);
-}
-
 const categorizePesticidePrompt = ai.definePrompt({
   name: 'categorizePesticidePrompt',
-  model: 'googleai/gemini-1.5-flash-preview',
+  model: 'googleai/gemini-pro',
   input: {schema: z.object({name: z.string()})},
   output: {schema: PesticideCategoryOutputSchema},
   prompt: `You are an expert in agricultural products. Your task is to categorize the given product name into one of the following categories: Fungicide, Insecticide, Herbicide, Fertilizer, Plant Growth Regulator, or Other.
 
 Product Name: {{{name}}}`,
-  config: {
-    // The API key will be passed dynamically in the flow.
-  },
 });
 
-const categorizePesticideFlow = ai.defineFlow(
-  {
-    name: 'categorizePesticideFlow',
-    inputSchema: PesticideCategoryInputSchema,
-    outputSchema: PesticideCategoryOutputSchema,
-  },
-  async (input) => {
-    const {output} = await categorizePesticidePrompt(
-        { name: input.name },
-        {
-            config: {
-                apiKey: input.apiKey,
-            },
-        }
-    );
-    return output!;
-  }
-);
+export async function categorizePesticide(input: PesticideCategoryInput): Promise<PesticideCategoryOutput> {
+  const categorizePesticideFlow = ai.defineFlow(
+    {
+      name: 'categorizePesticideFlow',
+      inputSchema: PesticideCategoryInputSchema,
+      outputSchema: PesticideCategoryOutputSchema,
+    },
+    async (input) => {
+      const {output} = await categorizePesticidePrompt(
+          { name: input.name },
+          {
+              config: {
+                  apiKey: input.apiKey,
+              },
+          }
+      );
+      return output!;
+    }
+  );
+  return categorizePesticideFlow(input);
+}
