@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, FileText } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { saveDocument, deleteDocument } from '@/lib/actions';
 
@@ -99,7 +99,7 @@ export default function PurchasesPage() {
     };
 
 
-  const saveToLocalStorage = async () => {
+  const savePurchase = async () => {
      if (!billNo || !date || !companyName) {
         toast({
             variant: 'destructive',
@@ -139,9 +139,21 @@ export default function PurchasesPage() {
         });
     } finally {
         fetchPurchases(); // Re-fetch to update list
+        setIsEditing(true); // Stay in editing mode for the current bill
         setIsSubmitting(false);
-        router.push(`/purchase-bill/${purchaseId}`);
     }
+  };
+
+  const viewPurchase = () => {
+    if (!isEditing || !billNo) {
+        toast({
+            variant: 'destructive',
+            title: 'Cannot View Bill',
+            description: 'Please save the purchase before viewing.',
+        });
+        return;
+    }
+    router.push(`/purchase-bill/${billNo}`);
   };
 
   const loadPurchaseForEdit = (purchase: any) => {
@@ -310,10 +322,13 @@ export default function PurchasesPage() {
 
             </CardContent>
             <CardFooter>
-                <div className="flex w-full justify-center">
-                    <Button onClick={saveToLocalStorage} size="lg" className="w-full max-w-xs" disabled={isSubmitting}>
+                <div className="flex w-full justify-center gap-4">
+                    <Button onClick={savePurchase} className="w-full max-w-xs" disabled={isSubmitting}>
                         {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                        {isEditing ? 'Update Purchase Bill' : 'Save & View Bill'}
+                        {isEditing ? 'Update Purchase' : 'Save Purchase'}
+                    </Button>
+                    <Button onClick={viewPurchase} variant="secondary" className="w-full max-w-xs gap-2" disabled={!isEditing}>
+                        <FileText className="h-4 w-4" /> View Bill
                     </Button>
                 </div>
             </CardFooter>
