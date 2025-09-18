@@ -46,7 +46,7 @@ export type ReceiptExtractOutput = z.infer<typeof ReceiptExtractOutputSchema>;
 
 const extractReceiptPrompt = ai.definePrompt({
   name: 'extractReceiptPrompt',
-  model: 'googleai/gemini-pro-vision',
+  model: 'googleai/gemini-1.5-flash-preview-0514',
   input: {schema: ReceiptExtractInputSchema},
   output: {schema: ReceiptExtractOutputSchema},
   prompt: `You are an expert data entry specialist for a fruit commission agency in Kashmir. Your task is to meticulously analyze the provided image of a "Goods Receipt" and extract all the relevant information into a structured JSON format.
