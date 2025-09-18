@@ -3,7 +3,7 @@
 /**
  * @fileOverview An AI flow to categorize pesticide and fertilizer products.
  *
- * - categorizePesticide - A function that suggests a category for a given product name.
+ * - categorizePesticide - a function that suggests a category for a given product name.
  * - PesticideCategoryInput - The input type for the flow.
  * - PesticideCategoryOutput - The return type for the flow.
  */
@@ -20,15 +20,6 @@ const PesticideCategoryOutputSchema = z.object({
   category: z.string().describe('The suggested category for the product. Should be one of: Fungicide, Insecticide, Herbicide, Fertilizer, Plant Growth Regulator, or Other.'),
 });
 export type PesticideCategoryOutput = z.infer<typeof PesticideCategoryOutputSchema>;
-
-const categorizePesticidePrompt = ai.definePrompt({
-  name: 'categorizePesticidePrompt',
-  input: {schema: z.object({name: z.string()})},
-  output: {schema: PesticideCategoryOutputSchema},
-  prompt: `You are an expert in agricultural products. Your task is to categorize the given product name into one of the following categories: Fungicide, Insecticide, Herbicide, Fertilizer, Plant Growth Regulator, or Other.
-
-Product Name: {{{name}}}`,
-});
 
 const categorizePesticideFlow = ai.defineFlow(
     {

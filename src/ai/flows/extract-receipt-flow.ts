@@ -25,7 +25,7 @@ const ReceiptExtractInputSchema = z.object({
   photoDataUri: z
     .string()
     .describe(
-      "A photo of a handwritten or printed Goods Receipt, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+      "A photo of a handwritten or printed Goods Receipt, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'"
     ),
 });
 export type ReceiptExtractInput = z.infer<typeof ReceiptExtractInputSchema>;
@@ -44,15 +44,19 @@ const ReceiptExtractOutputSchema = z.object({
 });
 export type ReceiptExtractOutput = z.infer<typeof ReceiptExtractOutputSchema>;
 
-const extractReceiptPrompt = ai.definePrompt({
-  name: 'extractReceiptPrompt',
-  input: {schema: ReceiptExtractInputSchema},
-  output: {schema: ReceiptExtractOutputSchema},
-  prompt: `You are an expert data entry specialist for a fruit commission agency in Kashmir. Your task is to meticulously analyze the provided image of a "Goods Receipt" and extract all the relevant information into a structured JSON format.
+const extractReceiptFlow = ai.defineFlow(
+    {
+        name: 'extractReceiptFlow',
+        inputSchema: ReceiptExtractInputSchema,
+        outputSchema: ReceiptExtractOutputSchema,
+    },
+    async (input) => {
+        const {output} = await ai.generate({
+            model: 'gemini-pro-vision',
+            prompt: {
+                text: `You are an expert data entry specialist for a fruit commission agency in Kashmir. Your task is to meticulously analyze the provided image of a "Goods Receipt" and extract all the relevant information into a structured JSON format.
 
 The Receipt may be handwritten or printed. Pay close attention to details.
-
-Analyze the image: {{media url=photoDataUri}}
 
 Extract the following fields and provide them in the specified JSON format. If a field is not present, you may omit it from the output.
 - no (Receipt No.)
@@ -63,7 +67,20 @@ Extract the following fields and provide them in the specified JSON format. If a
 - totalNugs: Calculate the sum of all peti and daba quantities.
 - freightPaid: The total freight amount paid in cash.
 - wattakReadyOn: The date the Watak is expected to be ready.`,
-});
+                media: {
+                    url: input.photoDataUri,
+                }
+            },
+            output: {
+                schema: ReceiptExtractOutputSchema,
+            },
+        });
+        if (!output) {
+            throw new Error('AI failed to extract data from the Receipt image.');
+        }
+        return output;
+    }
+);
 
 
 /**
@@ -72,9 +89,5 @@ Extract the following fields and provide them in the specified JSON format. If a
  * @returns A promise that resolves to the structured Receipt data.
  */
 export async function extractReceiptFromImage(input: ReceiptExtractInput): Promise<ReceiptExtractOutput> {
-    const {output} = await extractReceiptPrompt(input, {model: 'gemini-pro-vision'});
-    if (!output) {
-      throw new Error('AI failed to extract data from the Receipt image.');
-    }
-    return output;
+    return await extractReceiptFlow(input);
 }

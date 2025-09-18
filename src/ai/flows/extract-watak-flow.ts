@@ -59,16 +59,19 @@ const WatakExtractOutputSchema = z.object({
 });
 export type WatakExtractOutput = z.infer<typeof WatakExtractOutputSchema>;
 
-// Define the AI prompt for the OCR and data extraction task
-const extractWatakPrompt = ai.definePrompt({
-  name: 'extractWatakPrompt',
-  input: {schema: WatakExtractInputSchema},
-  output: {schema: WatakExtractOutputSchema},
-  prompt: `You are an expert data entry specialist for a fruit commission agency in Kashmir. Your task is to meticulously analyze the provided image of a "Watak" (a type of invoice or bill) and extract all the relevant information into a structured JSON format.
+const extractWatakFlow = ai.defineFlow(
+    {
+        name: 'extractWatakFlow',
+        inputSchema: WatakExtractInputSchema,
+        outputSchema: WatakExtractOutputSchema,
+    },
+    async (input) => {
+        const {output} = await ai.generate({
+            model: 'gemini-pro-vision',
+            prompt: {
+                text: `You are an expert data entry specialist for a fruit commission agency in Kashmir. Your task is to meticulously analyze the provided image of a "Watak" (a type of invoice or bill) and extract all the relevant information into a structured JSON format.
 
 The Watak may be handwritten or printed. Pay close attention to details.
-
-Analyze the image: {{media url=photoDataUri}}
 
 Extract the following fields and provide them in the specified JSON format. If a field is not present, you may omit it from the output unless it is required.
 - sNo (Bill No.)
@@ -79,7 +82,21 @@ Extract the following fields and provide them in the specified JSON format. If a
 - freight (if mentioned separately)
 - entries: A list of all items. Each item must have a type ('Patti' or 'Dabba'), quantity, variety, rate, and total.
 - totals: The summary section of the bill. You must calculate and fill all sub-fields like grossSale, all expenses (labour, commission, etc.), and netSale based on the values in the Watak. If formulas are mentioned on the Watak (e.g., Labour = Qty * 3), use them. The standard commission is 12% of the gross sale.`,
-});
+                media: {
+                    url: input.photoDataUri,
+                }
+            },
+            output: {
+                schema: WatakExtractOutputSchema,
+            },
+        });
+        if (!output) {
+            throw new Error('AI failed to extract data from the Watak image.');
+        }
+        return output;
+    }
+);
+
 
 /**
  * Takes an image of a Watak and returns a structured digital version.
@@ -87,9 +104,5 @@ Extract the following fields and provide them in the specified JSON format. If a
  * @returns A promise that resolves to the structured Watak data.
  */
 export async function extractWatakFromImage(input: WatakExtractInput): Promise<WatakExtractOutput> {
-  const {output} = await extractWatakPrompt(input, {model: 'gemini-pro-vision'});
-  if (!output) {
-    throw new Error('AI failed to extract data from the Watak image.');
-  }
-  return output;
+  return await extractWatakFlow(input);
 }
