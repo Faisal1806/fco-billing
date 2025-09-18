@@ -354,3 +354,5 @@ export function ReceiptMakingTab() {
     </div>
   );
 }
+
+    
