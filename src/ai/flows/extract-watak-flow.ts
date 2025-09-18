@@ -70,6 +70,31 @@ export async function extractWatakFromImage(input: WatakExtractInput): Promise<W
   return extractWatakFlow(input);
 }
 
+// Define the AI prompt for the OCR and data extraction task
+const extractWatakPrompt = ai.definePrompt({
+  name: 'extractWatakPrompt',
+  model: 'googleai/gemini-1.5-flash-preview',
+  input: {schema: z.object({ photoDataUri: z.string() })},
+  output: {schema: WatakExtractOutputSchema},
+  prompt: `You are an expert data entry specialist for a fruit commission agency in Kashmir. Your task is to meticulously analyze the provided image of a "Watak" (a type of invoice or bill) and extract all the relevant information into a structured JSON format.
+
+The Watak may be handwritten or printed. Pay close attention to details.
+
+Analyze the image: {{media url=photoDataUri}}
+
+Extract the following fields and provide them in the specified JSON format. If a field is not present, you may omit it from the output unless it is required.
+- sNo (Bill No.)
+- date (in YYYY-MM-DD format)
+- customerName (The M/s or Grower name)
+- watakNo
+- khata (Account Name, if different from customerName)
+- freight (if mentioned separately)
+- entries: A list of all items. Each item must have a type ('Patti' or 'Dabba'), quantity, variety, rate, and total.
+- totals: The summary section of the bill. You must calculate and fill all sub-fields like grossSale, all expenses (labour, commission, etc.), and netSale based on the values in the Watak. If formulas are mentioned on the Watak (e.g., Labour = Qty * 3), use them. The standard commission is 12% of the gross sale.`,
+  config: {
+    // The API key will be passed dynamically in the flow.
+  },
+});
 
 // Define the main Genkit flow
 const extractWatakFlow = ai.defineFlow(
@@ -79,34 +104,14 @@ const extractWatakFlow = ai.defineFlow(
     outputSchema: WatakExtractOutputSchema,
   },
   async (input) => {
-    
-    // Define the AI prompt for the OCR and data extraction task
-    const prompt = ai.definePrompt({
-      name: 'extractWatakPrompt',
-      model: 'googleai/gemini-1.5-flash-preview',
-      input: {schema: z.object({ photoDataUri: z.string() })},
-      output: {schema: WatakExtractOutputSchema},
-      prompt: `You are an expert data entry specialist for a fruit commission agency in Kashmir. Your task is to meticulously analyze the provided image of a "Watak" (a type of invoice or bill) and extract all the relevant information into a structured JSON format.
-
-    The Watak may be handwritten or printed. Pay close attention to details.
-
-    Analyze the image: {{media url=photoDataUri}}
-
-    Extract the following fields and provide them in the specified JSON format. If a field is not present, you may omit it from the output unless it is required.
-    - sNo (Bill No.)
-    - date (in YYYY-MM-DD format)
-    - customerName (The M/s or Grower name)
-    - watakNo
-    - khata (Account Name, if different from customerName)
-    - freight (if mentioned separately)
-    - entries: A list of all items. Each item must have a type ('Patti' or 'Dabba'), quantity, variety, rate, and total.
-    - totals: The summary section of the bill. You must calculate and fill all sub-fields like grossSale, all expenses (labour, commission, etc.), and netSale based on the values in the Watak. If formulas are mentioned on the Watak (e.g., Labour = Qty * 3), use them. The standard commission is 12% of the gross sale.`,
-      config: {
-          apiKey: input.apiKey,
-      },
-    });
-
-    const {output} = await prompt({photoDataUri: input.photoDataUri});
+    const {output} = await extractWatakPrompt(
+        {photoDataUri: input.photoDataUri},
+        {
+            config: {
+                apiKey: input.apiKey,
+            },
+        }
+    );
     if (!output) {
       throw new Error('AI failed to extract data from the Watak image.');
     }

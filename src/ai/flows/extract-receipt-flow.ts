@@ -55,6 +55,32 @@ export async function extractReceiptFromImage(input: ReceiptExtractInput): Promi
   return extractReceiptFlow(input);
 }
 
+
+const extractReceiptPrompt = ai.definePrompt({
+  name: 'extractReceiptPrompt',
+  model: 'googleai/gemini-1.5-flash-preview',
+  input: {schema: z.object({ photoDataUri: z.string() })},
+  output: {schema: ReceiptExtractOutputSchema},
+  prompt: `You are an expert data entry specialist for a fruit commission agency in Kashmir. Your task is to meticulously analyze the provided image of a "Goods Receipt" and extract all the relevant information into a structured JSON format.
+
+The Receipt may be handwritten or printed. Pay close attention to details.
+
+Analyze the image: {{media url=photoDataUri}}
+
+Extract the following fields and provide them in the specified JSON format. If a field is not present, you may omit it from the output.
+- no (Receipt No.)
+- date (in YYYY-MM-DD format)
+- customerName (The M/s or Grower name)
+- ro (Residence of)
+- entries: A list of all items. Each item must have a khata, kind, peti, and daba.
+- totalNugs: Calculate the sum of all peti and daba quantities.
+- freightPaid: The total freight amount paid in cash.
+- wattakReadyOn: The date the Watak is expected to be ready.`,
+  config: {
+    // The API key will be passed dynamically in the flow.
+  },
+});
+
 // Define the main Genkit flow
 const extractReceiptFlow = ai.defineFlow(
   {
@@ -63,33 +89,14 @@ const extractReceiptFlow = ai.defineFlow(
     outputSchema: ReceiptExtractOutputSchema,
   },
   async (input) => {
-    
-    const prompt = ai.definePrompt({
-      name: 'extractReceiptPrompt',
-      model: 'googleai/gemini-1.5-flash-preview',
-      input: {schema: z.object({ photoDataUri: z.string() })},
-      output: {schema: ReceiptExtractOutputSchema},
-      prompt: `You are an expert data entry specialist for a fruit commission agency in Kashmir. Your task is to meticulously analyze the provided image of a "Goods Receipt" and extract all the relevant information into a structured JSON format.
-
-    The Receipt may be handwritten or printed. Pay close attention to details.
-
-    Analyze the image: {{media url=photoDataUri}}
-
-    Extract the following fields and provide them in the specified JSON format. If a field is not present, you may omit it from the output.
-    - no (Receipt No.)
-    - date (in YYYY-MM-DD format)
-    - customerName (The M/s or Grower name)
-    - ro (Residence of)
-    - entries: A list of all items. Each item must have a khata, kind, peti, and daba.
-    - totalNugs: Calculate the sum of all peti and daba quantities.
-    - freightPaid: The total freight amount paid in cash.
-    - wattakReadyOn: The date the Watak is expected to be ready.`,
-      config: {
+    const {output} = await extractReceiptPrompt(
+      {photoDataUri: input.photoDataUri},
+      {
+        config: {
           apiKey: input.apiKey,
-      },
-    });
-
-    const {output} = await prompt({photoDataUri: input.photoDataUri});
+        },
+      }
+    );
     if (!output) {
       throw new Error('AI failed to extract data from the Receipt image.');
     }
