@@ -13,7 +13,26 @@ import {z} from 'genkit';
 
 const PesticideCategoryInputSchema = z.object({
   name: z.string().describe('The name of the pesticide or fertilizer product.'),
-  apiKey: z.string().optional().describe('The Gemini API key.'),
+});
+export type PesticideCategoryInput = z.infer<typeof PesticideCategoryInputSchema>;
+
+const PesticideCategoryOutputSchema = z.object({
+  category: z.string().describe('The suggested category for the product. Should be one of: Fungicide, Insecticide, Herbicide, Fertilizer, Plant Growth Regulator, or Other.'),
+});
+export type PesticideCategoryOutput = z.infer-noserver';
+/**
+ * @fileOverview An AI flow to categorize pesticide and fertilizer products.
+ *
+ * - categorizePesticide - A function that suggests a category for a given product name.
+ * - PesticideCategoryInput - The input type for the flow.
+ * - PesticideCategoryOutput - The return type for the flow.
+ */
+
+import {ai} from '@/ai/genkit';
+import {z} from 'genkit';
+
+const PesticideCategoryInputSchema = z.object({
+  name: z.string().describe('The name of the pesticide or fertilizer product.'),
 });
 export type PesticideCategoryInput = z.infer<typeof PesticideCategoryInputSchema>;
 
@@ -33,23 +52,9 @@ Product Name: {{{name}}}`,
 });
 
 export async function categorizePesticide(input: PesticideCategoryInput): Promise<PesticideCategoryOutput> {
-  const categorizePesticideFlow = ai.defineFlow(
-    {
-      name: 'categorizePesticideFlow',
-      inputSchema: PesticideCategoryInputSchema,
-      outputSchema: PesticideCategoryOutputSchema,
-    },
-    async (input) => {
-      const {output} = await categorizePesticidePrompt(
-          { name: input.name },
-          {
-              config: {
-                  apiKey: input.apiKey,
-              },
-          }
-      );
-      return output!;
-    }
-  );
-  return categorizePesticideFlow(input);
+  const {output} = await categorizePesticidePrompt(input);
+  if (!output) {
+    throw new Error('AI failed to categorize the product.');
+  }
+  return output;
 }

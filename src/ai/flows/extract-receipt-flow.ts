@@ -22,7 +22,6 @@ const ReceiptItemSchema = z.object({
 
 // Define the input schema for the AI flow
 const ReceiptExtractInputSchema = z.object({
-  apiKey: z.string().optional().describe('The Gemini API key.'),
   photoDataUri: z
     .string()
     .describe(
@@ -48,7 +47,7 @@ export type ReceiptExtractOutput = z.infer<typeof ReceiptExtractOutputSchema>;
 const extractReceiptPrompt = ai.definePrompt({
   name: 'extractReceiptPrompt',
   model: 'googleai/gemini-pro-vision',
-  input: {schema: z.object({ photoDataUri: z.string() })},
+  input: {schema: ReceiptExtractInputSchema},
   output: {schema: ReceiptExtractOutputSchema},
   prompt: `You are an expert data entry specialist for a fruit commission agency in Kashmir. Your task is to meticulously analyze the provided image of a "Goods Receipt" and extract all the relevant information into a structured JSON format.
 
@@ -74,26 +73,9 @@ Extract the following fields and provide them in the specified JSON format. If a
  * @returns A promise that resolves to the structured Receipt data.
  */
 export async function extractReceiptFromImage(input: ReceiptExtractInput): Promise<ReceiptExtractOutput> {
-  const extractReceiptFlow = ai.defineFlow(
-    {
-      name: 'extractReceiptFlow',
-      inputSchema: ReceiptExtractInputSchema,
-      outputSchema: ReceiptExtractOutputSchema,
-    },
-    async (input) => {
-      const {output} = await extractReceiptPrompt(
-        {photoDataUri: input.photoDataUri},
-        {
-          config: {
-            apiKey: input.apiKey,
-          },
-        }
-      );
-      if (!output) {
-        throw new Error('AI failed to extract data from the Receipt image.');
-      }
-      return output;
+    const {output} = await extractReceiptPrompt(input);
+    if (!output) {
+      throw new Error('AI failed to extract data from the Receipt image.');
     }
-  );
-  return extractReceiptFlow(input);
+    return output;
 }

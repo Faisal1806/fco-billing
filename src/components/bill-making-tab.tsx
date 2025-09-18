@@ -18,7 +18,6 @@ import { extractWatakFromImage, WatakExtractOutput } from '@/ai/flows/extract-wa
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { useApiKey } from '@/hooks/use-api-key';
 
 
 type Row = {
@@ -48,9 +47,6 @@ export function BillMakingTab() {
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractedData, setExtractedData] = useState<WatakExtractOutput | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { apiKey, setApiKey, isApiKeySet } = useApiKey();
-  const [tempApiKey, setTempApiKey] = useState('');
-
 
   // Camera State
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -75,10 +71,6 @@ export function BillMakingTab() {
     }
     fetchBills();
   }, []);
-
-  useEffect(() => {
-    setTempApiKey(apiKey);
-  }, [apiKey]);
 
   const fetchBills = () => {
     setIsLoading(true);
@@ -346,14 +338,10 @@ export function BillMakingTab() {
             toast({ variant: 'destructive', title: 'No Image', description: 'Please upload an image first.' });
             return;
         }
-        if (!isApiKeySet) {
-            toast({ variant: 'destructive', title: 'API Key Required', description: 'Please set your Gemini API key below to use AI features.' });
-            return;
-        }
         setIsExtracting(true);
         setExtractedData(null);
         try {
-            const result = await extractWatakFromImage({ apiKey, photoDataUri: imagePreview });
+            const result = await extractWatakFromImage({ photoDataUri: imagePreview });
             setExtractedData(result);
             toast({ title: 'Extraction Successful', description: 'Review the extracted data and apply it to the form.' });
         } catch (error: any) {
@@ -470,22 +458,7 @@ export function BillMakingTab() {
                                 )}
                             </div>
                             <div className="space-y-4">
-                                 <div className="space-y-2">
-                                    <Label htmlFor="apiKey" className="flex items-center gap-2"><KeyRound className="h-4 w-4" /> Gemini API Key</Label>
-                                    <Input
-                                        id="apiKey"
-                                        type="password"
-                                        placeholder="Paste your API key here"
-                                        value={tempApiKey}
-                                        onChange={(e) => setTempApiKey(e.target.value)}
-                                    />
-                                    <Button onClick={() => setApiKey(tempApiKey)} size="sm" disabled={!tempApiKey}>Save Key</Button>
-                                    <p className="text-xs text-muted-foreground">
-                                        Needed for AI features. Your key is saved only in your browser. Get one from <a href="https://aistudio.google.com/keys" target="_blank" rel="noopener noreferrer" className="underline">Google AI Studio</a>.
-                                    </p>
-                                </div>
-
-                                <Button onClick={handleExtract} disabled={!imagePreview || isExtracting || !isApiKeySet} className="w-full gap-2">
+                                <Button onClick={handleExtract} disabled={!imagePreview || isExtracting} className="w-full gap-2">
                                     {isExtracting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Sparkles className="h-4 w-4" />}
                                     {isExtracting ? 'Analyzing Image...' : 'Extract Data with AI'}
                                 </Button>

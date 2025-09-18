@@ -37,7 +37,6 @@ const WatakTotalsSchema = z.object({
 
 // Define the input schema for the AI flow
 const WatakExtractInputSchema = z.object({
-  apiKey: z.string().optional().describe('The Gemini API key.'),
   photoDataUri: z
     .string()
     .describe(
@@ -64,7 +63,7 @@ export type WatakExtractOutput = z.infer<typeof WatakExtractOutputSchema>;
 const extractWatakPrompt = ai.definePrompt({
   name: 'extractWatakPrompt',
   model: 'googleai/gemini-pro-vision',
-  input: {schema: z.object({ photoDataUri: z.string() })},
+  input: {schema: WatakExtractInputSchema},
   output: {schema: WatakExtractOutputSchema},
   prompt: `You are an expert data entry specialist for a fruit commission agency in Kashmir. Your task is to meticulously analyze the provided image of a "Watak" (a type of invoice or bill) and extract all the relevant information into a structured JSON format.
 
@@ -89,27 +88,9 @@ Extract the following fields and provide them in the specified JSON format. If a
  * @returns A promise that resolves to the structured Watak data.
  */
 export async function extractWatakFromImage(input: WatakExtractInput): Promise<WatakExtractOutput> {
-  // Define the main Genkit flow
-  const extractWatakFlow = ai.defineFlow(
-    {
-      name: 'extractWatakFlow',
-      inputSchema: WatakExtractInputSchema,
-      outputSchema: WatakExtractOutputSchema,
-    },
-    async (input) => {
-      const {output} = await extractWatakPrompt(
-          {photoDataUri: input.photoDataUri},
-          {
-              config: {
-                  apiKey: input.apiKey,
-              },
-          }
-      );
-      if (!output) {
-        throw new Error('AI failed to extract data from the Watak image.');
-      }
-      return output;
-    }
-  );
-  return extractWatakFlow(input);
+  const {output} = await extractWatakPrompt(input);
+  if (!output) {
+    throw new Error('AI failed to extract data from the Watak image.');
+  }
+  return output;
 }
