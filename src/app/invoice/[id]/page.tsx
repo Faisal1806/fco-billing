@@ -195,6 +195,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             styles: {
                 fontSize: 8,
                 cellPadding: 1.5,
+                font: 'helvetica'
             },
             columnStyles: {
                 2: { halign: 'center' },
@@ -207,6 +208,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     
         // Totals
         const summaryX = pageWidth / 2;
+        doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
         doc.text(`Total Quantity: ${billData.totals.totalQty} (Patti: ${billData.totals.pattiQty}, Dabba: ${billData.totals.dabbaQty})`, margin, finalY + 8);
     
@@ -249,13 +251,14 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         if (qrCanvas) {
             const qrImage = qrCanvas.toDataURL('image/png');
             doc.addImage(qrImage, 'PNG', margin, pageHeight - 35, 20, 20);
+            doc.setFont('helvetica', 'normal');
             doc.setFontSize(6);
             doc.text('Scan for Details & UPI', margin + 10, pageHeight - 12, { align: 'center'});
         }
     
-        doc.setFontSize(12);
         doc.addFont('/fonts/DancingScript-Bold.ttf', 'DancingScript', 'normal');
         doc.setFont('DancingScript');
+        doc.setFontSize(12);
         doc.text('Faisal', pageWidth - margin - 20, pageHeight - 20, { align: 'center' });
     
         doc.setFont('helvetica', 'bold');
@@ -436,7 +439,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     );
     
     const ClassicA4Layout = () => (
-         <div className="w-[148mm] h-[210mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-4 border-2 border-green-700 flex flex-col relative font-serif">
+         <div className="w-[148mm] min-h-[210mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-4 border-2 border-green-700 flex flex-col relative font-serif">
             <div className="absolute inset-0 flex items-center justify-center z-0">
                <Logo className="w-48 h-48 opacity-10" />
             </div>
@@ -632,6 +635,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         </div>
     );
 }
+
+    
 
     
 
