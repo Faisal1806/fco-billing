@@ -17,7 +17,7 @@ const config: Config = {
     },
     extend: {
       fontFamily: {
-        sans: ['Poppins', 'sans-serif'],
+        sans: ['Inter', 'sans-serif'],
         urdu: ['Noto Nastaliq Urdu', 'serif'],
       },
       colors: {
