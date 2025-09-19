@@ -1,5 +1,5 @@
 
-'use'
+'use client'
 
 import * as React from 'react';
 import {
@@ -50,6 +50,7 @@ export interface WatakEntry {
         rate: number;
         type: 'Patti' | 'Dabba';
         qty: number;
+        total: number;
     }[];
     totals: {
         grossSale: number;
