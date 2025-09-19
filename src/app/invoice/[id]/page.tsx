@@ -53,16 +53,14 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     const printRef = useRef<HTMLDivElement>(null);
     const [pageUrl, setPageUrl] = useState('');
     const [printStyle, setPrintStyle] = useState<'a4' | 'thermal'>('a4');
-    const [invoiceStyle, setInvoiceStyle] = useState('classic');
+    const [invoiceStyle, setInvoiceStyle] = useState('modern');
 
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
             setPageUrl(window.location.href);
-            const savedStyle = localStorage.getItem('invoiceStyle');
-            if (savedStyle) {
-                setInvoiceStyle(savedStyle);
-            }
+            // Force modern style for this page as per the new design
+            setInvoiceStyle('modern');
         }
     }, []);
 
@@ -113,19 +111,20 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     const handleDownloadPdf = async () => {
         const element = printRef.current;
         if (!element || !billData) return;
+
+        // Use the currently active print style for PDF generation
+        const activeLayout = printStyle === 'a4' ? element.querySelector('.print-area-a4') : element.querySelector('.print-area-thermal');
+        if (!activeLayout) return;
+
+        const canvas = await html2canvas(activeLayout as HTMLElement, {
+            scale: 2, 
+            useCORS: true,
+            backgroundColor: printStyle === 'a4' ? '#1f2937' : '#ffffff', // Match layout bg
+        });
     
         const isThermal = printStyle === 'thermal';
-        const format = isThermal ? [80, 297] : 'a5';
+        const format = isThermal ? [80, 297] : 'a4';
         const orientation = 'portrait';
-    
-        const canvas = await html2canvas(element, {
-            scale: 2, // Higher scale for better quality
-            useCORS: true,
-            width: element.scrollWidth,
-            height: element.scrollHeight,
-            windowWidth: element.scrollWidth,
-            windowHeight: element.scrollHeight,
-        });
     
         const pdf = new jsPDF({
             orientation,
@@ -142,40 +141,40 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
 
     const Controls = () => (
-        <div className="flex flex-col gap-4 print:hidden">
+        <div className="flex flex-col gap-4 print:hidden p-4 bg-gray-800 rounded-lg border border-gray-700">
             <div className="flex items-center gap-2">
-                 <Button onClick={() => setPrintStyle('a4')} variant={printStyle === 'a4' ? 'default' : 'outline'} size="sm" className="gap-2">
+                 <Button onClick={() => setPrintStyle('a4')} variant={printStyle === 'a4' ? 'default' : 'outline'} size="sm" className="flex-1 gap-2">
                     <FileText className="h-4 w-4" /> A4
                 </Button>
-                <Button onClick={() => setPrintStyle('thermal')} variant={printStyle === 'thermal' ? 'default' : 'outline'} size="sm" className="gap-2">
+                <Button onClick={() => setPrintStyle('thermal')} variant={printStyle === 'thermal' ? 'default' : 'outline'} size="sm" className="flex-1 gap-2">
                     <Receipt className="h-4 w-4" /> Thermal
                 </Button>
             </div>
-             <div className="flex items-center gap-2">
-                <Button onClick={handleShare} variant="outline" size="sm" className="gap-2">
-                    <FaWhatsapp className="h-4 w-4 text-green-500" />
-                    Share
+             <div className="flex flex-col gap-2">
+                <Button onClick={handleShare} variant="outline" size="sm" className="gap-2 bg-green-500/10 border-green-500/30 text-green-300 hover:bg-green-500/20 hover:text-green-200">
+                    <FaWhatsapp className="h-4 w-4" />
+                    Share on WhatsApp
                 </Button>
                 <Button onClick={() => window.print()} variant="outline" size="sm" className="gap-2">
                     <Printer className="h-4 w-4" />
                     Print
                 </Button>
-                <Button onClick={handleDownloadPdf} size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700">
+                <Button onClick={handleDownloadPdf} size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700 text-white">
                     <Download className="h-4 w-4" />
                     Save to Device
                 </Button>
              </div>
-             <div className="p-2 border rounded-md flex flex-col items-center">
-                <QRCode value={pageUrl} size={60} />
-                <p className="text-xs font-semibold mt-1">Scan to View Bill</p>
+             <div className="p-2 border border-gray-700 bg-gray-900 rounded-md flex flex-col items-center">
+                <QRCode value={pageUrl} size={80} bgColor="#111827" fgColor="#FFFFFF"/>
+                <p className="text-xs font-semibold mt-2 text-gray-400">Scan to View Bill</p>
             </div>
         </div>
     )
 
     if (loading) {
         return (
-            <div className="bg-gray-50 min-h-screen p-8 flex items-center justify-center">
-                 <div className="w-[148mm] min-h-[210mm] mx-auto bg-white p-8">
+            <div className="bg-gray-900 min-h-screen p-8 flex items-center justify-center">
+                 <div className="w-[210mm] min-h-[297mm] mx-auto bg-gray-800 p-8">
                     <Skeleton className="h-16 w-3/4 self-center mb-8" />
                     <div className="flex-grow mt-8">
                         <Skeleton className="h-96 w-full" />
@@ -187,8 +186,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
     if (!billData) {
         return (
-            <div className="bg-gray-50 min-h-screen p-8 flex items-center justify-center">
-                <div className="text-center p-8 border rounded-lg shadow-lg bg-white">
+            <div className="bg-gray-900 min-h-screen p-8 flex items-center justify-center">
+                <div className="text-center p-8 border rounded-lg shadow-lg bg-gray-800 text-white">
                     <h2 className="text-2xl font-bold text-destructive">Invoice Not Found</h2>
                     <p className="text-muted-foreground mt-2">The invoice you are looking for does not exist or has been deleted.</p>
                 </div>
@@ -200,141 +199,131 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         sNo, date, customerName, watakNo, khata, entries, totals, freight
     } = billData;
     
-    const A4Layout = () => (
-         <div className="w-[148mm] min-h-[210mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-4 flex flex-col text-xs">
-             <header className="bg-gradient-to-r from-green-400 via-emerald-500 to-teal-600 text-white p-4 rounded-t-xl shadow-lg">
-                <div className="flex justify-between items-center">
-                    <div className="text-left text-sm font-bold">
-                       🍎 F.Co
+    const ModernA4Layout = () => (
+         <div className="w-[210mm] min-h-[297mm] mx-auto bg-gray-800 text-gray-200 shadow-2xl print:shadow-none p-6 flex flex-col font-sans relative">
+            <div className="absolute inset-0 flex items-center justify-center z-0">
+                <Logo className="w-96 h-96 opacity-[0.02]" />
+            </div>
+             <div className="relative z-10 flex flex-col flex-grow">
+                <header className="bg-gradient-to-r from-green-500/80 to-teal-500/80 text-white p-4 rounded-xl shadow-lg">
+                    <div className="flex justify-between items-center">
+                        <div className="text-left text-sm font-bold flex items-center gap-2">
+                           <Logo className="h-8 w-8"/> F.Co
+                        </div>
+                        <div className="text-center">
+                            <h2 className="text-xl font-bold tracking-wider">FIRDOUS AHMAD & COMPANY</h2>
+                            <p className="mt-1 text-[10px] opacity-80">Fruit Merchants & Commission Agents</p>
+                            <p className="text-[8px] opacity-80">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
+                        </div>
+                        <div className="text-right text-sm font-bold flex items-center gap-2">
+                           F.Co <Logo className="h-8 w-8"/>
+                        </div>
                     </div>
-                    <div className="text-center">
-                        <h2 className="text-xl font-bold">FIRDOUS AHMAD & COMPANY</h2>
-                        <p className="mt-1 text-[10px]">Fruit Merchants & Commission Agents</p>
-                        <p className="text-[8px]">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
-                        <p className="text-[8px]">Prop: Firdous Ahmad Lone (Nadihal) | Cell: 7006136330, 9797002164, 9906740921 | Email: lone07936@gmail.com</p>
-                    </div>
-                    <div className="text-right text-sm font-bold">
-                       🍎 F.Co
-                    </div>
-                </div>
-            </header>
+                </header>
 
-            <main className="bg-white dark:bg-gray-800 p-4 rounded-b-xl shadow-lg -mt-4 flex-grow relative">
-                <div className="absolute inset-0 flex items-center justify-center z-0">
-                    <Logo className="w-64 h-64 opacity-5" />
-                </div>
-                <div className="relative z-10">
-                    <div className="grid grid-cols-2 gap-4 border-b pb-2 mb-2">
+                <main className="bg-gray-800/50 p-4 rounded-b-xl flex-grow mt-4">
+                    <div className="grid grid-cols-2 gap-4 border-b border-gray-700 pb-3 mb-3 text-sm">
                         <div>
-                            <h2 className="font-semibold text-gray-700 dark:text-gray-300">Bill To: / <span className="font-urdu">بل بنام</span></h2>
-                            <p className="font-bold text-base">{customerName}</p>
-                            <p>Khata: {khata}</p>
+                            <h2 className="font-semibold text-gray-400">Bill To: / <span className="font-urdu">بل بنام</span></h2>
+                            <p className="font-bold text-base text-white">{customerName}</p>
+                            {khata && <p className="text-gray-400">Khata: {khata}</p>}
                         </div>
-                        <div className="text-right">
-                             <p><strong>Bill No:</strong> {sNo}</p>
-                             <p><strong>Date:</strong> {new Date(date).toLocaleDateString('en-GB')}</p>
-                             <p><strong>Watak No:</strong> {watakNo}</p>
+                        <div className="text-right text-xs text-gray-400">
+                             <p><strong>Bill No:</strong> <span className="text-white font-mono">{sNo}</span></p>
+                             <p><strong>Date:</strong> <span className="text-white font-mono">{new Date(date).toLocaleDateString('en-GB')}</span></p>
+                             <p><strong>Watak No:</strong> <span className="text-white font-mono">{watakNo}</span></p>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-5 gap-2">
+                    <div className="grid grid-cols-5 gap-6 text-xs">
                         <div className="col-span-3">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow className="bg-gray-100 dark:bg-gray-700">
-                                        <TableHead>Type</TableHead>
-                                        <TableHead>Variety</TableHead>
-                                        <TableHead>Qty</TableHead>
-                                        <TableHead>Rate</TableHead>
-                                        <TableHead className="text-right">Gross</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
+                            <table className="w-full">
+                                <thead className="text-gray-400 uppercase">
+                                    <tr className="border-b border-gray-700">
+                                        <th className="pb-2 text-left">Type</th>
+                                        <th className="pb-2 text-left">Variety</th>
+                                        <th className="pb-2 text-center">Qty</th>
+                                        <th className="pb-2 text-right">Rate</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
                                     {entries.map((entry, index) => (
-                                        <TableRow key={index}>
-                                            <TableCell>{entry.type}</TableCell>
-                                            <TableCell>{entry.variety}</TableCell>
-                                            <TableCell>{entry.qty}</TableCell>
-                                            <TableCell>₹{entry.rate.toFixed(2)}</TableCell>
-                                            <TableCell className="text-right font-medium">₹{((entry.qty) * entry.rate).toFixed(2)}</TableCell>
-                                        </TableRow>
+                                        <tr key={index} className="border-b border-gray-700/50">
+                                            <td className="py-2">{entry.type}</td>
+                                            <td className="py-2">{entry.variety}</td>
+                                            <td className="py-2 text-center font-mono">{entry.qty}</td>
+                                            <td className="py-2 text-right font-mono">₹{entry.rate.toFixed(2)}</td>
+                                        </tr>
                                     ))}
-                                </TableBody>
-                            </Table>
+                                </tbody>
+                            </table>
                         </div>
 
-                        <div className="col-span-2">
-                             <Table>
-                                <TableHeader>
-                                    <TableRow className="bg-gray-100 dark:bg-gray-700">
-                                        <TableHead>Expenses</TableHead>
-                                        <TableHead className="text-right">Amount</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    <TableRow><TableCell>Freight</TableCell><TableCell className="text-right">₹{freight.toFixed(2)}</TableCell></TableRow>
-                                    <TableRow><TableCell>Labour</TableCell><TableCell className="text-right">₹{totals.labour.toFixed(2)}</TableCell></TableRow>
-                                    <TableRow><TableCell>Association</TableCell><TableCell className="text-right">₹{totals.association.toFixed(2)}</TableCell></TableRow>
-                                    <TableRow><TableCell>Security</TableCell><TableCell className="text-right">₹{totals.security.toFixed(2)}</TableCell></TableRow>
-                                    <TableRow className="font-semibold border-t-2"><TableCell>Commission</TableCell><TableCell className="text-right">₹{totals.commissionAmount.toFixed(2)}</TableCell></TableRow>
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </div>
-
-                    <Separator className="my-4" />
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                             <p><strong>Total Quantity:</strong> {totals.totalQty} (Patti: {totals.pattiQty}, Dabba: {totals.dabbaQty})</p>
-                        </div>
-                        <div className="space-y-1">
-                            <div className="flex justify-between items-center">
-                                <span className="font-semibold">Gross Sale:</span>
-                                <span>₹{totals.grossSale.toFixed(2)}</span>
-                             </div>
-                             <div className="flex justify-between items-center">
-                                <span className="font-semibold">Total Expenses:</span>
-                                <span>- ₹{totals.totalExpenses.toFixed(2)}</span>
+                        <div className="col-span-2 border-l border-gray-700 pl-6">
+                            <h3 className="text-gray-400 uppercase font-semibold pb-2 border-b border-gray-700">Expenses</h3>
+                             <div className="space-y-2 mt-2">
+                                <div className="flex justify-between items-center"><span className="text-gray-400">Freight</span><span className="font-mono">₹{freight.toFixed(2)}</span></div>
+                                <div className="flex justify-between items-center"><span className="text-gray-400">Labour</span><span className="font-mono">₹{totals.labour.toFixed(2)}</span></div>
+                                <div className="flex justify-between items-center"><span className="text-gray-400">Association</span><span className="font-mono">₹{totals.association.toFixed(2)}</span></div>
+                                <div className="flex justify-between items-center"><span className="text-gray-400">Security</span><span className="font-mono">₹{totals.security.toFixed(2)}</span></div>
+                                <div className="flex justify-between items-center font-semibold pt-1 border-t border-gray-700/50"><span className="text-gray-300">Commission</span><span className="font-mono">₹{totals.commissionAmount.toFixed(2)}</span></div>
                             </div>
-                            <Separator />
-                             <div className="flex justify-between items-center text-lg font-bold text-green-600">
+                        </div>
+                    </div>
+
+                    <div className="mt-6 grid grid-cols-5 gap-6">
+                        <div className="col-span-3 text-xs">
+                             <p className="text-gray-400"><strong>Total Quantity:</strong> <span className="font-mono text-gray-300">{totals.totalQty} (Patti: {totals.pattiQty}, Dabba: {totals.dabbaQty})</span></p>
+                        </div>
+                         <div className="col-span-2 space-y-1 text-sm border-l border-gray-700 pl-6">
+                            <div className="flex justify-between items-center text-gray-400">
+                                <span>Gross Sale:</span>
+                                <span className="font-mono">₹{totals.grossSale.toFixed(2)}</span>
+                             </div>
+                             <div className="flex justify-between items-center text-gray-400">
+                                <span>Total Expenses:</span>
+                                <span className="font-mono">- ₹{totals.totalExpenses.toFixed(2)}</span>
+                            </div>
+                            <Separator className="my-2 bg-gray-600" />
+                             <div className="flex justify-between items-center text-lg font-bold text-green-400 pt-1">
                                 <span >Net Sale:</span>
-                                <span>₹{totals.netSale.toFixed(2)}</span>
+                                <span className="font-mono">₹{totals.netSale.toFixed(2)}</span>
                              </div>
                         </div>
                     </div>
-                </div>
-            </main>
+                </main>
 
-            <footer className="flex justify-between items-end mt-auto pt-2 border-t print:pt-1">
-                 <BusinessCardQR size={60} />
-                 <div className="text-right text-[10px]">
-                    <p className="font-signature text-2xl text-gray-700 dark:text-gray-300">Faisal</p>
-                    <p className="font-bold">Sign. Of Manager</p>
-                    <p>For Firdous Ahmad & Company</p>
-                 </div>
-            </footer>
+                <footer className="flex justify-between items-end mt-auto pt-4 border-t border-gray-700 text-xs">
+                    <div className="flex flex-col items-center">
+                        <QRCode value={pageUrl} size={64} bgColor="#1f2937" fgColor="#FFFFFF" />
+                        <p className="text-gray-500 mt-1">Scan for Details & UPI</p>
+                    </div>
+                    <div className="text-right text-gray-400">
+                        <p className="font-signature text-3xl text-gray-200">Faisal</p>
+                        <p className="font-bold -mt-2">For Firdous Ahmad & Company</p>
+                        <p className="text-[10px]">Sign. Of Manager</p>
+                    </div>
+                </footer>
+            </div>
         </div>
     );
     
     const ThermalLayout = () => (
-        <div className="w-[80mm] bg-white text-black p-2 font-mono text-[10px] leading-tight">
+        <div className="w-[80mm] bg-white text-black p-2 font-sans text-xs leading-tight">
             <header className="text-center space-y-1">
                 <h1 className="text-sm font-bold">Firdous Ahmad & Company</h1>
-                <p>Fruit Merchants & Commission Agents</p>
-                <p>Sopore, Kashmir</p>
-                <p>Ph: 7006136330</p>
-                <p className="border-t border-dashed border-black mt-1 pt-1">Sale Invoice</p>
+                <p className="text-[10px]">Fruit Merchants & Commission Agents, Sopore, Kashmir</p>
+                <p className="text-[10px]">Ph: 7006136330</p>
+                <p className="border-t border-dashed border-black mt-1 pt-1 font-bold">Sale Invoice</p>
             </header>
-            <main className="my-2 border-t border-b border-dashed border-black py-2 space-y-1">
+            <main className="my-2 border-t border-b border-dashed border-black py-2 space-y-1 text-[11px]">
                 <div className="flex justify-between"><span>Bill No: {sNo}</span> <span>Date: {new Date(date).toLocaleDateString('en-GB')}</span></div>
-                <div className="flex justify-between"><span>Watak: {watakNo}</span></div>
+                {watakNo && <div className="flex justify-between"><span>Watak: {watakNo}</span></div>}
                 <div>Customer: {customerName}</div>
             </main>
-            <table className="w-full">
+            <table className="w-full text-[11px]">
                 <thead>
-                    <tr className="border-b border-dashed border-black">
+                    <tr className="border-b-2 border-black">
                         <th className="text-left">Item</th>
                         <th className="text-right">Qty</th>
                         <th className="text-right">Rate</th>
@@ -343,8 +332,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 </thead>
                 <tbody>
                     {entries.map((entry, i) => (
-                        <tr key={i}>
-                            <td className="text-left">{entry.variety} ({entry.type})</td>
+                        <tr key={i} className="border-b border-dashed border-black">
+                            <td className="text-left py-1">{entry.variety} ({entry.type})</td>
                             <td className="text-right">{entry.qty}</td>
                             <td className="text-right">{entry.rate.toFixed(2)}</td>
                             <td className="text-right">{(entry.qty * entry.rate).toFixed(2)}</td>
@@ -352,39 +341,28 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                     ))}
                 </tbody>
             </table>
-            <div className="my-2 border-t border-dashed border-black pt-2 space-y-1">
+            <div className="my-2 border-t border-dashed border-black pt-2 space-y-1 text-[11px]">
                 <div className="flex justify-between"><span>Gross Sale:</span><span>{totals.grossSale.toFixed(2)}</span></div>
-                <div className="flex justify-between"><span>Freight:</span><span>{freight.toFixed(2)}</span></div>
-                <div className="flex justify-between"><span>Labour:</span><span>{totals.labour.toFixed(2)}</span></div>
-                <div className="flex justify-between"><span>Commission:</span><span>{totals.commissionAmount.toFixed(2)}</span></div>
-                <div className="flex justify-between"><span>Other Exp:</span><span>{(totals.association + totals.security).toFixed(2)}</span></div>
-                <div className="flex justify-between"><span>Total Exp:</span><span>{totals.totalExpenses.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span>Freight:</span><span>- {freight.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span>Labour:</span><span>- {totals.labour.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span>Commission:</span><span>- {totals.commissionAmount.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span>Other Exp:</span><span>- {(totals.association + totals.security).toFixed(2)}</span></div>
+                <div className="flex justify-between font-semibold"><span>Total Exp:</span><span>- {totals.totalExpenses.toFixed(2)}</span></div>
             </div>
              <div className="my-2 border-t-2 border-black pt-1 space-y-1 text-sm font-bold">
                 <div className="flex justify-between"><span>NET SALE:</span><span>₹{totals.netSale.toFixed(2)}</span></div>
             </div>
-            <footer className="text-center pt-2 border-t border-dashed border-black">
+            <footer className="text-center pt-2 border-t border-dashed border-black text-[10px]">
                 <p>Thank you for your business!</p>
                 <div className="flex justify-center pt-2">
-                    <QRCode value={pageUrl} size={80} />
+                    <QRCode value={pageUrl} size={60} />
                 </div>
             </footer>
         </div>
     );
 
-    const renderContent = () => {
-        // Here you can add logic for Modern, Urdu etc.
-        // For now, it defaults to the classic A4 layout.
-        switch(invoiceStyle) {
-            // case 'modern': return <ModernLayout />;
-            // case 'urdu': return <UrduLayout />;
-            default: return <A4Layout />;
-        }
-    }
-
-
     return (
-        <div className="bg-gray-100 dark:bg-gray-900 font-sans print:bg-white flex flex-col md:flex-row gap-8 justify-center p-4 md:p-8">
+        <div className="bg-gray-900 font-sans print:bg-white flex flex-col md:flex-row gap-8 justify-center p-4 md:p-8">
              <style jsx global>{`
                 @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
                 .font-signature {
@@ -405,32 +383,25 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                     }
                     .print-area-a4 {
                         display: ${printStyle === 'a4' ? 'flex !important' : 'none !important'};
-                        width: 100%;
-                        height: 100%;
-                        box-shadow: none;
-                        border: none;
                     }
                      .print-area-thermal {
                         display: ${printStyle === 'thermal' ? 'block !important' : 'none !important'};
-                         box-shadow: none;
-                        border: none;
                     }
-
                     @page {
-                        size: ${printStyle === 'a4' ? 'A5 portrait' : '80mm 297mm'};
+                        size: ${printStyle === 'a4' ? 'A4 portrait' : '80mm 297mm'};
                         margin: 0;
                     }
                 }
             `}</style>
             
-            <div className="print:hidden w-full max-w-xs space-y-4">
+            <div className="print:hidden w-full max-w-[250px] space-y-4 sticky top-4 self-start">
                 <Controls />
             </div>
 
             <div className="print-container">
                 <div ref={printRef}>
                     <div className="print-area-a4">
-                        {renderContent()}
+                        <ModernA4Layout />
                     </div>
                      <div className="print-area-thermal">
                         <ThermalLayout />
