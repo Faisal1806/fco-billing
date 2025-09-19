@@ -361,7 +361,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                                     <td className="p-1 border-x border-green-600 text-right font-semibold">₹{(entry.qty * entry.rate).toFixed(2)}</td>
                                 </tr>
                             ))}
-                            {Array.from({ length: Math.max(0, 10 - entries.length) }).map((_, index) => (
+                            {Array.from({ length: Math.max(0, 8 - entries.length) }).map((_, index) => (
                                  <tr key={`empty-${index}`} className="border-b border-green-600/50 h-7">
                                     <td className="p-1 border-x border-green-600"></td>
                                     <td className="p-1 border-x border-green-600"></td>
@@ -487,7 +487,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                         display: ${printStyle === 'thermal' ? 'block !important' : 'none !important'};
                     }
                     @page {
-                        size: ${printStyle === 'a4' ? 'A5 portrait' : '80mm 297mm'};
+                        size: A5 portrait;
                         margin: 0;
                     }
                 }
