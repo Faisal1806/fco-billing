@@ -212,8 +212,9 @@ export default function WatakRegisterPage() {
     }
 
     let message = `Salaam ${selectedGrower},\n\n`;
-    message += `You can view your complete account ledger with Firdous Ahmad & Company by clicking the link below. You will be asked to enter your name to log in.\n\n`;
-    message += `Portal Link: ${window.location.origin}/portal/login\n\n`;
+    message += `You can view your complete account ledger with Firdous Ahmad & Company by clicking the link below. The portal will open directly to your account.\n\n`;
+    const encodedCustomerName = encodeURIComponent(selectedGrower);
+    message += `Portal Link: ${window.location.origin}/portal/login?customer=${encodedCustomerName}\n\n`;
     message += `Thank you for your business!`;
 
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
@@ -326,7 +327,7 @@ export default function WatakRegisterPage() {
               <TableHead>Watak No.</TableHead>
               <TableHead>Khata (Grower)</TableHead>
               <TableHead>Peti</TableHead>
-              <TableHead>Daba</TableHead>
+              <TableHead>Dabba</TableHead>
               <TableHead className="text-right">Gross Sale</TableHead>
               <TableHead className="text-right">Total Exp.</TableHead>
               <TableHead className="text-right">Net Sale</TableHead>

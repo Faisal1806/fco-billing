@@ -2,39 +2,38 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { User } from 'lucide-react';
+import { User, Loader2 } from 'lucide-react';
 import { addLog } from '@/lib/logger';
 
 export default function CustomerLoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [customerName, setCustomerName] = useState('');
   const [error, setError] = useState('');
+  const [isAutoLoggingIn, setIsAutoLoggingIn] = useState(false);
 
-  const handleLogin = () => {
-    // Basic validation
-    if (!customerName.trim()) {
+  const handleLogin = (name: string) => {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
       setError('Please enter your name.');
       toast({
         variant: 'destructive',
         title: 'Login Failed',
         description: 'A name is required to view your ledger.',
       });
+      setIsAutoLoggingIn(false);
       return;
     }
 
-    // In a real app, you would have OTP verification here.
-    // For this demo, we'll just check if a ledger exists for this customer.
     let ledgerExists = false;
-    const trimmedName = customerName.trim();
-
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && (key.startsWith('invoice-') || key.startsWith('purchase-'))) {
@@ -68,13 +67,34 @@ export default function CustomerLoginPage() {
             title: 'Login Failed',
             description: 'No transactions found for this name.',
         });
+        setIsAutoLoggingIn(false);
+        // If auto-login fails, clear the bad query param to allow manual login
+        router.replace('/portal/login');
     }
   };
+
+  useEffect(() => {
+    const customerQuery = searchParams.get('customer');
+    if (customerQuery) {
+        setIsAutoLoggingIn(true);
+        // Use a small timeout to allow the UI to show the loading state
+        setTimeout(() => handleLogin(customerQuery), 500);
+    }
+  }, [searchParams]);
   
   const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
       if (event.key === 'Enter') {
-          handleLogin();
+          handleLogin(customerName);
       }
+  }
+
+  if (isAutoLoggingIn) {
+      return (
+          <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center p-4">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              <p className="mt-4 text-lg text-muted-foreground">Logging you in automatically...</p>
+          </div>
+      )
   }
 
   return (
@@ -112,7 +132,7 @@ export default function CustomerLoginPage() {
                     />
                  </div>
                  {error && <p className="text-sm text-red-500 animate-pulse">{error}</p>}
-                  <Button onClick={handleLogin} className="w-full">
+                  <Button onClick={() => handleLogin(customerName)} className="w-full">
                     View My Ledger
                 </Button>
             </CardContent>
