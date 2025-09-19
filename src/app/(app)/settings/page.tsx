@@ -81,6 +81,23 @@ const CustomFieldSuggestion = ({ icon, title, example, children } : { icon: Reac
 export default function SettingsPage() {
     const { toast } = useToast();
     const [isSyncing, setIsSyncing] = React.useState(false);
+    const [invoiceStyle, setInvoiceStyle] = React.useState('classic');
+
+    React.useEffect(() => {
+        const savedStyle = localStorage.getItem('invoiceStyle');
+        if (savedStyle) {
+            setInvoiceStyle(savedStyle);
+        }
+    }, []);
+
+    const handleStyleChange = (style: string) => {
+        setInvoiceStyle(style);
+        localStorage.setItem('invoiceStyle', style);
+        toast({
+            title: "Style Updated",
+            description: `Invoice style set to ${style}.`,
+        })
+    };
     
     const handleFactoryReset = () => {
         try {
@@ -246,7 +263,7 @@ export default function SettingsPage() {
                         <AccordionItem value="styles">
                             <AccordionTrigger className="text-lg font-semibold">Invoice & Bill Styles</AccordionTrigger>
                             <AccordionContent>
-                                <Tabs defaultValue="classic" className="w-full mt-2">
+                                <Tabs value={invoiceStyle} onValueChange={handleStyleChange} className="w-full mt-2">
                                     <TabsList className="grid w-full grid-cols-3">
                                         <TabsTrigger value="classic">Classic Style</TabsTrigger>
                                         <TabsTrigger value="modern">Modern Style</TabsTrigger>

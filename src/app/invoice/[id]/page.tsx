@@ -54,10 +54,16 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     const printRef = useRef<HTMLDivElement>(null);
     const [pageUrl, setPageUrl] = useState('');
     const [printStyle, setPrintStyle] = useState<'a4' | 'thermal'>('a4');
+    const [invoiceStyle, setInvoiceStyle] = useState('classic');
+
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
             setPageUrl(window.location.href);
+            const savedStyle = localStorage.getItem('invoiceStyle');
+            if (savedStyle) {
+                setInvoiceStyle(savedStyle);
+            }
         }
     }, []);
 
@@ -367,6 +373,16 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         </div>
     );
 
+    const renderContent = () => {
+        // Here you can add logic for Modern, Urdu etc.
+        // For now, it defaults to the classic A4 layout.
+        switch(invoiceStyle) {
+            // case 'modern': return <ModernLayout />;
+            // case 'urdu': return <UrduLayout />;
+            default: return <A4Layout />;
+        }
+    }
+
 
     return (
         <div className="bg-gray-100 dark:bg-gray-900 font-sans print:bg-white flex flex-col md:flex-row gap-8 justify-center p-4 md:p-8">
@@ -413,7 +429,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             <div className="print-container">
                 <div ref={printRef}>
                     <div className="print-area-a4">
-                        <A4Layout />
+                        {renderContent()}
                     </div>
                      <div className="print-area-thermal">
                         <ThermalLayout />
