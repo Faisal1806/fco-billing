@@ -56,7 +56,7 @@ export default function PurchaseRegisterPage() {
   const [selectedGrower, setSelectedGrower] = React.useState('All Growers');
   const [searchTerm, setSearchTerm] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(true);
-  const [viewMode, setViewMode] = React.useState<'table' | 'grid'>('grid');
+  const [viewMode, setViewMode] = React.useState<'grid' | 'table'>('grid');
   const [userRole, setUserRole] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -173,24 +173,21 @@ export default function PurchaseRegisterPage() {
   };
     
   const handleShare = () => {
-    let reportText = `*Purchase Register for ${selectedGrower}*\n`;
-    reportText += `*FIRDOUS AHMAD & COMPANY*\n\n`;
+    if (selectedGrower === 'All Growers') {
+        toast({
+            variant: 'destructive',
+            title: 'Select a Grower',
+            description: 'Please select a specific grower from the dropdown to share their portal link.',
+        });
+        return;
+    }
 
-    filteredPurchases.forEach(p => {
-        const patti = p.entries.filter(e => e.type === 'Patti').reduce((acc, e) => acc + (e.qty || 0), 0);
-        const dabba = p.entries.filter(e => e.type === 'Dabba').reduce((acc, e) => acc + (e.qty || 0), 0);
-        reportText += `*Bill #${p.billNo}* (${new Date(p.date).toLocaleDateString('en-GB')})\n`;
-        reportText += `Grower: ${p.growerName}\n`;
-        reportText += `Items: ${patti} Patti, ${dabba} Dabba\n`;
-        reportText += `Total: *₹${p.totals.grandTotal.toFixed(2)}*\n\n`;
-    });
+    let message = `Salaam ${selectedGrower},\n\n`;
+    message += `You can view your complete account ledger with Firdous Ahmad & Company by clicking the link below. You will be asked to enter your name to log in.\n\n`;
+    message += `Portal Link: ${window.location.origin}/portal/login\n\n`;
+    message += `Thank you for your business!`;
 
-    reportText += `*Summary*\n`;
-    reportText += `Total Patti: ${footerTotals.patti}\n`;
-    reportText += `Total Dabba: ${footerTotals.dabba}\n`;
-    reportText += `*Grand Total: ₹${footerTotals.grandTotal.toFixed(2)}*`;
-
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(reportText)}`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
@@ -237,7 +234,7 @@ export default function PurchaseRegisterPage() {
                 </Button>
                  <Button size="sm" variant="outline" className="gap-1" onClick={handleShare}>
                     <FaWhatsapp className="h-4 w-4 text-green-500" />
-                    Share
+                    Share Portal
                  </Button>
                 <Button size="sm" variant="outline" className="gap-1" onClick={exportToPDF}>
                     <FileDown className="h-3.5 w-3.5" />
@@ -322,5 +319,3 @@ export default function PurchaseRegisterPage() {
     </Card>
   );
 }
-
-    
