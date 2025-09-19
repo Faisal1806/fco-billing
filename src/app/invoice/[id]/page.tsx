@@ -224,8 +224,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         const netSaleY = finalY + 8;
         let currentY = netSaleY;
         
+        doc.setFont('helvetica', 'normal');
         expenseLines.forEach(line => {
-            doc.setFont('helvetica', 'normal');
             doc.text(line.label, summaryX, currentY, { align: 'left' });
             doc.text(line.value, pageWidth - margin, currentY, { align: 'right' });
             currentY += 4;
@@ -256,7 +256,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             doc.setFontSize(6);
             doc.text('Scan for Details & UPI', margin + 10, pageHeight - 12, { align: 'center'});
         }
-    
+        
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(12);
         doc.text('Faisal', pageWidth - margin - 20, pageHeight - 20, { align: 'center' });
@@ -429,7 +429,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 <footer className="flex justify-between items-end mt-auto pt-4 border-t border-gray-700 text-xs">
                     <BusinessCardQR size={64} />
                     <div className="text-right text-gray-400">
-                        <p className="font-signature text-3xl text-gray-200">Faisal</p>
+                        <p className="text-3xl text-gray-200">Faisal</p>
                         <p className="font-bold -mt-2">For Firdous Ahmad & Company</p>
                         <p className="text-[10px]">Sign. Of Manager</p>
                     </div>
@@ -439,28 +439,28 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     );
     
     const ClassicA4Layout = () => {
-         const emptyRowsCount = Math.max(0, 12 - entries.length);
-         const emptyRows = Array.from({ length: emptyRowsCount });
+        const emptyRowsCount = Math.max(0, 12 - entries.length);
+        const emptyRows = Array.from({ length: emptyRowsCount });
 
-        return (
-             <div className="w-[148mm] min-h-[210mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-4 border-2 border-green-700 flex flex-col relative font-serif">
+       return (
+            <div className="w-[148mm] min-h-[210mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-4 border-2 border-green-700 flex flex-col relative font-serif">
                 <div className="absolute inset-0 flex items-center justify-center z-0">
-                   <Logo className="w-48 h-48 opacity-10" />
+                    <Logo className="w-48 h-48 opacity-10" />
                 </div>
-                 <div className="relative z-10 flex flex-col flex-grow">
+                <div className="relative z-10 flex flex-col flex-grow">
                     <header className="text-center border-b-2 border-green-700 pb-1">
                         <div className="flex justify-between items-start">
-                             <div className="text-left text-xs font-bold"><p>🍎 F.Co</p></div>
-                             <div className="flex-grow">
+                            <div className="text-left text-xs font-bold"><p>🍎 F.Co</p></div>
+                            <div className="flex-grow">
                                 <div className="text-[8px] leading-tight">
-                                     <p className="font-bold">Prop: Firdous Ahmad Lone (Nadihal)</p>
-                                     <p>Cell: 7006136330, 9797002164, 9906740921</p>
+                                    <p className="font-bold">Prop: Firdous Ahmad Lone (Nadihal)</p>
+                                    <p>Cell: 7006136330, 9797002164, 9906740921</p>
                                 </div>
                                 <h1 className="text-lg font-bold text-green-800">FIRDOUS AHMAD & COMPANY</h1>
                                 <p className="text-[10px] font-semibold">Fruit Merchants & Commission Agents</p>
                                 <p className="text-[8px]">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
-                             </div>
-                             <div className="text-right text-xs font-bold"><p>🍎 F.Co</p></div>
+                            </div>
+                            <div className="text-right text-xs font-bold"><p>🍎 F.Co</p></div>
                         </div>
                     </header>
                     <section className="flex justify-between items-end my-1 text-sm">
@@ -475,7 +475,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                         </div>
                     </section>
                     <main className="flex-grow">
-                         <table className="w-full text-xs border-collapse">
+                        <table className="w-full text-xs border-collapse">
                             <thead>
                                 <tr className="border-y-2 border-green-700">
                                     <th className="p-1 border-x border-green-600">TYPE</th>
@@ -496,7 +496,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                                     </tr>
                                 ))}
                                 {emptyRows.map((_, index) => (
-                                     <tr key={`empty-${index}`} className="border-b border-green-600/50 h-5">
+                                    <tr key={`empty-${index}`} className="border-b border-green-600/50 h-5">
                                         <td className="py-0.5 px-1 border-x border-green-600">&nbsp;</td>
                                         <td className="py-0.5 px-1 border-x border-green-600"></td>
                                         <td className="py-0.5 px-1 border-x border-green-600"></td>
@@ -507,30 +507,30 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                             </tbody>
                         </table>
                     </main>
-                     <footer className="mt-auto pt-1 text-xs">
+                    <footer className="mt-auto pt-1 text-xs">
                         <div className="grid grid-cols-2 gap-x-4">
                             <div className="space-y-0.5 pr-4">
                                 <p><strong>Total Quantity:</strong> {totals.totalQty} (Patti: {totals.pattiQty}, Dabba: {totals.dabbaQty})</p>
                             </div>
                             <div className="space-y-0.5 border-l-2 border-green-700 pl-4 text-[10px]">
-                                 <div className="flex justify-between"><span>Gross Sale:</span> <span className="font-semibold">₹{totals.grossSale.toFixed(2)}</span></div>
+                                <div className="flex justify-between"><span>Gross Sale:</span> <span className="font-semibold">₹{totals.grossSale.toFixed(2)}</span></div>
                                 <div className="flex justify-between"><span>Freight:</span> <span>- ₹{freight.toFixed(2)}</span></div>
-                                 <div className="flex justify-between"><span>Labour:</span> <span>- ₹{totals.labour.toFixed(2)}</span></div>
-                                 <div className="flex justify-between"><span>Association:</span> <span>- ₹{totals.association.toFixed(2)}</span></div>
-                                 <div className="flex justify-between"><span>Security:</span> <span>- ₹{totals.security.toFixed(2)}</span></div>
-                                 <div className="flex justify-between"><span>Commission:</span> <span>- ₹{totals.commissionAmount.toFixed(2)}</span></div>
-                                 <div className="flex justify-between font-bold border-t border-gray-400"><span>Total Exp:</span> <span>- ₹{totals.totalExpenses.toFixed(2)}</span></div>
-                                 <div className="flex justify-between font-bold text-base border-t border-gray-400"><span>Net Sale:</span> <span>₹{totals.netSale.toFixed(2)}</span></div>
+                                <div className="flex justify-between"><span>Labour:</span> <span>- ₹{totals.labour.toFixed(2)}</span></div>
+                                <div className="flex justify-between"><span>Association:</span> <span>- ₹{totals.association.toFixed(2)}</span></div>
+                                <div className="flex justify-between"><span>Security:</span> <span>- ₹{totals.security.toFixed(2)}</span></div>
+                                <div className="flex justify-between"><span>Commission:</span> <span>- ₹{totals.commissionAmount.toFixed(2)}</span></div>
+                                <div className="flex justify-between font-bold border-t border-gray-400"><span>Total Exp:</span> <span>- ₹{totals.totalExpenses.toFixed(2)}</span></div>
+                                <div className="flex justify-between font-bold text-base border-t border-gray-400"><span>Net Sale:</span> <span>₹{totals.netSale.toFixed(2)}</span></div>
                             </div>
                         </div>
-                         <div className="flex justify-between items-end mt-1">
+                        <div className="flex justify-between items-end mt-1">
                             <BusinessCardQR size={40} />
-                             <div className="text-center">
-                                <p className="font-signature text-xl">Faisal</p>
+                            <div className="text-center">
+                                <p className="text-xl">Faisal</p>
                                 <p className="font-bold -mt-2 text-[10px]">For Firdous Ahmad & Company</p>
-                             </div>
+                            </div>
                         </div>
-                     </footer>
+                    </footer>
                 </div>
             </div>
         )
@@ -601,9 +601,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         <div className="bg-gray-900 font-sans print:bg-white flex flex-col md:flex-row gap-8 justify-center p-4 md:p-8">
              <style jsx global>{`
                 @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
-                .font-signature {
-                    font-family: 'Dancing Script', cursive;
-                }
+                
                 @media print {
                     body {
                         background: white !important;
