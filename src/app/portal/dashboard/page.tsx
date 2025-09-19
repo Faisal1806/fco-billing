@@ -291,10 +291,10 @@ export default function CustomerDashboardPage() {
                         <TableFooter>
                              <TableRow className="font-bold text-lg bg-muted">
                                 <TableCell colSpan={5} className="text-right">Final Balance</TableCell>
-                                <TableCell className={`text-right ${balance <= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                                <TableCell className={`text-right ${balance >= 0 ? 'text-green-700' : 'text-red-700'}`}>
                                     ₹{Math.abs(balance).toFixed(2)}
                                     <span className="text-xs text-muted-foreground ml-1">
-                                        {balance <= 0 ? '(Payable)' : '(Receivable)'}
+                                        {balance >= 0 ? '(Receivable)' : '(Payable)'}
                                     </span>
                                 </TableCell>
                             </TableRow>
