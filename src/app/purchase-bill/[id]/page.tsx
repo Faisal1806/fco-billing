@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useEffect, useState, useRef } from "react";
@@ -12,6 +13,7 @@ import { Logo } from "@/components/logo";
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode.react';
+import BusinessCardQR from "@/components/BusinessCardQR";
 
 interface PurchaseData {
     billNo: string;
@@ -94,18 +96,18 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
         const element = printRef.current;
         if (!element || !billData) return;
     
+        const activeLayout = printStyle === 'a4' ? element.querySelector('.print-area-a4') : element.querySelector('.print-area-thermal');
+        if (!activeLayout) return;
+
+        const canvas = await html2canvas(activeLayout as HTMLElement, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: invoiceStyle === 'modern' ? '#1f2937' : (printStyle === 'thermal' ? '#ffffff' : '#FDFEE2'),
+        });
+    
         const isThermal = printStyle === 'thermal';
         const format = isThermal ? [80, 297] : 'a5';
         const orientation = 'portrait';
-    
-        const canvas = await html2canvas(element, {
-            scale: 2,
-            useCORS: true,
-            width: element.scrollWidth,
-            height: element.scrollHeight,
-            windowWidth: element.scrollWidth,
-            windowHeight: element.scrollHeight,
-        });
     
         const pdf = new jsPDF({
             orientation,
@@ -155,7 +157,7 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
     if (loading) {
         return (
             <div className="bg-gray-50 min-h-screen p-8 flex items-center justify-center">
-                 <div className="w-[105mm] min-h-[148mm] mx-auto bg-white p-4 border">
+                 <div className="w-[148mm] min-h-[210mm] mx-auto bg-white p-4 border">
                     <Skeleton className="h-16 w-full mb-4" />
                     <div className="flex-grow mt-4">
                         <Skeleton className="h-48 w-full" />
@@ -179,7 +181,7 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
     const { billNo, date, growerName, entries, totals } = billData;
     
     const A4Layout = () => (
-         <div className="w-[148mm] min-h-[210mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-4 border-2 border-green-700 flex flex-col relative">
+         <div className="w-[148mm] min-h-[210mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-4 border-2 border-green-700 flex flex-col relative font-serif">
             {/* Watermark */}
             <div className="absolute inset-0 flex items-center justify-center z-0">
                <Logo className="w-48 h-48 opacity-10" />
@@ -320,7 +322,7 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
             <footer className="text-center pt-2 border-t border-dashed border-black">
                 <p>Thank you for your business!</p>
                 <div className="flex justify-center pt-2">
-                    <QRCode value={pageUrl} size={80} />
+                    <BusinessCardQR size={80} />
                 </div>
             </footer>
         </div>
@@ -359,15 +361,9 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
                     }
                     .print-area-a4 {
                         display: ${printStyle === 'a4' ? 'flex !important' : 'none !important'};
-                        width: 100%;
-                        height: 100%;
-                        box-shadow: none;
-                        border: none;
                     }
                      .print-area-thermal {
                         display: ${printStyle === 'thermal' ? 'block !important' : 'none !important'};
-                         box-shadow: none;
-                        border: none;
                     }
 
                     @page {

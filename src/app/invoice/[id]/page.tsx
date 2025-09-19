@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useEffect, useState, useRef } from "react";
@@ -53,14 +54,16 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     const printRef = useRef<HTMLDivElement>(null);
     const [pageUrl, setPageUrl] = useState('');
     const [printStyle, setPrintStyle] = useState<'a4' | 'thermal'>('a4');
-    const [invoiceStyle, setInvoiceStyle] = useState('modern');
+    const [invoiceStyle, setInvoiceStyle] = useState('classic');
 
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
             setPageUrl(window.location.href);
-            // Force modern style for this page as per the new design
-            setInvoiceStyle('modern');
+            const savedStyle = localStorage.getItem('invoiceStyle');
+            if (savedStyle) {
+                setInvoiceStyle(savedStyle);
+            }
         }
     }, []);
 
@@ -119,11 +122,11 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         const canvas = await html2canvas(activeLayout as HTMLElement, {
             scale: 2, 
             useCORS: true,
-            backgroundColor: printStyle === 'a4' ? '#1f2937' : '#ffffff', // Match layout bg
+            backgroundColor: invoiceStyle === 'modern' ? '#1f2937' : (printStyle === 'thermal' ? '#ffffff' : '#FDFEE2'), // Match layout bg
         });
     
         const isThermal = printStyle === 'thermal';
-        const format = isThermal ? [80, 297] : 'a4';
+        const format = isThermal ? [80, 297] : 'a5';
         const orientation = 'portrait';
     
         const pdf = new jsPDF({
@@ -174,7 +177,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     if (loading) {
         return (
             <div className="bg-gray-900 min-h-screen p-8 flex items-center justify-center">
-                 <div className="w-[210mm] min-h-[297mm] mx-auto bg-gray-800 p-8">
+                 <div className="w-[148mm] min-h-[210mm] mx-auto bg-gray-800 p-8">
                     <Skeleton className="h-16 w-3/4 self-center mb-8" />
                     <div className="flex-grow mt-8">
                         <Skeleton className="h-96 w-full" />
@@ -200,7 +203,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     } = billData;
     
     const ModernA4Layout = () => (
-         <div className="w-[210mm] min-h-[297mm] mx-auto bg-gray-800 text-gray-200 shadow-2xl print:shadow-none p-6 flex flex-col font-sans relative">
+         <div className="w-[148mm] min-h-[210mm] mx-auto bg-gray-800 text-gray-200 shadow-2xl print:shadow-none p-6 flex flex-col font-sans relative">
             <div className="absolute inset-0 flex items-center justify-center z-0">
                 <Logo className="w-96 h-96 opacity-[0.02]" />
             </div>
@@ -294,10 +297,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 </main>
 
                 <footer className="flex justify-between items-end mt-auto pt-4 border-t border-gray-700 text-xs">
-                    <div className="flex flex-col items-center">
-                        <QRCode value={pageUrl} size={64} bgColor="#1f2937" fgColor="#FFFFFF" />
-                        <p className="text-gray-500 mt-1">Scan for Details & UPI</p>
-                    </div>
+                    <BusinessCardQR size={64} />
                     <div className="text-right text-gray-400">
                         <p className="font-signature text-3xl text-gray-200">Faisal</p>
                         <p className="font-bold -mt-2">For Firdous Ahmad & Company</p>
@@ -308,6 +308,97 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         </div>
     );
     
+    const ClassicA4Layout = () => (
+         <div className="w-[148mm] min-h-[210mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-4 border-2 border-green-700 flex flex-col relative font-serif">
+            <div className="absolute inset-0 flex items-center justify-center z-0">
+               <Logo className="w-48 h-48 opacity-10" />
+            </div>
+             <div className="relative z-10 flex flex-col flex-grow">
+                <header className="text-center border-b-2 border-green-700 pb-2">
+                    <div className="flex justify-between items-start">
+                         <div className="text-left text-xs font-bold"><p>🍎 F.Co</p></div>
+                         <div className="flex-grow">
+                            <div className="text-[10px]">
+                                 <p className="font-bold">Prop: Firdous Ahmad Lone (Nadihal)</p>
+                                 <p>Cell: 7006136330, 9797002164, 9906740921</p>
+                            </div>
+                            <h1 className="text-2xl font-bold text-green-800">FIRDOUS AHMAD & COMPANY</h1>
+                            <p className="text-xs font-semibold">Fruit Merchants & Commission Agents</p>
+                            <p className="text-[10px]">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
+                         </div>
+                         <div className="text-right text-xs font-bold"><p>🍎 F.Co</p></div>
+                    </div>
+                </header>
+                <section className="flex justify-between items-end my-2 text-sm">
+                    <div>
+                        <p><strong>M/s:</strong> {customerName}</p>
+                        {khata && <p><strong>Khata:</strong> {khata}</p>}
+                    </div>
+                    <div className="text-right">
+                        <p><strong>Bill No:</strong> {sNo}</p>
+                        <p><strong>Date:</strong> {new Date(date).toLocaleDateString('en-GB')}</p>
+                        <p><strong>Watak No:</strong> {watakNo}</p>
+                    </div>
+                </section>
+                <main className="flex-grow">
+                     <table className="w-full text-xs border-collapse">
+                        <thead>
+                            <tr className="border-y-2 border-green-700">
+                                <th className="p-1 border-x border-green-600">TYPE</th>
+                                <th className="p-1 border-x border-green-600">VARIETY</th>
+                                <th className="p-1 border-x border-green-600">QTY</th>
+                                <th className="p-1 border-x border-green-600">RATE</th>
+                                <th className="p-1 border-x border-green-600">GROSS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {entries.map((entry, index) => (
+                                <tr key={index} className="border-b border-green-600/50 h-7">
+                                    <td className="p-1 border-x border-green-600">{entry.type}</td>
+                                    <td className="p-1 border-x border-green-600">{entry.variety}</td>
+                                    <td className="p-1 border-x border-green-600 text-center">{entry.qty}</td>
+                                    <td className="p-1 border-x border-green-600 text-right">₹{entry.rate.toFixed(2)}</td>
+                                    <td className="p-1 border-x border-green-600 text-right font-semibold">₹{(entry.qty * entry.rate).toFixed(2)}</td>
+                                </tr>
+                            ))}
+                            {Array.from({ length: Math.max(0, 10 - entries.length) }).map((_, index) => (
+                                 <tr key={`empty-${index}`} className="border-b border-green-600/50 h-7">
+                                    <td className="p-1 border-x border-green-600"></td>
+                                    <td className="p-1 border-x border-green-600"></td>
+                                    <td className="p-1 border-x border-green-600"></td>
+                                    <td className="p-1 border-x border-green-600"></td>
+                                    <td className="p-1 border-x border-green-600"></td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                     <div className="mt-2 grid grid-cols-2 gap-x-4 text-xs">
+                        <div className="space-y-1 pr-4">
+                            <p><strong>Total Quantity:</strong> {totals.totalQty} (Patti: {totals.pattiQty}, Dabba: {totals.dabbaQty})</p>
+                        </div>
+                        <div className="space-y-1 border-l-2 border-green-700 pl-4">
+                             <div className="flex justify-between"><span>Gross Sale:</span> <span className="font-semibold">₹{totals.grossSale.toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span>Freight:</span> <span>- ₹{freight.toFixed(2)}</span></div>
+                             <div className="flex justify-between"><span>Labour:</span> <span>- ₹{totals.labour.toFixed(2)}</span></div>
+                             <div className="flex justify-between"><span>Association:</span> <span>- ₹{totals.association.toFixed(2)}</span></div>
+                             <div className="flex justify-between"><span>Security:</span> <span>- ₹{totals.security.toFixed(2)}</span></div>
+                             <div className="flex justify-between"><span>Commission:</span> <span>- ₹{totals.commissionAmount.toFixed(2)}</span></div>
+                             <div className="flex justify-between font-bold border-t border-gray-400"><span>Total Exp:</span> <span>- ₹{totals.totalExpenses.toFixed(2)}</span></div>
+                             <div className="flex justify-between font-bold text-base border-t border-gray-400"><span>Net Sale:</span> <span>₹{totals.netSale.toFixed(2)}</span></div>
+                        </div>
+                    </div>
+                </main>
+                 <footer className="flex justify-between items-end mt-auto pt-2 text-[10px]">
+                    <BusinessCardQR size={48} />
+                     <div className="text-center">
+                        <p className="font-signature text-xl">Faisal</p>
+                        <p className="font-bold -mt-2">For Firdous Ahmad & Company</p>
+                     </div>
+                </footer>
+            </div>
+        </div>
+    );
+
     const ThermalLayout = () => (
         <div className="w-[80mm] bg-white text-black p-2 font-sans text-xs leading-tight">
             <header className="text-center space-y-1">
@@ -355,11 +446,19 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             <footer className="text-center pt-2 border-t border-dashed border-black text-[10px]">
                 <p>Thank you for your business!</p>
                 <div className="flex justify-center pt-2">
-                    <QRCode value={pageUrl} size={60} />
+                    <BusinessCardQR size={60} />
                 </div>
             </footer>
         </div>
     );
+    
+    const renderContent = () => {
+        switch(invoiceStyle) {
+            case 'modern': return <ModernA4Layout />;
+            default: return <ClassicA4Layout />;
+        }
+    }
+
 
     return (
         <div className="bg-gray-900 font-sans print:bg-white flex flex-col md:flex-row gap-8 justify-center p-4 md:p-8">
@@ -388,7 +487,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                         display: ${printStyle === 'thermal' ? 'block !important' : 'none !important'};
                     }
                     @page {
-                        size: ${printStyle === 'a4' ? 'A4 portrait' : '80mm 297mm'};
+                        size: ${printStyle === 'a4' ? 'A5 portrait' : '80mm 297mm'};
                         margin: 0;
                     }
                 }
@@ -401,7 +500,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             <div className="print-container">
                 <div ref={printRef}>
                     <div className="print-area-a4">
-                        <ModernA4Layout />
+                        {renderContent()}
                     </div>
                      <div className="print-area-thermal">
                         <ThermalLayout />
