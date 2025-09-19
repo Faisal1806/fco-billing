@@ -33,7 +33,7 @@ interface PurchaseData {
 }
 
 
-export default function PurchaseBillPage({ params }: { params: { id: string } }) {
+export default function PurchaseBillPage({ params }: { params: { id:string } }) {
     const [billData, setBillData] = useState<PurchaseData | null>(null);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
@@ -127,7 +127,7 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
         <div className="flex flex-col gap-4 print:hidden">
              <div className="flex items-center gap-2">
                 <Button onClick={() => setPrintStyle('a4')} variant={printStyle === 'a4' ? 'default' : 'outline'} size="sm" className="gap-2">
-                    <FileText className="h-4 w-4" /> A4
+                    <FileText className="h-4 w-4" /> A5
                 </Button>
                 <Button onClick={() => setPrintStyle('thermal')} variant={printStyle === 'thermal' ? 'default' : 'outline'} size="sm" className="gap-2">
                     <Receipt className="h-4 w-4" /> Thermal
@@ -181,7 +181,7 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
     const { billNo, date, growerName, entries, totals } = billData;
     
     const A4Layout = () => (
-         <div className="w-[148mm] min-h-[210mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-4 border-2 border-green-700 flex flex-col relative font-serif">
+         <div className="w-[148mm] h-[210mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-4 border-2 border-green-700 flex flex-col relative font-serif">
             {/* Watermark */}
             <div className="absolute inset-0 flex items-center justify-center z-0">
                <Logo className="w-48 h-48 opacity-10" />
@@ -243,15 +243,6 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
                                     <td className="p-1 border-x border-green-600 text-right font-semibold">₹{entry.total.toFixed(2)}</td>
                                 </tr>
                             ))}
-                            {Array.from({ length: Math.max(0, 15 - entries.length) }).map((_, index) => (
-                                 <tr key={`empty-${index}`} className="border-b border-green-600/50 h-8">
-                                    <td className="p-1 border-x border-green-600"></td>
-                                    <td className="p-1 border-x border-green-600"></td>
-                                    <td className="p-1 border-x border-green-600"></td>
-                                    <td className="p-1 border-x border-green-600"></td>
-                                    <td className="p-1 border-x border-green-600"></td>
-                                </tr>
-                            ))}
                         </tbody>
                     </table>
                 </main>
@@ -271,8 +262,8 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
                         <p className="italic">If the bill is not paid within 15 days interest @ 5% will be Charged extra</p>
                     </div>
                     <div className="flex justify-between items-end mt-4">
-                         <div className="print:hidden w-full max-w-xs space-y-4">
-                            <Controls />
+                         <div className="text-center">
+                            {/* This space is intentionally left blank for the controls on screen */}
                         </div>
                         <div className="text-center">
                             <p className="font-signature text-2xl text-gray-700 dark:text-gray-300">Faisal</p>
