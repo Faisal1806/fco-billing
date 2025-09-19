@@ -257,8 +257,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             doc.text('Scan for Details & UPI', margin + 10, pageHeight - 12, { align: 'center'});
         }
     
-        doc.addFont('/fonts/DancingScript-Bold.ttf', 'DancingScript', 'normal');
-        doc.setFont('DancingScript');
+        doc.setFont('helvetica', 'normal');
         doc.setFontSize(12);
         doc.text('Faisal', pageWidth - margin - 20, pageHeight - 20, { align: 'center' });
     
@@ -444,7 +443,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
          const emptyRows = Array.from({ length: emptyRowsCount });
 
         return (
-             <div className="w-[148mm] h-[210mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-4 border-2 border-green-700 flex flex-col relative font-serif">
+             <div className="w-[148mm] min-h-[210mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-4 border-2 border-green-700 flex flex-col relative font-serif">
                 <div className="absolute inset-0 flex items-center justify-center z-0">
                    <Logo className="w-48 h-48 opacity-10" />
                 </div>
