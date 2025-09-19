@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useEffect, useState, useRef } from "react";
@@ -66,7 +67,7 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
         if (!element || !billData) return;
 
         const isThermal = printStyle === 'thermal';
-        const format = isThermal ? [80, 297] : 'a4';
+        const format = isThermal ? [80, 297] : 'a6';
         const orientation = 'portrait';
     
         const canvas = await html2canvas(element, {
@@ -95,7 +96,7 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
          <div className="flex flex-col gap-4 print:hidden">
             <div className="flex items-center gap-2">
                  <Button onClick={() => setPrintStyle('a4')} variant={printStyle === 'a4' ? 'default' : 'outline'} size="sm" className="gap-2">
-                    <FileText className="h-4 w-4" /> A4
+                    <FileText className="h-4 w-4" /> A6
                 </Button>
                 <Button onClick={() => setPrintStyle('thermal')} variant={printStyle === 'thermal' ? 'default' : 'outline'} size="sm" className="gap-2">
                     <Receipt className="h-4 w-4" /> Thermal
@@ -125,7 +126,7 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
     if (loading) {
         return (
             <div className="bg-gray-50 min-h-screen p-8 flex items-center justify-center">
-                 <div className="w-[210mm] min-h-[297mm] mx-auto bg-white p-8">
+                 <div className="w-[105mm] min-h-[148mm] mx-auto bg-white p-8">
                     <Skeleton className="h-24 w-full mb-4" />
                     <Skeleton className="h-48 w-full" />
                  </div>
@@ -149,21 +150,21 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
     } = billData;
     
     const A4Layout = () => (
-        <div className="w-[210mm] min-h-[297mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-8 flex flex-col">
-            <header className="bg-gradient-to-r from-cyan-400 via-sky-500 to-blue-600 text-white p-6 rounded-t-xl shadow-lg">
+        <div className="w-[105mm] min-h-[148mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-6 flex flex-col">
+            <header className="bg-gradient-to-r from-cyan-400 via-sky-500 to-blue-600 text-white p-4 rounded-t-xl shadow-lg">
                 <div className="flex justify-between items-center">
-                    <div className="text-sm font-bold flex items-center gap-1"><FlaskConical className="h-4 w-4" /> F.Co</div>
+                    <div className="text-xs font-bold flex items-center gap-1"><FlaskConical className="h-4 w-4" /> F.Co</div>
                     <div className="text-center">
-                        <h1 className="text-3xl font-bold">F. Co Pesticides & Fertilizers</h1>
-                        <p className="mt-1 text-sm">Deals in:- All kinds of Pesticides & Fertilizers</p>
-                        <p className="text-xs">NEAR JAMIA MASJID NADIHAL, SOPORE</p>
+                        <h1 className="text-lg font-bold">F. Co Pesticides & Fertilizers</h1>
+                        <p className="mt-1 text-xs">Deals in:- All kinds of Pesticides & Fertilizers</p>
+                        <p className="text-[10px]">NEAR JAMIA MASJID NADIHAL, SOPORE</p>
                     </div>
-                    <div className="text-sm font-bold flex items-center gap-1"><FlaskConical className="h-4 w-4" /> F.Co</div>
+                    <div className="text-xs font-bold flex items-center gap-1"><FlaskConical className="h-4 w-4" /> F.Co</div>
                 </div>
             </header>
             
-            <main className="bg-white dark:bg-gray-800 p-6 rounded-b-xl shadow-lg -mt-4 flex-grow">
-                 <div className="grid grid-cols-2 gap-4 text-sm border-b pb-4 mb-4">
+            <main className="bg-white dark:bg-gray-800 p-4 rounded-b-xl shadow-lg -mt-2 flex-grow">
+                 <div className="grid grid-cols-2 gap-4 text-xs border-b pb-2 mb-2">
                     <div>
                         <p><strong>No:</strong> {no}</p>
                         <p><strong>M/s:</strong> {customerName}</p>
@@ -175,7 +176,7 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
                 
                 <Table>
                     <TableHeader>
-                        <TableRow className="bg-gray-100 dark:bg-gray-700">
+                        <TableRow className="bg-gray-100 dark:bg-gray-700 text-xs">
                             <TableHead className="w-[10%]">S.NO.</TableHead>
                             <TableHead>PARTICULARS</TableHead>
                             <TableHead className="text-right">QTY</TableHead>
@@ -183,9 +184,9 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
                             <TableHead className="text-right">AMOUNT</TableHead>
                         </TableRow>
                     </TableHeader>
-                    <TableBody>
+                    <TableBody className="text-xs">
                         {entries.map((entry, index) => (
-                            <TableRow key={index} className="h-10">
+                            <TableRow key={index} className="h-8">
                                 <TableCell>{index + 1}</TableCell>
                                 <TableCell>{entry.particulars}</TableCell>
                                 <TableCell className="text-right">{entry.qty}</TableCell>
@@ -196,10 +197,10 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
                     </TableBody>
                 </Table>
 
-                <div className="flex justify-end mt-6">
-                    <div className="w-full max-w-sm space-y-2">
+                <div className="flex justify-end mt-4">
+                    <div className="w-full max-w-sm space-y-1">
                        <Separator />
-                       <div className="flex justify-between font-bold text-2xl pt-2">
+                       <div className="flex justify-between font-bold text-lg pt-1">
                          <span>Grand Total:</span>
                          <span>₹{grandTotal.toFixed(2)}</span>
                        </div>
@@ -207,10 +208,10 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
                     </div>
                 </div>
             </main>
-            <footer className="flex justify-between items-end p-4 mt-auto print:pt-2 text-xs">
+            <footer className="flex justify-between items-end p-4 mt-auto print:pt-2 text-[10px]">
                 <p className="italic text-gray-500">Goods once sold can not be taken back.</p>
                  <div className="text-center">
-                    <p className="font-signature text-2xl text-gray-700 dark:text-gray-300">Faisal</p>
+                    <p className="font-signature text-xl text-gray-700 dark:text-gray-300">Faisal</p>
                     <p className="font-bold">Sign. Of Manager</p>
                  </div>
             </footer>
@@ -304,7 +305,7 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
                     }
 
                     @page {
-                        size: ${printStyle === 'a4' ? 'A4 portrait' : '80mm 297mm'};
+                        size: ${printStyle === 'a4' ? 'A6 portrait' : '80mm 297mm'};
                         margin: 0;
                     }
                 }

@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useEffect, useState, useRef } from "react";
@@ -93,7 +94,7 @@ export default function PaymentPage({ params }: { params: { id: string } }) {
         if (!element || !receiptData) return;
 
         const isThermal = printStyle === 'thermal';
-        const format = isThermal ? [80, 297] : 'a5';
+        const format = isThermal ? [80, 297] : 'a6';
         const orientation = 'portrait';
     
         const canvas = await html2canvas(element, {
@@ -122,7 +123,7 @@ export default function PaymentPage({ params }: { params: { id: string } }) {
         <div className="flex flex-col gap-4 print:hidden">
             <div className="flex items-center gap-2">
                  <Button onClick={() => setPrintStyle('a4')} variant={printStyle === 'a4' ? 'default' : 'outline'} size="sm" className="gap-2">
-                    <FileText className="h-4 w-4" /> A4
+                    <FileText className="h-4 w-4" /> A6
                 </Button>
                 <Button onClick={() => setPrintStyle('thermal')} variant={printStyle === 'thermal' ? 'default' : 'outline'} size="sm" className="gap-2">
                     <Receipt className="h-4 w-4" /> Thermal
@@ -152,7 +153,7 @@ export default function PaymentPage({ params }: { params: { id: string } }) {
     if (loading) {
         return (
             <div className="bg-gray-50 min-h-screen p-8 flex items-center justify-center">
-                 <div className="w-[148mm] min-h-[210mm] mx-auto bg-white p-6">
+                 <div className="w-[105mm] min-h-[148mm] mx-auto bg-white p-6">
                     <Skeleton className="h-24 w-full mb-4" />
                     <Skeleton className="h-48 w-full" />
                  </div>
@@ -177,11 +178,11 @@ export default function PaymentPage({ params }: { params: { id: string } }) {
     } = receiptData;
     
     const A4Layout = () => (
-         <div className="w-[148mm] min-h-[210mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-6 flex flex-col">
+         <div className="w-[105mm] min-h-[148mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-6 flex flex-col">
                 <header className="bg-gradient-to-r from-yellow-400 via-orange-500 to-amber-600 text-white p-4 rounded-t-xl shadow-md flex justify-between items-center">
                     <div className="text-sm font-bold">🍎 F.Co</div>
                     <div className="text-center">
-                        <h1 className="text-2xl font-bold">GOODS RECEIPT</h1>
+                        <h1 className="text-xl font-bold">GOODS RECEIPT</h1>
                         <p className="text-xs">FIRDOUS AHMAD & COMPANY</p>
                     </div>
                     <div className="text-sm font-bold">🍎 F.Co</div>
@@ -332,7 +333,7 @@ export default function PaymentPage({ params }: { params: { id: string } }) {
                     }
 
                     @page {
-                        size: ${printStyle === 'a4' ? 'A5 portrait' : '80mm 297mm'};
+                        size: ${printStyle === 'a4' ? 'A6 portrait' : '80mm 297mm'};
                         margin: 0;
                     }
                 }
