@@ -41,7 +41,7 @@ interface ChallanData {
 }
 
 
-export default function ChallanPage({ params }: { params: { id: string } }) {
+export default function DeliveryNotePage({ params }: { params: { id: string } }) {
     const [challanData, setChallanData] = useState<ChallanData | null>(null);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
@@ -77,8 +77,8 @@ export default function ChallanPage({ params }: { params: { id: string } }) {
             } else {
                 toast({
                     variant: "destructive",
-                    title: "Challan Not Found",
-                    description: "The requested challan was not found on this device."
+                    title: "Delivery Note Not Found",
+                    description: "The requested delivery note was not found on this device."
                 });
             }
             
@@ -89,11 +89,11 @@ export default function ChallanPage({ params }: { params: { id: string } }) {
 
     const handleShare = () => {
         if (challanData) {
-            const message = `Check out this Challan (#${challanData.challanNo}) for ${challanData.toMs}: ${window.location.href}`;
+            const message = `Check out this Delivery Note (#${challanData.challanNo}) for ${challanData.toMs}: ${window.location.href}`;
             const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
             window.open(whatsappUrl, '_blank');
         } else {
-            toast({ variant: "destructive", title: "Share Failed", description: "Could not share the challan." });
+            toast({ variant: "destructive", title: "Share Failed", description: "Could not share the delivery note." });
         }
     };
     
@@ -124,7 +124,7 @@ export default function ChallanPage({ params }: { params: { id: string } }) {
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
         
         pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save(`Challan-${challanData.challanNo}.pdf`);
+        pdf.save(`Delivery-Note-${challanData.challanNo}.pdf`);
     };
 
     const Controls = () => (
@@ -173,8 +173,8 @@ export default function ChallanPage({ params }: { params: { id: string } }) {
         return (
             <div className="bg-background min-h-screen flex items-center justify-center p-4">
                 <div className="text-center p-8 border rounded-lg shadow-md">
-                    <h2 className="text-xl font-bold">Challan Not Found</h2>
-                    <p className="text-muted-foreground">The challan you are looking for does not exist.</p>
+                    <h2 className="text-xl font-bold">Delivery Note Not Found</h2>
+                    <p className="text-muted-foreground">The delivery note you are looking for does not exist.</p>
                 </div>
             </div>
         );
@@ -192,7 +192,7 @@ export default function ChallanPage({ params }: { params: { id: string } }) {
                     <div>
                         <h2 className="text-xl font-bold">FIRDOUS AHMAD & COMPANY</h2>
                         <p className="text-xs">Fruit Merchants & Commission Agents, Sopore</p>
-                        <h1 className="text-2xl font-bold mt-2">CHALLAN</h1>
+                        <h1 className="text-2xl font-bold mt-2">DELIVERY NOTE</h1>
                     </div>
                     <div className="text-sm font-bold">🍎 F.Co</div>
                 </header>
@@ -206,7 +206,7 @@ export default function ChallanPage({ params }: { params: { id: string } }) {
                             <p><strong>Driver:</strong> {driverName}</p>
                         </div>
                         <div className="text-right space-y-1">
-                             <p><strong>Challan No:</strong> {challanNo}</p>
+                             <p><strong>Note No:</strong> {challanNo}</p>
                              <p><strong>Dated:</strong> {new Date(date).toLocaleDateString('en-GB')}</p>
                         </div>
                     </div>
@@ -275,10 +275,10 @@ export default function ChallanPage({ params }: { params: { id: string } }) {
              <header className="text-center space-y-1">
                 <h1 className="text-sm font-bold">Firdous Ahmad & Company</h1>
                 <p>Fruit Merchants, Sopore</p>
-                <p className="border-t border-dashed border-black mt-1 pt-1 font-bold">CHALLAN</p>
+                <p className="border-t border-dashed border-black mt-1 pt-1 font-bold">DELIVERY NOTE</p>
             </header>
              <main className="my-2 border-t border-b border-dashed border-black py-2 space-y-1">
-                <div className="flex justify-between"><span>Challan No: {challanNo}</span> <span>Date: {new Date(date).toLocaleDateString('en-GB')}</span></div>
+                <div className="flex justify-between"><span>Note No: {challanNo}</span> <span>Date: {new Date(date).toLocaleDateString('en-GB')}</span></div>
                 <div>To, M/s: {toMs}</div>
                 <div>Vehicle: {vehicleNo}</div>
                 <div>Driver: {driverName}</div>

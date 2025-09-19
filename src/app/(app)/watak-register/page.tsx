@@ -80,7 +80,7 @@ const normalizeName = (name: string): string => {
 
 
 
-export default function WatakRegisterPage() {
+export default function SalesRegisterPage() {
   const { t } = useLanguage();
   const router = useRouter();
   const { toast } = useToast();

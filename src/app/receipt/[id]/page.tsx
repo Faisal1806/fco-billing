@@ -32,7 +32,7 @@ interface ReceiptData {
 }
 
 
-export default function ReceiptPage({ params }: { params: { id: string } }) {
+export default function PaymentPage({ params }: { params: { id: string } }) {
     const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
@@ -68,8 +68,8 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
             } else {
                  toast({
                     variant: "destructive",
-                    title: "Receipt Not Found",
-                    description: "The requested receipt was not found on this device."
+                    title: "Payment Not Found",
+                    description: "The requested payment was not found on this device."
                 });
             }
             
@@ -81,11 +81,11 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
 
     const handleShare = () => {
         if (receiptData) {
-            const message = `Check out this Receipt (#${receiptData.no}) for ${receiptData.customerName}: ${window.location.href}`;
+            const message = `Check out this Payment (#${receiptData.no}) for ${receiptData.customerName}: ${window.location.href}`;
             const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
             window.open(whatsappUrl, '_blank');
         } else {
-            toast({ variant: "destructive", title: "Share Failed", description: "Could not share the receipt." });
+            toast({ variant: "destructive", title: "Share Failed", description: "Could not share the payment." });
         }
     };
 
@@ -116,7 +116,7 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
         
         pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save(`Receipt-${receiptData.no}.pdf`);
+        pdf.save(`Payment-${receiptData.no}.pdf`);
     };
 
     const Controls = () => (
@@ -165,8 +165,8 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
         return (
             <div className="bg-background min-h-screen flex items-center justify-center p-4">
                 <div className="text-center p-8 border rounded-lg shadow-md bg-white">
-                    <h2 className="text-xl font-bold">Receipt Not Found</h2>
-                    <p className="text-muted-foreground">The receipt you are looking for does not exist.</p>
+                    <h2 className="text-xl font-bold">Payment Not Found</h2>
+                    <p className="text-muted-foreground">The payment you are looking for does not exist.</p>
                 </div>
             </div>
         );
@@ -182,7 +182,7 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
                 <header className="bg-gradient-to-r from-yellow-400 via-orange-500 to-amber-600 text-white p-4 rounded-t-xl shadow-md flex justify-between items-center">
                     <div className="text-sm font-bold">🍎 F.Co</div>
                     <div className="text-center">
-                        <h1 className="text-2xl font-bold">GOODS RECEIPT</h1>
+                        <h1 className="text-2xl font-bold">GOODS PAYMENT</h1>
                         <p className="text-xs">FIRDOUS AHMAD & COMPANY</p>
                     </div>
                     <div className="text-sm font-bold">🍎 F.Co</div>
@@ -226,7 +226,7 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
                     <div className="grid grid-cols-2 gap-4 text-xs font-semibold">
                         <div>
                            <p>Freight Paid Rs: {freightPaid > 0 ? `₹${freightPaid.toFixed(2)}` : ''}</p>
-                           <p>Wattak Ready On: {wattakReadyOn}</p>
+                           <p>Invoice Ready On: {wattakReadyOn}</p>
                         </div>
                         <div className="text-right">
                            <p>Total Nugs: {totalNugs}</p>
@@ -248,7 +248,7 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
             <header className="text-center space-y-1">
                 <h1 className="text-sm font-bold">Firdous Ahmad & Company</h1>
                 <p>Sopore</p>
-                <p className="border-t border-dashed border-black mt-1 pt-1 font-bold">Goods Receipt</p>
+                <p className="border-t border-dashed border-black mt-1 pt-1 font-bold">Goods Payment</p>
             </header>
              <main className="my-2 border-t border-b border-dashed border-black py-2 space-y-1">
                 <div className="flex justify-between"><span>No: {no}</span> <span>Date: {new Date(date).toLocaleDateString('en-GB')}</span></div>
@@ -278,7 +278,7 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
             </div>
              <div className="text-xs mt-2 space-y-1 border-t border-dashed pt-2">
                 <p>Freight Paid: {freightPaid > 0 ? `₹${freightPaid.toFixed(2)}` : 'N/A'}</p>
-                <p>Watak Ready On: {wattakReadyOn}</p>
+                <p>Invoice Ready On: {wattakReadyOn}</p>
             </div>
             <footer className="text-center pt-4">
                 <p>For: Firdous Ahmad & Co.</p>

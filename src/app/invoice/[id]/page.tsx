@@ -24,7 +24,7 @@ interface BillData {
     khata: string;
     entries: {
         peti: number;
-        dabba: number;
+        daba: number;
         variety: string;
         rate: number;
         type: 'Patti' | 'Dabba';
