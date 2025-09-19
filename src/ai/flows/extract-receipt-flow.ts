@@ -58,15 +58,30 @@ const extractReceiptFlow = ai.defineFlow(
 
 The Receipt may be handwritten or printed. Pay close attention to details.
 
-Extract the following fields and provide them in the specified JSON format. If a field is not present, you may omit it from the output.
-- no (Receipt No.)
-- date (in YYYY-MM-DD format)
-- customerName (The M/s or Grower name)
-- ro (Residence of)
-- entries: A list of all items. Each item must have a khata, kind, peti, and daba.
-- totalNugs: Calculate the sum of all peti and daba quantities.
-- freightPaid: The total freight amount paid in cash.
-- wattakReadyOn: The date the Watak is expected to be ready.
+**Rules:**
+- Extract the date and format it as YYYY-MM-DD.
+- 'M/s' refers to the customerName.
+- 'R/o' refers to the residence.
+- 'Khata' is the account name for a line item.
+- 'Peti' and 'Daba' are types of boxes. Extract their quantities for each line item.
+- 'Kind' refers to the variety of produce.
+- **You must calculate 'totalNugs' by summing up all 'peti' and 'daba' quantities from all entries.**
+- If a value is not present on the receipt, you may omit the field from the JSON output unless it is required by the schema.
+
+**Example of a handwritten receipt and its JSON output:**
+*   **Receipt Details:**
+    *   No: 101
+    *   Date: 15/07/2024
+    *   M/s: Ghulam Mohammad Lone
+    *   R/o: Nadihal
+    *   Item 1: Khata 'Self', Kind 'Delicious', Peti 10, Daba 5
+    *   Item 2: Khata 'Fayaz', Kind 'American', Peti 20, Daba 0
+    *   Freight Paid: 500
+*   **Correct JSON Output:**
+    *   { "no": "101", "date": "2024-07-15", "customerName": "Ghulam Mohammad Lone", "ro": "Nadihal", "entries": [ { "khata": "Self", "kind": "Delicious", "peti": 10, "daba": 5 }, { "khata": "Fayaz", "kind": "American", "peti": 20, "daba": 0 } ], "totalNugs": 35, "freightPaid": 500 }
+
+
+Now, analyze the following image and produce the JSON output.
 
 [START IMAGE]
 {{media url=photoDataUri}}
