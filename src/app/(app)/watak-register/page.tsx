@@ -1,5 +1,5 @@
 
-'use client'
+'use'
 
 import * as React from 'react';
 import {
@@ -34,6 +34,7 @@ import DocumentCard from '@/components/DocumentCard';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { Badge } from '@/components/ui/badge';
 
 export interface WatakEntry {
     id: string;
@@ -128,6 +129,12 @@ export default function SalesRegisterPage() {
     }
     setIsLoading(false);
   }
+
+  const yearlyCount = React.useMemo(() => {
+    if(!wataks) return 0;
+    const currentYear = new Date().getFullYear();
+    return wataks.filter(w => new Date(w.date).getFullYear() === currentYear).length;
+  }, [wataks]);
 
 
   React.useEffect(() => {
@@ -248,7 +255,10 @@ export default function SalesRegisterPage() {
       <CardHeader>
         <div className="flex justify-between items-start gap-4 flex-wrap">
             <div className="flex items-center gap-4">
-                <CardTitle>Sales Register</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                    Sales Register
+                    {!isLoading && <Badge variant="outline">{yearlyCount} This Year</Badge>}
+                </CardTitle>
                 <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input

@@ -17,6 +17,7 @@ import { PlusCircle, Trash2, FilePenLine, FilePlus, FileText } from 'lucide-reac
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
 import { saveDocument, deleteDocument } from '@/lib/actions';
+import { Badge } from '@/components/ui/badge';
 
 type ChallanEntry = {
   peti: number;
@@ -104,6 +105,12 @@ export function ChallanMakingTab() {
   React.useEffect(() => {
     fetchChallans();
   }, []);
+
+  const yearlyCount = React.useMemo(() => {
+    if(!savedChallans) return 0;
+    const currentYear = new Date().getFullYear();
+    return savedChallans.filter(c => new Date(c.date).getFullYear() === currentYear).length;
+  }, [savedChallans]);
 
   const handleEntryUpdate = (
     index: number,
@@ -341,7 +348,10 @@ export function ChallanMakingTab() {
         </Card>
         <Card className="lg:col-span-1 h-fit">
             <CardHeader>
-                <h3 className="text-lg font-medium">Recent Delivery Notes</h3>
+                <h3 className="text-lg font-medium flex items-center gap-2">
+                    Recent Delivery Notes
+                    <Badge variant="secondary">{yearlyCount} This Year</Badge>
+                </h3>
             </CardHeader>
             <CardContent>
                 <ScrollArea className="h-96">

@@ -19,6 +19,7 @@ import { PlusCircle, Trash2, FilePenLine, FilePlus, FileText } from 'lucide-reac
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
 import type { ReceiptExtractOutput } from '@/ai/flows/extract-receipt-flow';
+import { Badge } from '@/components/ui/badge';
 
 
 type ReceiptEntry = {
@@ -145,7 +146,11 @@ export function ReceiptMakingTab() {
     setSavedReceipts(receipts.sort((a,b) => (a.no > b.no) ? 1 : -1));
   };
   
-  
+  const yearlyCount = React.useMemo(() => {
+    if(!savedReceipts) return 0;
+    const currentYear = new Date().getFullYear();
+    return savedReceipts.filter(r => new Date(r.date).getFullYear() === currentYear).length;
+  }, [savedReceipts]);
 
   const handleEntryUpdate = (
     index: number,
@@ -349,7 +354,10 @@ export function ReceiptMakingTab() {
         </Card>
         <Card className="md:col-span-1 h-fit">
             <CardHeader>
-                <h3 className="text-lg font-medium">Recent Payments</h3>
+                <h3 className="text-lg font-medium flex items-center gap-2">
+                    Recent Payments
+                    <Badge variant="secondary">{yearlyCount} This Year</Badge>
+                </h3>
             </CardHeader>
             <CardContent>
                 <ScrollArea className="h-96">

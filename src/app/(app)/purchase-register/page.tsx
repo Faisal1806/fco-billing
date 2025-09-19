@@ -33,6 +33,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { FaWhatsapp } from 'react-icons/fa';
+import { Badge } from '@/components/ui/badge';
 
 export interface PurchaseEntry {
     billNo: string;
@@ -86,6 +87,12 @@ export default function PurchaseRegisterPage() {
   React.useEffect(() => {
     fetchPurchases();
   }, [toast]);
+  
+  const yearlyCount = React.useMemo(() => {
+    if(!purchases) return 0;
+    const currentYear = new Date().getFullYear();
+    return purchases.filter(p => new Date(p.date).getFullYear() === currentYear).length;
+  }, [purchases]);
 
   const filteredPurchases = purchases
     .filter(p => selectedGrower === 'All Growers' || p.growerName === selectedGrower)
@@ -197,7 +204,10 @@ export default function PurchaseRegisterPage() {
       <CardHeader>
         <div className="flex justify-between items-start gap-4 flex-wrap">
             <div className="flex items-center gap-4">
-                <CardTitle>Purchase Register</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                    Purchase Register
+                    {!isLoading && <Badge variant="outline">{yearlyCount} This Year</Badge>}
+                </CardTitle>
                  <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
