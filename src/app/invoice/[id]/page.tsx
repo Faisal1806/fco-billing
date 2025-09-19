@@ -225,6 +225,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         let currentY = netSaleY;
         
         expenseLines.forEach(line => {
+            doc.setFont('helvetica', 'normal');
             doc.text(line.label, summaryX, currentY, { align: 'left' });
             doc.text(line.value, pageWidth - margin, currentY, { align: 'right' });
             currentY += 4;
@@ -438,89 +439,103 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         </div>
     );
     
-    const ClassicA4Layout = () => (
-         <div className="w-[148mm] min-h-[210mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-4 border-2 border-green-700 flex flex-col relative font-serif">
-            <div className="absolute inset-0 flex items-center justify-center z-0">
-               <Logo className="w-48 h-48 opacity-10" />
-            </div>
-             <div className="relative z-10 flex flex-col flex-grow">
-                <header className="text-center border-b-2 border-green-700 pb-1">
-                    <div className="flex justify-between items-start">
-                         <div className="text-left text-xs font-bold"><p>🍎 F.Co</p></div>
-                         <div className="flex-grow">
-                            <div className="text-[8px] leading-tight">
-                                 <p className="font-bold">Prop: Firdous Ahmad Lone (Nadihal)</p>
-                                 <p>Cell: 7006136330, 9797002164, 9906740921</p>
-                            </div>
-                            <h1 className="text-lg font-bold text-green-800">FIRDOUS AHMAD & COMPANY</h1>
-                            <p className="text-[10px] font-semibold">Fruit Merchants & Commission Agents</p>
-                            <p className="text-[8px]">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
-                         </div>
-                         <div className="text-right text-xs font-bold"><p>🍎 F.Co</p></div>
-                    </div>
-                </header>
-                <section className="flex justify-between items-end my-1 text-sm">
-                    <div>
-                        <p><strong>M/s:</strong> {customerName}</p>
-                        {khata && <p><strong>Khata:</strong> {khata}</p>}
-                    </div>
-                    <div className="text-right text-xs">
-                        <p><strong>Bill No:</strong> {sNo}</p>
-                        <p><strong>Date:</strong> {new Date(date).toLocaleDateString('en-GB')}</p>
-                        <p><strong>Watak No:</strong> {watakNo}</p>
-                    </div>
-                </section>
-                <main className="flex-grow">
-                     <table className="w-full text-xs border-collapse">
-                        <thead>
-                            <tr className="border-y-2 border-green-700">
-                                <th className="p-1 border-x border-green-600">TYPE</th>
-                                <th className="p-1 border-x border-green-600">VARIETY</th>
-                                <th className="p-1 border-x border-green-600">QTY</th>
-                                <th className="p-1 border-x border-green-600">RATE</th>
-                                <th className="p-1 border-x border-green-600">GROSS</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {entries.map((entry, index) => (
-                                <tr key={index} className="border-b border-green-600/50 h-5">
-                                    <td className="py-0.5 px-1 border-x border-green-600">{entry.type}</td>
-                                    <td className="py-0.5 px-1 border-x border-green-600">{entry.variety}</td>
-                                    <td className="py-0.5 px-1 border-x border-green-600 text-center">{entry.qty}</td>
-                                    <td className="py-0.5 px-1 border-x border-green-600 text-right">₹{entry.rate.toFixed(2)}</td>
-                                    <td className="py-0.5 px-1 border-x border-green-600 text-right font-semibold">₹{(entry.qty * entry.rate).toFixed(2)}</td>
+    const ClassicA4Layout = () => {
+         const emptyRowsCount = Math.max(0, 12 - entries.length);
+         const emptyRows = Array.from({ length: emptyRowsCount });
+
+        return (
+             <div className="w-[148mm] h-[210mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-4 border-2 border-green-700 flex flex-col relative font-serif">
+                <div className="absolute inset-0 flex items-center justify-center z-0">
+                   <Logo className="w-48 h-48 opacity-10" />
+                </div>
+                 <div className="relative z-10 flex flex-col flex-grow">
+                    <header className="text-center border-b-2 border-green-700 pb-1">
+                        <div className="flex justify-between items-start">
+                             <div className="text-left text-xs font-bold"><p>🍎 F.Co</p></div>
+                             <div className="flex-grow">
+                                <div className="text-[8px] leading-tight">
+                                     <p className="font-bold">Prop: Firdous Ahmad Lone (Nadihal)</p>
+                                     <p>Cell: 7006136330, 9797002164, 9906740921</p>
+                                </div>
+                                <h1 className="text-lg font-bold text-green-800">FIRDOUS AHMAD & COMPANY</h1>
+                                <p className="text-[10px] font-semibold">Fruit Merchants & Commission Agents</p>
+                                <p className="text-[8px]">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
+                             </div>
+                             <div className="text-right text-xs font-bold"><p>🍎 F.Co</p></div>
+                        </div>
+                    </header>
+                    <section className="flex justify-between items-end my-1 text-sm">
+                        <div>
+                            <p><strong>M/s:</strong> {customerName}</p>
+                            {khata && <p><strong>Khata:</strong> {khata}</p>}
+                        </div>
+                        <div className="text-right text-xs">
+                            <p><strong>Bill No:</strong> {sNo}</p>
+                            <p><strong>Date:</strong> {new Date(date).toLocaleDateString('en-GB')}</p>
+                            <p><strong>Watak No:</strong> {watakNo}</p>
+                        </div>
+                    </section>
+                    <main className="flex-grow">
+                         <table className="w-full text-xs border-collapse">
+                            <thead>
+                                <tr className="border-y-2 border-green-700">
+                                    <th className="p-1 border-x border-green-600">TYPE</th>
+                                    <th className="p-1 border-x border-green-600">VARIETY</th>
+                                    <th className="p-1 border-x border-green-600">QTY</th>
+                                    <th className="p-1 border-x border-green-600">RATE</th>
+                                    <th className="p-1 border-x border-green-600">GROSS</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </main>
-                 <footer className="mt-auto pt-1 text-xs">
-                    <div className="grid grid-cols-2 gap-x-4">
-                        <div className="space-y-0.5 pr-4">
-                            <p><strong>Total Quantity:</strong> {totals.totalQty} (Patti: {totals.pattiQty}, Dabba: {totals.dabbaQty})</p>
+                            </thead>
+                            <tbody>
+                                {entries.map((entry, index) => (
+                                    <tr key={index} className="border-b border-green-600/50 h-5">
+                                        <td className="py-0.5 px-1 border-x border-green-600">{entry.type}</td>
+                                        <td className="py-0.5 px-1 border-x border-green-600">{entry.variety}</td>
+                                        <td className="py-0.5 px-1 border-x border-green-600 text-center">{entry.qty}</td>
+                                        <td className="py-0.5 px-1 border-x border-green-600 text-right">₹{entry.rate.toFixed(2)}</td>
+                                        <td className="py-0.5 px-1 border-x border-green-600 text-right font-semibold">₹{(entry.qty * entry.rate).toFixed(2)}</td>
+                                    </tr>
+                                ))}
+                                {emptyRows.map((_, index) => (
+                                     <tr key={`empty-${index}`} className="border-b border-green-600/50 h-5">
+                                        <td className="py-0.5 px-1 border-x border-green-600">&nbsp;</td>
+                                        <td className="py-0.5 px-1 border-x border-green-600"></td>
+                                        <td className="py-0.5 px-1 border-x border-green-600"></td>
+                                        <td className="py-0.5 px-1 border-x border-green-600"></td>
+                                        <td className="py-0.5 px-1 border-x border-green-600"></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </main>
+                     <footer className="mt-auto pt-1 text-xs">
+                        <div className="grid grid-cols-2 gap-x-4">
+                            <div className="space-y-0.5 pr-4">
+                                <p><strong>Total Quantity:</strong> {totals.totalQty} (Patti: {totals.pattiQty}, Dabba: {totals.dabbaQty})</p>
+                            </div>
+                            <div className="space-y-0.5 border-l-2 border-green-700 pl-4 text-[10px]">
+                                 <div className="flex justify-between"><span>Gross Sale:</span> <span className="font-semibold">₹{totals.grossSale.toFixed(2)}</span></div>
+                                <div className="flex justify-between"><span>Freight:</span> <span>- ₹{freight.toFixed(2)}</span></div>
+                                 <div className="flex justify-between"><span>Labour:</span> <span>- ₹{totals.labour.toFixed(2)}</span></div>
+                                 <div className="flex justify-between"><span>Association:</span> <span>- ₹{totals.association.toFixed(2)}</span></div>
+                                 <div className="flex justify-between"><span>Security:</span> <span>- ₹{totals.security.toFixed(2)}</span></div>
+                                 <div className="flex justify-between"><span>Commission:</span> <span>- ₹{totals.commissionAmount.toFixed(2)}</span></div>
+                                 <div className="flex justify-between font-bold border-t border-gray-400"><span>Total Exp:</span> <span>- ₹{totals.totalExpenses.toFixed(2)}</span></div>
+                                 <div className="flex justify-between font-bold text-base border-t border-gray-400"><span>Net Sale:</span> <span>₹{totals.netSale.toFixed(2)}</span></div>
+                            </div>
                         </div>
-                        <div className="space-y-0.5 border-l-2 border-green-700 pl-4 text-[10px]">
-                             <div className="flex justify-between"><span>Gross Sale:</span> <span className="font-semibold">₹{totals.grossSale.toFixed(2)}</span></div>
-                            <div className="flex justify-between"><span>Freight:</span> <span>- ₹{freight.toFixed(2)}</span></div>
-                             <div className="flex justify-between"><span>Labour:</span> <span>- ₹{totals.labour.toFixed(2)}</span></div>
-                             <div className="flex justify-between"><span>Association:</span> <span>- ₹{totals.association.toFixed(2)}</span></div>
-                             <div className="flex justify-between"><span>Security:</span> <span>- ₹{totals.security.toFixed(2)}</span></div>
-                             <div className="flex justify-between"><span>Commission:</span> <span>- ₹{totals.commissionAmount.toFixed(2)}</span></div>
-                             <div className="flex justify-between font-bold border-t border-gray-400"><span>Total Exp:</span> <span>- ₹{totals.totalExpenses.toFixed(2)}</span></div>
-                             <div className="flex justify-between font-bold text-base border-t border-gray-400"><span>Net Sale:</span> <span>₹{totals.netSale.toFixed(2)}</span></div>
+                         <div className="flex justify-between items-end mt-1">
+                            <BusinessCardQR size={40} />
+                             <div className="text-center">
+                                <p className="font-signature text-xl">Faisal</p>
+                                <p className="font-bold -mt-2 text-[10px]">For Firdous Ahmad & Company</p>
+                             </div>
                         </div>
-                    </div>
-                     <div className="flex justify-between items-end mt-1">
-                        <BusinessCardQR size={40} />
-                         <div className="text-center">
-                            <p className="font-signature text-xl">Faisal</p>
-                            <p className="font-bold -mt-2 text-[10px]">For Firdous Ahmad & Company</p>
-                         </div>
-                    </div>
-                 </footer>
+                     </footer>
+                </div>
             </div>
-        </div>
-    );
+        )
+    };
 
     const ThermalLayout = () => (
         <div className="w-[80mm] bg-white text-black p-2 font-sans text-xs leading-tight">
@@ -635,11 +650,3 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         </div>
     );
 }
-
-    
-
-    
-
-    
-
-    
