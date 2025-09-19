@@ -1,4 +1,3 @@
-
 'use client'
 
 import { useEffect, useState, useRef } from "react";
@@ -257,7 +256,9 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
                     </div>
                 </main>
                 <footer className="flex justify-between items-end p-4 mt-auto">
-                     <Controls />
+                     <div className="print:hidden w-full max-w-xs space-y-4">
+                        <Controls />
+                    </div>
                      <div className="text-center text-xs">
                         <div className="w-32 h-10 border-b border-gray-400 border-dotted"></div>
                         <p className="font-semibold">Signature of Driver</p>
@@ -367,7 +368,9 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
                 }
             `}</style>
             
-            <Controls />
+            <div className="print:hidden w-full max-w-xs space-y-4">
+                <Controls />
+            </div>
 
             <div className="print-container">
                 <div ref={printRef}>

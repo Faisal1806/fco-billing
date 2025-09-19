@@ -1,4 +1,3 @@
-
 'use client'
 
 import { useEffect, useState, useRef } from "react";
@@ -270,7 +269,9 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
                         <p className="italic">If the bill is not paid within 15 days interest @ 5% will be Charged extra</p>
                     </div>
                     <div className="flex justify-between items-end mt-4">
-                        <div></div> {/* Placeholder for controls */}
+                         <div className="print:hidden w-full max-w-xs space-y-4">
+                            <Controls />
+                        </div>
                         <div className="text-center">
                             <p className="font-signature text-2xl text-gray-700 dark:text-gray-300">Faisal</p>
                             <p className="font-bold">Sign. Of Manager</p>
@@ -376,7 +377,9 @@ export default function PurchaseBillPage({ params }: { params: { id: string } })
                 }
             `}</style>
             
-            <Controls />
+            <div className="print:hidden w-full max-w-xs space-y-4">
+                <Controls />
+            </div>
 
             <div className="print-container">
                 <div ref={printRef}>

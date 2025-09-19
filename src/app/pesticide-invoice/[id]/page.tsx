@@ -1,4 +1,3 @@
-
 'use client'
 
 import { useEffect, useState, useRef } from "react";
@@ -311,7 +310,9 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
                 }
             `}</style>
             
-            <Controls />
+            <div className="print:hidden w-full max-w-xs space-y-4">
+                <Controls />
+            </div>
 
             <div className="print-container">
                 <div ref={printRef}>

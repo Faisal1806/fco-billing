@@ -1,4 +1,3 @@
-
 'use client'
 
 import { useEffect, useState, useRef } from "react";
@@ -182,7 +181,7 @@ export default function PaymentPage({ params }: { params: { id: string } }) {
                 <header className="bg-gradient-to-r from-yellow-400 via-orange-500 to-amber-600 text-white p-4 rounded-t-xl shadow-md flex justify-between items-center">
                     <div className="text-sm font-bold">🍎 F.Co</div>
                     <div className="text-center">
-                        <h1 className="text-2xl font-bold">GOODS PAYMENT</h1>
+                        <h1 className="text-2xl font-bold">GOODS RECEIPT</h1>
                         <p className="text-xs">FIRDOUS AHMAD & COMPANY</p>
                     </div>
                     <div className="text-sm font-bold">🍎 F.Co</div>
@@ -226,7 +225,7 @@ export default function PaymentPage({ params }: { params: { id: string } }) {
                     <div className="grid grid-cols-2 gap-4 text-xs font-semibold">
                         <div>
                            <p>Freight Paid Rs: {freightPaid > 0 ? `₹${freightPaid.toFixed(2)}` : ''}</p>
-                           <p>Invoice Ready On: {wattakReadyOn}</p>
+                           <p>Watak Ready On: {wattakReadyOn}</p>
                         </div>
                         <div className="text-right">
                            <p>Total Nugs: {totalNugs}</p>
@@ -234,7 +233,9 @@ export default function PaymentPage({ params }: { params: { id: string } }) {
                     </div>
                 </main>
                 <footer className="flex justify-between items-end p-4 mt-auto text-xs print:pt-2">
-                     <Controls />
+                    <div className="print:hidden w-full max-w-xs space-y-4">
+                        <Controls />
+                    </div>
                      <div className="text-center">
                         <p className="font-signature text-2xl text-gray-700 dark:text-gray-300">Faisal</p>
                         <p className="font-bold">Sign. Of Manager</p>
@@ -248,7 +249,7 @@ export default function PaymentPage({ params }: { params: { id: string } }) {
             <header className="text-center space-y-1">
                 <h1 className="text-sm font-bold">Firdous Ahmad & Company</h1>
                 <p>Sopore</p>
-                <p className="border-t border-dashed border-black mt-1 pt-1 font-bold">Goods Payment</p>
+                <p className="border-t border-dashed border-black mt-1 pt-1 font-bold">Goods Receipt</p>
             </header>
              <main className="my-2 border-t border-b border-dashed border-black py-2 space-y-1">
                 <div className="flex justify-between"><span>No: {no}</span> <span>Date: {new Date(date).toLocaleDateString('en-GB')}</span></div>
@@ -278,7 +279,7 @@ export default function PaymentPage({ params }: { params: { id: string } }) {
             </div>
              <div className="text-xs mt-2 space-y-1 border-t border-dashed pt-2">
                 <p>Freight Paid: {freightPaid > 0 ? `₹${freightPaid.toFixed(2)}` : 'N/A'}</p>
-                <p>Invoice Ready On: {wattakReadyOn}</p>
+                <p>Watak Ready On: {wattakReadyOn}</p>
             </div>
             <footer className="text-center pt-4">
                 <p>For: Firdous Ahmad & Co.</p>
@@ -337,7 +338,9 @@ export default function PaymentPage({ params }: { params: { id: string } }) {
                 }
             `}</style>
             
-            <Controls />
+             <div className="print:hidden w-full max-w-xs space-y-4">
+                <Controls />
+            </div>
 
             <div className="print-container">
                 <div ref={printRef}>
