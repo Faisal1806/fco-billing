@@ -46,10 +46,16 @@ const interpretVoiceCommandFlow = ai.defineFlow(
 The user will provide a command to add items to an invoice. Extract the customer name (if provided) and a list of all items.
 Each item must have a type ('Patti' or 'Dabba'), quantity, variety, and rate.
 
-Here are some examples:
+**Rules:**
+- "patti" or "peti" should be interpreted as type 'Patti'.
+- "dabba" or "box" should be interpreted as type 'Dabba'.
+- If a customer name is mentioned with "for customer" or "customer is", extract it.
+
+**Examples:**
 - "Add 10 patti of American A2 at 1200 and 20 dabba of Red Delicious at 800 for customer Mohammad Shabaan." -> Should result in 2 items and a customerName.
 - "25 dabba Italy at 1500" -> Should result in 1 item.
 - "Customer is Sameer Lone. Add 50 patti Kullu at 1000." -> Should result in 1 item and a customerName.
+- "5 peti American at 1100" -> Should result in 1 item of type 'Patti'.
 
 User's voice command transcript:
 "${input.command}"`,
