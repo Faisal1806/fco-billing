@@ -314,27 +314,27 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                <Logo className="w-48 h-48 opacity-10" />
             </div>
              <div className="relative z-10 flex flex-col flex-grow">
-                <header className="text-center border-b-2 border-green-700 pb-2">
+                <header className="text-center border-b-2 border-green-700 pb-1">
                     <div className="flex justify-between items-start">
                          <div className="text-left text-xs font-bold"><p>🍎 F.Co</p></div>
                          <div className="flex-grow">
-                            <div className="text-[10px]">
+                            <div className="text-[9px] leading-tight">
                                  <p className="font-bold">Prop: Firdous Ahmad Lone (Nadihal)</p>
                                  <p>Cell: 7006136330, 9797002164, 9906740921</p>
                             </div>
-                            <h1 className="text-2xl font-bold text-green-800">FIRDOUS AHMAD & COMPANY</h1>
-                            <p className="text-xs font-semibold">Fruit Merchants & Commission Agents</p>
-                            <p className="text-[10px]">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
+                            <h1 className="text-xl font-bold text-green-800">FIRDOUS AHMAD & COMPANY</h1>
+                            <p className="text-[11px] font-semibold">Fruit Merchants & Commission Agents</p>
+                            <p className="text-[9px]">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
                          </div>
                          <div className="text-right text-xs font-bold"><p>🍎 F.Co</p></div>
                     </div>
                 </header>
-                <section className="flex justify-between items-end my-2 text-sm">
+                <section className="flex justify-between items-end my-1 text-sm">
                     <div>
                         <p><strong>M/s:</strong> {customerName}</p>
                         {khata && <p><strong>Khata:</strong> {khata}</p>}
                     </div>
-                    <div className="text-right">
+                    <div className="text-right text-xs">
                         <p><strong>Bill No:</strong> {sNo}</p>
                         <p><strong>Date:</strong> {new Date(date).toLocaleDateString('en-GB')}</p>
                         <p><strong>Watak No:</strong> {watakNo}</p>
@@ -353,7 +353,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                         </thead>
                         <tbody>
                             {entries.map((entry, index) => (
-                                <tr key={index} className="border-b border-green-600/50">
+                                <tr key={index} className="border-b border-green-600/50 h-6">
                                     <td className="p-1 border-x border-green-600">{entry.type}</td>
                                     <td className="p-1 border-x border-green-600">{entry.variety}</td>
                                     <td className="p-1 border-x border-green-600 text-center">{entry.qty}</td>
@@ -361,13 +361,15 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                                     <td className="p-1 border-x border-green-600 text-right font-semibold">₹{(entry.qty * entry.rate).toFixed(2)}</td>
                                 </tr>
                             ))}
+                             {/* This will make the table body take up space even if there are few items */}
+                            <tr className="h-full"><td colSpan={5}></td></tr>
                         </tbody>
                     </table>
-                     <div className="mt-4 grid grid-cols-2 gap-x-4 text-xs">
-                        <div className="space-y-1 pr-4">
+                     <div className="grid grid-cols-2 gap-x-4 text-xs mt-1">
+                        <div className="space-y-0.5 pr-4">
                             <p><strong>Total Quantity:</strong> {totals.totalQty} (Patti: {totals.pattiQty}, Dabba: {totals.dabbaQty})</p>
                         </div>
-                        <div className="space-y-1 border-l-2 border-green-700 pl-4">
+                        <div className="space-y-0.5 border-l-2 border-green-700 pl-4 text-[11px]">
                              <div className="flex justify-between"><span>Gross Sale:</span> <span className="font-semibold">₹{totals.grossSale.toFixed(2)}</span></div>
                             <div className="flex justify-between"><span>Freight:</span> <span>- ₹{freight.toFixed(2)}</span></div>
                              <div className="flex justify-between"><span>Labour:</span> <span>- ₹{totals.labour.toFixed(2)}</span></div>
@@ -379,7 +381,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                         </div>
                     </div>
                 </main>
-                 <footer className="flex justify-between items-end mt-auto pt-4 text-[10px]">
+                 <footer className="flex justify-between items-end mt-auto pt-2 text-[10px]">
                     <BusinessCardQR size={48} />
                      <div className="text-center">
                         <p className="font-signature text-xl">Faisal</p>
@@ -501,3 +503,5 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         </div>
     );
 }
+
+    
