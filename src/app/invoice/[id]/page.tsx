@@ -147,7 +147,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         <div className="flex flex-col gap-4 print:hidden p-4 bg-gray-800 rounded-lg border border-gray-700">
             <div className="flex items-center gap-2">
                  <Button onClick={() => setPrintStyle('a4')} variant={printStyle === 'a4' ? 'default' : 'outline'} size="sm" className="flex-1 gap-2">
-                    <FileText className="h-4 w-4" /> A4
+                    <FileText className="h-4 w-4" /> A5
                 </Button>
                 <Button onClick={() => setPrintStyle('thermal')} variant={printStyle === 'thermal' ? 'default' : 'outline'} size="sm" className="flex-1 gap-2">
                     <Receipt className="h-4 w-4" /> Thermal
@@ -309,7 +309,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     );
     
     const ClassicA4Layout = () => (
-         <div className="w-[148mm] min-h-[210mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-4 border-2 border-green-700 flex flex-col relative font-serif">
+         <div className="w-[148mm] h-[210mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-4 border-2 border-green-700 flex flex-col relative font-serif">
             <div className="absolute inset-0 flex items-center justify-center z-0">
                <Logo className="w-48 h-48 opacity-10" />
             </div>
@@ -353,7 +353,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                         </thead>
                         <tbody>
                             {entries.map((entry, index) => (
-                                <tr key={index} className="border-b border-green-600/50 h-7">
+                                <tr key={index} className="border-b border-green-600/50">
                                     <td className="p-1 border-x border-green-600">{entry.type}</td>
                                     <td className="p-1 border-x border-green-600">{entry.variety}</td>
                                     <td className="p-1 border-x border-green-600 text-center">{entry.qty}</td>
@@ -361,18 +361,9 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                                     <td className="p-1 border-x border-green-600 text-right font-semibold">₹{(entry.qty * entry.rate).toFixed(2)}</td>
                                 </tr>
                             ))}
-                            {Array.from({ length: Math.max(0, 8 - entries.length) }).map((_, index) => (
-                                 <tr key={`empty-${index}`} className="border-b border-green-600/50 h-7">
-                                    <td className="p-1 border-x border-green-600"></td>
-                                    <td className="p-1 border-x border-green-600"></td>
-                                    <td className="p-1 border-x border-green-600"></td>
-                                    <td className="p-1 border-x border-green-600"></td>
-                                    <td className="p-1 border-x border-green-600"></td>
-                                </tr>
-                            ))}
                         </tbody>
                     </table>
-                     <div className="mt-2 grid grid-cols-2 gap-x-4 text-xs">
+                     <div className="mt-4 grid grid-cols-2 gap-x-4 text-xs">
                         <div className="space-y-1 pr-4">
                             <p><strong>Total Quantity:</strong> {totals.totalQty} (Patti: {totals.pattiQty}, Dabba: {totals.dabbaQty})</p>
                         </div>
@@ -388,7 +379,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                         </div>
                     </div>
                 </main>
-                 <footer className="flex justify-between items-end mt-auto pt-2 text-[10px]">
+                 <footer className="flex justify-between items-end mt-auto pt-4 text-[10px]">
                     <BusinessCardQR size={48} />
                      <div className="text-center">
                         <p className="font-signature text-xl">Faisal</p>
