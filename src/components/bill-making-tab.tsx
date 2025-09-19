@@ -14,6 +14,8 @@ import { Separator } from './ui/separator';
 import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Share, FileText } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { ScrollArea } from './ui/scroll-area';
+import type { WatakExtractOutput } from '@/ai/flows/extract-watak-flow';
+
 
 type Row = {
   type: 'Patti' | 'Dabba';
@@ -50,6 +52,42 @@ export function BillMakingTab() {
       setUserRole(localStorage.getItem('userRole'));
     }
     fetchBills();
+
+    // Check for scanned data
+    const scannedDataJSON = localStorage.getItem('scannedWatakData');
+    if (scannedDataJSON) {
+        try {
+            const scannedData: WatakExtractOutput = JSON.parse(scannedDataJSON);
+            
+            const newRows = scannedData.entries.map(e => ({
+                type: e.type,
+                qty: e.qty,
+                variety: e.variety,
+                rate: e.rate
+            }));
+            
+            setSNo(scannedData.sNo);
+            setDate(scannedData.date);
+            setMs(scannedData.customerName);
+            setWatakNo(scannedData.watakNo);
+            setKhata(scannedData.khata || '');
+            setFreight(scannedData.freight || 0);
+            setRows(newRows.length > 0 ? newRows : initialRows);
+            
+            toast({
+                title: "Data Populated from Scan",
+                description: "Review the extracted data and save the invoice.",
+            });
+            
+            setIsEditing(false); // Treat as new bill
+        } catch (e) {
+            console.error("Error parsing scanned data", e);
+            toast({ variant: 'destructive', title: "Error", description: "Could not parse the scanned data." });
+        } finally {
+            localStorage.removeItem('scannedWatakData');
+        }
+    }
+
   }, []);
 
   const fetchBills = () => {

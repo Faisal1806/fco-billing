@@ -18,6 +18,8 @@ import { Separator } from '@/components/ui/separator';
 import { PlusCircle, Trash2, FilePenLine, FilePlus, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
+import type { ReceiptExtractOutput } from '@/ai/flows/extract-receipt-flow';
+
 
 type ReceiptEntry = {
   khata: string;
@@ -101,6 +103,34 @@ export function ReceiptMakingTab() {
     if (typeof window !== 'undefined') {
         setUserRole(localStorage.getItem('userRole'));
     }
+    fetchReceipts();
+
+    const scannedDataJSON = localStorage.getItem('scannedReceiptData');
+    if(scannedDataJSON) {
+        try {
+            const scannedData: ReceiptExtractOutput = JSON.parse(scannedDataJSON);
+            setReceiptDetails({
+                no: scannedData.no,
+                date: scannedData.date,
+                customerName: scannedData.customerName,
+                ro: scannedData.ro || '',
+                freightPaid: scannedData.freightPaid || 0,
+                wattakReadyOn: scannedData.wattakReadyOn || '',
+            });
+            setEntries(scannedData.entries.length > 0 ? scannedData.entries : initialEntries);
+            toast({
+                title: "Data Populated from Scan",
+                description: "Review the extracted data and save the receipt."
+            });
+            setIsEditing(false); // Treat as new
+        } catch(e) {
+            console.error(e);
+            toast({variant: 'destructive', title: "Error Parsing Scanned Data"});
+        } finally {
+            localStorage.removeItem('scannedReceiptData');
+        }
+    }
+
   }, []);
 
   const fetchReceipts = () => {
@@ -115,9 +145,6 @@ export function ReceiptMakingTab() {
     setSavedReceipts(receipts.sort((a,b) => (a.no > b.no) ? 1 : -1));
   };
   
-  React.useEffect(() => {
-    fetchReceipts();
-  }, []);
   
 
   const handleEntryUpdate = (
