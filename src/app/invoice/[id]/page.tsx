@@ -11,8 +11,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/logo";
 import BusinessCardQR from "@/components/BusinessCardQR";
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import QRCode from 'qrcode.react';
 
 interface BillData {
@@ -111,36 +111,163 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         }
     };
     
-    const handleDownloadPdf = async () => {
-        const element = printRef.current;
-        if (!element || !billData) return;
-
-        // Use the currently active print style for PDF generation
-        const activeLayout = printStyle === 'a4' ? element.querySelector('.print-area-a4') : element.querySelector('.print-area-thermal');
-        if (!activeLayout) return;
-
-        const canvas = await html2canvas(activeLayout as HTMLElement, {
-            scale: 2, 
-            useCORS: true,
-            backgroundColor: invoiceStyle === 'modern' ? '#1f2937' : (printStyle === 'thermal' ? '#ffffff' : '#FDFEE2'), // Match layout bg
-        });
+    const handleDownloadPdf = () => {
+        if (!billData) return;
     
-        const isThermal = printStyle === 'thermal';
-        const format = isThermal ? [80, 297] : 'a5';
-        const orientation = 'portrait';
-    
-        const pdf = new jsPDF({
-            orientation,
+        const doc = new jsPDF({
+            orientation: 'portrait',
             unit: 'mm',
-            format,
+            format: 'a5'
         });
     
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const margin = 10;
     
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save(`Invoice-${billData.sNo}_${billData.customerName}.pdf`);
+        // Draw border
+        doc.setDrawColor('#16a34a'); // green-700
+        doc.setLineWidth(1);
+        doc.rect(5, 5, pageWidth - 10, pageHeight - 10);
+    
+        // Header
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.text('🍎 F.Co', margin, margin);
+        doc.text('🍎 F.Co', pageWidth - margin, margin, { align: 'right' });
+    
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Prop: Firdous Ahmad Lone (Nadihal)', pageWidth / 2, margin - 2, { align: 'center' });
+        doc.text('Cell: 7006136330, 9797002164, 9906740921', pageWidth / 2, margin + 1, { align: 'center' });
+        
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor('#15803d'); // green-800
+        doc.text('FIRDOUS AHMAD & COMPANY', pageWidth / 2, margin + 6, { align: 'center' });
+        
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(0, 0, 0);
+        doc.text('Fruit Merchants & Commission Agents', pageWidth / 2, margin + 10, { align: 'center' });
+        doc.setFontSize(6);
+        doc.text('SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.', pageWidth / 2, margin + 13, { align: 'center' });
+    
+        doc.setLineWidth(0.5);
+        doc.setDrawColor('#16a34a');
+        doc.line(margin, margin + 15, pageWidth - margin, margin + 15);
+    
+        // Bill Info
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`M/s: ${billData.customerName}`, margin, margin + 22);
+        if (billData.khata) {
+            doc.text(`Khata: ${billData.khata}`, margin, margin + 27);
+        }
+    
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.text(`Bill No: ${billData.sNo}`, pageWidth - margin, margin + 22, { align: 'right' });
+        doc.text(`Date: ${new Date(billData.date).toLocaleDateString('en-GB')}`, pageWidth - margin, margin + 26, { align: 'right' });
+        if(billData.watakNo) {
+            doc.text(`Watak No: ${billData.watakNo}`, pageWidth - margin, margin + 30, { align: 'right' });
+        }
+    
+        // Table
+        const tableData = billData.entries.map(e => [
+            e.type,
+            e.variety,
+            e.qty.toString(),
+            `₹${e.rate.toFixed(2)}`,
+            `₹${(e.qty * e.rate).toFixed(2)}`
+        ]);
+    
+        autoTable(doc, {
+            head: [['TYPE', 'VARIETY', 'QTY', 'RATE', 'GROSS']],
+            body: tableData,
+            startY: margin + 35,
+            theme: 'grid',
+            headStyles: {
+                fillColor: '#16a34a',
+                textColor: '#ffffff',
+                fontStyle: 'bold',
+                halign: 'center'
+            },
+            styles: {
+                fontSize: 8,
+                cellPadding: 1.5,
+            },
+            columnStyles: {
+                2: { halign: 'center' },
+                3: { halign: 'right' },
+                4: { halign: 'right', fontStyle: 'bold' },
+            }
+        });
+    
+        const finalY = (doc as any).lastAutoTable.finalY;
+    
+        // Totals
+        const summaryX = pageWidth / 2;
+        doc.setFontSize(8);
+        doc.text(`Total Quantity: ${billData.totals.totalQty} (Patti: ${billData.totals.pattiQty}, Dabba: ${billData.totals.dabbaQty})`, margin, finalY + 8);
+    
+        const expenseLines = [
+            { label: 'Gross Sale:', value: `₹${billData.totals.grossSale.toFixed(2)}` },
+            { label: 'Freight:', value: `- ₹${billData.freight.toFixed(2)}` },
+            { label: 'Labour:', value: `- ₹${billData.totals.labour.toFixed(2)}` },
+            { label: 'Association:', value: `- ₹${billData.totals.association.toFixed(2)}` },
+            { label: 'Security:', value: `- ₹${billData.totals.security.toFixed(2)}` },
+            { label: 'Commission:', value: `- ₹${billData.totals.commissionAmount.toFixed(2)}` }
+        ];
+        
+        const netSaleY = finalY + 8;
+        let currentY = netSaleY;
+        
+        expenseLines.forEach(line => {
+            doc.text(line.label, summaryX, currentY, { align: 'left' });
+            doc.text(line.value, pageWidth - margin, currentY, { align: 'right' });
+            currentY += 4;
+        });
+    
+        doc.setLineWidth(0.2);
+        doc.line(summaryX, currentY, pageWidth - margin, currentY);
+        currentY += 4;
+        
+        doc.setFont('helvetica', 'bold');
+        doc.text('Total Exp:', summaryX, currentY, { align: 'left' });
+        doc.text(`- ₹${billData.totals.totalExpenses.toFixed(2)}`, pageWidth - margin, currentY, { align: 'right' });
+        currentY += 4;
+    
+        doc.line(summaryX, currentY, pageWidth - margin, currentY);
+        currentY += 5;
+        
+        doc.setFontSize(12);
+        doc.text('Net Sale:', summaryX, currentY, { align: 'left' });
+        doc.text(`₹${billData.totals.netSale.toFixed(2)}`, pageWidth - margin, currentY, { align: 'right' });
+    
+        // Footer
+        const qrCanvas = document.querySelector('canvas');
+        if (qrCanvas) {
+            const qrImage = qrCanvas.toDataURL('image/png');
+            doc.addImage(qrImage, 'PNG', margin, pageHeight - 35, 20, 20);
+            doc.setFontSize(6);
+            doc.text('Scan for Details & UPI', margin + 10, pageHeight - 12, { align: 'center'});
+        }
+    
+        doc.setFontSize(12);
+        doc.addFont('/fonts/DancingScript-Bold.ttf', 'DancingScript', 'normal');
+        doc.setFont('DancingScript');
+        doc.text('Faisal', pageWidth - margin - 20, pageHeight - 20, { align: 'center' });
+    
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(6);
+        doc.text('For Firdous Ahmad & Company', pageWidth - margin - 20, pageHeight - 15, { align: 'center'});
+        doc.setLineWidth(0.2);
+        doc.line(pageWidth - margin - 40, pageHeight-16, pageWidth - margin, pageHeight-16);
+    
+    
+        doc.save(`Invoice-${billData.sNo}_${billData.customerName}.pdf`);
     };
+
 
 
     const Controls = () => (
@@ -309,7 +436,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     );
     
     const ClassicA4Layout = () => (
-         <div className="w-[148mm] min-h-[210mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-4 border-2 border-green-700 flex flex-col relative font-serif">
+         <div className="w-[148mm] h-[210mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-4 border-2 border-green-700 flex flex-col relative font-serif">
             <div className="absolute inset-0 flex items-center justify-center z-0">
                <Logo className="w-48 h-48 opacity-10" />
             </div>
@@ -505,6 +632,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         </div>
     );
 }
+
+    
 
     
 
