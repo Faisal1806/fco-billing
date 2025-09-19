@@ -11,12 +11,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Separator } from './ui/separator';
-import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Share, FileText, Mic, MicOff } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Share, FileText } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { ScrollArea } from './ui/scroll-area';
 import type { WatakExtractOutput } from '@/ai/flows/extract-watak-flow';
-import { interpretVoiceCommand } from '@/ai/flows/interpret-voice-command-flow';
 import { useApiKey } from '@/hooks/use-api-key';
+import { Badge } from '@/components/ui/badge';
 
 
 type Row = {
@@ -50,23 +50,11 @@ export function BillMakingTab() {
 
   // Voice Input State
   const { apiKey, isApiKeySet } = useApiKey();
-  const [isListening, setIsListening] = useState(false);
-  const recognitionRef = useRef<any>(null);
 
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setUserRole(localStorage.getItem('userRole'));
-
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        recognitionRef.current = new SpeechRecognition();
-        recognitionRef.current.continuous = false;
-        recognitionRef.current.lang = 'en-US';
-        recognitionRef.current.onstart = () => setIsListening(true);
-        recognitionRef.current.onend = () => setIsListening(false);
-        recognitionRef.current.onresult = handleVoiceResult;
-      }
     }
     fetchBills();
 
@@ -125,48 +113,11 @@ export function BillMakingTab() {
     setIsLoading(false);
   };
   
-  const handleVoiceResult = async (event: any) => {
-    const transcript = event.results[0][0].transcript;
-    toast({ title: "Processing your command...", description: `"${transcript}"` });
-
-    try {
-        const result = await interpretVoiceCommand({ command: transcript, apiKey });
-
-        if (result.customerName) {
-            setMs(result.customerName);
-        }
-
-        if (result.items && result.items.length > 0) {
-            setRows(prevRows => {
-                const existingNonEmpty = prevRows.filter(r => r.qty > 0 || r.rate > 0 || r.variety);
-                const newRows = result.items.map(item => ({
-                    type: item.type,
-                    qty: item.qty,
-                    variety: item.variety,
-                    rate: item.rate,
-                }));
-                return [...existingNonEmpty, ...newRows];
-            });
-        }
-        toast({ title: "Success", description: "The form has been updated with your voice command." });
-    } catch (error) {
-        console.error("Voice interpretation error:", error);
-        toast({ variant: 'destructive', title: 'Voice Error', description: 'Could not understand the command.' });
-    }
-  };
-
-  const toggleListening = () => {
-    if (!isApiKeySet) {
-      toast({ variant: 'destructive', title: 'API Key Required', description: 'Set your Gemini API Key in the AI Scan tab to use voice input.'});
-      return;
-    }
-    if (isListening) {
-      recognitionRef.current?.stop();
-    } else {
-      recognitionRef.current?.start();
-    }
-  };
-  
+  const yearlyCount = useMemo(() => {
+    if(!savedBills) return 0;
+    const currentYear = new Date().getFullYear();
+    return savedBills.filter(b => new Date(b.date).getFullYear() === currentYear).length;
+  }, [savedBills]);
 
   // --- Calculations (ALL from your spec) ---
   const totals = useMemo(() => {
@@ -507,21 +458,15 @@ export function BillMakingTab() {
                      <Button onClick={handleShare} variant="outline" className="flex-1 min-w-[150px] gap-2" disabled={!isEditing}>
                        <FaWhatsapp className="h-4 w-4 text-green-500" /> Share on WhatsApp
                     </Button>
-                     <Button 
-                        onClick={toggleListening}
-                        size="icon"
-                        variant={isListening ? 'destructive' : 'outline'}
-                        className="rounded-full h-12 w-12"
-                        title="Use Voice Input"
-                    >
-                        {isListening ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
-                    </Button>
                 </div>
             </CardFooter>
         </Card>
         <Card className="md:col-span-1 h-fit">
             <CardHeader>
-                <h3 className="text-lg font-medium">Recent Invoices</h3>
+                <h3 className="text-lg font-medium flex items-center gap-2">
+                  Recent Invoices
+                  {!isLoading && <Badge variant="secondary">{yearlyCount} This Year</Badge>}
+                </h3>
             </CardHeader>
             <CardContent>
                 <ScrollArea className="h-96">
