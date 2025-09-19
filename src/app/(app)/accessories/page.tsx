@@ -60,7 +60,7 @@ const emptyFormState: Omit<LedgerEntry, 'id'> = {
     paymentMode: 'Cash',
 };
 
-export default function AccessoriesLedgerPage() {
+export default function SuppliesPage() {
     const { toast } = useToast();
     const [entries, setEntries] = useState<LedgerEntry[]>([]);
     const [formState, setFormState] = useState(emptyFormState);
@@ -186,7 +186,7 @@ export default function AccessoriesLedgerPage() {
     <div className="space-y-6 printable-area">
         <Card className="print-hidden">
           <CardHeader>
-            <CardTitle>Add to Daily Supplies Ledger</CardTitle>
+            <CardTitle>Add to Daily Supplies Ledger (Cashbook)</CardTitle>
             <CardDescription>Log sales of fertilizers, packaging materials, and other farm inputs. This is also referred to as a Cashbook.</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">

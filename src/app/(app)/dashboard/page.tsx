@@ -16,6 +16,7 @@ interface DailyStats {
   totalSaleValue: number;
   pattiSold: number;
   dabbaSold: number;
+  wataksToday: number;
 }
 
 interface YearlyStats {
@@ -109,7 +110,7 @@ const StatCard = ({ title, value, icon: Icon, note, iconBgColor }: { title: stri
             <p className="text-xs text-muted-foreground mt-1">{note}</p>
         </CardContent>
         <div className={`absolute -right-4 -top-2 h-16 w-16 rounded-full ${iconBgColor || 'bg-gray-100'} opacity-30`}></div>
-         <div className={`absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full ${iconBgColor || 'bg-gray-100'}`}>
+         <div className={`absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full ${iconBgColor || 'bg:gray-100'}`}>
             <Icon className="h-6 w-6 text-white" />
         </div>
     </Card>
@@ -146,6 +147,20 @@ const FruitDashboard = ({ stats, yearlyStats, accessoryStats, growerProfits, rou
                         note={`From ${stats?.pattiSold ?? 0} Patti / ${stats?.dabbaSold ?? 0} Dabba`}
                         iconBgColor="bg-green-500"
                      />
+                      <StatCard 
+                        title="Invoices Created Today"
+                        value={stats?.wataksToday.toString() ?? '0'}
+                        icon={BookCopy}
+                        note="Total invoices generated today"
+                        iconBgColor="bg-purple-500"
+                     />
+                    <StatCard 
+                        title="Outstanding Credit (Khata)"
+                        value={`₹${accessoryStats?.outstandingCredit.toLocaleString('en-IN') ?? '0'}`}
+                        icon={CreditCard}
+                        note="From Supplies/Cashbook"
+                        iconBgColor="bg-orange-500"
+                    />
                      <StatCard 
                         title="This Month's Sales (Net)"
                         value={`₹${yearlyStats?.monthSales.toLocaleString('en-IN') ?? '0'}`}
@@ -207,7 +222,7 @@ const FruitDashboard = ({ stats, yearlyStats, accessoryStats, growerProfits, rou
                 <div>
                     <h3 className="text-xl font-semibold mb-4">Quick Actions</h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <QuickActionButton title="New Watak" icon={BookCopy} onClick={() => router.push('/sales')} className="bg-green-600 hover:bg-green-700" />
+                        <QuickActionButton title="New Invoice" icon={BookCopy} onClick={() => router.push('/sales')} className="bg-green-600 hover:bg-green-700" />
                         <QuickActionButton title="Add Customer" icon={UserCheck} onClick={() => router.push('/khata')} className="bg-blue-600 hover:bg-blue-700" />
                         <QuickActionButton title="Add Product" icon={PlusCircle} onClick={() => router.push('/products')} className="bg-purple-600 hover:bg-purple-700" />
                         <QuickActionButton title="Record Expense" icon={FileText} onClick={() => router.push('/expenses')} className="bg-orange-600 hover:bg-orange-700" />
@@ -250,7 +265,7 @@ const FruitDashboard = ({ stats, yearlyStats, accessoryStats, growerProfits, rou
         </div>
 
         <div className="mt-6">
-            <h3 className="text-xl font-semibold mb-4">Recent Wataks</h3>
+            <h3 className="text-xl font-semibold mb-4">Recent Invoices</h3>
             <RateList />
         </div>
     </div>
@@ -260,19 +275,19 @@ const AccessoriesDashboard = ({ stats, router }: { stats: AccessoryStats | null,
      <div className="space-y-8">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
              <StatCard 
-                title="Today's Accessories Sale"
+                title="Today's Supplies Sale"
                 value={`₹${stats?.todaySales.toLocaleString('en-IN') ?? '0'}`}
                 icon={Package}
                 iconBgColor="bg-green-500"
              />
              <StatCard 
-                title="This Month's Accessories Sale"
+                title="This Month's Supplies Sale"
                 value={`₹${stats?.monthSales.toLocaleString('en-IN') ?? '0'}`}
                 icon={Calendar}
                  iconBgColor="bg-blue-500"
              />
              <StatCard 
-                title="Outstanding Khata (Credit)"
+                title="Outstanding Credit (Khata)"
                 value={`₹${stats?.outstandingCredit.toLocaleString('en-IN') ?? '0'}`}
                 icon={CreditCard}
                  iconBgColor="bg-orange-500"
@@ -286,7 +301,7 @@ const AccessoriesDashboard = ({ stats, router }: { stats: AccessoryStats | null,
         </div>
          <div className="mt-8 text-center">
              <Button onClick={() => router.push('/accessories')}>
-                Go to Full Accessories Ledger
+                Go to Full Supplies Ledger
             </Button>
          </div>
     </div>
@@ -348,7 +363,7 @@ const InventoryDashboard = ({ inventory, router }: { inventory: CategorizedProdu
 
             <div className="space-y-6">
                 <InventoryTable title="Fruit Products" products={inventory?.fruits ?? []} icon={Apple} iconColor="text-red-500" />
-                <InventoryTable title="Business Accessories" products={inventory?.accessories ?? []} icon={Box} iconColor="text-blue-500" />
+                <InventoryTable title="Business Supplies" products={inventory?.accessories ?? []} icon={Box} iconColor="text-blue-500" />
                 <InventoryTable title="Fertilizers & Pesticides" products={inventory?.fertilizers ?? []} icon={FlaskConical} iconColor="text-green-500" />
             </div>
         </div>
@@ -396,12 +411,14 @@ export default function DashboardPage() {
     let pattiSoldToday = 0;
     let dabbaSoldToday = 0;
     let totalSaleValueToday = 0;
+    let wataksToday = 0;
 
     allInvoices.forEach(sale => {
         if (sale.date === todayStr) {
             pattiSoldToday += sale.totals.pattiQty || 0;
             dabbaSoldToday += sale.totals.dabbaQty || 0;
             totalSaleValueToday += sale.totals.netSale || 0;
+            wataksToday += 1;
         }
     });
 
@@ -409,6 +426,7 @@ export default function DashboardPage() {
         pattiSold: pattiSoldToday,
         dabbaSold: dabbaSoldToday,
         totalSaleValue: totalSaleValueToday,
+        wataksToday: wataksToday,
     };
   }, [allInvoices, isLoading]);
 
@@ -563,7 +581,7 @@ export default function DashboardPage() {
     <Tabs defaultValue="fruit" className="space-y-4">
         <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="fruit"><Apple className="w-4 h-4 mr-2" />Fruit Business</TabsTrigger>
-            <TabsTrigger value="accessories"><Box className="w-4 h-4 mr-2" />Accessories</TabsTrigger>
+            <TabsTrigger value="accessories"><Box className="w-4 h-4 mr-2" />Supplies</TabsTrigger>
             <TabsTrigger value="inventory"><Package className="w-4 h-4 mr-2" />Inventory</TabsTrigger>
         </TabsList>
         <TabsContent value="fruit">
