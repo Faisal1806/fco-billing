@@ -48,6 +48,8 @@ export interface WatakEntry {
         daba: number;
         variety: string;
         rate: number;
+        type: 'Patti' | 'Dabba';
+        qty: number;
     }[];
     totals: {
         grossSale: number;
