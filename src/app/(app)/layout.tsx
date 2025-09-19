@@ -5,13 +5,15 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
     LayoutDashboard, ShoppingCart, Package, Settings, Phone, BookCopy, Globe, Receipt,
-    Banknote, Snowflake, Tags, FlaskConical, Shapes, History, Hash
+    Banknote, Snowflake, Tags, FlaskConical, Shapes, History, Hash, Menu
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Header } from '@/components/Header';
 import React from 'react';
 import { Logo } from '@/components/logo';
 import { useToast } from '@/hooks/use-toast';
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -68,60 +70,52 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return item ? item.label : 'SwiftSale';
   }
 
-  if (!userRole) {
-    return (
-        <div className="min-h-screen flex items-center justify-center bg-background">
-          <p className="ml-4">Loading...</p>
-        </div>
-    );
-  }
-
-  return (
-    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <div className="hidden border-r bg-background md:block">
-        <div className="flex h-full max-h-screen flex-col gap-2">
-          <div className="flex h-24 items-center border-b px-4 lg:px-6">
-            <Link href="/" className="flex items-center gap-4 font-semibold text-foreground">
-              <div className="bg-primary/90 p-3 rounded-lg shadow-md">
-                 <Logo className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold">F.Co</h1>
-                <p className="text-xs text-muted-foreground">FIRDOUS AHMAD & COMPANY</p>
-                <p className="text-sm font-semibold text-primary/90">Sopore, Kashmir</p>
-              </div>
-            </Link>
+  const NavContent = () => (
+    <div className="flex h-full max-h-screen flex-col gap-2">
+      <div className="flex h-24 items-center border-b px-4 lg:px-6">
+        <Link href="/" className="flex items-center gap-4 font-semibold text-foreground">
+          <div className="bg-primary/90 p-3 rounded-lg shadow-md">
+             <Logo className="h-8 w-8 text-white" />
           </div>
-          <div className="flex-1 overflow-auto py-2">
-            <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-              {navItems.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted',
-                    pathname.startsWith(item.href) && 'bg-muted text-primary'
-                  )}
-                >
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
+          <div>
+            <h1 className="text-xl font-bold">F.Co</h1>
+            <p className="text-xs text-muted-foreground">FIRDOUS AHMAD & COMPANY</p>
+            <p className="text-sm font-semibold text-primary/90">Sopore, Kashmir</p>
           </div>
-           <div className="mt-auto p-4 border-t">
-               <div className="px-4 mb-4">
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Quick Contact</h3>
-                <div className="space-y-2 text-sm">
-                  <a href="tel:7006136330" className="flex items-center gap-3 text-muted-foreground hover:text-primary">
-                    <Phone className="h-4 w-4" />
-                    <span>7006136330</span>
-                  </a>
-                   <p className="text-xs text-muted-foreground">Apple Town, Sopore</p>
-                   <p className="text-xs font-semibold text-primary">Fruit Mandi Operations</p>
-                </div>
-              </div>
-              <div className="border-t pt-4">
+        </Link>
+      </div>
+      <div className="flex-1 overflow-auto py-2">
+        <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+          {navItems.map((item) => (
+            <SheetClose asChild key={item.label}>
+              <Link
+                href={item.href}
+                className={cn(
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted',
+                  pathname.startsWith(item.href) && 'bg-muted text-primary'
+                )}
+              >
+                <item.icon className="h-4 w-4" />
+                {item.label}
+              </Link>
+            </SheetClose>
+          ))}
+        </nav>
+      </div>
+       <div className="mt-auto p-4 border-t">
+           <div className="px-4 mb-4">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Quick Contact</h3>
+            <div className="space-y-2 text-sm">
+              <a href="tel:7006136330" className="flex items-center gap-3 text-muted-foreground hover:text-primary">
+                <Phone className="h-4 w-4" />
+                <span>7006136330</span>
+              </a>
+               <p className="text-xs text-muted-foreground">Apple Town, Sopore</p>
+               <p className="text-xs font-semibold text-primary">Fruit Mandi Operations</p>
+            </div>
+          </div>
+          <div className="border-t pt-4">
+            <SheetClose asChild>
                 <Link
                     href="/settings"
                     className={cn(
@@ -132,15 +126,32 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <Settings className="h-4 w-4" />
                     Settings
                 </Link>
-              </div>
-              <div className="text-center text-xs text-muted-foreground mt-4">
-                <p>© 2025 F.Co</p>
-                <p>Firdous Ahmad & Company</p>
-              </div>
-            </div>
+            </SheetClose>
+          </div>
+          <div className="text-center text-xs text-muted-foreground mt-4">
+            <p>© 2025 F.Co</p>
+            <p>Firdous Ahmad & Company</p>
+          </div>
+        </div>
+    </div>
+  );
+
+  if (!userRole) {
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <p className="ml-4">Loading...</p>
+        </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen w-full">
+      <div className="hidden md:fixed md:inset-y-0 md:z-50 md:flex md:w-[280px] md:flex-col">
+        <div className="border-r bg-background h-full">
+            <NavContent />
         </div>
       </div>
-      <div className="flex flex-col bg-muted/40">
+      <div className="flex flex-col bg-muted/40 md:pl-[280px]">
         <Header title={getPageTitle()} />
         <main className="flex-1 overflow-auto p-4 md:p-6">
           <div className="max-w-7xl mx-auto">

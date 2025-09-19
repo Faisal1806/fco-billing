@@ -57,15 +57,15 @@ export function Header({ title }: { title: string }) {
 
 
   return (
-    <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6">
+    <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6 sticky top-0 z-40">
        <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="shrink-0 md:hidden">
+              <Button variant="outline" size="icon" className="shrink-0">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Toggle navigation menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="flex flex-col p-0">
+            <SheetContent side="left" className="flex flex-col p-0 w-[280px]">
               <div className="flex h-24 items-center border-b px-4 lg:px-6">
                 <Link href="/" className="flex items-center gap-4 font-semibold text-foreground">
                   <div className="bg-primary/90 p-3 rounded-lg shadow-md">
