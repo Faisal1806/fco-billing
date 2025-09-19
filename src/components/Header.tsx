@@ -39,7 +39,7 @@ export function Header({ title }: { title: string }) {
 
     const navItems = [
       { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-      { href: '/sales', icon: ShoppingCart, label: 'Sales' },
+      { href: '/sales', icon: ShoppingCart, label: 'Invoices' },
       { href: '/purchases', icon: Package, label: 'Purchases' },
       { href: '/purchase-register', icon: BookCopy, label: 'Purchase Register' },
       { href: '/outside-sales', icon: Globe, label: 'Outside Sales' },
@@ -47,11 +47,11 @@ export function Header({ title }: { title: string }) {
       { href: '/expenses', icon: Receipt, label: 'Expenses' },
       { href: '/advances', icon: Banknote, label: 'Advances' },
       { href: '/cold-storage', icon: Snowflake, label: 'Cold Storage' },
-      { href: '/watak-register', icon: BookCopy, label: 'Watak Register' },
+      { href: '/watak-register', icon: BookCopy, label: 'Sales Register' },
       { href: '/khata', icon: BookCopy, label: 'Khata Ledger' },
-      { href: '/rates', icon: Tags, label: 'Fruit Rates' },
+      { href: '/rates', icon: Tags, label: 'Market Rates' },
       { href: '/fertilizers', icon: FlaskConical, label: 'Fertilizers & Pesticides' },
-      { href: '/accessories', icon: Shapes, label: 'Accessories' },
+      { href: '/accessories', icon: Shapes, label: 'Supplies' },
       { href: '/activity-log', icon: History, label: 'Activity Log' },
     ];
 

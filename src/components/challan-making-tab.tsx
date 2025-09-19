@@ -144,7 +144,7 @@ export function ChallanMakingTab() {
         toast({
             variant: 'destructive',
             title: 'Missing Details',
-            description: 'Please fill in Challan No., Date, and To, M/s before saving.',
+            description: 'Please fill in Delivery Note No., Date, and To, M/s before saving.',
         });
         return;
     }
@@ -162,14 +162,14 @@ export function ChallanMakingTab() {
     try {
         await saveDocument('challans', challanId, challanData);
         toast({
-            title: isEditing ? 'Challan Updated & Synced' : 'Challan Saved & Synced',
-            description: 'The challan has been successfully saved to the cloud.',
+            title: isEditing ? 'Delivery Note Updated & Synced' : 'Delivery Note Saved & Synced',
+            description: 'The delivery note has been successfully saved to the cloud.',
         });
     } catch (error) {
          toast({
             variant: 'destructive',
             title: 'Cloud Sync Failed',
-            description: 'Could not save the challan to the cloud. It is saved locally.',
+            description: 'Could not save the delivery note to the cloud. It is saved locally.',
         });
     }
 
@@ -179,7 +179,7 @@ export function ChallanMakingTab() {
 
    const handleViewChallan = () => {
       if (!isEditing || !details.challanNo) {
-          toast({ variant: 'destructive', title: 'Cannot View', description: 'Please save the challan first.'});
+          toast({ variant: 'destructive', title: 'Cannot View', description: 'Please save the delivery note first.'});
           return;
       }
       router.push(`/challan/${details.challanNo}`);
@@ -203,10 +203,10 @@ export function ChallanMakingTab() {
 
   const handleDeleteChallan = async (challanId: string) => {
     if(userRole !== 'admin') {
-      toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to delete challans.' });
+      toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to delete delivery notes.' });
       return;
     }
-    if(!window.confirm(`Are you sure you want to delete Challan #${challanId}? This action cannot be undone.`)) {
+    if(!window.confirm(`Are you sure you want to delete Delivery Note #${challanId}? This action cannot be undone.`)) {
         return;
     }
     
@@ -215,14 +215,14 @@ export function ChallanMakingTab() {
     try {
         await deleteDocument('challans', challanId);
         toast({
-            title: "Challan Deleted",
-            description: `Challan #${challanId} has been successfully deleted from local and cloud storage.`
+            title: "Delivery Note Deleted",
+            description: `Delivery Note #${challanId} has been successfully deleted from local and cloud storage.`
         });
     } catch (error) {
         toast({
             variant: "destructive",
             title: "Cloud Delete Failed",
-            description: "Could not delete challan from cloud, but it was removed locally."
+            description: "Could not delete delivery note from cloud, but it was removed locally."
         });
     }
 
@@ -248,7 +248,7 @@ export function ChallanMakingTab() {
                      {isEditing && (
                         <Button variant="outline" size="sm" onClick={resetForm} className="gap-2 ml-4">
                             <FilePlus className="h-4 w-4" />
-                            New Challan
+                            New Delivery Note
                         </Button>
                     )}
                 </div>
@@ -256,7 +256,7 @@ export function ChallanMakingTab() {
             <CardContent className="space-y-6">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                      <div className="space-y-2">
-                        <Label>Challan No.</Label>
+                        <Label>Delivery Note No.</Label>
                         <Input value={details.challanNo} onChange={e => handleDetailChange('challanNo', e.target.value)} disabled={isEditing} />
                     </div>
                     <div className="space-y-2">
@@ -333,15 +333,15 @@ export function ChallanMakingTab() {
 
             </CardContent>
             <CardFooter className="flex justify-center gap-4">
-                 <Button onClick={handleSaveChallan} className="w-full max-w-xs">{isEditing ? 'Update Challan' : 'Save Challan'}</Button>
+                 <Button onClick={handleSaveChallan} className="w-full max-w-xs">{isEditing ? 'Update Note' : 'Save Note'}</Button>
                 <Button onClick={handleViewChallan} variant="secondary" className="w-full max-w-xs gap-2" disabled={!isEditing}>
-                    <FileText className="h-4 w-4" /> View Challan
+                    <FileText className="h-4 w-4" /> View Note
                 </Button>
             </CardFooter>
         </Card>
         <Card className="lg:col-span-1 h-fit">
             <CardHeader>
-                <h3 className="text-lg font-medium">Recent Challans</h3>
+                <h3 className="text-lg font-medium">Recent Delivery Notes</h3>
             </CardHeader>
             <CardContent>
                 <ScrollArea className="h-96">
@@ -349,7 +349,7 @@ export function ChallanMakingTab() {
                         {savedChallans.map(challan => (
                             <div key={challan.challanNo} className="flex justify-between items-center p-2 border rounded-md">
                                 <div>
-                                    <p className="font-medium">Challan #{challan.challanNo}</p>
+                                    <p className="font-medium">Note #{challan.challanNo}</p>
                                     <p className="text-sm text-muted-foreground">{challan.toMs}</p>
                                     <p className="text-sm text-muted-foreground">{new Date(challan.date).toLocaleDateString()}</p>
                                 </div>
@@ -365,7 +365,7 @@ export function ChallanMakingTab() {
                                 </div>
                             </div>
                         ))}
-                         {savedChallans.length === 0 && <p className="text-sm text-muted-foreground text-center">No recent challans found.</p>}
+                         {savedChallans.length === 0 && <p className="text-sm text-muted-foreground text-center">No recent delivery notes found.</p>}
                     </div>
                 </ScrollArea>
             </CardContent>

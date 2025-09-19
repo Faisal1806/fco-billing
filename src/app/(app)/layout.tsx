@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
     LayoutDashboard, ShoppingCart, Package, Settings, Phone, BookCopy, Globe, Receipt,
-    Banknote, Snowflake, Tags, FlaskConical, Shapes, History, Hash, Menu
+    Banknote, Snowflake, Tags, FlaskConical, Shapes, History, Hash, Menu, FileText, Truck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Header } from '@/components/Header';
@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 
 const navItems = [
     { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { href: '/sales', icon: ShoppingCart, label: 'Sales' },
+    { href: '/sales', icon: ShoppingCart, label: 'Invoices' },
     { href: '/purchases', icon: Package, label: 'Purchases' },
     { href: '/purchase-register', icon: BookCopy, label: 'Purchase Register' },
     { href: '/outside-sales', icon: Globe, label: 'Outside Sales' },
@@ -26,11 +26,11 @@ const navItems = [
     { href: '/expenses', icon: Receipt, label: 'Expenses' },
     { href: '/advances', icon: Banknote, label: 'Advances' },
     { href: '/cold-storage', icon: Snowflake, label: 'Cold Storage' },
-    { href: '/watak-register', icon: BookCopy, label: 'Watak Register' },
+    { href: '/watak-register', icon: BookCopy, label: 'Sales Register' },
     { href: '/khata', icon: BookCopy, label: 'Khata Ledger' },
-    { href: '/rates', icon: Tags, label: 'Fruit Rates' },
+    { href: '/rates', icon: Tags, label: 'Market Rates' },
     { href: '/fertilizers', icon: FlaskConical, label: 'Fertilizers & Pesticides' },
-    { href: '/accessories', icon: Shapes, label: 'Accessories' },
+    { href: '/accessories', icon: Shapes, label: 'Supplies' },
     { href: '/activity-log', icon: History, label: 'Activity Log' },
 ];
 
@@ -81,8 +81,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     // A simple way to derive title for sub-pages like /invoice/[id]
     if (pathname.startsWith('/invoice/')) return 'Invoice';
     if (pathname.startsWith('/purchase-bill/')) return 'Purchase Bill';
-    if (pathname.startsWith('/receipt/')) return 'Receipt';
-    if (pathname.startsWith('/challan/')) return 'Challan';
+    if (pathname.startsWith('/receipt/')) return 'Payment';
+    if (pathname.startsWith('/challan/')) return 'Delivery Note';
     if (pathname.startsWith('/pesticide-invoice/')) return 'Pesticide Bill';
     
     const item = navItems.find(item => pathname.startsWith(item.href));
@@ -169,4 +169,3 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-

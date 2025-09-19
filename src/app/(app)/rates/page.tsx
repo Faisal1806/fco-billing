@@ -17,7 +17,7 @@ export default function RatesPage() {
         
         <AutomaticRateList 
             sourceType="fruit"
-            title="Sopore Mandi Rates (from Local Sales)"
+            title="Sopore Mandi Rates (from Local Invoices)"
         />
 
         <Separator className="my-8" />
@@ -29,6 +29,3 @@ export default function RatesPage() {
       </>
   );
 }
-
-
-    

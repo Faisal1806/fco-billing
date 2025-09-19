@@ -17,14 +17,14 @@ export default function SalesPage() {
   return (
     <Tabs value={outerTab} onValueChange={setOuterTab} className="w-full">
       <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="bill-making">Bill Making</TabsTrigger>
-        <TabsTrigger value="receipt-making">Receipt Making</TabsTrigger>
+        <TabsTrigger value="bill-making">Invoice & Note Creation</TabsTrigger>
+        <TabsTrigger value="receipt-making">Payment Creation</TabsTrigger>
       </TabsList>
       <TabsContent value="bill-making">
         <Tabs value={innerTab} onValueChange={setInnerTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="wataks">Wataks</TabsTrigger>
-                <TabsTrigger value="challan">Challan</TabsTrigger>
+                <TabsTrigger value="wataks">Sales Invoices</TabsTrigger>
+                <TabsTrigger value="challan">Delivery Notes</TabsTrigger>
                 <TabsTrigger value="pesticide-bill">Pesticide Bill</TabsTrigger>
             </TabsList>
             <TabsContent value="wataks">

@@ -148,7 +148,7 @@ export default function AccessoriesLedgerPage() {
 
     const exportToPDF = () => {
         const doc = new jsPDF();
-        doc.text("Accessories Ledger", 14, 15);
+        doc.text("Supplies Ledger", 14, 15);
         autoTable(doc, {
             head: [['Date', 'Customer', 'Category', 'Item', 'Qty', 'Rate', 'Payment', 'Amount']],
             body: entries.map(e => [
@@ -163,7 +163,7 @@ export default function AccessoriesLedgerPage() {
             ]),
             foot: [[{ content: 'Total', colSpan: 7, styles: { halign: 'right' } }, `₹${overallTotal.toFixed(2)}`]],
         });
-        doc.save("accessories-ledger.pdf");
+        doc.save("supplies-ledger.pdf");
     };
 
     const exportToExcel = () => {
@@ -178,16 +178,16 @@ export default function AccessoriesLedgerPage() {
             Amount: e.qty * e.rate,
         })));
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Accessories");
-        XLSX.writeFile(wb, "accessories-ledger.xlsx");
+        XLSX.utils.book_append_sheet(wb, ws, "Supplies");
+        XLSX.writeFile(wb, "supplies-ledger.xlsx");
     };
 
   return (
     <div className="space-y-6 printable-area">
         <Card className="print-hidden">
           <CardHeader>
-            <CardTitle>Add to Daily Accessories Ledger</CardTitle>
-            <CardDescription>Log sales of fertilizers, packaging materials, and other farm inputs. Inventory stock will be deducted automatically.</CardDescription>
+            <CardTitle>Add to Daily Supplies Ledger</CardTitle>
+            <CardDescription>Log sales of fertilizers, packaging materials, and other farm inputs. This is also referred to as a Cashbook.</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
@@ -245,7 +245,7 @@ export default function AccessoriesLedgerPage() {
         <div className="flex justify-between items-center">
             <div>
                 <CardTitle>Ledger History</CardTitle>
-                <CardDescription>A record of all accessory and material sales.</CardDescription>
+                <CardDescription>A record of all supply and material sales.</CardDescription>
             </div>
             <div className="flex gap-2 print-hidden">
                 <Button onClick={handlePrint} variant="outline" size="sm" className="gap-1"><Printer className="h-4 w-4"/>Print</Button>
@@ -322,5 +322,3 @@ export default function AccessoriesLedgerPage() {
     </div>
   );
 }
-
-    

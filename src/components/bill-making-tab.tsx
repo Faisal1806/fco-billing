@@ -137,7 +137,7 @@ export function BillMakingTab() {
         toast({
             variant: 'destructive',
             title: 'Missing Details',
-            description: 'Please fill in Bill No, Date, and Customer Name before saving.',
+            description: 'Please fill in Invoice No, Date, and Customer Name before saving.',
         });
         return;
     }
@@ -170,8 +170,8 @@ export function BillMakingTab() {
     localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
     
     toast({
-        title: isEditing ? 'Watak Updated' : 'Watak Saved',
-        description: `The Watak has been successfully saved to this device.`,
+        title: isEditing ? 'Invoice Updated' : 'Invoice Saved',
+        description: `The invoice has been successfully saved to this device.`,
     });
     
     fetchBills(); // Re-fetch to update the list
@@ -200,18 +200,18 @@ export function BillMakingTab() {
 
     const handleDeleteBill = async (billId: string) => {
         if(userRole !== 'admin') {
-            toast({ variant: "destructive", title: "Permission Denied", description: "You do not have permission to delete bills."});
+            toast({ variant: "destructive", title: "Permission Denied", description: "You do not have permission to delete invoices."});
             return;
         }
-        if(!window.confirm(`Are you sure you want to delete Watak #${billId}? This action cannot be undone.`)) {
+        if(!window.confirm(`Are you sure you want to delete Invoice #${billId}? This action cannot be undone.`)) {
             return;
         }
         
         localStorage.removeItem(`invoice-${billId}`);
         
         toast({
-            title: "Watak Deleted",
-            description: `Watak #${billId} has been successfully deleted.`
+            title: "Invoice Deleted",
+            description: `Invoice #${billId} has been successfully deleted.`
         });
         
         fetchBills(); // Re-fetch to update list
@@ -222,7 +222,7 @@ export function BillMakingTab() {
 
   const navigateToPrint = () => {
     if (!isEditing || !sNo) {
-        toast({ variant: 'destructive', title: 'Cannot View', description: 'Please save the Watak first to generate a printable version.'});
+        toast({ variant: 'destructive', title: 'Cannot View', description: 'Please save the invoice first to generate a printable version.'});
         return;
     }
     router.push(`/invoice/${sNo}`);
@@ -230,10 +230,10 @@ export function BillMakingTab() {
 
   const handleShare = () => {
     if (!isEditing || !sNo) {
-      toast({ variant: 'destructive', title: 'Cannot Share', description: 'Please save the bill first.' });
+      toast({ variant: 'destructive', title: 'Cannot Share', description: 'Please save the invoice first.' });
       return;
     }
-    const message = `Dear ${ms}, Watak No. ${watakNo || sNo}, Net Sale ₹${totals.netSale.toFixed(2)}. Thank you – F.Co`;
+    const message = `Dear ${ms}, Invoice No. ${watakNo || sNo}, Net Sale ₹${totals.netSale.toFixed(2)}. Thank you – F.Co`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
@@ -257,11 +257,11 @@ export function BillMakingTab() {
                  {/* Header fields */}
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4 items-end">
                     <div className="md:col-span-2">
-                        <Label>Bill No</Label>
+                        <Label>Invoice No</Label>
                         <div className="flex items-center gap-2">
                             <Input value={sNo} onChange={e => setSNo(e.target.value)} disabled={isEditing} />
                              {isEditing && (
-                                <Button variant="outline" size="icon" onClick={resetForm} title="Create a new bill">
+                                <Button variant="outline" size="icon" onClick={resetForm} title="Create a new invoice">
                                     <FilePlus className="h-4 w-4" />
                                 </Button>
                             )}
@@ -402,7 +402,7 @@ export function BillMakingTab() {
                 <div className="flex w-full justify-center flex-wrap gap-3">
                     <Button onClick={saveBill} className="flex-1 min-w-[150px]" disabled={isSubmitting}>
                         {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                        {isEditing ? 'Update Watak' : 'Save Watak'}
+                        {isEditing ? 'Update Invoice' : 'Save Invoice'}
                     </Button>
                     <Button onClick={navigateToPrint} variant="secondary" className="flex-1 min-w-[150px] gap-2" disabled={!isEditing}>
                        <FileText className="h-4 w-4" /> Print/View Invoice
@@ -415,7 +415,7 @@ export function BillMakingTab() {
         </Card>
         <Card className="md:col-span-1 h-fit">
             <CardHeader>
-                <h3 className="text-lg font-medium">Recent Wataks</h3>
+                <h3 className="text-lg font-medium">Recent Invoices</h3>
             </CardHeader>
             <CardContent>
                 <ScrollArea className="h-96">
@@ -428,7 +428,7 @@ export function BillMakingTab() {
                             savedBills.map(bill => (
                             <div key={bill.sNo} className="flex justify-between items-center p-2 border rounded-md hover:bg-muted">
                                 <div>
-                                    <p className="font-medium">Bill #{bill.sNo}</p>
+                                    <p className="font-medium">Invoice #{bill.sNo}</p>
                                     <p className="text-sm text-muted-foreground">{bill.customerName}</p>
                                     <p className="text-xs text-muted-foreground">{new Date(bill.date).toLocaleDateString()}</p>
                                 </div>
@@ -445,7 +445,7 @@ export function BillMakingTab() {
                             </div>
                             ))
                         ) : (
-                           <p className="text-sm text-muted-foreground text-center p-4">No recent Wataks found.</p>
+                           <p className="text-sm text-muted-foreground text-center p-4">No recent invoices found.</p>
                         )}
                     </div>
                 </ScrollArea>
@@ -454,5 +454,3 @@ export function BillMakingTab() {
     </div>
   );
 }
-
-    

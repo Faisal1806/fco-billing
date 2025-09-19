@@ -174,14 +174,14 @@ export function ReceiptMakingTab() {
     setIsEditing(true);
 
     toast({
-      title: isEditing ? 'Receipt Updated' : 'Receipt Saved',
-      description: 'The receipt has been successfully saved to this device.',
+      title: isEditing ? 'Payment Updated' : 'Payment Saved',
+      description: 'The payment has been successfully saved to this device.',
     });
   };
 
   const handleViewReceipt = () => {
       if (!isEditing || !receiptDetails.no) {
-          toast({ variant: 'destructive', title: 'Cannot View', description: 'Please save the receipt first.'});
+          toast({ variant: 'destructive', title: 'Cannot View', description: 'Please save the payment first.'});
           return;
       }
       router.push(`/receipt/${receiptDetails.no}`);
@@ -204,11 +204,11 @@ export function ReceiptMakingTab() {
 
   const handleDeleteReceipt = async (receiptId: string) => {
     if(userRole !== 'admin') {
-        toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to delete receipts.' });
+        toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to delete payments.' });
         return;
     }
 
-    if(!window.confirm(`Are you sure you want to delete Receipt #${receiptId}? This action cannot be undone.`)) {
+    if(!window.confirm(`Are you sure you want to delete Payment #${receiptId}? This action cannot be undone.`)) {
         return;
     }
     
@@ -216,8 +216,8 @@ export function ReceiptMakingTab() {
 
     fetchReceipts();
     toast({
-        title: "Receipt Deleted",
-        description: `Receipt #${receiptId} has been successfully deleted.`
+        title: "Payment Deleted",
+        description: `Payment #${receiptId} has been successfully deleted.`
     });
     
     if (receiptDetails.no === receiptId) {
@@ -233,7 +233,7 @@ export function ReceiptMakingTab() {
                     <div className="text-sm font-bold">🍎 F.Co</div>
                     <div className="text-center flex-1">
                         <h2 className="text-2xl font-bold">F.Co - FIRDOUS AHMAD & COMPANY</h2>
-                        <p className="text-sm text-muted-foreground">Goods Receipt</p>
+                        <p className="text-sm text-muted-foreground">Goods Payment</p>
                     </div>
                     <div className="text-sm font-bold">🍎 F.Co</div>
                 </div>
@@ -245,7 +245,7 @@ export function ReceiptMakingTab() {
                         <div className="flex items-center gap-2">
                         <Input value={receiptDetails.no} onChange={e => handleDetailChange('no', e.target.value)} disabled={isEditing} />
                          {isEditing && (
-                            <Button variant="outline" size="icon" onClick={resetForm} title="Create a new receipt">
+                            <Button variant="outline" size="icon" onClick={resetForm} title="Create a new payment">
                                 <FilePlus className="h-4 w-4" />
                             </Button>
                         )}
@@ -300,7 +300,7 @@ export function ReceiptMakingTab() {
                             <Input className="text-right" type="number" value={receiptDetails.freightPaid || ''} onChange={(e) => handleDetailChange('freightPaid', Number(e.target.value))} />
                         </div>
                         <div className="flex items-center gap-4">
-                            <Label>Wattak Ready On:</Label>
+                            <Label>Invoice Ready On:</Label>
                             <Input value={receiptDetails.wattakReadyOn} onChange={(e) => handleDetailChange('wattakReadyOn', e.target.value)} />
                         </div>
                     </div>
@@ -314,15 +314,15 @@ export function ReceiptMakingTab() {
                 </div>
             </CardContent>
             <CardFooter className="flex justify-center gap-4">
-                <Button onClick={handleSaveReceipt} className="w-full max-w-xs">{isEditing ? 'Update Receipt' : 'Save Receipt'}</Button>
+                <Button onClick={handleSaveReceipt} className="w-full max-w-xs">{isEditing ? 'Update Payment' : 'Save Payment'}</Button>
                 <Button onClick={handleViewReceipt} variant="secondary" className="w-full max-w-xs gap-2" disabled={!isEditing}>
-                    <FileText className="h-4 w-4" /> View Receipt
+                    <FileText className="h-4 w-4" /> View Payment
                 </Button>
             </CardFooter>
         </Card>
         <Card className="md:col-span-1 h-fit">
             <CardHeader>
-                <h3 className="text-lg font-medium">Recent Receipts</h3>
+                <h3 className="text-lg font-medium">Recent Payments</h3>
             </CardHeader>
             <CardContent>
                 <ScrollArea className="h-96">
@@ -330,7 +330,7 @@ export function ReceiptMakingTab() {
                         {savedReceipts.map(receipt => (
                             <div key={receipt.no} className="flex justify-between items-center p-2 border rounded-md">
                                 <div>
-                                    <p className="font-medium">Receipt #{receipt.no}</p>
+                                    <p className="font-medium">Payment #{receipt.no}</p>
                                     <p className="text-sm text-muted-foreground">{receipt.customerName}</p>
                                     <p className="text-sm text-muted-foreground">{new Date(receipt.date).toLocaleDateString()}</p>
                                 </div>
@@ -346,7 +346,7 @@ export function ReceiptMakingTab() {
                                 </div>
                             </div>
                         ))}
-                         {savedReceipts.length === 0 && <p className="text-sm text-muted-foreground text-center">No recent receipts found.</p>}
+                         {savedReceipts.length === 0 && <p className="text-sm text-muted-foreground text-center">No recent payments found.</p>}
                     </div>
                 </ScrollArea>
             </CardContent>

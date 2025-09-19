@@ -42,7 +42,12 @@ export interface WatakEntry {
     watakNo: string;
     customerName: string;
     customerUrdu?: string;
-    entries: { peti: number, daba: number, variety: string, rate: number }[];
+    entries: {
+        peti: number;
+        daba: number;
+        variety: string;
+        rate: number;
+    }[];
     totals: {
         grossSale: number;
         totalExpenses: number;
@@ -153,7 +158,7 @@ export default function WatakRegisterPage() {
 
   const exportToPDF = () => {
     const doc = new jsPDF();
-    doc.text(`Watak Register - ${selectedGrower}`, 14, 15);
+    doc.text(`Sales Register - ${selectedGrower}`, 14, 15);
     doc.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, 14, 22);
 
     const tableData = filteredWataks.map(w => [
@@ -167,7 +172,7 @@ export default function WatakRegisterPage() {
     ]);
 
     autoTable(doc, {
-        head: [['Date', 'Bill No.', 'Watak No.', 'Khata (Grower)', 'Gross Sale', 'Total Exp.', 'Net Sale']],
+        head: [['Date', 'Invoice No.', 'Watak No.', 'Khata (Grower)', 'Gross Sale', 'Total Exp.', 'Net Sale']],
         body: tableData,
         foot: [[
             'Total', '', '', '', `Rs. ${footerTotals.grossSale.toFixed(2)}`, `Rs. ${footerTotals.totalExpenses.toFixed(2)}`, `Rs. ${footerTotals.netSale.toFixed(2)}`
@@ -177,13 +182,13 @@ export default function WatakRegisterPage() {
         headStyles: { fillColor: [22, 163, 74] }
     });
 
-    doc.save(`Watak-Register-${selectedGrower}.pdf`);
+    doc.save(`Sales-Register-${selectedGrower}.pdf`);
   };
 
   const exportToExcel = () => {
       const worksheetData = filteredWataks.map(w => ({
         'Date': new Date(w.date).toLocaleDateString('en-GB'),
-        'Bill No.': w.sNo,
+        'Invoice No.': w.sNo,
         'Watak No.': w.watakNo,
         'Khata (Grower)': w.customerName,
         'Gross Sale': w.totals.grossSale,
@@ -197,8 +202,8 @@ export default function WatakRegisterPage() {
     ], { origin: -1 });
 
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Wataks');
-    XLSX.writeFile(workbook, `Watak-Register-${selectedGrower}.xlsx`);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sales');
+    XLSX.writeFile(workbook, `Sales-Register-${selectedGrower}.xlsx`);
   };
 
   const handleShare = () => {
@@ -228,13 +233,13 @@ export default function WatakRegisterPage() {
 
   const handleDelete = async (sNo: string) => {
     if(userRole !== 'admin') {
-      toast({ variant: "destructive", title: "Permission Denied", description: "You do not have permission to delete bills."});
+      toast({ variant: "destructive", title: "Permission Denied", description: "You do not have permission to delete invoices."});
       return;
     }
-    if(!window.confirm(`Are you sure you want to delete Bill #${sNo}? This cannot be undone.`)) return;
+    if(!window.confirm(`Are you sure you want to delete Invoice #${sNo}? This cannot be undone.`)) return;
     
     localStorage.removeItem(`invoice-${sNo}`);
-    toast({ title: "Bill Deleted", description: `Bill #${sNo} has been deleted locally.`});
+    toast({ title: "Invoice Deleted", description: `Invoice #${sNo} has been deleted locally.`});
     fetchWataks();
   }
 
@@ -243,12 +248,12 @@ export default function WatakRegisterPage() {
       <CardHeader>
         <div className="flex justify-between items-start gap-4 flex-wrap">
             <div className="flex items-center gap-4">
-                <CardTitle>{t('watak_register')}</CardTitle>
+                <CardTitle>Sales Register</CardTitle>
                 <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                         type="search"
-                        placeholder="Search by Bill No, Watak No, Name..."
+                        placeholder="Search by Invoice No, Watak No, Name..."
                         className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -294,12 +299,12 @@ export default function WatakRegisterPage() {
                 <Button size="sm" className="gap-1" onClick={() => router.push('/sales')}>
                     <PlusCircle className="h-3.5 w-3.5" />
                     <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                        {t('add_watak')}
+                        Add Invoice
                     </span>
                 </Button>
             </div>
         </div>
-        <CardDescription>{t('watak_register_subtitle')}</CardDescription>
+        <CardDescription>Track and manage customer credit and sales invoices.</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -310,7 +315,7 @@ export default function WatakRegisterPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {filteredWataks.map((watak) => (
                      <div key={watak.id} onClick={() => navigateToBill(watak.sNo)} className="cursor-pointer">
-                        <DocumentCard type="watak" title={`Watak #${watak.watakNo || watak.sNo}`}>
+                        <DocumentCard type="watak" title={`Invoice #${watak.watakNo || watak.sNo}`}>
                             <p className="text-lg font-semibold">{watak.customerName}</p>
                             {watak.customerUrdu && <p className="font-urdu text-xl mt-1">{watak.customerUrdu}</p>}
                             <p className="text-sm mt-2">Date: {new Date(watak.date).toLocaleDateString()}</p>
@@ -324,7 +329,7 @@ export default function WatakRegisterPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Date</TableHead>
-              <TableHead>Bill No.</TableHead>
+              <TableHead>Invoice No.</TableHead>
               <TableHead>Watak No.</TableHead>
               <TableHead>Khata (Grower)</TableHead>
               <TableHead>Peti</TableHead>
