@@ -122,7 +122,7 @@ export default function SalesRegisterPage() {
                 }
             }
         }
-        setWataks(items);
+        setWataks(items.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         
         const growerMap = new Map<string, string>();
         items.forEach(w => {
@@ -403,3 +403,5 @@ export default function SalesRegisterPage() {
     </Card>
   );
 }
+
+    

@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, FileText } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { saveDocument, deleteDocument } from '@/lib/actions';
+import { Badge } from '@/components/ui/badge';
 
 type PurchaseRow = {
   type: 'Patti' | 'Dabba';
@@ -57,13 +58,19 @@ export default function PurchasesPage() {
             purchases.push(purchase);
         }
     }
-    setSavedPurchases(purchases.sort((a,b) => (a.billNo > b.billNo) ? 1 : -1));
+    setSavedPurchases(purchases.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     setIsLoading(false);
   };
 
   useEffect(() => {
     fetchPurchases();
   }, []);
+  
+  const yearlyCount = useMemo(() => {
+    if(!savedPurchases) return 0;
+    const currentYear = new Date().getFullYear();
+    return savedPurchases.filter(p => new Date(p.date).getFullYear() === currentYear).length;
+  }, [savedPurchases]);
 
 
   const totals = useMemo(() => {
@@ -275,7 +282,7 @@ export default function PurchasesPage() {
                                 className="w-24 text-right"
                                 placeholder="0"
                                 value={r.qty || ''}
-                                onChange={e => updateRow(i, { qty: Number(e.target.value) })}
+                                onChange={e => updateRow(i, { qty: Number(e.target.value) || 0 })}
                                 />
                             </TableCell>
                             <TableCell>
@@ -284,7 +291,7 @@ export default function PurchasesPage() {
                                 className="w-24 text-right"
                                 placeholder="0.00"
                                 value={r.rate || ''}
-                                onChange={e => updateRow(i, { rate: Number(e.target.value) })}
+                                onChange={e => updateRow(i, { rate: Number(e.target.value) || 0 })}
                                 />
                             </TableCell>
                             <TableCell className="text-right font-medium">₹{(totals.rowTotals[i] || 0).toFixed(2)}</TableCell>
@@ -335,7 +342,10 @@ export default function PurchasesPage() {
         </Card>
         <Card className="lg:col-span-1 h-fit">
             <CardHeader>
-                <h3 className="text-lg font-medium">Saved Purchases</h3>
+                <h3 className="text-lg font-medium flex items-center gap-2">
+                  Saved Purchases
+                  {!isLoading && <Badge variant="secondary">{yearlyCount} This Year</Badge>}
+                </h3>
             </CardHeader>
             <CardContent>
                 <ScrollArea className="h-96">
@@ -374,3 +384,9 @@ export default function PurchasesPage() {
     </div>
   );
 }
+
+    
+
+    
+
+    

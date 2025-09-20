@@ -143,7 +143,7 @@ export function ReceiptMakingTab() {
             receipts.push(receipt);
         }
     }
-    setSavedReceipts(receipts.sort((a,b) => (a.no > b.no) ? 1 : -1));
+    setSavedReceipts(receipts.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
   };
   
   const yearlyCount = React.useMemo(() => {
@@ -389,5 +389,7 @@ export function ReceiptMakingTab() {
     </div>
   );
 }
+
+    
 
     

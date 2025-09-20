@@ -99,7 +99,7 @@ export function ChallanMakingTab() {
             }
         }
     }
-    setSavedChallans(challans.sort((a,b) => (a.challanNo > b.challanNo) ? 1 : -1));
+    setSavedChallans(challans.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
   };
   
   React.useEffect(() => {
@@ -383,3 +383,5 @@ export function ChallanMakingTab() {
     </div>
   );
 }
+
+    

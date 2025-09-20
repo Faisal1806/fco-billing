@@ -96,7 +96,7 @@ export function PesticideBillTab() {
             bills.push(bill);
         }
     }
-    setSavedBills(bills.sort((a,b) => (a.no > b.no) ? 1 : -1));
+    setSavedBills(bills.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
   };
   
   React.useEffect(() => {
@@ -330,3 +330,5 @@ export function PesticideBillTab() {
     </div>
   );
 }
+
+    
