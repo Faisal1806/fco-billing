@@ -53,10 +53,14 @@ export interface WatakEntry {
         total: number;
     }[];
     totals: {
-        grossSale: number;
-        totalExpenses: number;
-        netSale: number;
+      pattiQty: number;
+      dabbaQty: number;
+      totalQty: number;
+      grossSale: number;
+      totalExpenses: number;
+      netSale: number;
     }
+    freight: number;
 }
 
 const normalizeName = (name: string): string => {
@@ -163,8 +167,10 @@ export default function SalesRegisterPage() {
     acc.grossSale += watak.totals.grossSale || 0;
     acc.totalExpenses += watak.totals.totalExpenses || 0;
     acc.netSale += watak.totals.netSale || 0;
+    acc.pattiQty += watak.totals.pattiQty || 0;
+    acc.dabbaQty += watak.totals.dabbaQty || 0;
     return acc;
-  }, { grossSale: 0, totalExpenses: 0, netSale: 0 });
+  }, { grossSale: 0, totalExpenses: 0, netSale: 0, pattiQty: 0, dabbaQty: 0 });
 
   const exportToPDF = () => {
     const doc = new jsPDF();
@@ -176,16 +182,18 @@ export default function SalesRegisterPage() {
         w.sNo,
         w.watakNo,
         w.customerName,
+        w.totals.pattiQty || 0,
+        w.totals.dabbaQty || 0,
         `Rs. ${w.totals.grossSale.toFixed(2)}`,
         `Rs. ${w.totals.totalExpenses.toFixed(2)}`,
         `Rs. ${w.totals.netSale.toFixed(2)}`
     ]);
 
     autoTable(doc, {
-        head: [['Date', 'Invoice No.', 'Watak No.', 'Khata (Grower)', 'Gross Sale', 'Total Exp.', 'Net Sale']],
+        head: [['Date', 'Invoice No.', 'Watak No.', 'Khata (Grower)', 'Patti', 'Dabba', 'Gross Sale', 'Total Exp.', 'Net Sale']],
         body: tableData,
         foot: [[
-            'Total', '', '', '', `Rs. ${footerTotals.grossSale.toFixed(2)}`, `Rs. ${footerTotals.totalExpenses.toFixed(2)}`, `Rs. ${footerTotals.netSale.toFixed(2)}`
+            'Total', '', '', '', footerTotals.pattiQty, footerTotals.dabbaQty, `Rs. ${footerTotals.grossSale.toFixed(2)}`, `Rs. ${footerTotals.totalExpenses.toFixed(2)}`, `Rs. ${footerTotals.netSale.toFixed(2)}`
         ]],
         startY: 30,
         theme: 'striped',
@@ -201,6 +209,8 @@ export default function SalesRegisterPage() {
         'Invoice No.': w.sNo,
         'Watak No.': w.watakNo,
         'Khata (Grower)': w.customerName,
+        'Peti': w.totals.pattiQty || 0,
+        'Dabba': w.totals.dabbaQty || 0,
         'Gross Sale': w.totals.grossSale,
         'Total Expenses': w.totals.totalExpenses,
         'Net Sale': w.totals.netSale
@@ -208,7 +218,7 @@ export default function SalesRegisterPage() {
     
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
     XLSX.utils.sheet_add_aoa(worksheet, [
-        ["Total", "", "", "", footerTotals.grossSale, footerTotals.totalExpenses, footerTotals.netSale]
+        ["Total", "", "", "", footerTotals.pattiQty, footerTotals.dabbaQty, footerTotals.grossSale, footerTotals.totalExpenses, footerTotals.netSale]
     ], { origin: -1 });
 
     const workbook = XLSX.utils.book_new();
@@ -360,8 +370,8 @@ export default function SalesRegisterPage() {
                 <TableCell>{watak.sNo}</TableCell>
                 <TableCell>{watak.watakNo}</TableCell>
                 <TableCell className="font-medium">{watak.customerName}</TableCell>
-                <TableCell>{watak.entries.reduce((acc, e) => acc + (e.peti || 0), 0)}</TableCell>
-                <TableCell>{watak.entries.reduce((acc, e) => acc + (e.daba || 0), 0)}</TableCell>
+                <TableCell>{watak.totals.pattiQty || 0}</TableCell>
+                <TableCell>{watak.totals.dabbaQty || 0}</TableCell>
                 <TableCell className="text-right">₹{watak.totals.grossSale.toFixed(2)}</TableCell>
                 <TableCell className="text-right">₹{watak.totals.totalExpenses.toFixed(2)}</TableCell>
                 <TableCell className="text-right">₹{watak.totals.netSale.toFixed(2)}</TableCell>
@@ -378,7 +388,9 @@ export default function SalesRegisterPage() {
               </TableRow>
             ))}
              <TableRow className="font-bold bg-muted">
-                <TableCell colSpan={6} className="text-right">Total</TableCell>
+                <TableCell colSpan={4} className="text-right">Total</TableCell>
+                <TableCell>{footerTotals.pattiQty}</TableCell>
+                <TableCell>{footerTotals.dabbaQty}</TableCell>
                 <TableCell className="text-right">₹{footerTotals.grossSale.toFixed(2)}</TableCell>
                 <TableCell className="text-right">₹{footerTotals.totalExpenses.toFixed(2)}</TableCell>
                 <TableCell className="text-right">₹{footerTotals.netSale.toFixed(2)}</TableCell>
