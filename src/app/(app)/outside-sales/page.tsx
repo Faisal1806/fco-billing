@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Globe, ArrowRight, Percent, Minus, Package, ShoppingCart } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Globe, ArrowRight, Percent, Minus, Package, ShoppingCart, Truck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { saveDocument, deleteDocument } from '@/lib/actions';
@@ -41,6 +41,8 @@ export default function OutsideSalesPage() {
     // Expenses
     const [expenses, setExpenses] = useState(0);
     const [commissionRate, setCommissionRate] = useState(0);
+    const [freightPerPatti, setFreightPerPatti] = useState(0);
+
 
     // Data Management
     const [availableChallans, setAvailableChallans] = useState<any[]>([]);
@@ -85,13 +87,17 @@ export default function OutsideSalesPage() {
         const totalPurchaseCost = purchaseRows.reduce((acc, row) => acc + (Number(row.qty) || 0) * (Number(row.rate) || 0), 0);
         const grossSale = saleRows.reduce((acc, row) => acc + (Number(row.qty) || 0) * (Number(row.rate) || 0), 0);
         const commissionAmount = grossSale * ((Number(commissionRate) || 0) / 100);
-        const freightCost = selectedChallan?.payOnlyFreight || 0;
-        const totalExpenses = freightCost + (Number(expenses) || 0) + commissionAmount;
+
+        const pattiQty = saleRows.filter(r => r.type === 'Patti').reduce((acc, r) => acc + (Number(r.qty) || 0), 0);
+        const dabbaQty = saleRows.filter(r => r.type === 'Dabba').reduce((acc, r) => acc + (Number(r.qty) || 0), 0);
+        const calculatedFreight = (pattiQty * (Number(freightPerPatti) || 0)) + (dabbaQty * ((Number(freightPerPatti) || 0) / 2));
+        
+        const totalExpenses = calculatedFreight + (Number(expenses) || 0) + commissionAmount;
         const netSale = grossSale - totalExpenses;
         const netProfitOrLoss = netSale - totalPurchaseCost;
 
-        return { totalPurchaseCost, grossSale, commissionAmount, freightCost, totalExpenses, netSale, netProfitOrLoss };
-    }, [purchaseRows, saleRows, expenses, commissionRate, selectedChallan]);
+        return { totalPurchaseCost, grossSale, commissionAmount, calculatedFreight, totalExpenses, netSale, netProfitOrLoss };
+    }, [purchaseRows, saleRows, expenses, commissionRate, freightPerPatti]);
 
 
     const resetForm = () => {
@@ -103,6 +109,7 @@ export default function OutsideSalesPage() {
         setSaleRows([emptyRow]);
         setExpenses(0);
         setCommissionRate(0);
+        setFreightPerPatti(0);
         setIsEditing(false);
     };
 
@@ -123,6 +130,7 @@ export default function OutsideSalesPage() {
             saleEntries: saleRows.filter(r => r.qty > 0 && r.rate > 0),
             expenses: Number(expenses),
             commissionRate: Number(commissionRate),
+            freightPerPatti: Number(freightPerPatti),
             calculation
         };
         localStorage.setItem(`bikri-${id}`, JSON.stringify(data));
@@ -154,6 +162,7 @@ export default function OutsideSalesPage() {
         setSaleRows(bikri.saleEntries?.length > 0 ? bikri.saleEntries : [emptyRow]);
         setExpenses(bikri.expenses);
         setCommissionRate(bikri.commissionRate || 0);
+        setFreightPerPatti(bikri.freightPerPatti || 0);
         setIsEditing(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -266,10 +275,9 @@ export default function OutsideSalesPage() {
                             <CardHeader className="p-2">
                                 <CardTitle className="text-lg">Challan Summary</CardTitle>
                             </CardHeader>
-                            <CardContent className="p-2 grid grid-cols-3 gap-4 text-sm">
+                            <CardContent className="p-2 grid grid-cols-2 gap-4 text-sm">
                                 <p><strong>To:</strong> {selectedChallan.toMs}</p>
                                 <p><strong>Items Sent:</strong> {selectedChallan.totalNugs}</p>
-                                <p><strong>Freight Cost:</strong> ₹{selectedChallan.payOnlyFreight?.toFixed(2)}</p>
                             </CardContent>
                         </Card>
                     )}
@@ -286,6 +294,14 @@ export default function OutsideSalesPage() {
                     {/* Calculation */}
                     <div className="grid md:grid-cols-2 gap-6">
                         <div className="space-y-4">
+                            <div>
+                                <Label htmlFor="freightPerPatti">Freight Rate per Patti</Label>
+                                <div className="relative">
+                                    <Truck className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input id="freightPerPatti" type="number" className="pl-8" placeholder="e.g., 250" value={freightPerPatti || ''} onChange={e => setFreightPerPatti(Number(e.target.value))} />
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">Dabba freight is calculated as half of the Patti rate.</p>
+                            </div>
                              <div>
                                 <Label htmlFor="commissionRate">Commission Rate (%)</Label>
                                 <div className="relative">
@@ -306,8 +322,8 @@ export default function OutsideSalesPage() {
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between"><span>Gross Sale from Bikri:</span> <span className="font-medium">₹{calculation.grossSale.toFixed(2)}</span></div>
                                 <div className="flex justify-between text-red-500"><span>(-) Total Purchase Cost:</span> <span className="font-medium">₹{calculation.totalPurchaseCost.toFixed(2)}</span></div>
+                                <div className="flex justify-between text-red-500"><span>(-) Calculated Freight:</span> <span className="font-medium">₹{calculation.calculatedFreight.toFixed(2)}</span></div>
                                 <div className="flex justify-between text-red-500"><span>(-) Commission:</span> <span className="font-medium">₹{calculation.commissionAmount.toFixed(2)}</span></div>
-                                <div className="flex justify-between text-red-500"><span>(-) Freight from Challan:</span> <span className="font-medium">₹{calculation.freightCost.toFixed(2)}</span></div>
                                 <div className="flex justify-between text-red-500"><span>(-) Other Expenses:</span> <span className="font-medium">₹{(Number(expenses) || 0).toFixed(2)}</span></div>
                                 <Separator />
                                 <div className={`flex justify-between font-bold text-lg ${calculation.netProfitOrLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
