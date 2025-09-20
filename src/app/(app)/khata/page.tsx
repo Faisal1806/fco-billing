@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import * as React from 'react';
@@ -160,7 +159,7 @@ export default function KhataLedgerPage() {
                         });
                     }
                 } catch (e) {
-                    console.error("Failed to parse ledger data from local storage", e);
+                    console.error("Failed to parse ledger data from local storage for key:", key, e);
                 }
             }
 
@@ -169,6 +168,7 @@ export default function KhataLedgerPage() {
             const calculatedLedgers: Ledger = {};
 
             for (const trans of allTransactions) {
+                if (!trans.party) continue;
                 const normalizedName = normalizeName(trans.party);
                 if (!calculatedLedgers[normalizedName]) {
                     calculatedLedgers[normalizedName] = { 
@@ -216,6 +216,7 @@ export default function KhataLedgerPage() {
         const filterAndSetParties = (type: PartyType | 'all') => {
             const parties = allParties.filter(p => {
                 if (type === 'all') return true;
+                if (!p) return false;
                 const ledger = ledgers[normalizeName(p)];
                 if (!ledger) return false;
                 if (type === 'customer') return ledger.partyType === 'customer' || ledger.partyType === 'both';
@@ -224,7 +225,9 @@ export default function KhataLedgerPage() {
             });
             setFilteredParties(parties);
             if(parties.length > 0) {
-                setSelectedParty(parties[0]);
+                if (!selectedParty || !parties.includes(selectedParty)) {
+                  setSelectedParty(parties[0]);
+                }
             } else {
                 setSelectedParty(null);
             }
@@ -235,7 +238,7 @@ export default function KhataLedgerPage() {
         else if (activeTab === 'all') {
             filterAndSetParties('all');
         }
-    }, [activeTab, allParties, ledgers]);
+    }, [activeTab, allParties, ledgers, selectedParty]);
 
     const selectedLedger = selectedParty ? ledgers[normalizeName(selectedParty)] : null;
 
@@ -441,7 +444,7 @@ export default function KhataLedgerPage() {
                             <DropdownMenuContent align="start" className="max-h-96 overflow-y-auto">
                                 {filteredParties.map(party => (
                                     <DropdownMenuItem key={party} onSelect={() => setSelectedParty(party)}>
-                                        <PartyIcon type={ledgers[normalizeName(party)].partyType} />
+                                        {ledgers[normalizeName(party)] && <PartyIcon type={ledgers[normalizeName(party)].partyType} />}
                                         {party}
                                     </DropdownMenuItem>
                                 ))}
@@ -519,3 +522,5 @@ export default function KhataLedgerPage() {
     </>
   );
 }
+
+    
