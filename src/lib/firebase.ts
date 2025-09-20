@@ -4,16 +4,7 @@ import { getFirestore, Firestore } from "firebase/firestore";
 import { getMessaging, Messaging } from 'firebase/messaging';
 import { getDatabase, Database } from "firebase/database";
 import { getStorage, FirebaseStorage } from "firebase/storage";
-
-const firebaseConfig = {
-  "projectId": "swiftsale-ewd7o",
-  "appId": "1:693507183352:web:62935a0e75eb4a261e610d",
-  "storageBucket": "swiftsale-ewd7o.appspot.com",
-  "apiKey": "AIzaSyDreV3-idwKsbpZI8UL9MT_GHssbLaEUo4",
-  "authDomain": "swiftsale-ewd7o.firebaseapp.com",
-  "measurementId": "G-F7TTL0TYRC",
-  "messagingSenderId": "693507183352"
-};
+import { firebaseConfig } from "./firebase-config";
 
 
 const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
@@ -56,5 +47,4 @@ export const getClientMessaging = () => {
 }
 
 
-export { app, firebaseConfig };
-
+export { app };
