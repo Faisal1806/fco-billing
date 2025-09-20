@@ -10,9 +10,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
-import { Separator } from './ui/separator';
+import { Separator } from '@/components/ui/separator';
 import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, FileText } from 'lucide-react';
-import { ScrollArea } from './ui/scroll-area';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { saveDocument, deleteDocument } from '@/lib/actions';
 import { Badge } from '@/components/ui/badge';
 
@@ -384,5 +384,7 @@ export default function PurchasesPage() {
     </div>
   );
 }
+
+    
 
     
