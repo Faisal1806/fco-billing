@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Globe, ArrowRight, Percent, Minus, Package, ShoppingCart, Truck } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Globe, ArrowRight, Percent, Minus, Package, ShoppingCart, Truck, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { saveDocument, deleteDocument } from '@/lib/actions';
@@ -126,8 +126,8 @@ export default function OutsideSalesPage() {
             bikriNo,
             date,
             market,
-            purchaseEntries: purchaseRows.filter(r => r.qty > 0 && r.rate > 0),
-            saleEntries: saleRows.filter(r => r.qty > 0 && r.rate > 0),
+            purchaseEntries: purchaseRows.filter(r => r.qty > 0 && r.rate > 0).map(r => ({...r, total: r.qty * r.rate})),
+            saleEntries: saleRows.filter(r => r.qty > 0 && r.rate > 0).map(r => ({...r, total: r.qty * r.rate})),
             expenses: Number(expenses),
             commissionRate: Number(commissionRate),
             freightPerPatti: Number(freightPerPatti),
@@ -149,6 +149,7 @@ export default function OutsideSalesPage() {
                 }
                 return [...prev, data];
             });
+            setIsEditing(true);
             setIsSubmitting(false);
         }
     };
@@ -166,6 +167,19 @@ export default function OutsideSalesPage() {
         setIsEditing(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
+
+    const viewBikri = () => {
+        if (!isEditing || !bikriNo) {
+            toast({
+                variant: 'destructive',
+                title: 'Cannot View Bikri',
+                description: 'Please save the Bikri record before viewing.',
+            });
+            return;
+        }
+        const id = `${selectedChallanNo}-${bikriNo}`;
+        router.push(`/bikri-bill/${id}`);
+    };
     
     const handleDelete = async (id: string) => {
         if(userRole !== 'admin') {
@@ -182,6 +196,9 @@ export default function OutsideSalesPage() {
             toast({variant: 'destructive', title: 'Cloud Delete Failed', description: 'Record removed locally.'});
         }
         setSavedBikris(prev => prev.filter(b => b.id !== id));
+         if (`${selectedChallanNo}-${bikriNo}` === id) {
+            resetForm();
+        }
     };
 
     const updateEntryRow = (setter: React.Dispatch<React.SetStateAction<EntryRow[]>>, i: number, patch: Partial<EntryRow>) => {
@@ -336,10 +353,15 @@ export default function OutsideSalesPage() {
 
                 </CardContent>
                 <CardFooter>
-                    <Button onClick={handleSave} disabled={isSubmitting} className="w-full max-w-xs mx-auto">
-                        {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                        {isEditing ? 'Update Bikri Record' : 'Save Bikri Record'}
-                    </Button>
+                     <div className="flex w-full justify-center gap-4">
+                        <Button onClick={handleSave} className="w-full max-w-xs" disabled={isSubmitting}>
+                            {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                            {isEditing ? 'Update Bikri Record' : 'Save Bikri Record'}
+                        </Button>
+                        <Button onClick={viewBikri} variant="secondary" className="w-full max-w-xs gap-2" disabled={!isEditing}>
+                            <FileText className="h-4 w-4" /> View Bikri
+                        </Button>
+                    </div>
                 </CardFooter>
             </Card>
 
@@ -379,3 +401,5 @@ export default function OutsideSalesPage() {
         </div>
     );
 }
+
+    
