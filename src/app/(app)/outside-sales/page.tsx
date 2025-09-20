@@ -9,35 +9,40 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Globe, ArrowRight, Percent } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Globe, ArrowRight, Percent, Minus, Package, ShoppingCart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { saveDocument, deleteDocument } from '@/lib/actions';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-type BikriEntry = {
+type EntryRow = {
     type: 'Patti' | 'Dabba';
     qty: number;
     variety: string;
     rate: number;
 };
 
-const emptyRow: BikriEntry = { type: 'Patti', qty: 0, variety: '', rate: 0 };
+const emptyRow: EntryRow = { type: 'Patti', qty: 0, variety: '', rate: 0 };
 
 export default function OutsideSalesPage() {
     const { toast } = useToast();
     const router = useRouter();
 
-    // State for the form
+    // Form State
     const [selectedChallanNo, setSelectedChallanNo] = useState('');
     const [bikriNo, setBikriNo] = useState('');
     const [date, setDate] = useState('');
     const [market, setMarket] = useState('');
-    const [rows, setRows] = useState<BikriEntry[]>([emptyRow]);
+    
+    // Entries
+    const [purchaseRows, setPurchaseRows] = useState<EntryRow[]>([emptyRow]);
+    const [saleRows, setSaleRows] = useState<EntryRow[]>([emptyRow]);
+
+    // Expenses
     const [expenses, setExpenses] = useState(0);
     const [commissionRate, setCommissionRate] = useState(0);
 
-    // State for data management
+    // Data Management
     const [availableChallans, setAvailableChallans] = useState<any[]>([]);
     const [savedBikris, setSavedBikris] = useState<any[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -77,14 +82,16 @@ export default function OutsideSalesPage() {
     }, [selectedChallanNo, availableChallans]);
 
     const calculation = useMemo(() => {
-        const grossSale = rows.reduce((acc, row) => acc + (Number(row.qty) || 0) * (Number(row.rate) || 0), 0);
+        const totalPurchaseCost = purchaseRows.reduce((acc, row) => acc + (Number(row.qty) || 0) * (Number(row.rate) || 0), 0);
+        const grossSale = saleRows.reduce((acc, row) => acc + (Number(row.qty) || 0) * (Number(row.rate) || 0), 0);
         const commissionAmount = grossSale * ((Number(commissionRate) || 0) / 100);
         const freightCost = selectedChallan?.payOnlyFreight || 0;
         const totalExpenses = freightCost + (Number(expenses) || 0) + commissionAmount;
         const netSale = grossSale - totalExpenses;
+        const netProfitOrLoss = netSale - totalPurchaseCost;
 
-        return { grossSale, commissionAmount, freightCost, totalExpenses, netSale };
-    }, [rows, expenses, commissionRate, selectedChallan]);
+        return { totalPurchaseCost, grossSale, commissionAmount, freightCost, totalExpenses, netSale, netProfitOrLoss };
+    }, [purchaseRows, saleRows, expenses, commissionRate, selectedChallan]);
 
 
     const resetForm = () => {
@@ -92,7 +99,8 @@ export default function OutsideSalesPage() {
         setBikriNo('');
         setDate('');
         setMarket('');
-        setRows([emptyRow]);
+        setPurchaseRows([emptyRow]);
+        setSaleRows([emptyRow]);
         setExpenses(0);
         setCommissionRate(0);
         setIsEditing(false);
@@ -100,7 +108,7 @@ export default function OutsideSalesPage() {
 
     const handleSave = async () => {
         if (!selectedChallanNo || !bikriNo || !date || !market) {
-            toast({ variant: 'destructive', title: 'Missing Details', description: 'Please fill out all fields before saving.' });
+            toast({ variant: 'destructive', title: 'Missing Details', description: 'Please fill out all required header fields before saving.' });
             return;
         }
         setIsSubmitting(true);
@@ -111,7 +119,8 @@ export default function OutsideSalesPage() {
             bikriNo,
             date,
             market,
-            entries: rows.filter(r => r.qty > 0 && r.rate > 0),
+            purchaseEntries: purchaseRows.filter(r => r.qty > 0 && r.rate > 0),
+            saleEntries: saleRows.filter(r => r.qty > 0 && r.rate > 0),
             expenses: Number(expenses),
             commissionRate: Number(commissionRate),
             calculation
@@ -141,7 +150,8 @@ export default function OutsideSalesPage() {
         setBikriNo(bikri.bikriNo);
         setDate(bikri.date);
         setMarket(bikri.market);
-        setRows(bikri.entries.length > 0 ? bikri.entries : [emptyRow]);
+        setPurchaseRows(bikri.purchaseEntries?.length > 0 ? bikri.purchaseEntries : [emptyRow]);
+        setSaleRows(bikri.saleEntries?.length > 0 ? bikri.saleEntries : [emptyRow]);
         setExpenses(bikri.expenses);
         setCommissionRate(bikri.commissionRate || 0);
         setIsEditing(true);
@@ -165,17 +175,55 @@ export default function OutsideSalesPage() {
         setSavedBikris(prev => prev.filter(b => b.id !== id));
     };
 
-
-    const updateRow = (i: number, patch: Partial<BikriEntry>) => {
-        setRows(prev => {
+    const updateEntryRow = (setter: React.Dispatch<React.SetStateAction<EntryRow[]>>, i: number, patch: Partial<EntryRow>) => {
+        setter(prev => {
           const copy = [...prev];
           copy[i] = { ...copy[i], ...patch };
           return copy;
         });
     };
 
-    const addRow = () => setRows(prev => [...prev, { ...emptyRow }]);
-    const removeRow = (i: number) => setRows(prev => (prev.length > 1 ? prev.filter((_, idx) => idx !== i) : prev));
+    const addEntryRow = (setter: React.Dispatch<React.SetStateAction<EntryRow[]>>) => setter(prev => [...prev, { ...emptyRow }]);
+    const removeEntryRow = (setter: React.Dispatch<React.SetStateAction<EntryRow[]>>, i: number) => setter(prev => (prev.length > 1 ? prev.filter((_, idx) => idx !== i) : prev));
+    
+    const EntryTable = ({ title, rows, setter, icon }: { title: string, rows: EntryRow[], setter: React.Dispatch<React.SetStateAction<EntryRow[]>>, icon: React.ReactNode }) => (
+         <div>
+            <Label className="text-base font-semibold flex items-center gap-2 mb-2">{icon} {title}</Label>
+            <Table>
+                 <TableHeader>
+                    <TableRow>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Variety</TableHead>
+                        <TableHead className="text-right">Qty</TableHead>
+                        <TableHead className="text-right">Rate</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                        <TableHead className="w-12"></TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {rows.map((r, i) => (
+                        <TableRow key={i}>
+                            <TableCell>
+                                <Select value={r.type} onValueChange={(v: EntryRow['type']) => updateEntryRow(setter, i, { type: v })}>
+                                    <SelectTrigger><SelectValue/></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Patti">Patti</SelectItem>
+                                        <SelectItem value="Dabba">Dabba</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </TableCell>
+                            <TableCell><Input placeholder="Variety" value={r.variety} onChange={e => updateEntryRow(setter, i, { variety: e.target.value })}/></TableCell>
+                            <TableCell><Input type="number" className="text-right" value={r.qty || ''} onChange={e => updateEntryRow(setter, i, { qty: Number(e.target.value) })} /></TableCell>
+                            <TableCell><Input type="number" className="text-right" value={r.rate || ''} onChange={e => updateEntryRow(setter, i, { rate: Number(e.target.value) })}/></TableCell>
+                            <TableCell className="text-right font-medium">₹{((r.qty || 0) * (r.rate || 0)).toFixed(2)}</TableCell>
+                            <TableCell><Button variant="ghost" size="icon" onClick={() => removeEntryRow(setter, i)}><Trash2 className="text-red-500 h-4 w-4"/></Button></TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+            <Button onClick={() => addEntryRow(setter)} variant="outline" size="sm" className="mt-2 gap-2"><PlusCircle className="h-4 w-4" /> Add Row</Button>
+        </div>
+    );
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -185,7 +233,7 @@ export default function OutsideSalesPage() {
                         <CardTitle className="flex items-center gap-2"><Globe className="h-6 w-6" /> Outside Sales Register (Bikri)</CardTitle>
                         {isEditing && <Button variant="outline" size="sm" onClick={resetForm}><FilePlus className="h-4 w-4 mr-2" />Enter New Bikri</Button>}
                     </div>
-                    <CardDescription>Enter the sales invoice (Bikri) received from outside markets to calculate your profit/loss.</CardDescription>
+                    <CardDescription>Enter the purchase cost and sales invoice (Bikri) received from outside markets to calculate your profit/loss.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     {/* Header */}
@@ -228,42 +276,9 @@ export default function OutsideSalesPage() {
 
                     <Separator />
                     
-                    {/* Entries */}
-                     <div>
-                        <Label className="text-base font-semibold">Bikri Sale Entries</Label>
-                        <Table>
-                             <TableHeader>
-                                <TableRow>
-                                    <TableHead>Type</TableHead>
-                                    <TableHead>Variety</TableHead>
-                                    <TableHead className="text-right">Qty</TableHead>
-                                    <TableHead className="text-right">Rate</TableHead>
-                                    <TableHead className="text-right">Amount</TableHead>
-                                    <TableHead className="w-12"></TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {rows.map((r, i) => (
-                                    <TableRow key={i}>
-                                        <TableCell>
-                                            <Select value={r.type} onValueChange={(v: BikriEntry['type']) => updateRow(i, { type: v })}>
-                                                <SelectTrigger><SelectValue/></SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="Patti">Patti</SelectItem>
-                                                    <SelectItem value="Dabba">Dabba</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </TableCell>
-                                        <TableCell><Input placeholder="Variety" value={r.variety} onChange={e => updateRow(i, { variety: e.target.value })}/></TableCell>
-                                        <TableCell><Input type="number" className="text-right" value={r.qty || ''} onChange={e => updateRow(i, { qty: Number(e.target.value) })} /></TableCell>
-                                        <TableCell><Input type="number" className="text-right" value={r.rate || ''} onChange={e => updateRow(i, { rate: Number(e.target.value) })}/></TableCell>
-                                        <TableCell className="text-right font-medium">₹{((r.qty || 0) * (r.rate || 0)).toFixed(2)}</TableCell>
-                                        <TableCell><Button variant="ghost" size="icon" onClick={() => removeRow(i)}><Trash2 className="text-red-500 h-4 w-4"/></Button></TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                        <Button onClick={addRow} variant="outline" size="sm" className="mt-2 gap-2"><PlusCircle className="h-4 w-4" /> Add Row</Button>
+                    <div className="space-y-6">
+                         <EntryTable title="Original Purchase Cost (in Sopore)" rows={purchaseRows} setter={setPurchaseRows} icon={<ShoppingCart className="h-5 w-5 text-blue-500" />} />
+                         <EntryTable title="Bikri Sale Entries" rows={saleRows} setter={setSaleRows} icon={<Package className="h-5 w-5 text-green-500" />} />
                     </div>
 
                     <Separator />
@@ -280,20 +295,24 @@ export default function OutsideSalesPage() {
                             </div>
                             <div>
                                 <Label htmlFor="expenses">Other Expenses from Bikri (Labour, etc.)</Label>
-                                <Input id="expenses" type="number" value={expenses || ''} onChange={e => setExpenses(Number(e.target.value))} />
+                                 <div className="relative">
+                                    <Minus className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input id="expenses" type="number" className="pl-8" value={expenses || ''} onChange={e => setExpenses(Number(e.target.value))} />
+                                </div>
                             </div>
                         </div>
                         <Card className="p-4 bg-muted">
                             <h3 className="font-bold text-lg mb-2">Profit / Loss Calculation</h3>
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between"><span>Gross Sale from Bikri:</span> <span className="font-medium">₹{calculation.grossSale.toFixed(2)}</span></div>
+                                <div className="flex justify-between text-red-500"><span>(-) Total Purchase Cost:</span> <span className="font-medium">₹{calculation.totalPurchaseCost.toFixed(2)}</span></div>
                                 <div className="flex justify-between text-red-500"><span>(-) Commission:</span> <span className="font-medium">₹{calculation.commissionAmount.toFixed(2)}</span></div>
                                 <div className="flex justify-between text-red-500"><span>(-) Freight from Challan:</span> <span className="font-medium">₹{calculation.freightCost.toFixed(2)}</span></div>
                                 <div className="flex justify-between text-red-500"><span>(-) Other Expenses:</span> <span className="font-medium">₹{(Number(expenses) || 0).toFixed(2)}</span></div>
                                 <Separator />
-                                <div className={`flex justify-between font-bold text-lg ${calculation.netSale >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                <div className={`flex justify-between font-bold text-lg ${calculation.netProfitOrLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                     <span>Net Profit / Loss:</span>
-                                    <span>₹{calculation.netSale.toFixed(2)}</span>
+                                    <span>₹{calculation.netProfitOrLoss.toFixed(2)}</span>
                                 </div>
                             </div>
                         </Card>
@@ -321,8 +340,8 @@ export default function OutsideSalesPage() {
                                             <div>
                                                 <p className="font-semibold">{bikri.market} Market</p>
                                                 <p className="text-sm text-muted-foreground">Challan #{bikri.challanNo} <ArrowRight className="h-3 w-3 inline"/> Bikri #{bikri.bikriNo}</p>
-                                                 <p className={`text-lg font-bold ${bikri.calculation.netSale >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                    Profit: ₹{bikri.calculation.netSale.toFixed(2)}
+                                                 <p className={`text-lg font-bold ${bikri.calculation.netProfitOrLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                    Profit: ₹{bikri.calculation.netProfitOrLoss.toFixed(2)}
                                                  </p>
                                             </div>
                                             <div className="flex flex-col items-end">
