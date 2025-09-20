@@ -230,7 +230,7 @@ export default function KhataLedgerPage() {
             
             const parties = allParties.filter(p => {
                 if (tab === 'all') return true;
-                if (!p) return false;
+                if (!p || p === fcoName) return false;
                 const ledger = ledgers[normalizeName(p)];
                 if (!ledger) return false;
 
@@ -537,3 +537,6 @@ export default function KhataLedgerPage() {
     </>
   );
 }
+
+
+    
