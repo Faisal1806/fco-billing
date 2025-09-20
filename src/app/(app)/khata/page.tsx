@@ -508,7 +508,7 @@ export default function KhataLedgerPage() {
                             </TableRow>
                              <TableRow className="font-bold text-lg bg-muted">
                                 <TableCell colSpan={5} className="text-right">Final Balance</TableCell>
-                                <TableCell className={`text-right ${selectedLedger.balance >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                                <TableCell className={`text-right ${selectedLedger.balance >= 0 ? 'text-red-700' : 'text-green-700'}`}>
                                     ₹{Math.abs(selectedLedger.balance).toFixed(2)}
                                     <span className="text-xs text-muted-foreground ml-1">
                                         {selectedLedger.balance >= 0 ? '(Payable)' : '(Receivable)'}
