@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -23,6 +24,12 @@ const liveSoporeRates: LiveRate[] = [
     { variety: 'Gala', type: 'Dabba', rate: '500 - 800' },
     { variety: 'Gala', type: 'Patti', rate: '300 - 600' },
     { variety: 'Kulu', type: 'Dabba', rate: '700 - 1100' },
+    { variety: 'Kulu', type: 'Patti', rate: '500 - 850' },
+    { variety: 'Maharaji', type: 'Dabba', rate: '800 - 1300' },
+    { variety: 'Maharaji', type: 'Patti', rate: '600 - 1000' },
+    { variety: 'Golden Delicious', type: 'Dabba', rate: '400 - 700' },
+    { variety: 'Golden Delicious', type: 'Patti', rate: '200 - 450' },
+    { variety: 'Shimla', type: 'Dabba', rate: '450 - 750' },
     { variety: 'Nakh', type: 'Patti', rate: '150 - 350' },
     { variety: 'BG', type: 'Patti', rate: '200 - 450' },
 ];
