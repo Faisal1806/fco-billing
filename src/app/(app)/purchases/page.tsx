@@ -32,7 +32,7 @@ export default function PurchasesPage() {
   const [companyName, setCompanyName] = useState('');
   const [date, setDate] = useState('');
   const [rows, setRows] = useState<PurchaseRow[]>(initialRows);
-  const [purchaseFor, setPurchaseFor] = useState<'Customer' | 'Own Stock (AFC)'>('Customer');
+  const [purchaseFor, setPurchaseFor] = useState<'Customer' | 'Own Stock (F.Co)'>('Customer');
 
 
   const { toast } = useToast();
@@ -121,7 +121,7 @@ export default function PurchasesPage() {
 
     setIsSubmitting(true);
     const purchaseId = billNo;
-    const finalCompanyName = purchaseFor === 'Own Stock (AFC)' ? 'AFC (Own Stock)' : companyName;
+    const finalCompanyName = purchaseFor === 'Own Stock (F.Co)' ? 'F.Co (Own Stock)' : companyName;
     const purchaseData = {
       billNo,
       date,
@@ -241,11 +241,11 @@ export default function PurchasesPage() {
                     </div>
                      <div>
                         <Label htmlFor="purchaseFor">Purchase For</Label>
-                        <Select value={purchaseFor} onValueChange={(value: 'Customer' | 'Own Stock (AFC)') => setPurchaseFor(value)}>
+                        <Select value={purchaseFor} onValueChange={(value: 'Customer' | 'Own Stock (F.Co)') => setPurchaseFor(value)}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="Customer">Customer</SelectItem>
-                                <SelectItem value="Own Stock (AFC)">Own Stock (AFC)</SelectItem>
+                                <SelectItem value="Own Stock (F.Co)">Own Stock (F.Co)</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -255,10 +255,10 @@ export default function PurchasesPage() {
                         </Label>
                         <Input 
                             id="companyName" 
-                            value={purchaseFor === 'Own Stock (AFC)' ? 'AFC (Own Stock)' : companyName} 
+                            value={purchaseFor === 'Own Stock (F.Co)' ? 'F.Co (Own Stock)' : companyName} 
                             onChange={e => setCompanyName(e.target.value)} 
                             placeholder="e.g., Ahmad Traders" 
-                            disabled={purchaseFor === 'Own Stock (AFC)'}
+                            disabled={purchaseFor === 'Own Stock (F.Co)'}
                         />
                     </div>
                 </div>

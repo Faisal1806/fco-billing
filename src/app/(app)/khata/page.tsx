@@ -220,11 +220,11 @@ export default function KhataLedgerPage() {
     }, []);
 
     React.useEffect(() => {
-        const filterAndSetParties = (tab: 'growers' | 'customers' | 'afc' | 'all') => {
-             const afcName = 'AFC (Own Stock)';
-             if (tab === 'afc') {
-                setFilteredParties([afcName]);
-                setSelectedParty(afcName);
+        const filterAndSetParties = (tab: 'growers' | 'customers' | 'fco' | 'all') => {
+             const fcoName = 'F.Co (Own Stock)';
+             if (tab === 'fco') {
+                setFilteredParties([fcoName]);
+                setSelectedParty(fcoName);
                 return;
              }
             
@@ -442,7 +442,7 @@ export default function KhataLedgerPage() {
                         <TabsList className="grid w-full grid-cols-4">
                             <TabsTrigger value="growers"><Leaf className="h-4 w-4 mr-2"/>Grower Ledger</TabsTrigger>
                             <TabsTrigger value="customers"><ShoppingCart className="h-4 w-4 mr-2"/>Customer Ledger</TabsTrigger>
-                            <TabsTrigger value="afc"><Building className="h-4 w-4 mr-2"/>AFC Ledger</TabsTrigger>
+                            <TabsTrigger value="fco"><Building className="h-4 w-4 mr-2"/>F.Co Ledger</TabsTrigger>
                             <TabsTrigger value="all"><Users className="h-4 w-4 mr-2"/>All Parties</TabsTrigger>
                         </TabsList>
                     </Tabs>
