@@ -32,6 +32,8 @@ export default function PurchasesPage() {
   const [companyName, setCompanyName] = useState('');
   const [date, setDate] = useState('');
   const [rows, setRows] = useState<PurchaseRow[]>(initialRows);
+  const [purchaseFor, setPurchaseFor] = useState<'Customer' | 'Own Stock (AFC)'>('Customer');
+
 
   const { toast } = useToast();
   const router = useRouter();
@@ -101,6 +103,7 @@ export default function PurchasesPage() {
         setBillNo('');
         setCompanyName('');
         setDate('');
+        setPurchaseFor('Customer');
         setRows(initialRows);
         setIsEditing(false);
     };
@@ -118,10 +121,12 @@ export default function PurchasesPage() {
 
     setIsSubmitting(true);
     const purchaseId = billNo;
+    const finalCompanyName = purchaseFor === 'Own Stock (AFC)' ? 'AFC (Own Stock)' : companyName;
     const purchaseData = {
       billNo,
       date,
-      growerName: companyName,
+      growerName: finalCompanyName,
+      purchaseFor,
       entries: rows.filter(r => r.qty > 0 && r.rate > 0).map(r => ({...r, qty: Number(r.qty), rate: Number(r.rate), total: Number(r.qty) * Number(r.rate)})),
       totals: {
         totalQty: totals.totalQty,
@@ -167,6 +172,7 @@ export default function PurchasesPage() {
     setBillNo(purchase.billNo);
     setCompanyName(purchase.growerName);
     setDate(purchase.date);
+    setPurchaseFor(purchase.purchaseFor || 'Customer');
     setRows(purchase.entries.length > 0 ? purchase.entries : initialRows);
     setIsEditing(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -224,7 +230,7 @@ export default function PurchasesPage() {
                 </div>
             </CardHeader>
             <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                         <Label htmlFor="billNo">Bill No</Label>
                         <Input id="billNo" value={billNo} onChange={e => setBillNo(e.target.value)} disabled={isEditing} />
@@ -233,9 +239,27 @@ export default function PurchasesPage() {
                         <Label htmlFor="date">Date</Label>
                         <Input id="date" type="date" value={date} onChange={e => setDate(e.target.value)} />
                     </div>
+                     <div>
+                        <Label htmlFor="purchaseFor">Purchase For</Label>
+                        <Select value={purchaseFor} onValueChange={(value: 'Customer' | 'Own Stock (AFC)') => setPurchaseFor(value)}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Customer">Customer</SelectItem>
+                                <SelectItem value="Own Stock (AFC)">Own Stock (AFC)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
                     <div>
-                        <Label htmlFor="companyName">Company Name</Label>
-                        <Input id="companyName" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="e.g., Ahmad Traders" />
+                        <Label htmlFor="companyName">
+                            {purchaseFor === 'Customer' ? 'Customer Name' : 'Company Name'}
+                        </Label>
+                        <Input 
+                            id="companyName" 
+                            value={purchaseFor === 'Own Stock (AFC)' ? 'AFC (Own Stock)' : companyName} 
+                            onChange={e => setCompanyName(e.target.value)} 
+                            placeholder="e.g., Ahmad Traders" 
+                            disabled={purchaseFor === 'Own Stock (AFC)'}
+                        />
                     </div>
                 </div>
 
@@ -384,9 +408,3 @@ export default function PurchasesPage() {
     </div>
   );
 }
-
-    
-
-    
-
-    
