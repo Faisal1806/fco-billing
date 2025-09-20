@@ -2,6 +2,7 @@
 
 import AutomaticRateList from "@/components/AutomaticRateList";
 import LiveRateList from "@/components/LiveRateList";
+import OutsideLiveRateList from "@/components/OutsideLiveRateList";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
@@ -16,6 +17,10 @@ export default function RatesPage() {
         </Card>
 
         <LiveRateList />
+
+        <Separator className="my-8" />
+        
+        <OutsideLiveRateList />
 
         <Separator className="my-8" />
         
