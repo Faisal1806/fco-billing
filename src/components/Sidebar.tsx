@@ -26,96 +26,56 @@ import { Logo } from './logo';
 import { cn } from '@/lib/utils';
 import { SheetClose } from './ui/sheet';
 
-const iconMap: { [key: string]: React.ElementType } = {
-  "Dashboard": LayoutGrid,
-  "Sales Invoices": FileText,
-  "Watak Register": BookCopy,
-  "Purchases": ShoppingCart,
-  "Purchase Register": List,
-  "Outside Sales (Bikris)": Globe,
-  "Products": Package,
-  "Expenses": FileText,
-  "Advances": HandCoins,
-  "Cold Storage": Snowflake,
-  "Khata Ledger": BookOpen,
-  "Fruit Rates": Apple,
-  "Fertilizers And Pesticides": FlaskConical,
-  "Accessories": Boxes,
-  "Activity Log": History,
-  "Settings": Settings,
-};
-
-const hrefMap: { [key: string]: string } = {
-  "Dashboard": "/dashboard",
-  "Sales Invoices": "/sales",
-  "Watak Register": "/watak-register",
-  "Purchases": "/purchases",
-  "Purchase Register": "/purchase-register",
-  "Outside Sales (Bikris)": "/outside-sales",
-  "Products": "/products",
-  "Expenses": "/expenses",
-  "Advances": "/advances",
-  "Cold Storage": "/cold-storage",
-  "Khata Ledger": "/khata",
-  "Fruit Rates": "/rates",
-  "Fertilizers And Pesticides": "/fertilizers",
-  "Accessories": "/accessories",
-  "Activity Log": "/activity-log",
-  "Settings": "/settings",
-};
-
 const sidebarSections = [
   {
     title: "ANALYTICS",
-    items: ["Dashboard"]
+    items: [{ name: "Dashboard", href: "/dashboard", icon: LayoutGrid }]
   },
   {
     title: "SALES AND PURCHASES",
     items: [
-      "Sales Invoices",
-      "Watak Register",
-      "Purchases",
-      "Purchase Register",
-      "Outside Sales (Bikris)"
+      { name: "Sales Invoices", href: "/sales", icon: FileText },
+      { name: "Watak Register", href: "/watak-register", icon: BookCopy },
+      { name: "Purchases", href: "/purchases", icon: ShoppingCart },
+      { name: "Purchase Register", href: "/purchase-register", icon: List },
+      { name: "Outside Sales (Bikris)", href: "/outside-sales", icon: Globe }
     ]
   },
   {
     title: "MANAGEMENT",
     items: [
-      "Products",
-      "Expenses",
-      "Advances",
-      "Cold Storage",
-      "Khata Ledger"
+      { name: "Products", href: "/products", icon: Package },
+      { name: "Expenses", href: "/expenses", icon: FileText },
+      { name: "Advances", href: "/advances", icon: HandCoins },
+      { name: "Cold Storage", href: "/cold-storage", icon: Snowflake },
+      { name: "Khata Ledger", href: "/khata", icon: BookOpen }
     ]
   },
   {
     title: "RESOURCES",
     items: [
-      "Fruit Rates",
-      "Fertilizers And Pesticides",
-      "Accessories",
-      "Activity Log"
+      { name: "Fruit Rates", href: "/rates", icon: Apple },
+      { name: "Fertilizers And Pesticides", href: "/fertilizers", icon: FlaskConical },
+      { name: "Accessories", href: "/accessories", icon: Boxes },
+      { name: "Activity Log", href: "/activity-log", icon: History }
     ]
   },
   {
     title: "CONFIGURATION",
-    items: ["Settings"]
+    items: [{ name: "Settings", href: "/settings", icon: Settings }]
   }
 ];
 
-const NavLink = ({ name, isMobile }: { name: string; isMobile?: boolean }) => {
+const NavLink = ({ name, href, icon: Icon, isMobile }: { name: string; href: string; icon: React.ElementType; isMobile?: boolean }) => {
   const pathname = usePathname();
-  const href = hrefMap[name] || '/';
-  const Icon = iconMap[name] || FileText;
   const isActive = pathname === href;
 
   const LinkContent = () => (
     <Link
       href={href}
       className={cn(
-        "sidebar-item flex items-center gap-4 px-7 py-2.5 text-sm font-medium text-gray-300 transition-colors hover:bg-[#23262f] hover:text-white rounded-md mb-px",
-        isActive && "bg-[#313236] text-[#03dac5] font-bold"
+        "flex items-center gap-3 rounded-md px-3 py-2 text-gray-300 transition-all hover:bg-gray-700 hover:text-white",
+        isActive && "bg-gray-700 text-white"
       )}
     >
       <Icon className="h-4 w-4" />
@@ -131,23 +91,25 @@ const NavLink = ({ name, isMobile }: { name: string; isMobile?: boolean }) => {
 
 export const SidebarContent = ({ isMobile = false }) => {
   return (
-    <div className="flex h-full max-h-screen flex-col">
-      <div className="flex h-16 items-center border-b border-gray-700 px-6">
-        <Link href="/dashboard" className="flex items-center gap-3 font-semibold text-white">
-          <Logo className="h-8 w-8" />
-          <span className="text-lg">F.Co</span>
+    <div className="flex h-full max-h-screen flex-col gap-2">
+      <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+        <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-white">
+          <div className="bg-purple-600 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold">
+            F
+          </div>
+          <span className="text-xl">F.Co</span>
         </Link>
       </div>
-      <div className="flex-1 overflow-y-auto pt-4 px-2">
-        <nav className="grid items-start text-sm font-medium">
+      <div className="flex-1 overflow-y-auto">
+        <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
           {sidebarSections.map((section, i) => (
-            <div className="sidebar-section mb-4" key={i}>
-              <div className="sidebar-section-title px-5 py-2 text-xs font-bold uppercase text-gray-500 tracking-wider">
+            <div className="mb-2" key={i}>
+              <div className="px-3 py-2 text-xs font-bold uppercase text-gray-500 tracking-wider">
                 {section.title}
               </div>
               <div className="space-y-1">
                 {section.items.map((item, j) => (
-                  <NavLink key={j} name={item} isMobile={isMobile} />
+                  <NavLink key={j} name={item.name} href={item.href} icon={item.icon} isMobile={isMobile} />
                 ))}
               </div>
             </div>
@@ -169,7 +131,7 @@ export const SidebarContent = ({ isMobile = false }) => {
 
 export default function Sidebar() {
   return (
-    <aside className="hidden md:block w-[260px] bg-[#181a1b] text-[#fafafa] border-r border-[#24262e]">
+    <aside className="hidden w-64 bg-gray-900 text-gray-200 flex-col p-4 min-h-screen shadow-xl md:flex">
         <SidebarContent />
     </aside>
   );
