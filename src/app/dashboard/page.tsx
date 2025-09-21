@@ -1,9 +1,10 @@
 
+
 'use client'
 
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Package, UserCheck, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, History, BookOpen, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Hash, ShoppingCart, Globe, DollarSign, Banknote, Snowflake, Cog, CheckCircle, FileDown, FileSpreadsheet, Settings } from 'lucide-react';
+import { Loader2, Package, UserCheck, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, History, BookOpen, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Hash, ShoppingCart, Globe, DollarSign, Banknote, Snowflake, Cog, CheckCircle, FileDown, FileSpreadsheet, Settings, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import RateList from '@/components/RateList';
@@ -156,6 +157,45 @@ const navSections = [
     },
 ];
 
+const QuickActions = () => {
+    const router = useRouter();
+    return (
+        <div className="my-6">
+            <h3 className="text-xl font-semibold mb-4">Quick Actions</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Button 
+                    className="h-20 bg-green-500 hover:bg-green-600 text-white text-lg flex flex-col gap-1"
+                    onClick={() => router.push('/sales')}
+                >
+                    <FileText className="h-6 w-6" />
+                    New Watak
+                </Button>
+                <Button 
+                    className="h-20 bg-blue-500 hover:bg-blue-600 text-white text-lg flex flex-col gap-1"
+                    onClick={() => router.push('/khata')}
+                >
+                    <Users className="h-6 w-6" />
+                    Add Customer
+                </Button>
+                <Button 
+                    className="h-20 bg-purple-500 hover:bg-purple-600 text-white text-lg flex flex-col gap-1"
+                    onClick={() => router.push('/products')}
+                >
+                    <PlusCircle className="h-6 w-6" />
+                    Add Product
+                </Button>
+                <Button 
+                    className="h-20 bg-orange-500 hover:bg-orange-600 text-white text-lg flex flex-col gap-1"
+                    onClick={() => router.push('/expenses')}
+                >
+                    <DollarSign className="h-6 w-6" />
+                    Record Expense
+                </Button>
+            </div>
+        </div>
+    )
+}
+
 const FruitDashboard = ({ stats, yearlyStats, accessoryStats, growerProfits, router }: { stats: DailyStats | null, yearlyStats: YearlyStats | null, accessoryStats: AccessoryStats | null, growerProfits: GrowerProfit[], router: any }) => (
     <div className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -236,6 +276,7 @@ const FruitDashboard = ({ stats, yearlyStats, accessoryStats, growerProfits, rou
                         iconBgColor="bg-slate-500"
                      />
                 </div>
+                 <QuickActions />
             </div>
              <div className="lg:col-span-1 space-y-6">
                 <Card className="shadow-lg">
