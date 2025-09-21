@@ -43,7 +43,6 @@ const sidebarSections = [
         { name: "Sales Invoices", href: "/sales", icon: FileText },
         { name: "Watak Register", href: "/watak-register", icon: FileSpreadsheet },
         { name: "Purchases", href: "/purchase-register", icon: ShoppingCart },
-        { name: "Delivery Notes", href: "/challan-register", icon: Truck },
         { name: "Outside Sales (Bikris)", href: "/outside-sales", icon: Globe },
       ],
     },
