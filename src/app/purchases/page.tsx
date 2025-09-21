@@ -110,11 +110,11 @@ export default function PurchasesPage() {
 
 
   const savePurchase = async () => {
-     if (!billNo || !date || !companyName) {
+     if (!billNo || !date || (purchaseFor === 'Customer' && !companyName)) {
         toast({
             variant: 'destructive',
             title: 'Missing Details',
-            description: 'Please fill in Bill No, Date, and Company Name before saving.',
+            description: 'Please fill in Bill No, Date, and Customer Name before saving.',
         });
         return;
     }
@@ -170,9 +170,9 @@ export default function PurchasesPage() {
 
   const loadPurchaseForEdit = (purchase: any) => {
     setBillNo(purchase.billNo);
-    setCompanyName(purchase.growerName);
+    setCompanyName(purchase.growerName === 'F.Co (Own Stock)' ? '' : purchase.growerName);
     setDate(purchase.date);
-    setPurchaseFor(purchase.purchaseFor || 'Customer');
+    setPurchaseFor(purchase.purchaseFor || (purchase.growerName === 'F.Co (Own Stock)' ? 'Own Stock (F.Co)' : 'Customer'));
     setRows(purchase.entries.length > 0 ? purchase.entries : initialRows);
     setIsEditing(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -408,7 +408,3 @@ export default function PurchasesPage() {
     </div>
   );
 }
-
-    
-
-    

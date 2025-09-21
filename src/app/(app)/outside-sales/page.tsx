@@ -1,404 +1,404 @@
-'use client';
+'use client'
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import * as React from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/contexts/language-context';
+import { ChevronDown, PlusCircle, Loader2, FilePenLine, Trash2, List, LayoutGrid, Search, FileDown } from 'lucide-react';
+import { FaWhatsapp } from 'react-icons/fa';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Separator } from '@/components/ui/separator';
-import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Globe, ArrowRight, Percent, Minus, Package, ShoppingCart, Truck, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { saveDocument, deleteDocument } from '@/lib/actions';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import DocumentCard from '@/components/DocumentCard';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+import { Badge } from '@/components/ui/badge';
 
-type EntryRow = {
-    type: 'Patti' | 'Dabba';
-    qty: number;
-    variety: string;
-    rate: number;
-};
-
-const emptyRow: EntryRow = { type: 'Patti', qty: 0, variety: '', rate: 0 };
-
-export default function OutsideSalesPage() {
-    const { toast } = useToast();
-    const router = useRouter();
-
-    // Form State
-    const [selectedChallanNo, setSelectedChallanNo] = useState('');
-    const [bikriNo, setBikriNo] = useState('');
-    const [date, setDate] = useState('');
-    const [market, setMarket] = useState('');
-    
-    // Entries
-    const [purchaseRows, setPurchaseRows] = useState<EntryRow[]>([emptyRow]);
-    const [saleRows, setSaleRows] = useState<EntryRow[]>([emptyRow]);
-
-    // Expenses
-    const [expenses, setExpenses] = useState(0);
-    const [commissionRate, setCommissionRate] = useState(0);
-    const [freightPerPatti, setFreightPerPatti] = useState(0);
-
-
-    // Data Management
-    const [availableChallans, setAvailableChallans] = useState<any[]>([]);
-    const [savedBikris, setSavedBikris] = useState<any[]>([]);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isEditing, setIsEditing] = useState(false);
-    const [userRole, setUserRole] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            setUserRole(localStorage.getItem('userRole'));
-        }
-    }, []);
-
-    useEffect(() => {
-        const fetchData = () => {
-            setIsLoading(true);
-            const allChallans = [];
-            const allBikris = [];
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key?.startsWith('challan-')) {
-                    allChallans.push(JSON.parse(localStorage.getItem(key)!));
-                }
-                if (key?.startsWith('bikri-')) {
-                    allBikris.push(JSON.parse(localStorage.getItem(key)!));
-                }
-            }
-            setAvailableChallans(allChallans.sort((a,b) => (a.challanNo > b.challanNo) ? 1 : -1));
-            setSavedBikris(allBikris);
-            setIsLoading(false);
-        };
-        fetchData();
-    }, []);
-    
-    const selectedChallan = useMemo(() => {
-        return availableChallans.find(c => c.challanNo === selectedChallanNo);
-    }, [selectedChallanNo, availableChallans]);
-
-    const calculation = useMemo(() => {
-        const totalPurchaseCost = purchaseRows.reduce((acc, row) => acc + (Number(row.qty) || 0) * (Number(row.rate) || 0), 0);
-        const grossSale = saleRows.reduce((acc, row) => acc + (Number(row.qty) || 0) * (Number(row.rate) || 0), 0);
-        const commissionAmount = grossSale * ((Number(commissionRate) || 0) / 100);
-
-        const pattiQty = saleRows.filter(r => r.type === 'Patti').reduce((acc, r) => acc + (Number(r.qty) || 0), 0);
-        const dabbaQty = saleRows.filter(r => r.type === 'Dabba').reduce((acc, r) => acc + (Number(r.qty) || 0), 0);
-        const calculatedFreight = (pattiQty * (Number(freightPerPatti) || 0)) + (dabbaQty * ((Number(freightPerPatti) || 0) / 2));
-        
-        const totalExpenses = calculatedFreight + (Number(expenses) || 0) + commissionAmount;
-        const netSale = grossSale - totalExpenses;
-        const netProfitOrLoss = netSale - totalPurchaseCost;
-
-        return { totalPurchaseCost, grossSale, commissionAmount, calculatedFreight, totalExpenses, netSale, netProfitOrLoss };
-    }, [purchaseRows, saleRows, expenses, commissionRate, freightPerPatti]);
-
-
-    const resetForm = () => {
-        setSelectedChallanNo('');
-        setBikriNo('');
-        setDate('');
-        setMarket('');
-        setPurchaseRows([emptyRow]);
-        setSaleRows([emptyRow]);
-        setExpenses(0);
-        setCommissionRate(0);
-        setFreightPerPatti(0);
-        setIsEditing(false);
-    };
-
-    const handleSave = async () => {
-        if (!selectedChallanNo || !bikriNo || !date || !market) {
-            toast({ variant: 'destructive', title: 'Missing Details', description: 'Please fill out all required header fields before saving.' });
-            return;
-        }
-        setIsSubmitting(true);
-        const id = `${selectedChallanNo}-${bikriNo}`;
-        const data = {
-            id,
-            challanNo: selectedChallanNo,
-            bikriNo,
-            date,
-            market,
-            purchaseEntries: purchaseRows.filter(r => r.qty > 0 && r.rate > 0).map(r => ({...r, total: r.qty * r.rate})),
-            saleEntries: saleRows.filter(r => r.qty > 0 && r.rate > 0).map(r => ({...r, total: r.qty * r.rate})),
-            expenses: Number(expenses),
-            commissionRate: Number(commissionRate),
-            freightPerPatti: Number(freightPerPatti),
-            calculation
-        };
-        localStorage.setItem(`bikri-${id}`, JSON.stringify(data));
-        try {
-            await saveDocument('bikris', id, data);
-            toast({ title: isEditing ? 'Bikri Updated' : 'Bikri Saved', description: 'The outside sale has been recorded.' });
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Sync Failed', description: 'Saved locally, but failed to sync to cloud.' });
-        } finally {
-            setSavedBikris(prev => {
-                const existing = prev.findIndex(b => b.id === data.id);
-                if (existing > -1) {
-                    const copy = [...prev];
-                    copy[existing] = data;
-                    return copy;
-                }
-                return [...prev, data];
-            });
-            setIsEditing(true);
-            setIsSubmitting(false);
-        }
-    };
-    
-     const loadBikriForEdit = (bikri: any) => {
-        setSelectedChallanNo(bikri.challanNo);
-        setBikriNo(bikri.bikriNo);
-        setDate(bikri.date);
-        setMarket(bikri.market);
-        setPurchaseRows(bikri.purchaseEntries?.length > 0 ? bikri.purchaseEntries : [emptyRow]);
-        setSaleRows(bikri.saleEntries?.length > 0 ? bikri.saleEntries : [emptyRow]);
-        setExpenses(bikri.expenses);
-        setCommissionRate(bikri.commissionRate || 0);
-        setFreightPerPatti(bikri.freightPerPatti || 0);
-        setIsEditing(true);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    const viewBikri = () => {
-        if (!isEditing || !bikriNo) {
-            toast({
-                variant: 'destructive',
-                title: 'Cannot View Bikri',
-                description: 'Please save the Bikri record before viewing.',
-            });
-            return;
-        }
-        const id = `${selectedChallanNo}-${bikriNo}`;
-        router.push(`/bikri-bill/${id}`);
-    };
-    
-    const handleDelete = async (id: string) => {
-        if(userRole !== 'admin') {
-            toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot delete this record.' });
-            return;
-        }
-        if(!window.confirm('Are you sure you want to delete this Bikri record?')) return;
-        
-        localStorage.removeItem(`bikri-${id}`);
-        try {
-            await deleteDocument('bikris', id);
-            toast({title: 'Record Deleted', description: 'The Bikri record has been removed.'});
-        } catch (error) {
-            toast({variant: 'destructive', title: 'Cloud Delete Failed', description: 'Record removed locally.'});
-        }
-        setSavedBikris(prev => prev.filter(b => b.id !== id));
-         if (`${selectedChallanNo}-${bikriNo}` === id) {
-            resetForm();
-        }
-    };
-
-    const updateEntryRow = (setter: React.Dispatch<React.SetStateAction<EntryRow[]>>, i: number, patch: Partial<EntryRow>) => {
-        setter(prev => {
-          const copy = [...prev];
-          copy[i] = { ...copy[i], ...patch };
-          return copy;
-        });
-    };
-
-    const addEntryRow = (setter: React.Dispatch<React.SetStateAction<EntryRow[]>>) => setter(prev => [...prev, { ...emptyRow }]);
-    const removeEntryRow = (setter: React.Dispatch<React.SetStateAction<EntryRow[]>>, i: number) => setter(prev => (prev.length > 1 ? prev.filter((_, idx) => idx !== i) : prev));
-    
-    const EntryTable = ({ title, rows, setter, icon }: { title: string, rows: EntryRow[], setter: React.Dispatch<React.SetStateAction<EntryRow[]>>, icon: React.ReactNode }) => (
-         <div>
-            <Label className="text-base font-semibold flex items-center gap-2 mb-2">{icon} {title}</Label>
-            <Table>
-                 <TableHeader>
-                    <TableRow>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Variety</TableHead>
-                        <TableHead className="text-right">Qty</TableHead>
-                        <TableHead className="text-right">Rate</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                        <TableHead className="w-12"></TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {rows.map((r, i) => (
-                        <TableRow key={i}>
-                            <TableCell>
-                                <Select value={r.type} onValueChange={(v: EntryRow['type']) => updateEntryRow(setter, i, { type: v })}>
-                                    <SelectTrigger><SelectValue/></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Patti">Patti</SelectItem>
-                                        <SelectItem value="Dabba">Dabba</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </TableCell>
-                            <TableCell><Input placeholder="Variety" value={r.variety} onChange={e => updateEntryRow(setter, i, { variety: e.target.value })}/></TableCell>
-                            <TableCell><Input type="number" className="text-right" value={r.qty || ''} onChange={e => updateEntryRow(setter, i, { qty: Number(e.target.value) })} /></TableCell>
-                            <TableCell><Input type="number" className="text-right" value={r.rate || ''} onChange={e => updateEntryRow(setter, i, { rate: Number(e.target.value) })}/></TableCell>
-                            <TableCell className="text-right font-medium">₹{((r.qty || 0) * (r.rate || 0)).toFixed(2)}</TableCell>
-                            <TableCell><Button variant="ghost" size="icon" onClick={() => removeEntryRow(setter, i)}><Trash2 className="text-red-500 h-4 w-4"/></Button></TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-            <Button onClick={() => addEntryRow(setter)} variant="outline" size="sm" className="mt-2 gap-2"><PlusCircle className="h-4 w-4" /> Add Row</Button>
-        </div>
-    );
-
-    return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2">
-                <CardHeader>
-                    <div className='flex justify-between items-center'>
-                        <CardTitle className="flex items-center gap-2"><Globe className="h-6 w-6" /> Outside Sales Register (Bikri)</CardTitle>
-                        {isEditing && <Button variant="outline" size="sm" onClick={resetForm}><FilePlus className="h-4 w-4 mr-2" />Enter New Bikri</Button>}
-                    </div>
-                    <CardDescription>Enter the purchase cost and sales invoice (Bikri) received from outside markets to calculate your profit/loss.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    {/* Header */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
-                        <div>
-                            <Label htmlFor="challanNo">Original Challan No.</Label>
-                            <Select value={selectedChallanNo} onValueChange={setSelectedChallanNo} disabled={isEditing}>
-                                <SelectTrigger id="challanNo"><SelectValue placeholder="Select Challan" /></SelectTrigger>
-                                <SelectContent>
-                                    {availableChallans.map(c => <SelectItem key={c.challanNo} value={c.challanNo}>{c.challanNo} - {c.toMs}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                         <div>
-                            <Label htmlFor="bikriNo">Bikri No.</Label>
-                            <Input id="bikriNo" value={bikriNo} onChange={e => setBikriNo(e.target.value)} disabled={isEditing}/>
-                        </div>
-                        <div>
-                            <Label htmlFor="bikriDate">Bikri Date</Label>
-                            <Input id="bikriDate" type="date" value={date} onChange={e => setDate(e.target.value)} />
-                        </div>
-                        <div>
-                            <Label htmlFor="market">Market</Label>
-                            <Input id="market" placeholder="e.g., Delhi, Kolkata" value={market} onChange={e => setMarket(e.target.value)} />
-                        </div>
-                    </div>
-                    
-                    {selectedChallan && (
-                        <Card className="bg-muted/50 p-4">
-                            <CardHeader className="p-2">
-                                <CardTitle className="text-lg">Challan Summary</CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-2 grid grid-cols-2 gap-4 text-sm">
-                                <p><strong>To:</strong> {selectedChallan.toMs}</p>
-                                <p><strong>Items Sent:</strong> {selectedChallan.totalNugs}</p>
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    <Separator />
-                    
-                    <div className="space-y-6">
-                         <EntryTable title="Original Purchase Cost (in Sopore)" rows={purchaseRows} setter={setPurchaseRows} icon={<ShoppingCart className="h-5 w-5 text-blue-500" />} />
-                         <EntryTable title="Bikri Sale Entries" rows={saleRows} setter={setSaleRows} icon={<Package className="h-5 w-5 text-green-500" />} />
-                    </div>
-
-                    <Separator />
-                    
-                    {/* Calculation */}
-                    <div className="grid md:grid-cols-2 gap-6">
-                        <div className="space-y-4">
-                            <div>
-                                <Label htmlFor="freightPerPatti">Freight Rate per Patti</Label>
-                                <div className="relative">
-                                    <Truck className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    <Input id="freightPerPatti" type="number" className="pl-8" placeholder="e.g., 250" value={freightPerPatti || ''} onChange={e => setFreightPerPatti(Number(e.target.value))} />
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-1">Dabba freight is calculated as half of the Patti rate.</p>
-                            </div>
-                             <div>
-                                <Label htmlFor="commissionRate">Commission Rate (%)</Label>
-                                <div className="relative">
-                                     <Percent className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                     <Input id="commissionRate" type="number" className="pl-8" placeholder="e.g., 8 for 8%" value={commissionRate || ''} onChange={e => setCommissionRate(Number(e.target.value))} />
-                                </div>
-                            </div>
-                            <div>
-                                <Label htmlFor="expenses">Other Expenses from Bikri (Labour, etc.)</Label>
-                                 <div className="relative">
-                                    <Minus className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    <Input id="expenses" type="number" className="pl-8" value={expenses || ''} onChange={e => setExpenses(Number(e.target.value))} />
-                                </div>
-                            </div>
-                        </div>
-                        <Card className="p-4 bg-muted">
-                            <h3 className="font-bold text-lg mb-2">Profit / Loss Calculation</h3>
-                            <div className="space-y-2 text-sm">
-                                <div className="flex justify-between"><span>Gross Sale from Bikri:</span> <span className="font-medium">₹{calculation.grossSale.toFixed(2)}</span></div>
-                                <div className="flex justify-between text-red-500"><span>(-) Total Purchase Cost:</span> <span className="font-medium">₹{calculation.totalPurchaseCost.toFixed(2)}</span></div>
-                                <div className="flex justify-between text-red-500"><span>(-) Calculated Freight:</span> <span className="font-medium">₹{calculation.calculatedFreight.toFixed(2)}</span></div>
-                                <div className="flex justify-between text-red-500"><span>(-) Commission:</span> <span className="font-medium">₹{calculation.commissionAmount.toFixed(2)}</span></div>
-                                <div className="flex justify-between text-red-500"><span>(-) Other Expenses:</span> <span className="font-medium">₹{(Number(expenses) || 0).toFixed(2)}</span></div>
-                                <Separator />
-                                <div className={`flex justify-between font-bold text-lg ${calculation.netProfitOrLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                    <span>Net Profit / Loss:</span>
-                                    <span>₹{calculation.netProfitOrLoss.toFixed(2)}</span>
-                                </div>
-                            </div>
-                        </Card>
-                    </div>
-
-                </CardContent>
-                <CardFooter>
-                     <div className="flex w-full justify-center gap-4">
-                        <Button onClick={handleSave} className="w-full max-w-xs" disabled={isSubmitting}>
-                            {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                            {isEditing ? 'Update Bikri Record' : 'Save Bikri Record'}
-                        </Button>
-                        <Button onClick={viewBikri} variant="secondary" className="w-full max-w-xs gap-2" disabled={!isEditing}>
-                            <FileText className="h-4 w-4" /> View Bikri
-                        </Button>
-                    </div>
-                </CardFooter>
-            </Card>
-
-            <Card className="lg:col-span-1 h-fit">
-                <CardHeader><CardTitle>Saved Bikris</CardTitle></CardHeader>
-                <CardContent>
-                    <ScrollArea className="h-[500px]">
-                        {isLoading ? <Loader2 className="mx-auto h-6 w-6 animate-spin" /> :
-                         savedBikris.length > 0 ? (
-                            <div className="space-y-2">
-                                {savedBikris.map(bikri => (
-                                    <Card key={bikri.id} className="p-3">
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <p className="font-semibold">{bikri.market} Market</p>
-                                                <p className="text-sm text-muted-foreground">Challan #{bikri.challanNo} <ArrowRight className="h-3 w-3 inline"/> Bikri #{bikri.bikriNo}</p>
-                                                 <p className={`text-lg font-bold ${bikri.calculation.netProfitOrLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                    Profit: ₹{bikri.calculation.netProfitOrLoss.toFixed(2)}
-                                                 </p>
-                                            </div>
-                                            <div className="flex flex-col items-end">
-                                                <div className="flex">
-                                                    <Button variant="ghost" size="icon" onClick={() => loadBikriForEdit(bikri)}><FilePenLine className="h-4 w-4"/></Button>
-                                                    {userRole === 'admin' && <Button variant="ghost" size="icon" onClick={() => handleDelete(bikri.id)}><Trash2 className="h-4 w-4 text-destructive"/></Button>}
-                                                </div>
-                                                 <p className="text-xs text-muted-foreground mt-2">{new Date(bikri.date).toLocaleDateString()}</p>
-                                            </div>
-                                        </div>
-                                    </Card>
-                                ))}
-                            </div>
-                         ) : <p className="text-sm text-center text-muted-foreground">No outside sales records yet.</p>
-                        }
-                    </ScrollArea>
-                </CardContent>
-            </Card>
-        </div>
-    );
+export interface WatakEntry {
+    id: string;
+    sNo: string;
+    date: string;
+    watakNo: string;
+    customerName: string;
+    customerUrdu?: string;
+    entries: {
+        peti: number;
+        daba: number;
+        variety: string;
+        rate: number;
+        type: 'Patti' | 'Dabba';
+        qty: number;
+        total: number;
+    }[];
+    totals: {
+      pattiQty: number;
+      dabbaQty: number;
+      totalQty: number;
+      grossSale: number;
+      totalExpenses: number;
+      netSale: number;
+    }
+    freight: number;
 }
 
+const normalizeName = (name: string): string => {
+    if (!name) return '';
     
+    const suffixes = ["S/P", "B/P", "K/P", "(LAMA)"];
+    let mainName = name.toUpperCase();
+    let suffix = '';
+
+    for (const s of suffixes) {
+        if (mainName.endsWith(s)) {
+            mainName = mainName.substring(0, mainName.length - s.length).trim();
+            suffix = ` ${s}`;
+            break;
+        }
+    }
+    
+    return mainName
+        .replace(/\b(MOHAMMAD|MOHD|MD)\b/g, 'MOHAMMAD')
+        .replace(/\b(AHMAD|AH)\b/g, 'AHMAD')
+        .replace(/\./g, '') // Remove dots
+        .replace(/\s+/g, ' ') // Collapse multiple spaces
+        .trim() + suffix;
+};
+
+
+
+export default function SalesRegisterPage() {
+  const { t } = useLanguage();
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const [wataks, setWataks] = React.useState<WatakEntry[]>([]);
+  const [growers, setGrowers] = React.useState<string[]>([]);
+  const [selectedGrower, setSelectedGrower] = React.useState('All Growers');
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [viewMode, setViewMode] = React.useState<'table' | 'grid'>('grid');
+  const [userRole, setUserRole] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setUserRole(localStorage.getItem('userRole'));
+    }
+    fetchWataks();
+  }, []);
+
+  const fetchWataks = () => {
+    setIsLoading(true);
+    if(typeof window !== 'undefined') {
+        const items = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key?.startsWith('invoice-')) {
+                try {
+                    items.push(JSON.parse(localStorage.getItem(key)!));
+                } catch(e) {
+                    console.error("Failed to parse watak from local storage", e);
+                }
+            }
+        }
+        setWataks(items.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        
+        const growerMap = new Map<string, string>();
+        items.forEach(w => {
+            const normalized = normalizeName(w.customerName);
+            if (!growerMap.has(normalized)) {
+                growerMap.set(normalized, w.customerName);
+            }
+        });
+        const uniqueGrowers = ['All Growers', ...Array.from(growerMap.values()).sort()];
+        setGrowers(uniqueGrowers);
+    }
+    setIsLoading(false);
+  }
+
+  const yearlyCount = React.useMemo(() => {
+    if(!wataks) return 0;
+    const currentYear = new Date().getFullYear();
+    return wataks.filter(w => new Date(w.date).getFullYear() === currentYear).length;
+  }, [wataks]);
+
+
+  React.useEffect(() => {
+    fetchWataks();
+  }, [toast]);
+
+  const filteredWataks = wataks
+    .filter(w => {
+        if (selectedGrower === 'All Growers') return true;
+        return normalizeName(w.customerName) === normalizeName(selectedGrower);
+    })
+    .filter(w => {
+      if (!searchTerm) return true;
+      const lowerCaseSearch = searchTerm.toLowerCase();
+      return (
+        w.customerName.toLowerCase().includes(lowerCaseSearch) ||
+        w.sNo.toLowerCase().includes(lowerCaseSearch) ||
+        (w.watakNo && w.watakNo.toLowerCase().includes(lowerCaseSearch))
+      );
+    });
+
+  const footerTotals = filteredWataks.reduce((acc, watak) => {
+    acc.grossSale += watak.totals.grossSale || 0;
+    acc.totalExpenses += watak.totals.totalExpenses || 0;
+    acc.netSale += watak.totals.netSale || 0;
+    acc.pattiQty += watak.totals.pattiQty || 0;
+    acc.dabbaQty += watak.totals.dabbaQty || 0;
+    return acc;
+  }, { grossSale: 0, totalExpenses: 0, netSale: 0, pattiQty: 0, dabbaQty: 0 });
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.text(`Sales Register - ${selectedGrower}`, 14, 15);
+    doc.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, 14, 22);
+
+    const tableData = filteredWataks.map(w => [
+        new Date(w.date).toLocaleDateString('en-GB'),
+        w.sNo,
+        w.watakNo,
+        w.customerName,
+        w.totals.pattiQty || 0,
+        w.totals.dabbaQty || 0,
+        `Rs. ${w.totals.grossSale.toFixed(2)}`,
+        `Rs. ${w.totals.totalExpenses.toFixed(2)}`,
+        `Rs. ${w.totals.netSale.toFixed(2)}`
+    ]);
+
+    autoTable(doc, {
+        head: [['Date', 'Invoice No.', 'Watak No.', 'Khata (Grower)', 'Patti', 'Dabba', 'Gross Sale', 'Total Exp.', 'Net Sale']],
+        body: tableData,
+        foot: [[
+            'Total', '', '', '', footerTotals.pattiQty, footerTotals.dabbaQty, `Rs. ${footerTotals.grossSale.toFixed(2)}`, `Rs. ${footerTotals.totalExpenses.toFixed(2)}`, `Rs. ${footerTotals.netSale.toFixed(2)}`
+        ]],
+        startY: 30,
+        theme: 'striped',
+        headStyles: { fillColor: [22, 163, 74] }
+    });
+
+    doc.save(`Sales-Register-${selectedGrower}.pdf`);
+  };
+
+  const exportToExcel = () => {
+      const worksheetData = filteredWataks.map(w => ({
+        'Date': new Date(w.date).toLocaleDateString('en-GB'),
+        'Invoice No.': w.sNo,
+        'Watak No.': w.watakNo,
+        'Khata (Grower)': w.customerName,
+        'Peti': w.totals.pattiQty || 0,
+        'Dabba': w.totals.dabbaQty || 0,
+        'Gross Sale': w.totals.grossSale,
+        'Total Expenses': w.totals.totalExpenses,
+        'Net Sale': w.totals.netSale
+    }));
+    
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+    XLSX.utils.sheet_add_aoa(worksheet, [
+        ["Total", "", "", "", footerTotals.pattiQty, footerTotals.dabbaQty, footerTotals.grossSale, footerTotals.totalExpenses, footerTotals.netSale]
+    ], { origin: -1 });
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sales');
+    XLSX.writeFile(workbook, `Sales-Register-${selectedGrower}.xlsx`);
+  };
+
+  const handleShare = () => {
+    if (selectedGrower === 'All Growers') {
+        toast({
+            variant: 'destructive',
+            title: 'Select a Grower',
+            description: 'Please select a specific grower from the dropdown to share their portal link.',
+        });
+        return;
+    }
+
+    let message = `Salaam ${selectedGrower},\n\n`;
+    message += `You can view your complete account ledger with Firdous Ahmad & Company by clicking the link below. The portal will open directly to your account.\n\n`;
+    const encodedCustomerName = encodeURIComponent(selectedGrower);
+    const portalUrl = `${window.location.origin}/portal/login?customer=${encodedCustomerName}`;
+    message += `Portal Link: ${portalUrl}\n\n`;
+    message += `Thank you for your business!`;
+
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const navigateToBill = (id: string) => {
+    router.push(`/invoice/${id}`);
+  }
+
+  const handleDelete = async (sNo: string) => {
+    if(userRole !== 'admin') {
+      toast({ variant: "destructive", title: "Permission Denied", description: "You do not have permission to delete invoices."});
+      return;
+    }
+    if(!window.confirm(`Are you sure you want to delete Invoice #${sNo}? This cannot be undone.`)) return;
+    
+    localStorage.removeItem(`invoice-${sNo}`);
+    toast({ title: "Invoice Deleted", description: `Invoice #${sNo} has been deleted locally.`});
+    fetchWataks();
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex justify-between items-start gap-4 flex-wrap">
+            <div className="flex items-center gap-4">
+                <CardTitle className="flex items-center gap-2">
+                    Sales Register
+                    {!isLoading && <Badge variant="outline">{yearlyCount} This Year</Badge>}
+                </CardTitle>
+                <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        type="search"
+                        placeholder="Search by Invoice No, Watak No, Name..."
+                        className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="flex items-center gap-2 min-w-[200px]">
+                           <span className="flex-1 text-left">{selectedGrower}</span>
+                           <ChevronDown className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                        {growers.map(grower => (
+                             <DropdownMenuItem key={grower} onSelect={() => setSelectedGrower(grower)}>
+                                {grower}
+                             </DropdownMenuItem>
+                        ))}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+            <div className="flex items-center gap-2">
+                 <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setViewMode(viewMode === 'table' ? 'grid' : 'table')}
+                    title={viewMode === 'table' ? 'Grid View' : 'Table View'}
+                    >
+                    {viewMode === 'table' ? <LayoutGrid className="h-4 w-4" /> : <List className="h-4 w-4" />}
+                </Button>
+                <Button size="sm" onClick={handleShare} variant="outline" className="gap-1">
+                    <FaWhatsapp className="h-4 w-4 text-green-500" />
+                     Share Portal
+                </Button>
+                 <Button size="sm" variant="outline" className="gap-1" onClick={exportToPDF}>
+                    <FileDown className="h-3.5 w-3.5" />
+                    PDF
+                </Button>
+                <Button size="sm" variant="outline" className="gap-1" onClick={exportToExcel}>
+                    <FileDown className="h-3.5 w-3.5" />
+                    Excel
+                </Button>
+                <Button size="sm" className="gap-1" onClick={() => router.push('/sales')}>
+                    <PlusCircle className="h-3.5 w-3.5" />
+                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                        Add Invoice
+                    </span>
+                </Button>
+            </div>
+        </div>
+        <CardDescription>Track and manage customer credit and sales invoices.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        ) : viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {filteredWataks.map((watak) => (
+                     <div key={watak.id} onClick={() => navigateToBill(watak.sNo)} className="cursor-pointer">
+                        <DocumentCard type="watak" title={`Invoice #${watak.watakNo || watak.sNo}`}>
+                            <p className="text-lg font-semibold">{watak.customerName}</p>
+                            {watak.customerUrdu && <p className="font-urdu text-xl mt-1">{watak.customerUrdu}</p>}
+                            <p className="text-sm mt-2">Date: {new Date(watak.date).toLocaleDateString()}</p>
+                            <p className="text-2xl font-bold mt-4">₹{watak.totals.netSale.toFixed(2)}</p>
+                        </DocumentCard>
+                    </div>
+                ))}
+            </div>
+        ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Date</TableHead>
+              <TableHead>Invoice No.</TableHead>
+              <TableHead>Watak No.</TableHead>
+              <TableHead>Khata (Grower)</TableHead>
+              <TableHead>Peti</TableHead>
+              <TableHead>Dabba</TableHead>
+              <TableHead className="text-right">Gross Sale</TableHead>
+              <TableHead className="text-right">Total Exp.</TableHead>
+              <TableHead className="text-right">Net Sale</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredWataks.map((watak: WatakEntry) => (
+              <TableRow key={watak.id}>
+                <TableCell>{new Date(watak.date).toLocaleDateString('en-GB')}</TableCell>
+                <TableCell>{watak.sNo}</TableCell>
+                <TableCell>{watak.watakNo}</TableCell>
+                <TableCell className="font-medium">{watak.customerName}</TableCell>
+                <TableCell>{watak.totals.pattiQty || 0}</TableCell>
+                <TableCell>{watak.totals.dabbaQty || 0}</TableCell>
+                <TableCell className="text-right">₹{watak.totals.grossSale.toFixed(2)}</TableCell>
+                <TableCell className="text-right">₹{watak.totals.totalExpenses.toFixed(2)}</TableCell>
+                <TableCell className="text-right">₹{watak.totals.netSale.toFixed(2)}</TableCell>
+                <TableCell className="text-right">
+                  <Button variant="ghost" size="icon" onClick={() => navigateToBill(watak.sNo)}>
+                    <FilePenLine className="h-4 w-4" />
+                  </Button>
+                  {userRole === 'admin' && (
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(watak.sNo)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+             <TableRow className="font-bold bg-muted">
+                <TableCell colSpan={4} className="text-right">Total</TableCell>
+                <TableCell>{footerTotals.pattiQty}</TableCell>
+                <TableCell>{footerTotals.dabbaQty}</TableCell>
+                <TableCell className="text-right">₹{footerTotals.grossSale.toFixed(2)}</TableCell>
+                <TableCell className="text-right">₹{footerTotals.totalExpenses.toFixed(2)}</TableCell>
+                <TableCell className="text-right">₹{footerTotals.netSale.toFixed(2)}</TableCell>
+                <TableCell></TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

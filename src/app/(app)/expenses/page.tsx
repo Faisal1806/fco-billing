@@ -1,13 +1,12 @@
-'use client';
+'use client'
 
-import React, { useState, useEffect, useMemo } from 'react';
+import * as React from 'react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from '@/components/ui/card';
 import {
   Table,
@@ -16,386 +15,390 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  TableFooter
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/contexts/language-context';
+import { ChevronDown, PlusCircle, Loader2, FilePenLine, Trash2, List, LayoutGrid, Search, FileDown } from 'lucide-react';
+import { FaWhatsapp } from 'react-icons/fa';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { PlusCircle, Trash2, Receipt, Users, Building, Percent, Truck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
+import DocumentCard from '@/components/DocumentCard';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import { Badge } from '@/components/ui/badge';
 
-type ExpenseEntry = {
+export interface WatakEntry {
     id: string;
+    sNo: string;
     date: string;
-    category: string;
-    description: string;
-    amount: number;
-    type: 'manual' | 'auto';
+    watakNo: string;
+    customerName: string;
+    customerUrdu?: string;
+    entries: {
+        peti: number;
+        daba: number;
+        variety: string;
+        rate: number;
+        type: 'Patti' | 'Dabba';
+        qty: number;
+        total: number;
+    }[];
+    totals: {
+      pattiQty: number;
+      dabbaQty: number;
+      totalQty: number;
+      grossSale: number;
+      totalExpenses: number;
+      netSale: number;
+    }
+    freight: number;
+}
+
+const normalizeName = (name: string): string => {
+    if (!name) return '';
+    
+    const suffixes = ["S/P", "B/P", "K/P", "(LAMA)"];
+    let mainName = name.toUpperCase();
+    let suffix = '';
+
+    for (const s of suffixes) {
+        if (mainName.endsWith(s)) {
+            mainName = mainName.substring(0, mainName.length - s.length).trim();
+            suffix = ` ${s}`;
+            break;
+        }
+    }
+    
+    return mainName
+        .replace(/\b(MOHAMMAD|MOHD|MD)\b/g, 'MOHAMMAD')
+        .replace(/\b(AHMAD|AH)\b/g, 'AHMAD')
+        .replace(/\./g, '') // Remove dots
+        .replace(/\s+/g, ' ') // Collapse multiple spaces
+        .trim() + suffix;
 };
 
-type ExpenseStats = {
-    totalWataks: number;
-    totalPatti: number;
-    totalDabba: number;
-    totalNugs: number;
-}
-
-const emptyFormState = {
-    date: new Date().toISOString().split('T')[0],
-    category: '',
-    description: '',
-    amount: 0,
-}
-
-const ExpenseTable = ({ title, icon, description, expenses, total, children, showActions, onDelete }: {
-    title: string,
-    icon: React.ReactNode,
-    description: React.ReactNode,
-    expenses: ExpenseEntry[],
-    total: number,
-    children?: React.ReactNode,
-    showActions: boolean,
-    onDelete?: (id: string) => void
-}) => (
-     <Card>
-        <CardHeader>
-            <div className="flex items-center gap-3">
-                {icon}
-                <CardTitle>{title}</CardTitle>
-            </div>
-            <CardDescription>{description}</CardDescription>
-        </CardHeader>
-        <CardContent>
-             {expenses.length > 0 ? (
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Category</TableHead>
-                            <TableHead>Description</TableHead>
-                            <TableHead>Type</TableHead>
-                            <TableHead className="text-right">Amount</TableHead>
-                            {showActions && <TableHead className="text-right">Actions</TableHead>}
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {expenses.map((exp) => (
-                            <TableRow key={exp.id}>
-                                <TableCell>{new Date(exp.date).toLocaleDateString('en-GB')}</TableCell>
-                                <TableCell className="font-medium">{exp.category}</TableCell>
-                                <TableCell>{exp.description}</TableCell>
-                                <TableCell>
-                                    <Badge variant={exp.type === 'auto' ? 'secondary' : 'default'}>{exp.type}</Badge>
-                                </TableCell>
-                                <TableCell className="text-right font-mono">₹{exp.amount.toFixed(2)}</TableCell>
-                                {showActions && onDelete && (
-                                    <TableCell className="text-right">
-                                        {exp.type === 'manual' && (
-                                            <Button variant="ghost" size="icon" onClick={() => onDelete(exp.id)}>
-                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                            </Button>
-                                        )}
-                                    </TableCell>
-                                )}
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                        <TableFooter>
-                        <TableRow className="font-bold text-lg">
-                            <TableCell colSpan={showActions ? 5 : 4} className="text-right">Total</TableCell>
-                            <TableCell className="text-right font-mono">₹{total.toFixed(2)}</TableCell>
-                            {showActions && <TableCell></TableCell>}
-                        </TableRow>
-                    </TableFooter>
-                </Table>
-            ) : (
-                <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
-                    <Receipt className="mx-auto h-12 w-12" />
-                    <h3 className="mt-4 text-lg font-semibold">No records yet.</h3>
-                    <p className="mt-1 text-sm">Entries in this category will appear here automatically.</p>
-                </div>
-            )}
-        </CardContent>
-        {children && <CardFooter>{children}</CardFooter>}
-    </Card>
-);
-
-const StatsDescription = ({ text, stats }: { text: string; stats: ExpenseStats }) => (
-    <div className="space-y-1">
-        <p>{text}</p>
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold pt-1 text-foreground">
-            <span>Wataks: <Badge variant="secondary">{stats.totalWataks}</Badge></span>
-            <span>Patti: <Badge variant="secondary">{stats.totalPatti}</Badge></span>
-            <span>Dabba: <Badge variant="secondary">{stats.totalDabba}</Badge></span>
-            <span>Total Nugs: <Badge variant="outline">{stats.totalNugs}</Badge></span>
-        </div>
-    </div>
-);
 
 
-export default function ExpensesPage() {
-    const { toast } = useToast();
-    const [labourExpenses, setLabourExpenses] = useState<ExpenseEntry[]>([]);
-    const [companyExpenses, setCompanyExpenses] = useState<ExpenseEntry[]>([]);
-    const [commissionIncome, setCommissionIncome] = useState<ExpenseEntry[]>([]);
-    const [freightExpenses, setFreightExpenses] = useState<ExpenseEntry[]>([]);
-    
-    const [commissionStats, setCommissionStats] = useState<ExpenseStats>({ totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 });
-    const [labourStats, setLabourStats] = useState<ExpenseStats>({ totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 });
-    const [companyStats, setCompanyStats] = useState<ExpenseStats>({ totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 });
-    const [freightStats, setFreightStats] = useState<ExpenseStats>({ totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 });
+export default function SalesRegisterPage() {
+  const { t } = useLanguage();
+  const router = useRouter();
+  const { toast } = useToast();
 
-    
-    const [formState, setFormState] = useState(emptyFormState);
-    const [userRole, setUserRole] = useState<string | null>(null);
+  const [wataks, setWataks] = React.useState<WatakEntry[]>([]);
+  const [growers, setGrowers] = React.useState<string[]>([]);
+  const [selectedGrower, setSelectedGrower] = React.useState('All Growers');
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [viewMode, setViewMode] = React.useState<'table' | 'grid'>('grid');
+  const [userRole, setUserRole] = React.useState<string | null>(null);
 
-    const fetchExpenses = () => {
-        if (typeof window !== 'undefined') {
-            setUserRole(localStorage.getItem('userRole'));
-            
-            const manualExpensesData: any[] = [];
-            const invoicesData: any[] = [];
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setUserRole(localStorage.getItem('userRole'));
+    }
+    fetchWataks();
+  }, []);
 
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key?.startsWith('expense-')) {
-                    manualExpensesData.push(JSON.parse(localStorage.getItem(key)!));
-                }
-                if (key?.startsWith('invoice-')) {
-                    invoicesData.push(JSON.parse(localStorage.getItem(key)!));
+  const fetchWataks = () => {
+    setIsLoading(true);
+    if(typeof window !== 'undefined') {
+        const items = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key?.startsWith('invoice-')) {
+                try {
+                    items.push(JSON.parse(localStorage.getItem(key)!));
+                } catch(e) {
+                    console.error("Failed to parse watak from local storage", e);
                 }
             }
-
-            const allLabourExpenses: ExpenseEntry[] = [];
-            const allCompanyExpenses: ExpenseEntry[] = (manualExpensesData || []).map((d: any) => ({ ...d, type: 'manual' }));
-            const allCommissionIncome: ExpenseEntry[] = [];
-            const allFreightExpenses: ExpenseEntry[] = [];
-            
-            let newCommissionStats: ExpenseStats = { totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 };
-            let newLabourStats: ExpenseStats = { totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 };
-            let newCompanyStats: ExpenseStats = { totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 };
-            let newFreightStats: ExpenseStats = { totalWataks: 0, totalPatti: 0, totalDabba: 0, totalNugs: 0 };
-            
-            const companyWataks = new Set<string>();
-            const labourWataks = new Set<string>();
-            const freightWataks = new Set<string>();
-
-            (invoicesData || []).forEach((sale: any) => {
-                if(sale.totals) {
-                    const pattiQty = sale.totals.pattiQty || 0;
-                    const dabbaQty = sale.totals.dabbaQty || 0;
-                    const totalNugs = pattiQty + dabbaQty;
-
-                    if (sale.totals.labour > 0) {
-                        allLabourExpenses.push({
-                            id: `auto-labour-${sale.sNo}`,
-                            date: sale.date,
-                            category: 'Sales Deduction',
-                            description: `Labour charges for Bill #${sale.sNo}`,
-                            amount: sale.totals.labour,
-                            type: 'auto',
-                        });
-                        labourWataks.add(sale.sNo);
-                        newLabourStats.totalPatti += pattiQty;
-                        newLabourStats.totalDabba += dabbaQty;
-                        newLabourStats.totalNugs += totalNugs;
-                    }
-                    if (sale.freight > 0) {
-                         allFreightExpenses.push({
-                            id: `auto-freight-${sale.sNo}`,
-                            date: sale.date,
-                            category: 'Sales Deduction',
-                            description: `Freight charges for Bill #${sale.sNo}`,
-                            amount: sale.freight,
-                            type: 'auto',
-                        });
-                        freightWataks.add(sale.sNo);
-                        newFreightStats.totalPatti += pattiQty;
-                        newFreightStats.totalDabba += dabbaQty;
-                        newFreightStats.totalNugs += totalNugs;
-                    }
-                    if (sale.totals.association > 0) {
-                        allCompanyExpenses.push({
-                            id: `auto-assoc-${sale.sNo}`,
-                            date: sale.date,
-                            category: 'Sales Deduction',
-                            description: `Association fee for Bill #${sale.sNo}`,
-                            amount: sale.totals.association,
-                            type: 'auto',
-                        });
-                        companyWataks.add(sale.sNo);
-                    }
-                    if (sale.totals.security > 0) {
-                        allCompanyExpenses.push({
-                            id: `auto-security-${sale.sNo}`,
-                            date: sale.date,
-                            category: 'Sales Deduction',
-                            description: `Security fee for Bill #${sale.sNo}`,
-                            amount: sale.totals.security,
-                            type: 'auto',
-                        });
-                        companyWataks.add(sale.sNo);
-                    }
-                    if (sale.totals.commissionAmount > 0) {
-                        allCommissionIncome.push({
-                            id: `auto-commission-${sale.sNo}`,
-                            date: sale.date,
-                            category: 'Sales Commission',
-                            description: `Commission from Bill #${sale.sNo}`,
-                            amount: sale.totals.commissionAmount,
-                            type: 'auto',
-                        });
-                        newCommissionStats.totalWataks += 1;
-                        newCommissionStats.totalPatti += pattiQty;
-                        newCommissionStats.totalDabba += dabbaQty;
-                        newCommissionStats.totalNugs += totalNugs;
-                    }
-                }
-            });
-
-            const companyWatakIds = Array.from(companyWataks);
-            newCompanyStats.totalWataks = companyWatakIds.length;
-            companyWatakIds.forEach(sNo => {
-                const sale = invoicesData?.find(inv => inv.sNo === sNo);
-                if (sale) {
-                    const pattiQty = sale.totals.pattiQty || 0;
-                    const dabbaQty = sale.totals.dabbaQty || 0;
-                    newCompanyStats.totalPatti += pattiQty;
-                    newCompanyStats.totalDabba += dabbaQty;
-                    newCompanyStats.totalNugs += pattiQty + dabbaQty;
-                }
-            });
-
-            newLabourStats.totalWataks = labourWataks.size;
-            newFreightStats.totalWataks = freightWataks.size;
-            
-            setLabourExpenses(allLabourExpenses.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-            setCompanyExpenses(allCompanyExpenses.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-            setCommissionIncome(allCommissionIncome.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-            setFreightExpenses(allFreightExpenses.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-            
-            setCommissionStats(newCommissionStats);
-            setLabourStats(newLabourStats);
-            setCompanyStats(newCompanyStats);
-            setFreightStats(newFreightStats);
         }
+        setWataks(items.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        
+        const growerMap = new Map<string, string>();
+        items.forEach(w => {
+            const normalized = normalizeName(w.customerName);
+            if (!growerMap.has(normalized)) {
+                growerMap.set(normalized, w.customerName);
+            }
+        });
+        const uniqueGrowers = ['All Growers', ...Array.from(growerMap.values()).sort()];
+        setGrowers(uniqueGrowers);
     }
+    setIsLoading(false);
+  }
 
-    useEffect(() => {
-        fetchExpenses();
-    }, []);
+  const yearlyCount = React.useMemo(() => {
+    if(!wataks) return 0;
+    const currentYear = new Date().getFullYear();
+    return wataks.filter(w => new Date(w.date).getFullYear() === currentYear).length;
+  }, [wataks]);
+
+
+  React.useEffect(() => {
+    fetchWataks();
+  }, [toast]);
+
+  const filteredWataks = wataks
+    .filter(w => {
+        if (selectedGrower === 'All Growers') return true;
+        return normalizeName(w.customerName) === normalizeName(selectedGrower);
+    })
+    .filter(w => {
+      if (!searchTerm) return true;
+      const lowerCaseSearch = searchTerm.toLowerCase();
+      return (
+        w.customerName.toLowerCase().includes(lowerCaseSearch) ||
+        w.sNo.toLowerCase().includes(lowerCaseSearch) ||
+        (w.watakNo && w.watakNo.toLowerCase().includes(lowerCaseSearch))
+      );
+    });
+
+  const footerTotals = filteredWataks.reduce((acc, watak) => {
+    acc.grossSale += watak.totals.grossSale || 0;
+    acc.totalExpenses += watak.totals.totalExpenses || 0;
+    acc.netSale += watak.totals.netSale || 0;
+    acc.pattiQty += watak.totals.pattiQty || 0;
+    acc.dabbaQty += watak.totals.dabbaQty || 0;
+    return acc;
+  }, { grossSale: 0, totalExpenses: 0, netSale: 0, pattiQty: 0, dabbaQty: 0 });
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.text(`Sales Register - ${selectedGrower}`, 14, 15);
+    doc.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, 14, 22);
+
+    const tableData = filteredWataks.map(w => [
+        new Date(w.date).toLocaleDateString('en-GB'),
+        w.sNo,
+        w.watakNo,
+        w.customerName,
+        w.totals.pattiQty || 0,
+        w.totals.dabbaQty || 0,
+        `Rs. ${w.totals.grossSale.toFixed(2)}`,
+        `Rs. ${w.totals.totalExpenses.toFixed(2)}`,
+        `Rs. ${w.totals.netSale.toFixed(2)}`
+    ]);
+
+    autoTable(doc, {
+        head: [['Date', 'Invoice No.', 'Watak No.', 'Khata (Grower)', 'Patti', 'Dabba', 'Gross Sale', 'Total Exp.', 'Net Sale']],
+        body: tableData,
+        foot: [[
+            'Total', '', '', '', footerTotals.pattiQty, footerTotals.dabbaQty, `Rs. ${footerTotals.grossSale.toFixed(2)}`, `Rs. ${footerTotals.totalExpenses.toFixed(2)}`, `Rs. ${footerTotals.netSale.toFixed(2)}`
+        ]],
+        startY: 30,
+        theme: 'striped',
+        headStyles: { fillColor: [22, 163, 74] }
+    });
+
+    doc.save(`Sales-Register-${selectedGrower}.pdf`);
+  };
+
+  const exportToExcel = () => {
+      const worksheetData = filteredWataks.map(w => ({
+        'Date': new Date(w.date).toLocaleDateString('en-GB'),
+        'Invoice No.': w.sNo,
+        'Watak No.': w.watakNo,
+        'Khata (Grower)': w.customerName,
+        'Peti': w.totals.pattiQty || 0,
+        'Dabba': w.totals.dabbaQty || 0,
+        'Gross Sale': w.totals.grossSale,
+        'Total Expenses': w.totals.totalExpenses,
+        'Net Sale': w.totals.netSale
+    }));
     
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value, type } = e.target;
-        setFormState(prev => ({ ...prev, [name]: type === 'number' ? Number(value) : value }));
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+    XLSX.utils.sheet_add_aoa(worksheet, [
+        ["Total", "", "", "", footerTotals.pattiQty, footerTotals.dabbaQty, footerTotals.grossSale, footerTotals.totalExpenses, footerTotals.netSale]
+    ], { origin: -1 });
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sales');
+    XLSX.writeFile(workbook, `Sales-Register-${selectedGrower}.xlsx`);
+  };
+
+  const handleShare = () => {
+    if (selectedGrower === 'All Growers') {
+        toast({
+            variant: 'destructive',
+            title: 'Select a Grower',
+            description: 'Please select a specific grower from the dropdown to share their portal link.',
+        });
+        return;
     }
 
-    const handleSaveExpense = async () => {
-        if (!formState.date || !formState.category || !formState.description || formState.amount <= 0) {
-            toast({ variant: 'destructive', title: 'Missing Fields', description: 'Please fill out all fields before saving.' });
-            return;
-        }
+    let message = `Salaam ${selectedGrower},\n\n`;
+    message += `You can view your complete account ledger with Firdous Ahmad & Company by clicking the link below. The portal will open directly to your account.\n\n`;
+    const encodedCustomerName = encodeURIComponent(selectedGrower);
+    const portalUrl = `${window.location.origin}/portal/login?customer=${encodedCustomerName}`;
+    message += `Portal Link: ${portalUrl}\n\n`;
+    message += `Thank you for your business!`;
 
-        const id = `expense-${Date.now()}`;
-        const expenseData = { ...formState, id, type: 'manual' };
-        
-        localStorage.setItem(id, JSON.stringify(expenseData));
-        toast({ title: 'Expense Saved', description: 'Your expense has been successfully recorded locally.' });
-        
-        fetchExpenses();
-        setFormState(emptyFormState);
-    };
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
 
-    const handleDeleteExpense = async (id: string) => {
-        if (userRole !== 'admin') {
-            toast({ variant: 'destructive', title: 'Permission Denied' });
-            return;
-        }
-        if (!window.confirm('Are you sure you want to delete this expense?')) return;
-        
-        localStorage.removeItem(id);
-        toast({ title: 'Expense Deleted' });
-        
-        fetchExpenses();
-    };
+  const navigateToBill = (id: string) => {
+    router.push(`/invoice/${id}`);
+  }
 
-    const totalLabourExpenses = useMemo(() => labourExpenses.reduce((acc, exp) => acc + exp.amount, 0), [labourExpenses]);
-    const totalCompanyExpenses = useMemo(() => companyExpenses.reduce((acc, exp) => acc + exp.amount, 0), [companyExpenses]);
-    const totalCommissionIncome = useMemo(() => commissionIncome.reduce((acc, exp) => acc + exp.amount, 0), [commissionIncome]);
-    const totalFreightExpenses = useMemo(() => freightExpenses.reduce((acc, exp) => acc + exp.amount, 0), [freightExpenses]);
+  const handleDelete = async (sNo: string) => {
+    if(userRole !== 'admin') {
+      toast({ variant: "destructive", title: "Permission Denied", description: "You do not have permission to delete invoices."});
+      return;
+    }
+    if(!window.confirm(`Are you sure you want to delete Invoice #${sNo}? This cannot be undone.`)) return;
+    
+    localStorage.removeItem(`invoice-${sNo}`);
+    toast({ title: "Invoice Deleted", description: `Invoice #${sNo} has been deleted locally.`});
+    fetchWataks();
+  }
 
-
-    return (
-        <div className="space-y-8">
-             <ExpenseTable 
-                title="Commission Earned"
-                icon={<Percent className="h-6 w-6 text-primary"/>}
-                description={<StatsDescription text="Commission income automatically calculated from your sales invoices (wataks)." stats={commissionStats} />}
-                expenses={commissionIncome}
-                total={totalCommissionIncome}
-                showActions={false}
-            />
-            
-            <ExpenseTable 
-                title="Labour Expenses"
-                icon={<Users className="h-6 w-6 text-primary"/>}
-                description={<StatsDescription text="Expenses paid out to company laborers, automatically calculated from sales deductions." stats={labourStats} />}
-                expenses={labourExpenses}
-                total={totalLabourExpenses}
-                showActions={false}
-            />
-
-            <ExpenseTable 
-                title="Freight Expenses"
-                icon={<Truck className="h-6 w-6 text-primary"/>}
-                description={<StatsDescription text="Freight charges automatically deducted from sales invoices (wataks)." stats={freightStats} />}
-                expenses={freightExpenses}
-                total={totalFreightExpenses}
-                showActions={false}
-            />
-
-            <ExpenseTable 
-                title="Company, Security & Association Expenses"
-                icon={<Building className="h-6 w-6 text-primary"/>}
-                description={<StatsDescription text="Expenses for the company itself, including security/association fees from sales and other manually added costs." stats={companyStats} />}
-                expenses={companyExpenses}
-                total={totalCompanyExpenses}
-                showActions={userRole === 'admin'}
-                onDelete={handleDeleteExpense}
-            >
-                <Card className="w-full">
-                     <CardHeader>
-                        <CardTitle>Add Manual Company Expense</CardTitle>
-                        <CardDescription>Record any other business expenses here (e.g. Shop Rent).</CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                         <div>
-                            <Label htmlFor="date">Date</Label>
-                            <Input id="date" name="date" type="date" value={formState.date} onChange={handleInputChange} />
-                        </div>
-                        <div>
-                            <Label htmlFor="category">Category</Label>
-                            <Input id="category" name="category" placeholder="e.g., Shop Rent" value={formState.category} onChange={handleInputChange} />
-                        </div>
-                        <div>
-                            <Label htmlFor="description">Description</Label>
-                            <Input id="description" name="description" placeholder="e.g., Monthly shop rent" value={formState.description} onChange={handleInputChange} />
-                        </div>
-                        <div>
-                            <Label htmlFor="amount">Amount</Label>
-                            <Input id="amount" name="amount" type="number" placeholder="0.00" value={formState.amount || ''} onChange={handleInputChange} />
-                        </div>
-                    </CardContent>
-                     <CardFooter>
-                        <Button onClick={handleSaveExpense} className="gap-2">
-                            <PlusCircle className="h-4 w-4" /> Add Company Expense
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex justify-between items-start gap-4 flex-wrap">
+            <div className="flex items-center gap-4">
+                <CardTitle className="flex items-center gap-2">
+                    Sales Register
+                    {!isLoading && <Badge variant="outline">{yearlyCount} This Year</Badge>}
+                </CardTitle>
+                <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        type="search"
+                        placeholder="Search by Invoice No, Watak No, Name..."
+                        className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="flex items-center gap-2 min-w-[200px]">
+                           <span className="flex-1 text-left">{selectedGrower}</span>
+                           <ChevronDown className="h-4 w-4" />
                         </Button>
-                    </CardFooter>
-                </Card>
-            </ExpenseTable>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                        {growers.map(grower => (
+                             <DropdownMenuItem key={grower} onSelect={() => setSelectedGrower(grower)}>
+                                {grower}
+                             </DropdownMenuItem>
+                        ))}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+            <div className="flex items-center gap-2">
+                 <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setViewMode(viewMode === 'table' ? 'grid' : 'table')}
+                    title={viewMode === 'table' ? 'Grid View' : 'Table View'}
+                    >
+                    {viewMode === 'table' ? <LayoutGrid className="h-4 w-4" /> : <List className="h-4 w-4" />}
+                </Button>
+                <Button size="sm" onClick={handleShare} variant="outline" className="gap-1">
+                    <FaWhatsapp className="h-4 w-4 text-green-500" />
+                     Share Portal
+                </Button>
+                 <Button size="sm" variant="outline" className="gap-1" onClick={exportToPDF}>
+                    <FileDown className="h-3.5 w-3.5" />
+                    PDF
+                </Button>
+                <Button size="sm" variant="outline" className="gap-1" onClick={exportToExcel}>
+                    <FileDown className="h-3.5 w-3.5" />
+                    Excel
+                </Button>
+                <Button size="sm" className="gap-1" onClick={() => router.push('/sales')}>
+                    <PlusCircle className="h-3.5 w-3.5" />
+                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                        Add Invoice
+                    </span>
+                </Button>
+            </div>
         </div>
-    );
+        <CardDescription>Track and manage customer credit and sales invoices.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        ) : viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {filteredWataks.map((watak) => (
+                     <div key={watak.id} onClick={() => navigateToBill(watak.sNo)} className="cursor-pointer">
+                        <DocumentCard type="watak" title={`Invoice #${watak.watakNo || watak.sNo}`}>
+                            <p className="text-lg font-semibold">{watak.customerName}</p>
+                            {watak.customerUrdu && <p className="font-urdu text-xl mt-1">{watak.customerUrdu}</p>}
+                            <p className="text-sm mt-2">Date: {new Date(watak.date).toLocaleDateString()}</p>
+                            <p className="text-2xl font-bold mt-4">₹{watak.totals.netSale.toFixed(2)}</p>
+                        </DocumentCard>
+                    </div>
+                ))}
+            </div>
+        ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Date</TableHead>
+              <TableHead>Invoice No.</TableHead>
+              <TableHead>Watak No.</TableHead>
+              <TableHead>Khata (Grower)</TableHead>
+              <TableHead>Peti</TableHead>
+              <TableHead>Dabba</TableHead>
+              <TableHead className="text-right">Gross Sale</TableHead>
+              <TableHead className="text-right">Total Exp.</TableHead>
+              <TableHead className="text-right">Net Sale</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredWataks.map((watak: WatakEntry) => (
+              <TableRow key={watak.id}>
+                <TableCell>{new Date(watak.date).toLocaleDateString('en-GB')}</TableCell>
+                <TableCell>{watak.sNo}</TableCell>
+                <TableCell>{watak.watakNo}</TableCell>
+                <TableCell className="font-medium">{watak.customerName}</TableCell>
+                <TableCell>{watak.totals.pattiQty || 0}</TableCell>
+                <TableCell>{watak.totals.dabbaQty || 0}</TableCell>
+                <TableCell className="text-right">₹{watak.totals.grossSale.toFixed(2)}</TableCell>
+                <TableCell className="text-right">₹{watak.totals.totalExpenses.toFixed(2)}</TableCell>
+                <TableCell className="text-right">₹{watak.totals.netSale.toFixed(2)}</TableCell>
+                <TableCell className="text-right">
+                  <Button variant="ghost" size="icon" onClick={() => navigateToBill(watak.sNo)}>
+                    <FilePenLine className="h-4 w-4" />
+                  </Button>
+                  {userRole === 'admin' && (
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(watak.sNo)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+             <TableRow className="font-bold bg-muted">
+                <TableCell colSpan={4} className="text-right">Total</TableCell>
+                <TableCell>{footerTotals.pattiQty}</TableCell>
+                <TableCell>{footerTotals.dabbaQty}</TableCell>
+                <TableCell className="text-right">₹{footerTotals.grossSale.toFixed(2)}</TableCell>
+                <TableCell className="text-right">₹{footerTotals.totalExpenses.toFixed(2)}</TableCell>
+                <TableCell className="text-right">₹{footerTotals.netSale.toFixed(2)}</TableCell>
+                <TableCell></TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+        )}
+      </CardContent>
+    </Card>
+  );
 }
-
-    

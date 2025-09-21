@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react';
+import * as React from 'react';
 import {
   Card,
   CardContent,
@@ -17,435 +17,388 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useLanguage } from '@/contexts/language-context';
+import { ChevronDown, PlusCircle, Loader2, FilePenLine, Trash2, List, LayoutGrid, Search, FileDown } from 'lucide-react';
+import { FaWhatsapp } from 'react-icons/fa';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogClose,
-} from '@/components/ui/dialog';
-import { PlusCircle, Edit, Trash2, Package, Apple, Box, Search, FileDown } from 'lucide-react';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useRouter } from 'next/navigation';
+import DocumentCard from '@/components/DocumentCard';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { Badge } from '@/components/ui/badge';
 
-
-interface Product {
-  id: string;
-  name: string;
-  category: string;
-  stock: number;
-  unitType?: string;
-  varietyGrade?: string;
-  rateRange?: string;
-  batchNo?: string;
-  expiryDate?: string;
-  supplier?: string;
-  reorderLevel?: number;
-  notes?: string;
-}
-
-const emptyFormState: Omit<Product, 'id'> = {
-    name: '',
-    category: '',
-    stock: 0,
-    unitType: '',
-    varietyGrade: '',
-    rateRange: '',
-    batchNo: '',
-    expiryDate: '',
-    supplier: '',
-    reorderLevel: 0,
-    notes: '',
-}
-
-export default function ProductsPage() {
-  const { toast } = useToast();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isClient, setIsClient] = useState(false);
-  
-  // Form state
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [formState, setFormState] = useState<Product | Omit<Product, 'id'>>(emptyFormState);
-  const [userRole, setUserRole] = useState<string | null>(null);
-
-  // Filter and search state
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-
-  useEffect(() => {
-    setIsClient(true);
-    if (typeof window !== 'undefined') {
-        setUserRole(localStorage.getItem('userRole'));
+export interface WatakEntry {
+    id: string;
+    sNo: string;
+    date: string;
+    watakNo: string;
+    customerName: string;
+    customerUrdu?: string;
+    entries: {
+        peti: number;
+        daba: number;
+        variety: string;
+        rate: number;
+        type: 'Patti' | 'Dabba';
+        qty: number;
+        total: number;
+    }[];
+    totals: {
+      pattiQty: number;
+      dabbaQty: number;
+      totalQty: number;
+      grossSale: number;
+      totalExpenses: number;
+      netSale: number;
     }
+    freight: number;
+}
+
+const normalizeName = (name: string): string => {
+    if (!name) return '';
+    
+    const suffixes = ["S/P", "B/P", "K/P", "(LAMA)"];
+    let mainName = name.toUpperCase();
+    let suffix = '';
+
+    for (const s of suffixes) {
+        if (mainName.endsWith(s)) {
+            mainName = mainName.substring(0, mainName.length - s.length).trim();
+            suffix = ` ${s}`;
+            break;
+        }
+    }
+    
+    return mainName
+        .replace(/\b(MOHAMMAD|MOHD|MD)\b/g, 'MOHAMMAD')
+        .replace(/\b(AHMAD|AH)\b/g, 'AHMAD')
+        .replace(/\./g, '') // Remove dots
+        .replace(/\s+/g, ' ') // Collapse multiple spaces
+        .trim() + suffix;
+};
+
+
+
+export default function SalesRegisterPage() {
+  const { t } = useLanguage();
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const [wataks, setWataks] = React.useState<WatakEntry[]>([]);
+  const [growers, setGrowers] = React.useState<string[]>([]);
+  const [selectedGrower, setSelectedGrower] = React.useState('All Growers');
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [viewMode, setViewMode] = React.useState<'table' | 'grid'>('grid');
+  const [userRole, setUserRole] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setUserRole(localStorage.getItem('userRole'));
+    }
+    fetchWataks();
   }, []);
 
-  const fetchProducts = () => {
-    if (typeof window === 'undefined') return;
-    const items = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key?.startsWith('product-')) {
-        items.push(JSON.parse(localStorage.getItem(key)!));
-      }
-    }
-    setProducts(items);
-  };
-
-  useEffect(() => {
-    if (isClient) {
-      fetchProducts();
-    }
-  }, [isClient]);
-
-  const filteredProducts = useMemo(() => {
-    return products
-        .filter(p => {
-            const lowerCaseSearch = searchTerm.toLowerCase();
-            return p.name.toLowerCase().includes(lowerCaseSearch) || (p.supplier && p.supplier.toLowerCase().includes(lowerCaseSearch));
-        })
-        .filter(p => {
-            if (categoryFilter === 'all') return true;
-            if (categoryFilter === 'fruits') {
-                 return ['fruit', 'apple', 'pear', 'nakh', 'gosha', 'red delicious', 'american', 'gala mast', 'shimla'].includes(p.category.toLowerCase());
+  const fetchWataks = () => {
+    setIsLoading(true);
+    if(typeof window !== 'undefined') {
+        const items = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key?.startsWith('invoice-')) {
+                try {
+                    items.push(JSON.parse(localStorage.getItem(key)!));
+                } catch(e) {
+                    console.error("Failed to parse watak from local storage", e);
+                }
             }
-            if (categoryFilter === 'accessories') {
-                 return !['fruit', 'apple', 'pear', 'nakh', 'gosha', 'red delicious', 'american', 'gala mast', 'shimla'].includes(p.category.toLowerCase());
-            }
-            return true;
-        });
-  }, [products, searchTerm, categoryFilter]);
-
-
-  const { fruitProducts, accessoryProducts } = useMemo(() => {
-    const fruits: Product[] = [];
-    const accessories: Product[] = [];
-    filteredProducts.forEach(p => {
-        const lowerCat = p.category.toLowerCase();
-        if (['fruit', 'apple', 'pear', 'nakh', 'gosha', 'red delicious', 'american', 'gala mast', 'shimla'].includes(lowerCat)) {
-            fruits.push(p);
-        } else {
-            accessories.push(p);
         }
-    });
-    return { fruitProducts: fruits, accessoryProducts: accessories };
-  }, [filteredProducts]);
-  
-  const resetForm = () => {
-    setFormState(emptyFormState);
-  }
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target;
-    const val = type === 'number' ? Number(value) : value;
-    setFormState(prev => ({...prev, [name]: val}));
-  };
-
-  const handleSaveProduct = () => {
-    if (!formState.name || !formState.category) {
-      toast({
-        variant: 'destructive',
-        title: 'Missing Fields',
-        description: 'Product Name and Category are required.',
-      });
-      return;
+        setWataks(items.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        
+        const growerMap = new Map<string, string>();
+        items.forEach(w => {
+            const normalized = normalizeName(w.customerName);
+            if (!growerMap.has(normalized)) {
+                growerMap.set(normalized, w.customerName);
+            }
+        });
+        const uniqueGrowers = ['All Growers', ...Array.from(growerMap.values()).sort()];
+        setGrowers(uniqueGrowers);
     }
-
-    const id = 'id' in formState ? formState.id : `product-${Date.now()}`;
-    const newProduct: Product = { id, ...formState } as Product;
-
-    localStorage.setItem(id, JSON.stringify(newProduct));
-    toast({
-      title: 'id' in formState ? 'Product Updated' : 'Product Added',
-      description: `${formState.name} has been saved.`,
-    });
-    
-    fetchProducts();
-    resetForm();
-    setIsDialogOpen(false);
-  };
-
-  const handleEditClick = (product: Product) => {
-    setFormState(product);
-    setIsDialogOpen(true);
+    setIsLoading(false);
   }
-  
-  const handleDeleteProduct = (id: string) => {
-    if(userRole !== 'admin') {
-      toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot delete products.' });
-      return;
-    }
-    if (!window.confirm('Are you sure you want to delete this product?')) return;
-    localStorage.removeItem(id);
-    toast({
-      title: 'Product Deleted',
-      description: 'The product has been removed.',
+
+  const yearlyCount = React.useMemo(() => {
+    if(!wataks) return 0;
+    const currentYear = new Date().getFullYear();
+    return wataks.filter(w => new Date(w.date).getFullYear() === currentYear).length;
+  }, [wataks]);
+
+
+  React.useEffect(() => {
+    fetchWataks();
+  }, [toast]);
+
+  const filteredWataks = wataks
+    .filter(w => {
+        if (selectedGrower === 'All Growers') return true;
+        return normalizeName(w.customerName) === normalizeName(selectedGrower);
+    })
+    .filter(w => {
+      if (!searchTerm) return true;
+      const lowerCaseSearch = searchTerm.toLowerCase();
+      return (
+        w.customerName.toLowerCase().includes(lowerCaseSearch) ||
+        w.sNo.toLowerCase().includes(lowerCaseSearch) ||
+        (w.watakNo && w.watakNo.toLowerCase().includes(lowerCaseSearch))
+      );
     });
-    fetchProducts();
-  }
-  
+
+  const footerTotals = filteredWataks.reduce((acc, watak) => {
+    acc.grossSale += watak.totals.grossSale || 0;
+    acc.totalExpenses += watak.totals.totalExpenses || 0;
+    acc.netSale += watak.totals.netSale || 0;
+    acc.pattiQty += watak.totals.pattiQty || 0;
+    acc.dabbaQty += watak.totals.dabbaQty || 0;
+    return acc;
+  }, { grossSale: 0, totalExpenses: 0, netSale: 0, pattiQty: 0, dabbaQty: 0 });
+
   const exportToPDF = () => {
     const doc = new jsPDF();
-    doc.text("Product Inventory List", 14, 15);
+    doc.text(`Sales Register - ${selectedGrower}`, 14, 15);
+    doc.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, 14, 22);
+
+    const tableData = filteredWataks.map(w => [
+        new Date(w.date).toLocaleDateString('en-GB'),
+        w.sNo,
+        w.watakNo,
+        w.customerName,
+        w.totals.pattiQty || 0,
+        w.totals.dabbaQty || 0,
+        `Rs. ${w.totals.grossSale.toFixed(2)}`,
+        `Rs. ${w.totals.totalExpenses.toFixed(2)}`,
+        `Rs. ${w.totals.netSale.toFixed(2)}`
+    ]);
+
     autoTable(doc, {
-        head: [['Name', 'Category', 'Stock', 'Unit', 'Variety/Grade', 'Rate Range', 'Supplier', 'Expiry']],
-        body: filteredProducts.map(p => [
-            p.name,
-            p.category,
-            p.stock,
-            p.unitType || '',
-            p.varietyGrade || '',
-            p.rateRange || '',
-            p.supplier || '',
-            p.expiryDate || '',
-        ]),
+        head: [['Date', 'Invoice No.', 'Watak No.', 'Khata (Grower)', 'Patti', 'Dabba', 'Gross Sale', 'Total Exp.', 'Net Sale']],
+        body: tableData,
+        foot: [[
+            'Total', '', '', '', footerTotals.pattiQty, footerTotals.dabbaQty, `Rs. ${footerTotals.grossSale.toFixed(2)}`, `Rs. ${footerTotals.totalExpenses.toFixed(2)}`, `Rs. ${footerTotals.netSale.toFixed(2)}`
+        ]],
+        startY: 30,
+        theme: 'striped',
+        headStyles: { fillColor: [22, 163, 74] }
     });
-    doc.save("product-inventory.pdf");
+
+    doc.save(`Sales-Register-${selectedGrower}.pdf`);
   };
 
   const exportToExcel = () => {
-      const ws = XLSX.utils.json_to_sheet(filteredProducts.map(p => ({
-          'Product Name': p.name,
-          'Category': p.category,
-          'Stock Quantity': p.stock,
-          'Unit Type': p.unitType,
-          'Variety/Grade': p.varietyGrade,
-          'Rate Range': p.rateRange,
-          'Batch No': p.batchNo,
-          'Expiry Date': p.expiryDate,
-          'Supplier': p.supplier,
-          'Reorder Level': p.reorderLevel,
-          'Notes': p.notes,
-      })));
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Inventory");
-      XLSX.writeFile(wb, "product-inventory.xlsx");
+      const worksheetData = filteredWataks.map(w => ({
+        'Date': new Date(w.date).toLocaleDateString('en-GB'),
+        'Invoice No.': w.sNo,
+        'Watak No.': w.watakNo,
+        'Khata (Grower)': w.customerName,
+        'Peti': w.totals.pattiQty || 0,
+        'Dabba': w.totals.dabbaQty || 0,
+        'Gross Sale': w.totals.grossSale,
+        'Total Expenses': w.totals.totalExpenses,
+        'Net Sale': w.totals.netSale
+    }));
+    
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+    XLSX.utils.sheet_add_aoa(worksheet, [
+        ["Total", "", "", "", footerTotals.pattiQty, footerTotals.dabbaQty, footerTotals.grossSale, footerTotals.totalExpenses, footerTotals.netSale]
+    ], { origin: -1 });
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sales');
+    XLSX.writeFile(workbook, `Sales-Register-${selectedGrower}.xlsx`);
   };
 
-  const ProductTable = ({ products }: { products: Product[] }) => (
-    <div className="mb-4">
-        {products.length > 0 ? (
-            <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Product Name</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Variety/Grade</TableHead>
-                <TableHead>Unit</TableHead>
-                <TableHead>Stock</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {products.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>{product.category}</TableCell>
-                  <TableCell>{product.varietyGrade}</TableCell>
-                  <TableCell>{product.unitType}</TableCell>
-                  <TableCell>{product.stock}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => handleEditClick(product)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    {userRole === 'admin' && (
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(product.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        ) : (
-            <p className="text-sm text-muted-foreground text-center py-4">No products in this category match your search.</p>
-        )}
-    </div>
-  );
+  const handleShare = () => {
+    if (selectedGrower === 'All Growers') {
+        toast({
+            variant: 'destructive',
+            title: 'Select a Grower',
+            description: 'Please select a specific grower from the dropdown to share their portal link.',
+        });
+        return;
+    }
+
+    let message = `Salaam ${selectedGrower},\n\n`;
+    message += `You can view your complete account ledger with Firdous Ahmad & Company by clicking the link below. The portal will open directly to your account.\n\n`;
+    const encodedCustomerName = encodeURIComponent(selectedGrower);
+    const portalUrl = `${window.location.origin}/portal/login?customer=${encodedCustomerName}`;
+    message += `Portal Link: ${portalUrl}\n\n`;
+    message += `Thank you for your business!`;
+
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const navigateToBill = (id: string) => {
+    router.push(`/invoice/${id}`);
+  }
+
+  const handleDelete = async (sNo: string) => {
+    if(userRole !== 'admin') {
+      toast({ variant: "destructive", title: "Permission Denied", description: "You do not have permission to delete invoices."});
+      return;
+    }
+    if(!window.confirm(`Are you sure you want to delete Invoice #${sNo}? This cannot be undone.`)) return;
+    
+    localStorage.removeItem(`invoice-${sNo}`);
+    toast({ title: "Invoice Deleted", description: `Invoice #${sNo} has been deleted locally.`});
+    fetchWataks();
+  }
 
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-center flex-wrap gap-4">
-          <div>
-            <CardTitle>Products & Inventory</CardTitle>
-            <CardDescription>
-              Manage your product inventory, track stock levels, and receive low-stock alerts here.
-            </CardDescription>
-          </div>
-          <div className="flex items-center gap-2">
-             <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                    type="search"
-                    placeholder="Search by name..."
-                    className="pl-8 sm:w-[200px] lg:w-[250px]"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-            </div>
-             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Filter by category" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    <SelectItem value="fruits">Fruits</SelectItem>
-                    <SelectItem value="accessories">Accessories</SelectItem>
-                </SelectContent>
-            </Select>
-            <Button onClick={exportToPDF} variant="outline" size="sm" className="gap-1"><FileDown className="h-4 w-4"/>PDF</Button>
-            <Button onClick={exportToExcel} variant="outline" size="sm" className="gap-1"><FileDown className="h-4 w-4"/>Excel</Button>
-            <Dialog open={isDialogOpen} onOpenChange={(isOpen) => {
-                setIsDialogOpen(isOpen);
-                if (!isOpen) {
-                  resetForm();
-                }
-            }}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="gap-1">
-                  <PlusCircle className="h-3.5 w-3.5" />
-                  Add Product
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>{'id' in formState ? 'Edit Product' : 'Add New Product'}</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                          <Label htmlFor="name">Name</Label>
-                          <Input id="name" name="name" value={formState.name} onChange={handleInputChange} />
-                      </div>
-                       <div className="space-y-2">
-                          <Label htmlFor="category">Category</Label>
-                          <Input id="category" name="category" value={formState.category} onChange={handleInputChange} placeholder="e.g., Fruit, Pesticide, Fertilizer" />
-                      </div>
-                       <div className="space-y-2">
-                          <Label htmlFor="unitType">Unit Type</Label>
-                          <Input id="unitType" name="unitType" value={formState.unitType || ''} onChange={handleInputChange} placeholder="e.g., kg, box, patti, liter, piece" />
-                      </div>
-                      <div className="space-y-2">
-                          <Label htmlFor="varietyGrade">Variety/Grade</Label>
-                          <Input id="varietyGrade" name="varietyGrade" value={formState.varietyGrade || ''} onChange={handleInputChange} placeholder="e.g., Extraordinary, Standard" />
-                      </div>
-                      <div className="space-y-2">
-                          <Label htmlFor="rateRange">Rate Range</Label>
-                          <Input id="rateRange" name="rateRange" value={formState.rateRange || ''} onChange={handleInputChange} placeholder="e.g., 500-600" />
-                      </div>
-                       <div className="space-y-2">
-                          <Label htmlFor="stock">Stock Quantity</Label>
-                          <Input id="stock" name="stock" type="number" value={formState.stock || ''} onChange={handleInputChange} />
-                      </div>
-                      <div className="space-y-2">
-                          <Label htmlFor="batchNo">Batch No. (for chemicals)</Label>
-                          <Input id="batchNo" name="batchNo" value={formState.batchNo || ''} onChange={handleInputChange} />
-                      </div>
-                      <div className="space-y-2">
-                          <Label htmlFor="expiryDate">Expiry Date (for chemicals)</Label>
-                          <Input id="expiryDate" name="expiryDate" type="date" value={formState.expiryDate || ''} onChange={handleInputChange} />
-                      </div>
-                       <div className="space-y-2">
-                          <Label htmlFor="supplier">Supplier / Company</Label>
-                          <Input id="supplier" name="supplier" value={formState.supplier || ''} onChange={handleInputChange} />
-                      </div>
-                       <div className="space-y-2">
-                          <Label htmlFor="reorderLevel">Reorder Level</Label>
-                          <Input id="reorderLevel" name="reorderLevel" type="number" value={formState.reorderLevel || ''} onChange={handleInputChange} placeholder="Alert when stock drops to this level" />
-                      </div>
-                      <div className="space-y-2 md:col-span-2">
-                          <Label htmlFor="notes">Notes</Label>
-                          <Textarea id="notes" name="notes" value={formState.notes || ''} onChange={handleInputChange} />
-                      </div>
-                    </div>
+        <div className="flex justify-between items-start gap-4 flex-wrap">
+            <div className="flex items-center gap-4">
+                <CardTitle className="flex items-center gap-2">
+                    Sales Register
+                    {!isLoading && <Badge variant="outline">{yearlyCount} This Year</Badge>}
+                </CardTitle>
+                <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        type="search"
+                        placeholder="Search by Invoice No, Watak No, Name..."
+                        className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
                 </div>
-                <DialogFooter>
-                  <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                  <Button onClick={handleSaveProduct}>Save Product</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="flex items-center gap-2 min-w-[200px]">
+                           <span className="flex-1 text-left">{selectedGrower}</span>
+                           <ChevronDown className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                        {growers.map(grower => (
+                             <DropdownMenuItem key={grower} onSelect={() => setSelectedGrower(grower)}>
+                                {grower}
+                             </DropdownMenuItem>
+                        ))}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+            <div className="flex items-center gap-2">
+                 <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setViewMode(viewMode === 'table' ? 'grid' : 'table')}
+                    title={viewMode === 'table' ? 'Grid View' : 'Table View'}
+                    >
+                    {viewMode === 'table' ? <LayoutGrid className="h-4 w-4" /> : <List className="h-4 w-4" />}
+                </Button>
+                <Button size="sm" onClick={handleShare} variant="outline" className="gap-1">
+                    <FaWhatsapp className="h-4 w-4 text-green-500" />
+                     Share Portal
+                </Button>
+                 <Button size="sm" variant="outline" className="gap-1" onClick={exportToPDF}>
+                    <FileDown className="h-3.5 w-3.5" />
+                    PDF
+                </Button>
+                <Button size="sm" variant="outline" className="gap-1" onClick={exportToExcel}>
+                    <FileDown className="h-3.5 w-3.5" />
+                    Excel
+                </Button>
+                <Button size="sm" className="gap-1" onClick={() => router.push('/sales')}>
+                    <PlusCircle className="h-3.5 w-3.5" />
+                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                        Add Invoice
+                    </span>
+                </Button>
+            </div>
         </div>
+        <CardDescription>Track and manage customer credit and sales invoices.</CardDescription>
       </CardHeader>
       <CardContent>
-         {isClient && products.length > 0 ? (
-            <Accordion type="multiple" defaultValue={['fruits', 'accessories']} className="w-full">
-                <AccordionItem value="fruits" className={categoryFilter !== 'accessories' ? '' : 'hidden'}>
-                    <AccordionTrigger>
-                        <h2 className="text-xl font-semibold flex items-center gap-2"><Apple className="h-5 w-5 text-red-500" /> Fruits ({fruitProducts.length})</h2>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                       <ProductTable products={fruitProducts} />
-                    </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="accessories" className={categoryFilter !== 'fruits' ? '' : 'hidden'}>
-                    <AccordionTrigger>
-                        <h2 className="text-xl font-semibold flex items-center gap-2"><Box className="h-5 w-5 text-blue-500" /> Accessories ({accessoryProducts.length})</h2>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                        <ProductTable products={accessoryProducts} />
-                    </AccordionContent>
-                </AccordionItem>
-            </Accordion>
-         ) : (
-          <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
-            <Package className="mx-auto h-12 w-12" />
-            <h3 className="mt-4 text-lg font-semibold">No products found.</h3>
-            <p className="mt-1 text-sm">Get started by adding your first product.</p>
-             <Dialog open={isDialogOpen} onOpenChange={(isOpen) => {
-                setIsDialogOpen(isOpen);
-                if (!isOpen) {
-                    resetForm();
-                }
-             }}>
-                <DialogTrigger asChild>
-                <Button size="sm" className="mt-4 gap-1">
-                    <PlusCircle className="h-3.5 w-3.5" />
-                    Add Your First Product
-                </Button>
-                </DialogTrigger>
-                <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>{'id' in formState ? 'Edit Product' : 'Add New Product'}</DialogTitle>
-                </DialogHeader>
-                 <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                          <Label htmlFor="name">Name</Label>
-                          <Input id="name" name="name" value={formState.name} onChange={handleInputChange} />
-                      </div>
-                       <div className="space-y-2">
-                          <Label htmlFor="category">Category</Label>
-                          <Input id="category" name="category" value={formState.category} onChange={handleInputChange} placeholder="e.g., Fruit, Pesticide, Fertilizer" />
-                      </div>
-                       <div className="space-y-2">
-                          <Label htmlFor="stock">Stock Quantity</Label>
-                          <Input id="stock" name="stock" type="number" value={formState.stock || ''} onChange={handleInputChange} />
-                      </div>
+        {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        ) : viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {filteredWataks.map((watak) => (
+                     <div key={watak.id} onClick={() => navigateToBill(watak.sNo)} className="cursor-pointer">
+                        <DocumentCard type="watak" title={`Invoice #${watak.watakNo || watak.sNo}`}>
+                            <p className="text-lg font-semibold">{watak.customerName}</p>
+                            {watak.customerUrdu && <p className="font-urdu text-xl mt-1">{watak.customerUrdu}</p>}
+                            <p className="text-sm mt-2">Date: {new Date(watak.date).toLocaleDateString()}</p>
+                            <p className="text-2xl font-bold mt-4">₹{watak.totals.netSale.toFixed(2)}</p>
+                        </DocumentCard>
                     </div>
-                </div>
-                <DialogFooter>
-                    <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                    <Button onClick={handleSaveProduct}>Save Product</Button>
-                </DialogFooter>
-                </DialogContent>
-            </Dialog>
-          </div>
+                ))}
+            </div>
+        ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Date</TableHead>
+              <TableHead>Invoice No.</TableHead>
+              <TableHead>Watak No.</TableHead>
+              <TableHead>Khata (Grower)</TableHead>
+              <TableHead>Peti</TableHead>
+              <TableHead>Dabba</TableHead>
+              <TableHead className="text-right">Gross Sale</TableHead>
+              <TableHead className="text-right">Total Exp.</TableHead>
+              <TableHead className="text-right">Net Sale</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredWataks.map((watak: WatakEntry) => (
+              <TableRow key={watak.id}>
+                <TableCell>{new Date(watak.date).toLocaleDateString('en-GB')}</TableCell>
+                <TableCell>{watak.sNo}</TableCell>
+                <TableCell>{watak.watakNo}</TableCell>
+                <TableCell className="font-medium">{watak.customerName}</TableCell>
+                <TableCell>{watak.totals.pattiQty || 0}</TableCell>
+                <TableCell>{watak.totals.dabbaQty || 0}</TableCell>
+                <TableCell className="text-right">₹{watak.totals.grossSale.toFixed(2)}</TableCell>
+                <TableCell className="text-right">₹{watak.totals.totalExpenses.toFixed(2)}</TableCell>
+                <TableCell className="text-right">₹{watak.totals.netSale.toFixed(2)}</TableCell>
+                <TableCell className="text-right">
+                  <Button variant="ghost" size="icon" onClick={() => navigateToBill(watak.sNo)}>
+                    <FilePenLine className="h-4 w-4" />
+                  </Button>
+                  {userRole === 'admin' && (
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(watak.sNo)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+             <TableRow className="font-bold bg-muted">
+                <TableCell colSpan={4} className="text-right">Total</TableCell>
+                <TableCell>{footerTotals.pattiQty}</TableCell>
+                <TableCell>{footerTotals.dabbaQty}</TableCell>
+                <TableCell className="text-right">₹{footerTotals.grossSale.toFixed(2)}</TableCell>
+                <TableCell className="text-right">₹{footerTotals.totalExpenses.toFixed(2)}</TableCell>
+                <TableCell className="text-right">₹{footerTotals.netSale.toFixed(2)}</TableCell>
+                <TableCell></TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
         )}
       </CardContent>
     </Card>
   );
 }
-
-
