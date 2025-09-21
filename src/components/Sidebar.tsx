@@ -1,137 +1,130 @@
-// src/components/Sidebar.tsx
+
 "use client";
+
 import Link from "next/link";
-import { useLanguage } from "@/contexts/language-context";
+import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, FileText, ShoppingCart, Package,
-  DollarSign, BookOpen, Receipt, Layers, TrendingUp,
-  Cog, Archive, FileSpreadsheet, LogOut, Phone, MapPin, Home, Users, BarChart2, Package2, Settings, History, Truck, Building, Leaf, Banknote, Snowflake, FileDown, SprayCan
+  LayoutDashboard,
+  FileText,
+  ShoppingCart,
+  Truck,
+  Globe,
+  Package,
+  Receipt,
+  BookOpen,
+  DollarSign,
+  TrendingUp,
+  FlaskConical,
+  Box,
+  History,
+  Cog,
+  Snowflake,
+  Banknote,
+  FileSpreadsheet,
 } from "lucide-react";
-import { usePathname } from 'next/navigation';
-import { Logo } from './logo';
-import { Button } from './ui/button';
+import { cn } from "@/lib/utils";
+import { Logo } from "./logo";
 
+const sidebarSections = [
+    {
+      title: "ANALYTICS",
+      items: [
+        { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+      ],
+    },
+    {
+      title: "SALES AND PURCHASES",
+      items: [
+        { name: "Sales Invoices", href: "/sales", icon: FileText },
+        { name: "Watak Register", href: "/watak-register", icon: FileSpreadsheet },
+        { name: "Purchases", href: "/purchases", icon: ShoppingCart },
+        { name: "Purchase Register", href: "/purchase-register", icon: BookOpen },
+        { name: "Delivery Notes", href: "/sales", params: "challan", icon: Truck },
+        { name: "Outside Sales (Bikris)", href: "/outside-sales", icon: Globe },
+      ],
+    },
+    {
+      title: "MANAGEMENT",
+      items: [
+        { name: "Products", href: "/products", icon: Package },
+        { name: "Expenses", href: "/expenses", icon: DollarSign },
+        { name: "Advances", href: "/advances", icon: Banknote },
+        { name: "Cold Storage", href: "/cold-storage", icon: Snowflake },
+        { name: "Khata Ledger", href: "/khata", icon: BookOpen },
+      ],
+    },
+    {
+      title: "RESOURCES",
+      items: [
+        { name: "Fruit Rates", href: "/rates", icon: TrendingUp },
+        { name: "Fertilizers/Pesticides", href: "/fertilizers", icon: FlaskConical },
+        { name: "Accessories", href: "/accessories", icon: Box },
+        { name: "Activity Log", href: "/activity-log", icon: History },
+      ],
+    },
+    {
+      title: "CONFIGURATION",
+      items: [
+        { name: "Settings", href: "/settings", icon: Cog },
+      ],
+    },
+];
 
-const NavLink = ({ href, icon: Icon, children }: { href: string, icon: React.ElementType, children: React.ReactNode }) => {
-    const pathname = usePathname();
+export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
+  const pathname = usePathname();
+
+  const renderLink = (item: any) => {
+    const { name, href, icon: Icon, params } = item;
     const isActive = pathname === href;
+    const linkHref = params ? `${href}?tab=${params}` : href;
 
     return (
-        <Link
-          href={href}
-          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-gray-400 transition-all hover:text-white hover:bg-gray-700 ${isActive ? "bg-gray-800 text-white" : ""}`}
-        >
-          <Icon className="h-4 w-4" />
-          {children}
+      <Link
+        href={linkHref}
+        className={cn(
+          "flex items-center gap-3 rounded-lg px-3 py-2 text-gray-400 transition-all hover:bg-gray-700 hover:text-white",
+          isActive && "bg-gray-700 text-white"
+        )}
+      >
+        <Icon className="h-4 w-4" />
+        {name}
+      </Link>
+    );
+  };
+
+  return (
+    <div className="flex h-full max-h-screen flex-col gap-2">
+      <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+        <Link href="/" className="flex items-center gap-2 font-semibold text-white">
+          <Logo className="h-8 w-8" />
+          <span>SwiftSale</span>
         </Link>
-    )
-}
-
-export function SidebarContent({ isMobile = false }) {
-    const { t } = useLanguage();
-    const CloseWrapper = isMobile ? 'SheetClose' : 'div';
-
-    const sidebarSections = [
-      {
-        title: "ANALYTICS",
-        items: [
-          { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-        ]
-      },
-      {
-        title: "SALES AND PURCHASES",
-        items: [
-          { name: "Sales Invoices", href: "/sales", icon: FileText },
-          { name: "Watak Register", href: "/watak-register", icon: FileSpreadsheet },
-          { name: "Purchases", href: "/purchases", icon: ShoppingCart },
-          { name: "Purchase Register", href: "/purchase-register", icon: Layers },
-          { name: "Outside Sales (Bikris)", href: "/outside-sales", icon: Truck },
-        ]
-      },
-      {
-        title: "MANAGEMENT",
-        items: [
-          { name: "Products", href: "/products", icon: Package },
-          { name: "Expenses", href: "/expenses", icon: DollarSign },
-          { name: "Advances", href: "/advances", icon: Banknote },
-          { name: "Cold Storage", href: "/cold-storage", icon: Snowflake },
-          { name: "Khata Ledger", href: "/khata", icon: BookOpen },
-        ]
-      },
-      {
-        title: "RESOURCES",
-        items: [
-          { name: "Fruit Rates", href: "/rates", icon: TrendingUp },
-          { name: "Fertilizers", href: "/fertilizers", icon: SprayCan },
-          { name: "Accessories", href: "/accessories", icon: Archive },
-          { name: "Activity Log", href: "/activity-log", icon: History },
-        ]
-      },
-      {
-        title: "CONFIGURATION",
-        items: [
-          { name: "Settings", href: "/settings", icon: Cog },
-        ]
-      }
-    ];
-
-    return (
-        <div className="flex h-full max-h-screen flex-col gap-2">
-          <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
-              <Logo className="h-8 w-8" />
-              <span className="">SwiftSale</span>
-            </Link>
-          </div>
-          <div className="flex-1">
-            <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-              {sidebarSections.map((section, i) => (
-                <div className="py-2" key={i}>
-                    <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight text-gray-400">
-                        {section.title}
-                    </h2>
-                    <div className="space-y-1">
-                        {section.items.map((item, j) => (
-                           <NavLink key={j} href={item.href} icon={item.icon}>
-                                {item.name}
-                            </NavLink>
-                        ))}
-                    </div>
-                </div>
-              ))}
-            </nav>
-          </div>
-           <div className="mt-auto p-4">
-            <Card>
-              <CardHeader className="p-2 pt-0 md:p-4">
-                <CardTitle>Quick Contact</CardTitle>
-                <CardDescription>
-                  Reach out for support or inquiries.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-2 pt-0 md:p-4 md:pt-0">
-                 <div className="text-sm space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Phone size={14} />
-                      <span>+91 7006136330</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin size={14} />
-                      <span>Fruit Mandi, Sopore</span>
-                    </div>
-                  </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-    )
+      </div>
+      <div className="flex-1 overflow-y-auto">
+        <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+          {sidebarSections.map((section, sectionIndex) => (
+            <div key={sectionIndex} className="py-2">
+              <h3 className="mb-2 px-4 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                {section.title}
+              </h3>
+              <div className="grid grid-flow-row auto-rows-max text-sm">
+                {section.items.map((item, itemIndex) => (
+                  <div key={itemIndex}>{renderLink(item)}</div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </nav>
+      </div>
+    </div>
+  );
 }
 
 
 export default function Sidebar() {
     return (
-      <aside className="hidden border-r bg-muted/40 md:block w-full">
-          <SidebarContent />
-      </aside>
+        <div className="hidden border-r bg-gray-800/40 md:block">
+            <SidebarContent />
+        </div>
     )
 }
