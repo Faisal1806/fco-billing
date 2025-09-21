@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 import { SheetClose } from "@/components/ui/sheet";
 import { Logo } from "./logo";
 
-const sidebarSections = [
+export const sidebarSections = [
     {
       title: "ANALYTICS",
       items: [
@@ -120,13 +120,7 @@ export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
 
 
 export default function Sidebar() {
-    return (
-        <div className="hidden border-r bg-muted/40 md:block">
-            <div className="flex h-full max-h-screen flex-col gap-2">
-                <SidebarContent />
-            </div>
-        </div>
-    )
+    // This component is now primarily for exporting the section data and for potential re-use.
+    // The main layout no longer renders it directly.
+    return null;
 }
-
-    
