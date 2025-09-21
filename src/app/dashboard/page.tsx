@@ -2,6 +2,7 @@
 
 'use client'
 
+import * as React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, Package, UserCheck, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, History, BookOpen, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Hash, ShoppingCart, Globe, DollarSign, Banknote, Snowflake, Cog, CheckCircle, FileDown, FileSpreadsheet, Settings, Users, Menu } from 'lucide-react';
