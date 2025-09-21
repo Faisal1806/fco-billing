@@ -10,7 +10,6 @@ export default function HomePage() {
 
   useEffect(() => {
     // Always redirect to the login page.
-    // The login page itself will handle routing to the dashboard after a successful login.
     router.replace('/login');
   }, [router]);
 

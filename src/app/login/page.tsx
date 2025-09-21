@@ -19,17 +19,16 @@ export default function LoginPage() {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    // This effect runs only once when the component mounts on the client.
     setIsClient(true);
-    // Check if already logged in
-    if (typeof window !== 'undefined' && localStorage.getItem('userRole')) {
-      router.push('/dashboard');
-    }
-  }, [router]);
+    // It's important NOT to check for existing login here to prevent auto-login.
+    // The user must always be presented with the password screen unless they
+    // are already navigating within the app. This page is the gate.
+  }, []);
 
   const handleLogin = () => {
     if (password === 'Faisal1806') {
       if (typeof window !== 'undefined') {
-        // Set role to admin upon successful login
         localStorage.setItem('userRole', 'admin');
       }
       toast({
@@ -53,6 +52,7 @@ export default function LoginPage() {
   }
 
   if (!isClient) {
+    // Render nothing or a loading spinner on the server to avoid hydration errors
     return null;
   }
 
