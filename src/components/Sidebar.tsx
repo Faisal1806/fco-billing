@@ -18,56 +18,69 @@ import {
   FlaskConical,
   Boxes,
   History,
-  Phone,
   Settings,
   ShoppingCart,
+  Phone,
 } from 'lucide-react';
 import { Logo } from './logo';
 import { cn } from '@/lib/utils';
 import { SheetClose } from './ui/sheet';
 
-
-const mainNavLinks = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutGrid },
-];
-
-const salesNavLinks = [
-    { name: 'Sales Invoices', href: '/sales', icon: FileText },
-    { name: 'Watak Register', href: '/watak-register', icon: BookCopy },
-    { name: 'Purchases', href: '/purchases', icon: ShoppingCart },
-    { name: 'Purchase Register', href: '/purchase-register', icon: List },
-    { name: 'Outside Sales', href: '/outside-sales', icon: Globe },
-];
-
-const managementNavLinks = [
-  { name: 'Products', href: '/products', icon: Package },
-  { name: 'Expenses', href: '/expenses', icon: FileText },
-  { name: 'Advances', href: '/advances', icon: HandCoins },
-  { name: 'Cold Storage', href: '/cold-storage', icon: Snowflake },
-  { name: 'Khata Ledger', href: '/khata', icon: BookOpen },
-];
-
-const resourcesNavLinks = [
-  { name: 'Fruit Rates', href: '/rates', icon: Apple },
-  { name: 'Fertilizers & Pesticides', href: '/fertilizers', icon: FlaskConical },
-  { name: 'Accessories', href: '/accessories', icon: Boxes },
-  { name: 'Activity Log', href: '/activity-log', icon: History },
-];
-
-const settingsNavLinks = [
-    { name: 'Settings', href: '/settings', icon: Settings },
+const sidebarSections = [
+  {
+    title: "ANALYTICS",
+    items: [
+      { name: "Dashboard", href: "/dashboard", icon: LayoutGrid },
+    ]
+  },
+  {
+    title: "SALES AND PURCHASES",
+    items: [
+      { name: "Sales Invoices", href: "/sales", icon: FileText },
+      { name: "Watak Register", href: "/watak-register", icon: BookCopy },
+      { name: "Purchases", href: "/purchases", icon: ShoppingCart },
+      { name: "Purchase Register", href: "/purchase-register", icon: List },
+      { name: "Outside Sales (Bikris)", href: "/outside-sales", icon: Globe },
+    ]
+  },
+  {
+    title: "MANAGEMENT",
+    items: [
+      { name: "Products", href: "/products", icon: Package },
+      { name: "Expenses", href: "/expenses", icon: FileText },
+      { name: "Advances", href: "/advances", icon: HandCoins },
+      { name: "Cold Storage", href: "/cold-storage", icon: Snowflake },
+      { name: "Khata Ledger", href: "/khata", icon: BookOpen },
+    ]
+  },
+  {
+    title: "RESOURCES",
+    items: [
+      { name: "Fruit Rates", href: "/rates", icon: Apple },
+      { name: "Fertilizers And Pesticides", href: "/fertilizers", icon: FlaskConical },
+      { name: "Accessories", href: "/accessories", icon: Boxes },
+      { name: "Activity Log", href: "/activity-log", icon: History },
+    ]
+  },
+  {
+    title: "CONFIGURATION",
+    items: [
+      { name: "Settings", href: "/settings", icon: Settings },
+    ]
+  }
 ];
 
 
 const NavLink = ({ href, icon: Icon, children, isMobile }: { href: string; icon: React.ElementType; children: React.ReactNode; isMobile?: boolean }) => {
   const pathname = usePathname();
   const isActive = pathname === href;
+  
   const LinkContent = () => (
      <Link
       href={href}
       className={cn(
-        'flex items-center gap-3 rounded-lg px-3 py-2 text-gray-400 transition-all hover:text-gray-50',
-        isActive && 'bg-gray-700 text-white'
+        "sidebar-item flex items-center gap-4 px-7 py-2.5 text-sm font-medium text-gray-300 transition-colors hover:bg-[#23262f] hover:text-white",
+        isActive && "bg-[#313236] text-[#03dac5] font-bold"
       )}
     >
       <Icon className="h-4 w-4" />
@@ -81,13 +94,13 @@ const NavLink = ({ href, icon: Icon, children, isMobile }: { href: string; icon:
   return <LinkContent />;
 };
 
-const NavGroup = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div>
-        <h3 className="mb-2 px-3 text-xs font-semibold uppercase text-gray-500 tracking-wider">
+const NavGroup = ({ title, items, isMobile }: { title: string; items: { name: string, href: string, icon: React.ElementType }[], isMobile?: boolean }) => (
+    <div className="sidebar-section mb-4">
+        <h3 className="sidebar-section-title px-5 py-2 text-xs font-bold uppercase text-gray-500 tracking-wider">
             {title}
         </h3>
         <div className="space-y-1">
-            {children}
+            {items.map(item => <NavLink key={item.href} href={item.href} icon={item.icon} isMobile={isMobile}>{item.name}</NavLink>)}
         </div>
     </div>
 );
@@ -95,33 +108,21 @@ const NavGroup = ({ title, children }: { title: string; children: React.ReactNod
 
 export const SidebarContent = ({ isMobile = false }) => {
   return (
-    <div className="flex h-full max-h-screen flex-col gap-2">
-      <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-        <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
-          <Logo className="h-8 w-8 text-primary" />
-          <span className="">F.Co</span>
+    <div className="flex h-full max-h-screen flex-col">
+      <div className="flex h-16 items-center border-b border-gray-700 px-6">
+        <Link href="/dashboard" className="flex items-center gap-3 font-semibold text-white">
+          <Logo className="h-8 w-8" />
+          <span className="text-lg">F.Co</span>
         </Link>
       </div>
-      <div className="flex-1 overflow-y-auto">
-        <nav className="grid items-start px-2 text-sm font-medium lg:px-4 space-y-4 py-4">
-          <NavGroup title="Analytics">
-             {mainNavLinks.map(link => <NavLink key={link.href} href={link.href} icon={link.icon} isMobile={isMobile}>{link.name}</NavLink>)}
-          </NavGroup>
-          <NavGroup title="Sales & Purchases">
-            {salesNavLinks.map(link => <NavLink key={link.href} href={link.href} icon={link.icon} isMobile={isMobile}>{link.name}</NavLink>)}
-          </NavGroup>
-           <NavGroup title="Management">
-            {managementNavLinks.map(link => <NavLink key={link.href} href={link.href} icon={link.icon} isMobile={isMobile}>{link.name}</NavLink>)}
-          </NavGroup>
-           <NavGroup title="Resources">
-            {resourcesNavLinks.map(link => <NavLink key={link.href} href={link.href} icon={link.icon} isMobile={isMobile}>{link.name}</NavLink>)}
-          </NavGroup>
-           <NavGroup title="Configuration">
-            {settingsNavLinks.map(link => <NavLink key={link.href} href={link.href} icon={link.icon} isMobile={isMobile}>{link.name}</NavLink>)}
-          </NavGroup>
+      <div className="flex-1 overflow-y-auto pt-4">
+        <nav className="grid items-start text-sm font-medium">
+          {sidebarSections.map((section) => (
+            <NavGroup key={section.title} title={section.title} items={section.items} isMobile={isMobile} />
+          ))}
         </nav>
       </div>
-       <div className="mt-auto p-4 border-t">
+       <div className="mt-auto p-4 border-t border-gray-700">
           <h3 className="mb-2 px-3 text-xs font-semibold uppercase text-gray-500 tracking-wider">
             Quick Contact
           </h3>
@@ -137,7 +138,7 @@ export const SidebarContent = ({ isMobile = false }) => {
 
 export default function Sidebar() {
   return (
-    <aside className="hidden border-r bg-muted/40 md:block w-[280px]">
+    <aside className="hidden md:block w-[260px] bg-[#181a1b] text-[#fafafa] border-r border-[#24262e]">
         <SidebarContent />
     </aside>
   );
