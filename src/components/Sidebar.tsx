@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "./logo";
+import { SheetClose } from "@/components/ui/sheet";
 
 const sidebarSections = [
     {
@@ -78,24 +79,29 @@ export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
     const isActive = pathname === href;
     const linkHref = params ? `${href}?tab=${params}` : href;
 
-    return (
-      <Link
+    const linkContent = (
+       <Link
         href={linkHref}
         className={cn(
-          "flex items-center gap-3 rounded-lg px-3 py-2 text-gray-400 transition-all hover:bg-gray-700 hover:text-white",
-          isActive && "bg-gray-700 text-white"
+          "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+          isActive && "bg-muted text-primary"
         )}
       >
         <Icon className="h-4 w-4" />
         {name}
       </Link>
     );
+
+    if (isMobile) {
+      return <SheetClose asChild>{linkContent}</SheetClose>
+    }
+    return linkContent;
   };
 
   return (
     <div className="flex h-full max-h-screen flex-col gap-2">
       <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-        <Link href="/" className="flex items-center gap-2 font-semibold text-white">
+        <Link href="/" className="flex items-center gap-2 font-semibold">
           <Logo className="h-8 w-8" />
           <span>SwiftSale</span>
         </Link>
@@ -104,7 +110,7 @@ export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
         <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
           {sidebarSections.map((section, sectionIndex) => (
             <div key={sectionIndex} className="py-2">
-              <h3 className="mb-2 px-4 text-xs font-semibold uppercase tracking-wider text-gray-500">
+              <h3 className="mb-2 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 {section.title}
               </h3>
               <div className="grid grid-flow-row auto-rows-max text-sm">
@@ -123,7 +129,7 @@ export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
 
 export default function Sidebar() {
     return (
-        <div className="hidden border-r bg-gray-800/40 md:block">
+        <div className="hidden border-r bg-muted/40 md:block">
             <SidebarContent />
         </div>
     )
