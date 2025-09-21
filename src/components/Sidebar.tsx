@@ -6,27 +6,24 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutGrid,
-  ShoppingCart,
+  FileText,
+  BookCopy,
   List,
   Globe,
   Package,
-  FileText,
   HandCoins,
   Snowflake,
-  BookCopy,
   BookOpen,
   Apple,
   FlaskConical,
   Boxes,
   History,
   Phone,
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-  Button
+  Settings,
 } from 'lucide-react';
 import { Logo } from './logo';
 import { cn } from '@/lib/utils';
+import { Sheet } from './ui/sheet';
 
 
 const mainNavLinks = [
@@ -53,6 +50,10 @@ const resourcesNavLinks = [
   { name: 'Fertilizers & Pesticides', href: '/fertilizers', icon: FlaskConical },
   { name: 'Accessories', href: '/accessories', icon: Boxes },
   { name: 'Activity Log', href: '/activity-log', icon: History },
+];
+
+const settingsNavLinks = [
+    { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
 
@@ -96,8 +97,8 @@ export const SidebarContent = ({ isMobile = false }) => {
           <span className="">F.Co</span>
         </Link>
       </div>
-      <div className="flex-1">
-        <nav className="grid items-start px-2 text-sm font-medium lg:px-4 space-y-4">
+      <div className="flex-1 overflow-y-auto">
+        <nav className="grid items-start px-2 text-sm font-medium lg:px-4 space-y-4 py-4">
           <NavGroup title="Analytics">
              {mainNavLinks.map(link => <NavLink key={link.href} href={link.href} icon={link.icon}>{link.name}</NavLink>)}
           </NavGroup>
@@ -109,6 +110,9 @@ export const SidebarContent = ({ isMobile = false }) => {
           </NavGroup>
            <NavGroup title="Resources">
             {resourcesNavLinks.map(link => <NavLink key={link.href} href={link.href} icon={link.icon}>{link.name}</NavLink>)}
+          </NavGroup>
+           <NavGroup title="Configuration">
+            {settingsNavLinks.map(link => <NavLink key={link.href} href={link.href} icon={link.icon}>{link.name}</NavLink>)}
           </NavGroup>
         </nav>
       </div>
