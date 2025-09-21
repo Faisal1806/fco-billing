@@ -1,32 +1,134 @@
-// src/components/Sidebar.tsx
-import Link from "next/link";
 
-const links = [
-  { name: "Dashboard", href: "/dashboard" },
-  { name: "Invoices", href: "/invoices" },
-  { name: "Purchases", href: "/purchases" },
-  { name: "Sales", href: "/sales" },
-  { name: "Khata Ledger", href: "/khata" },
-  { name: "Market Rates", href: "/market" },
-  { name: "Supplies", href: "/supplies" },
-  { name: "Settings", href: "/settings" },
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import {
+  LayoutGrid,
+  ShoppingCart,
+  List,
+  Globe,
+  Package,
+  FileText,
+  HandCoins,
+  Snowflake,
+  BookCopy,
+  BookOpen,
+  Apple,
+  FlaskConical,
+  Boxes,
+  History,
+  Phone,
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  Button
+} from 'lucide-react';
+import { Logo } from './logo';
+import { cn } from '@/lib/utils';
+
+
+const mainNavLinks = [
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutGrid },
 ];
+
+const salesNavLinks = [
+    { name: 'Sales Invoices', href: '/sales', icon: FileText },
+    { name: 'Watak Register', href: '/watak-register', icon: BookCopy },
+    { name: 'Purchase Register', href: '/purchase-register', icon: List },
+    { name: 'Outside Sales', href: '/outside-sales', icon: Globe },
+];
+
+const managementNavLinks = [
+  { name: 'Products', href: '/products', icon: Package },
+  { name: 'Expenses', href: '/expenses', icon: FileText },
+  { name: 'Advances', href: '/advances', icon: HandCoins },
+  { name: 'Cold Storage', href: '/cold-storage', icon: Snowflake },
+  { name: 'Khata Ledger', href: '/khata', icon: BookOpen },
+];
+
+const resourcesNavLinks = [
+  { name: 'Fruit Rates', href: '/rates', icon: Apple },
+  { name: 'Fertilizers & Pesticides', href: '/fertilizers', icon: FlaskConical },
+  { name: 'Accessories', href: '/accessories', icon: Boxes },
+  { name: 'Activity Log', href: '/activity-log', icon: History },
+];
+
+
+const NavLink = ({ href, icon: Icon, children }: { href: string; icon: React.ElementType; children: React.ReactNode }) => {
+  const pathname = usePathname();
+  const isActive = pathname === href;
+
+  return (
+    <Link
+      href={href}
+      className={cn(
+        'flex items-center gap-3 rounded-lg px-3 py-2 text-gray-400 transition-all hover:text-gray-50',
+        isActive && 'bg-gray-700 text-white'
+      )}
+    >
+      <Icon className="h-4 w-4" />
+      {children}
+    </Link>
+  );
+};
+
+const NavGroup = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <div>
+        <h3 className="mb-2 px-3 text-xs font-semibold uppercase text-gray-500 tracking-wider">
+            {title}
+        </h3>
+        <div className="space-y-1">
+            {children}
+        </div>
+    </div>
+);
+
+
+export const SidebarContent = ({ isMobile = false }) => {
+  const SheetCloseOrFragment = isMobile ? Sheet : React.Fragment;
+  return (
+    <div className="flex h-full max-h-screen flex-col gap-2">
+      <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+        <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
+          <Logo className="h-8 w-8 text-primary" />
+          <span className="">F.Co</span>
+        </Link>
+      </div>
+      <div className="flex-1">
+        <nav className="grid items-start px-2 text-sm font-medium lg:px-4 space-y-4">
+          <NavGroup title="Analytics">
+             {mainNavLinks.map(link => <NavLink key={link.href} href={link.href} icon={link.icon}>{link.name}</NavLink>)}
+          </NavGroup>
+          <NavGroup title="Sales & Purchases">
+            {salesNavLinks.map(link => <NavLink key={link.href} href={link.href} icon={link.icon}>{link.name}</NavLink>)}
+          </NavGroup>
+           <NavGroup title="Management">
+            {managementNavLinks.map(link => <NavLink key={link.href} href={link.href} icon={link.icon}>{link.name}</NavLink>)}
+          </NavGroup>
+           <NavGroup title="Resources">
+            {resourcesNavLinks.map(link => <NavLink key={link.href} href={link.href} icon={link.icon}>{link.name}</NavLink>)}
+          </NavGroup>
+        </nav>
+      </div>
+       <div className="mt-auto p-4 border-t">
+          <h3 className="mb-2 px-3 text-xs font-semibold uppercase text-gray-500 tracking-wider">
+            Quick Contact
+          </h3>
+          <div className="px-3 text-gray-400">
+            <p className="text-sm flex items-center gap-2"><Phone className="h-4 w-4"/> 7006136330</p>
+            <p className="text-xs">Apple Town, Sopore</p>
+          </div>
+      </div>
+    </div>
+  )
+};
+
 
 export default function Sidebar() {
   return (
-    <aside className="w-64 bg-gray-800 text-gray-200 flex flex-col p-4">
-      <div className="text-2xl font-bold mb-6">F.Co</div>
-      <nav className="space-y-2">
-        {links.map((link) => (
-          <Link
-            key={link.name}
-            href={link.href}
-            className="block rounded-md px-3 py-2 hover:bg-gray-700"
-          >
-            {link.name}
-          </Link>
-        ))}
-      </nav>
+    <aside className="hidden border-r bg-muted/40 md:block w-[280px]">
+        <SidebarContent />
     </aside>
   );
 }
