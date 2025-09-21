@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Package, UserCheck, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, History, BookOpen, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Hash, ShoppingCart, Globe, DollarSign, Banknote, Snowflake, Cog } from 'lucide-react';
+import { Loader2, Package, UserCheck, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, History, BookOpen, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Hash, ShoppingCart, Globe, DollarSign, Banknote, Snowflake, Cog, CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import RateList from '@/components/RateList';
@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 interface DailyStats {
@@ -117,6 +119,54 @@ const StatCard = ({ title, value, icon: Icon, note, iconBgColor }: { title: stri
     </Card>
 );
 
+const FeaturesDialog = () => {
+    const features = [
+        { name: "Sales Invoices (Watak)", description: "Create, manage, and print sales invoices with automatic expense calculations.", icon: FileText },
+        { name: "Purchase Register", description: "Record purchases from growers and manage bills for items bought at the mandi.", icon: ShoppingCart },
+        { name: "Khata Ledger", description: "Comprehensive ledger for tracking receivables from customers and payables to growers.", icon: BookOpen },
+        { name: "Outside Sales (Bikri)", description: "Manage sales to outside markets, linking them to challans and calculating profit/loss.", icon: Globe },
+        { name: "Delivery Notes (Challan)", description: "Generate and print delivery notes for goods being transported.", icon: FileText },
+        { name: "Goods Receipts", description: "Record goods received from growers before they are sold.", icon: FileText },
+        { name: "Pesticide & Fertilizer Sales", description: "A dedicated module for creating bills for pesticides, fertilizers, and other farm inputs.", icon: FlaskConical },
+        { name: "Advances & Loans", description: "Track advances given to growers and repayments received from them.", icon: Banknote },
+        { name: "Expense Tracking", description: "Monitor both automatic expenses from sales and manual company expenses like rent.", icon: DollarSign },
+        { name: "Inventory Management", description: "Manage stock levels for fruits, accessories, and other products with reorder alerts.", icon: Package },
+        { name-g: "Cold Storage Register", description: "Track stock placed in cold storage, including inward and outward movements.", icon: Snowflake },
+        { name: "Rate Lists", description: "View automatically generated rate lists from your sales and live official mandi rates.", icon: TrendingUp },
+        { name: "Customer Portal", description: "A secure portal for customers to view their own ledger history.", icon: UserCheck },
+        { name: "Data Portability", description: "Export your data to PDF and Excel from almost any register for backup and analysis.", icon: FileDown },
+        { name: "Customization", description: "Change invoice styles and themes to match your branding.", icon: Cog },
+    ];
+    return (
+    <Dialog>
+        <DialogTrigger asChild>
+            <Button variant="outline" className="w-full">View App Features</Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+                <DialogTitle>Application Features</DialogTitle>
+                <CardDescription>A complete overview of the modules available in your SwiftSale application.</CardDescription>
+            </DialogHeader>
+            <ScrollArea className="h-96 pr-4">
+            <div className="space-y-4">
+                {features.map(feature => (
+                    <div key={feature.name} className="flex items-start gap-4">
+                         <div className="p-2 bg-muted rounded-full mt-1">
+                           <feature.icon className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                            <h4 className="font-semibold">{feature.name}</h4>
+                            <p className="text-sm text-muted-foreground">{feature.description}</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+            </ScrollArea>
+        </DialogContent>
+    </Dialog>
+    )
+}
+
 const FruitDashboard = ({ stats, yearlyStats, accessoryStats, growerProfits, router }: { stats: DailyStats | null, yearlyStats: YearlyStats | null, accessoryStats: AccessoryStats | null, growerProfits: GrowerProfit[], router: any }) => (
     <div className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -198,39 +248,50 @@ const FruitDashboard = ({ stats, yearlyStats, accessoryStats, growerProfits, rou
                      />
                 </div>
             </div>
-             <Card className="lg:col-span-1 shadow-lg">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Trophy className="h-6 w-6 text-amber-500" /> Top Growers by Profit</CardTitle>
-                    <CardDescription>This session's top growers based on total net sales.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {growerProfits.length > 0 ? (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Grower</TableHead>
-                                    <TableHead className="text-right">Net Sales</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {growerProfits.map((grower, index) => (
-                                    <TableRow key={grower.name}>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                <span className={`text-lg font-bold ${index < 3 ? 'text-amber-500' : 'text-muted-foreground'}`}>{index + 1}</span>
-                                                <span className="font-medium">{grower.name}</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-right font-mono">₹{grower.profit.toLocaleString('en-IN')}</TableCell>
+             <div className="lg:col-span-1 space-y-6">
+                <Card className="shadow-lg">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Trophy className="h-6 w-6 text-amber-500" /> Top Growers by Profit</CardTitle>
+                        <CardDescription>This session's top growers based on total net sales.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {growerProfits.length > 0 ? (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Grower</TableHead>
+                                        <TableHead className="text-right">Net Sales</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    ) : (
-                         <p className="text-sm text-muted-foreground text-center py-4">No sales data recorded this year to calculate grower profits.</p>
-                    )}
-                </CardContent>
-            </Card>
+                                </TableHeader>
+                                <TableBody>
+                                    {growerProfits.map((grower, index) => (
+                                        <TableRow key={grower.name}>
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`text-lg font-bold ${index < 3 ? 'text-amber-500' : 'text-muted-foreground'}`}>{index + 1}</span>
+                                                    <span className="font-medium">{grower.name}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-right font-mono">₹{grower.profit.toLocaleString('en-IN')}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        ) : (
+                             <p className="text-sm text-muted-foreground text-center py-4">No sales data recorded this year to calculate grower profits.</p>
+                        )}
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>App Features</CardTitle>
+                        <CardDescription>Click to see what this app can do.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <FeaturesDialog />
+                    </CardContent>
+                </Card>
+            </div>
         </div>
 
         <div className="mt-6">
@@ -565,7 +626,3 @@ export default function DashboardPage() {
     </Tabs>
   );
 }
-
-    
-
-    
