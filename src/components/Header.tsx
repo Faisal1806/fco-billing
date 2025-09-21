@@ -39,7 +39,7 @@ export function Header({ title }: { title: string }) {
 
     const navItems = [
       { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-      { href: '/sales', icon: ShoppingCart, label: 'Invoices' },
+      { href: '/sales', icon: ShoppingCart, label: 'Sales' },
       { href: '/purchases', icon: Package, label: 'Purchases' },
       { href: '/purchase-register', icon: BookCopy, label: 'Purchase Register' },
       { href: '/outside-sales', icon: Globe, label: 'Outside Sales' },
@@ -47,11 +47,11 @@ export function Header({ title }: { title: string }) {
       { href: '/expenses', icon: Receipt, label: 'Expenses' },
       { href: '/advances', icon: Banknote, label: 'Advances' },
       { href: '/cold-storage', icon: Snowflake, label: 'Cold Storage' },
-      { href: '/watak-register', icon: BookCopy, label: 'Sales Register' },
+      { href: '/watak-register', icon: BookCopy, label: 'Watak Register' },
       { href: '/khata', icon: BookCopy, label: 'Khata Ledger' },
-      { href: '/rates', icon: Tags, label: 'Market Rates' },
+      { href: '/rates', icon: Tags, label: 'Fruit Rates' },
       { href: '/fertilizers', icon: FlaskConical, label: 'Fertilizers & Pesticides' },
-      { href: '/accessories', icon: Shapes, label: 'Supplies' },
+      { href: '/accessories', icon: Shapes, label: 'Accessories' },
       { href: '/activity-log', icon: History, label: 'Activity Log' },
     ];
 
@@ -102,14 +102,13 @@ export function Header({ title }: { title: string }) {
             </div>
             <div className="mt-auto p-4 border-t">
                 <div className="px-4 mb-4">
-                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Quick Contact</h3>
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">QUICK CONTACT</h3>
                     <div className="space-y-2 text-sm">
                         <a href="tel:7006136330" className="flex items-center gap-3 text-muted-foreground hover:text-primary">
                             <Phone className="h-4 w-4" />
                             <span>7006136330</span>
                         </a>
                         <p className="text-xs text-muted-foreground">Apple Town, Sopore</p>
-                        <p className="text-xs font-semibold text-primary">Fruit Mandi Operations</p>
                     </div>
                 </div>
                 <div className="border-t pt-4">
@@ -154,7 +153,6 @@ export function Header({ title }: { title: string }) {
         <h1 className="text-xl font-bold">{title}</h1>
       </div>
       <div className="flex items-center gap-2">
-        <LanguageSwitcher />
         <ThemeSwitcher />
         <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2">
             <LogOut className="h-4 w-4" />

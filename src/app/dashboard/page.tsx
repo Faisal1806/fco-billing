@@ -147,21 +147,7 @@ const FruitDashboard = ({ stats, yearlyStats, accessoryStats, growerProfits, rou
                         note={`From ${stats?.pattiSold ?? 0} Patti / ${stats?.dabbaSold ?? 0} Dabba`}
                         iconBgColor="bg-green-500"
                      />
-                      <StatCard 
-                        title="Invoices Created Today"
-                        value={stats?.wataksToday.toString() ?? '0'}
-                        icon={BookCopy}
-                        note="Total invoices generated today"
-                        iconBgColor="bg-purple-500"
-                     />
                     <StatCard 
-                        title="Outstanding Credit (Khata)"
-                        value={`₹${accessoryStats?.outstandingCredit.toLocaleString('en-IN') ?? '0'}`}
-                        icon={CreditCard}
-                        note="From Supplies/Cashbook"
-                        iconBgColor="bg-orange-500"
-                    />
-                     <StatCard 
                         title="This Month's Sales (Net)"
                         value={`₹${yearlyStats?.monthSales.toLocaleString('en-IN') ?? '0'}`}
                         icon={Calendar}
@@ -222,7 +208,7 @@ const FruitDashboard = ({ stats, yearlyStats, accessoryStats, growerProfits, rou
                 <div>
                     <h3 className="text-xl font-semibold mb-4">Quick Actions</h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <QuickActionButton title="New Invoice" icon={BookCopy} onClick={() => router.push('/sales')} className="bg-green-600 hover:bg-green-700" />
+                        <QuickActionButton title="New Watak" icon={BookCopy} onClick={() => router.push('/sales')} className="bg-green-600 hover:bg-green-700" />
                         <QuickActionButton title="Add Customer" icon={UserCheck} onClick={() => router.push('/khata')} className="bg-blue-600 hover:bg-blue-700" />
                         <QuickActionButton title="Add Product" icon={PlusCircle} onClick={() => router.push('/products')} className="bg-purple-600 hover:bg-purple-700" />
                         <QuickActionButton title="Record Expense" icon={FileText} onClick={() => router.push('/expenses')} className="bg-orange-600 hover:bg-orange-700" />
@@ -265,7 +251,7 @@ const FruitDashboard = ({ stats, yearlyStats, accessoryStats, growerProfits, rou
         </div>
 
         <div className="mt-6">
-            <h3 className="text-xl font-semibold mb-4">Recent Invoices</h3>
+            <h3 className="text-xl font-semibold mb-4">Recent Wataks</h3>
             <RateList />
         </div>
     </div>
@@ -581,7 +567,7 @@ export default function DashboardPage() {
     <Tabs defaultValue="fruit" className="space-y-4">
         <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="fruit"><Apple className="w-4 h-4 mr-2" />Fruit Business</TabsTrigger>
-            <TabsTrigger value="accessories"><Box className="w-4 h-4 mr-2" />Supplies</TabsTrigger>
+            <TabsTrigger value="accessories"><Box className="w-4 h-4 mr-2" />Accessories</TabsTrigger>
             <TabsTrigger value="inventory"><Package className="w-4 h-4 mr-2" />Inventory</TabsTrigger>
         </TabsList>
         <TabsContent value="fruit">
