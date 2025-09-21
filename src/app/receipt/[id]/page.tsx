@@ -234,9 +234,6 @@ export default function PaymentPage({ params }: { params: { id: string } }) {
                     </div>
                 </main>
                 <footer className="flex justify-between items-end p-4 mt-auto text-xs print:pt-2">
-                    <div className="print:hidden w-full max-w-xs space-y-4">
-                        <Controls />
-                    </div>
                      <div className="text-center">
                         <p className="font-signature text-2xl text-gray-700 dark:text-gray-300">Faisal</p>
                         <p className="font-bold">Sign. Of Manager</p>
