@@ -135,6 +135,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (pathname.startsWith('/receipt/')) return 'Payment';
     if (pathname.startsWith('/challan/')) return 'Delivery Note';
     if (pathname.startsWith('/pesticide-invoice/')) return 'Pesticide Bill';
+    if (pathname.startsWith('/bikri-bill/')) return 'Bikri Bill';
     
     const item = navItems.find(item => pathname.startsWith(item.href));
     return item ? item.label : 'SwiftSale';
@@ -155,7 +156,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
       <div className="flex flex-col">
         <Header title={getPageTitle()} />
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-muted/40">
           {children}
         </main>
       </div>

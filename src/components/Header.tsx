@@ -55,6 +55,86 @@ export function Header({ title }: { title: string }) {
       { href: '/activity-log', icon: History, label: 'Activity Log' },
     ];
 
+    const NavLinks = ({ isMobile }: { isMobile: boolean }) => {
+        const pathname = usePathname();
+        const Wrapper = isMobile ? SheetClose : React.Fragment;
+
+        return (
+            <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+            {navItems.map((item) => {
+                const link = (
+                <Link
+                    href={item.href}
+                    className={cn(
+                        'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted',
+                        pathname.startsWith(item.href) && 'bg-muted text-primary'
+                    )}
+                    >
+                    <item.icon className="h-4 w-4" />
+                    {item.label}
+                    </Link>
+                );
+                return isMobile ? <Wrapper asChild key={item.label}>{link}</Wrapper> : <React.Fragment key={item.label}>{link}</React.Fragment>;
+            })}
+            </nav>
+        );
+    };
+
+    const NavContent = ({ isMobile }: { isMobile: boolean }) => {
+        const pathname = usePathname();
+        const SettingsLinkWrapper = isMobile ? SheetClose : React.Fragment;
+        return (
+        <div className="flex h-full max-h-screen flex-col gap-2">
+            <div className="flex h-24 items-center border-b px-4 lg:px-6">
+                <Link href="/" className="flex items-center gap-4 font-semibold text-foreground">
+                    <div className="bg-primary/90 p-3 rounded-lg shadow-md">
+                        <Logo className="h-8 w-8 text-white" />
+                    </div>
+                    <div>
+                        <h1 className="text-xl font-bold">F.Co</h1>
+                        <p className="text-xs text-muted-foreground">FIRDOUS AHMAD & COMPANY</p>
+                        <p className="text-sm font-semibold text-primary/90">Sopore, Kashmir</p>
+                    </div>
+                </Link>
+            </div>
+            <div className="flex-1 overflow-auto py-2">
+                <NavLinks isMobile={isMobile} />
+            </div>
+            <div className="mt-auto p-4 border-t">
+                <div className="px-4 mb-4">
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Quick Contact</h3>
+                    <div className="space-y-2 text-sm">
+                        <a href="tel:7006136330" className="flex items-center gap-3 text-muted-foreground hover:text-primary">
+                            <Phone className="h-4 w-4" />
+                            <span>7006136330</span>
+                        </a>
+                        <p className="text-xs text-muted-foreground">Apple Town, Sopore</p>
+                        <p className="text-xs font-semibold text-primary">Fruit Mandi Operations</p>
+                    </div>
+                </div>
+                <div className="border-t pt-4">
+                    <SettingsLinkWrapper {...(isMobile ? {asChild: true} : {})}>
+                        <Link
+                            href="/settings"
+                            className={cn(
+                                'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted',
+                                pathname.startsWith('/settings') && 'bg-muted text-primary'
+                            )}
+                            >
+                            <Settings className="h-4 w-4" />
+                            Settings
+                        </Link>
+                    </SettingsLinkWrapper>
+                </div>
+                <div className="text-center text-xs text-muted-foreground mt-4">
+                    <p>© 2025 F.Co</p>
+                    <p>Firdous Ahmad & Company</p>
+                </div>
+            </div>
+        </div>
+        )
+    };
+
 
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6 sticky top-0 z-40">
@@ -66,65 +146,7 @@ export function Header({ title }: { title: string }) {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col p-0 w-[280px]">
-              <div className="flex h-24 items-center border-b px-4 lg:px-6">
-                <Link href="/" className="flex items-center gap-4 font-semibold text-foreground">
-                  <div className="bg-primary/90 p-3 rounded-lg shadow-md">
-                    <Logo className="h-8 w-8 text-white" />
-                  </div>
-                  <div>
-                    <h1 className="text-xl font-bold">F.Co</h1>
-                    <p className="text-xs text-muted-foreground">FIRDOUS AHMAD & COMPANY</p>
-                    <p className="text-sm font-semibold text-primary/90">Sopore, Kashmir</p>
-                  </div>
-                </Link>
-              </div>
-              <nav className="grid gap-2 text-base font-medium p-4">
-                {navItems.map((item) => (
-                  <SheetClose asChild key={item.label}>
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted',
-                        pathname.startsWith(item.href) && 'bg-muted text-primary'
-                      )}
-                    >
-                      <item.icon className="h-5 w-5" />
-                      {item.label}
-                    </Link>
-                  </SheetClose>
-                ))}
-              </nav>
-               <div className="mt-auto border-t p-4">
-                <div className="px-4 mb-4">
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Quick Contact</h3>
-                  <div className="space-y-2 text-sm">
-                    <a href="tel:7006136330" className="flex items-center gap-3 text-muted-foreground hover:text-primary">
-                      <Phone className="h-4 w-4" />
-                      <span>7006136330</span>
-                    </a>
-                    <p className="text-xs text-muted-foreground">Apple Town, Sopore</p>
-                    <p className="text-xs font-semibold text-primary">Fruit Mandi Operations</p>
-                  </div>
-                </div>
-                <div className="border-t pt-4">
-                   <SheetClose asChild>
-                      <Link
-                          href="/settings"
-                          className={cn(
-                              'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted',
-                              pathname.startsWith('/settings') && 'bg-muted text-primary'
-                          )}
-                          >
-                          <Settings className="h-5 w-5" />
-                          Settings
-                      </Link>
-                    </SheetClose>
-                </div>
-                <div className="text-center text-xs text-muted-foreground mt-4">
-                    <p>© 2025 F.Co</p>
-                    <p>Firdous Ahmad & Company</p>
-              </div>
-              </div>
+              <NavContent isMobile={true} />
             </SheetContent>
         </Sheet>
 
