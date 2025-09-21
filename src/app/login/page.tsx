@@ -16,7 +16,6 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'admin' | 'staff'>('staff');
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -28,25 +27,21 @@ export default function LoginPage() {
   }, [router]);
 
   const handleLogin = () => {
-    // In a real app, you'd have a more secure password check.
-    // For this prototype, 'admin' is the password for the admin role.
-    const isAdmin = role === 'admin' && password === 'admin';
-    const isStaff = role === 'staff';
-
-    if (isAdmin || isStaff) {
+    if (password === 'Faisal1806') {
       if (typeof window !== 'undefined') {
-        localStorage.setItem('userRole', role);
+        // Set role to admin upon successful login
+        localStorage.setItem('userRole', 'admin');
       }
       toast({
         title: 'Login Successful',
-        description: `Welcome, ${role}!`,
+        description: 'Welcome back!',
       });
       router.push('/dashboard');
     } else {
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: 'Incorrect password for admin role.',
+        description: 'Incorrect password. Please try again.',
       });
     }
   };
@@ -89,33 +84,23 @@ export default function LoginPage() {
              <div className="mx-auto bg-primary text-primary-foreground p-3 rounded-full w-fit mb-2">
                <ShieldCheck className="h-6 w-6" />
             </div>
-            <CardTitle className="text-center">Staff & Admin Login</CardTitle>
-            <CardDescription className="text-center">Select your role and enter the password to access the dashboard.</CardDescription>
+            <CardTitle className="text-center">Admin Login</CardTitle>
+            <CardDescription className="text-center">Enter the password to access the dashboard.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-2">
-                <Button variant={role === 'staff' ? 'default' : 'outline'} onClick={() => setRole('staff')}>Staff</Button>
-                <Button variant={role === 'admin' ? 'default' : 'outline'} onClick={() => setRole('admin')}>Admin</Button>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
+                  <KeyRound className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input id="password" type="password" placeholder="Enter password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyPress={handleKeyPress} className="pl-8" />
+              </div>
             </div>
-            {role === 'admin' && (
-              <motion.div
-                 initial={{ opacity: 0, height: 0 }}
-                 animate={{ opacity: 1, height: 'auto' }}
-                 className="space-y-2 overflow-hidden"
-              >
-                <Label htmlFor="password">Admin Password</Label>
-                <div className="relative">
-                    <KeyRound className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input id="password" type="password" placeholder="Enter admin password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyPress={handleKeyPress} className="pl-8" />
-                </div>
-              </motion.div>
-            )}
             <Button onClick={handleLogin} className="w-full">
-              Login as {role.charAt(0).toUpperCase() + role.slice(1)}
+              Login
             </Button>
           </CardContent>
            <CardFooter className="text-xs text-muted-foreground text-center flex-col">
-                <p>This is a local login for device access. Customer portal has a separate login.</p>
+                <p>This is a local login for device access.</p>
                 <Button variant="link" size="sm" onClick={() => router.push('/portal/login')}>Go to Customer Portal</Button>
             </CardFooter>
         </Card>
