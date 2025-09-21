@@ -10,7 +10,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { 
-    LayoutDashboard, Settings, Receipt, BookCopy, Menu, Package, BarChart3, Users, Tags, FlaskConical, Phone, ShoppingCart, Globe, Banknote, Snowflake, Shapes, History, Hash 
+    LayoutDashboard, Settings, Receipt, BookCopy, Menu, Package, BarChart3, Users, Tags, FlaskConical, Phone, ShoppingCart, Globe, Banknote, Snowflake, Shapes, History, Hash, LogOut 
 } from 'lucide-react';
 import { Logo } from "./logo";
 import React from "react";
@@ -60,7 +60,7 @@ export function Header({ title }: { title: string }) {
     <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6 sticky top-0 z-40">
        <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="shrink-0">
+              <Button variant="outline" size="icon" className="shrink-0 md:hidden">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Toggle navigation menu</span>
               </Button>
@@ -131,8 +131,14 @@ export function Header({ title }: { title: string }) {
       <div className="w-full flex-1">
         <h1 className="text-xl font-bold">{title}</h1>
       </div>
-      <LanguageSwitcher />
-      <ThemeSwitcher />
+      <div className="flex items-center gap-2">
+        <LanguageSwitcher />
+        <ThemeSwitcher />
+        <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2">
+            <LogOut className="h-4 w-4" />
+            <span className="hidden sm:inline">Logout</span>
+        </Button>
+      </div>
     </header>
   );
 }

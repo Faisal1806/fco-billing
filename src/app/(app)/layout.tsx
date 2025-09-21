@@ -15,7 +15,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 
-
 const navItems = [
     { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { href: '/sales', icon: ShoppingCart, label: 'Invoices' },
@@ -59,11 +58,64 @@ const NavLinks = ({ isMobile }: { isMobile: boolean }) => {
   );
 };
 
+const NavContent = ({ isMobile }: { isMobile: boolean }) => {
+    const pathname = usePathname();
+    const SettingsLinkWrapper = isMobile ? SheetClose : React.Fragment;
+    return (
+      <div className="flex h-full max-h-screen flex-col gap-2">
+          <div className="flex h-24 items-center border-b px-4 lg:px-6">
+              <Link href="/" className="flex items-center gap-4 font-semibold text-foreground">
+                  <div className="bg-primary/90 p-3 rounded-lg shadow-md">
+                      <Logo className="h-8 w-8 text-white" />
+                  </div>
+                  <div>
+                      <h1 className="text-xl font-bold">F.Co</h1>
+                      <p className="text-xs text-muted-foreground">FIRDOUS AHMAD & COMPANY</p>
+                      <p className="text-sm font-semibold text-primary/90">Sopore, Kashmir</p>
+                  </div>
+              </Link>
+          </div>
+          <div className="flex-1 overflow-auto py-2">
+              <NavLinks isMobile={isMobile} />
+          </div>
+          <div className="mt-auto p-4 border-t">
+              <div className="px-4 mb-4">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Quick Contact</h3>
+                  <div className="space-y-2 text-sm">
+                      <a href="tel:7006136330" className="flex items-center gap-3 text-muted-foreground hover:text-primary">
+                          <Phone className="h-4 w-4" />
+                          <span>7006136330</span>
+                      </a>
+                      <p className="text-xs text-muted-foreground">Apple Town, Sopore</p>
+                      <p className="text-xs font-semibold text-primary">Fruit Mandi Operations</p>
+                  </div>
+              </div>
+              <div className="border-t pt-4">
+                   <SettingsLinkWrapper {...(isMobile ? {asChild: true} : {})}>
+                      <Link
+                          href="/settings"
+                          className={cn(
+                              'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted',
+                              pathname.startsWith('/settings') && 'bg-muted text-primary'
+                          )}
+                          >
+                          <Settings className="h-4 w-4" />
+                          Settings
+                      </Link>
+                  </SettingsLinkWrapper>
+              </div>
+              <div className="text-center text-xs text-muted-foreground mt-4">
+                  <p>© 2025 F.Co</p>
+                  <p>Firdous Ahmad & Company</p>
+              </div>
+          </div>
+      </div>
+  )
+};
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { toast } = useToast();
   const [userRole, setUserRole] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -78,7 +130,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [router]);
   
   const getPageTitle = () => {
-    // A simple way to derive title for sub-pages like /invoice/[id]
     if (pathname.startsWith('/invoice/')) return 'Invoice';
     if (pathname.startsWith('/purchase-bill/')) return 'Purchase Bill';
     if (pathname.startsWith('/receipt/')) return 'Payment';
@@ -89,60 +140,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return item ? item.label : 'SwiftSale';
   }
 
-  const NavContent = ({ isMobile }: { isMobile: boolean }) => {
-      const SettingsLinkWrapper = isMobile ? SheetClose : React.Fragment;
-      return (
-        <div className="flex h-full max-h-screen flex-col gap-2">
-            <div className="flex h-24 items-center border-b px-4 lg:px-6">
-                <Link href="/" className="flex items-center gap-4 font-semibold text-foreground">
-                    <div className="bg-primary/90 p-3 rounded-lg shadow-md">
-                        <Logo className="h-8 w-8 text-white" />
-                    </div>
-                    <div>
-                        <h1 className="text-xl font-bold">F.Co</h1>
-                        <p className="text-xs text-muted-foreground">FIRDOUS AHMAD & COMPANY</p>
-                        <p className="text-sm font-semibold text-primary/90">Sopore, Kashmir</p>
-                    </div>
-                </Link>
-            </div>
-            <div className="flex-1 overflow-auto py-2">
-                <NavLinks isMobile={isMobile} />
-            </div>
-            <div className="mt-auto p-4 border-t">
-                <div className="px-4 mb-4">
-                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Quick Contact</h3>
-                    <div className="space-y-2 text-sm">
-                        <a href="tel:7006136330" className="flex items-center gap-3 text-muted-foreground hover:text-primary">
-                            <Phone className="h-4 w-4" />
-                            <span>7006136330</span>
-                        </a>
-                        <p className="text-xs text-muted-foreground">Apple Town, Sopore</p>
-                        <p className="text-xs font-semibold text-primary">Fruit Mandi Operations</p>
-                    </div>
-                </div>
-                <div className="border-t pt-4">
-                     <SettingsLinkWrapper {...(isMobile ? {asChild: true} : {})}>
-                        <Link
-                            href="/settings"
-                            className={cn(
-                                'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted',
-                                pathname.startsWith('/settings') && 'bg-muted text-primary'
-                            )}
-                            >
-                            <Settings className="h-4 w-4" />
-                            Settings
-                        </Link>
-                    </SettingsLinkWrapper>
-                </div>
-                <div className="text-center text-xs text-muted-foreground mt-4">
-                    <p>© 2025 F.Co</p>
-                    <p>Firdous Ahmad & Company</p>
-                </div>
-            </div>
-        </div>
-    )
-  };
-
   if (!userRole) {
     return (
         <div className="min-h-screen flex items-center justify-center bg-background">
@@ -152,18 +149,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen w-full">
-       <Sheet>
-            <SheetContent side="left" className="flex flex-col p-0 w-[280px]">
-                <NavContent isMobile={true} />
-            </SheetContent>
-        </Sheet>
-      <div className="flex flex-col bg-muted/40">
+    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+      <div className="hidden border-r bg-background md:block">
+        <NavContent isMobile={false} />
+      </div>
+      <div className="flex flex-col">
         <Header title={getPageTitle()} />
-        <main className="flex-1 overflow-auto p-4 md:p-6">
-          <div className="max-w-7xl mx-auto">
-            {children}
-          </div>
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+          {children}
         </main>
       </div>
     </div>
