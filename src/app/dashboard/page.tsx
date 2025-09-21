@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Package, UserCheck, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, History, BookOpen, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Hash, ShoppingCart, Globe, DollarSign, Banknote, Snowflake, Cog, CheckCircle, FileDown, FileSpreadsheet, Settings, Users } from 'lucide-react';
+import { Loader2, Package, UserCheck, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, History, BookOpen, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Hash, ShoppingCart, Globe, DollarSign, Banknote, Snowflake, Cog, CheckCircle, FileDown, FileSpreadsheet, Settings, Users, Menu } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import RateList from '@/components/RateList';
@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 
@@ -280,9 +280,36 @@ const FruitDashboard = ({ stats, yearlyStats, accessoryStats, growerProfits, rou
             </div>
              <div className="lg:col-span-1 space-y-6">
                 <Card className="shadow-lg">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Trophy className="h-6 w-6 text-amber-500" /> Top Growers by Profit</CardTitle>
-                        <CardDescription>This session's top growers based on total net sales.</CardDescription>
+                    <CardHeader className="flex-row items-center justify-between">
+                        <div>
+                            <CardTitle className="flex items-center gap-2"><Trophy className="h-6 w-6 text-amber-500" /> Top Growers</CardTitle>
+                            <CardDescription>This session's top growers by net sales.</CardDescription>
+                        </div>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="icon">
+                                    <Menu className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                 {navSections.map((section, index) => (
+                                    <React.Fragment key={section.title}>
+                                        {index > 0 && <DropdownMenuSeparator />}
+                                        <DropdownMenuLabel>{section.title}</DropdownMenuLabel>
+                                        <DropdownMenuGroup>
+                                            {section.items.map(item => (
+                                                <Link href={item.href} passHref key={item.name}>
+                                                    <DropdownMenuItem>
+                                                        <item.icon className="mr-2 h-4 w-4" />
+                                                        <span>{item.name}</span>
+                                                    </DropdownMenuItem>
+                                                </Link>
+                                            ))}
+                                        </DropdownMenuGroup>
+                                    </React.Fragment>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </CardHeader>
                     <CardContent>
                         {growerProfits.length > 0 ? (
@@ -310,22 +337,6 @@ const FruitDashboard = ({ stats, yearlyStats, accessoryStats, growerProfits, rou
                         ) : (
                              <p className="text-sm text-muted-foreground text-center py-4">No sales data recorded this year to calculate grower profits.</p>
                         )}
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>App Navigation</CardTitle>
-                        <CardDescription>Quickly jump to any section of the application.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-2 gap-2">
-                         {navSections.flatMap(section => section.items).map((item) => (
-                            <Button key={item.name} variant="outline" className="justify-start gap-2" asChild>
-                               <Link href={item.href}>
-                                 <item.icon className="h-4 w-4" />
-                                 {item.name}
-                               </Link>
-                            </Button>
-                        ))}
                     </CardContent>
                 </Card>
             </div>
