@@ -3,13 +3,14 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Package, UserCheck, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, History, BookCopy, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Hash } from 'lucide-react';
+import { Loader2, Package, UserCheck, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, History, BookOpen, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Hash, ShoppingCart, Globe, DollarSign, Banknote, Snowflake, Cog } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import RateList from '@/components/RateList';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
 
 interface DailyStats {
@@ -116,11 +117,18 @@ const StatCard = ({ title, value, icon: Icon, note, iconBgColor }: { title: stri
     </Card>
 );
 
-const QuickActionButton = ({ title, icon: Icon, onClick, className }: { title: string, icon: React.ElementType, onClick: () => void, className?: string }) => (
-    <Button onClick={onClick} className={`flex items-center justify-center flex-col h-24 text-lg gap-2 shadow-md hover:shadow-lg transition-shadow ${className}`}>
-        <Icon className="h-6 w-6" />
-        {title}
-    </Button>
+const NavLink = ({ href, icon: Icon, title, description }: { href: string, icon: React.ElementType, title: string, description: string }) => (
+    <Link href={href} passHref>
+        <div className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted transition-colors cursor-pointer">
+            <div className="p-2 bg-primary/10 rounded-md">
+                <Icon className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+                <h4 className="font-semibold">{title}</h4>
+                <p className="text-sm text-muted-foreground">{description}</p>
+            </div>
+        </div>
+    </Link>
 );
 
 
@@ -205,15 +213,29 @@ const FruitDashboard = ({ stats, yearlyStats, accessoryStats, growerProfits, rou
                      />
                 </div>
                 
-                <div>
-                    <h3 className="text-xl font-semibold mb-4">Quick Actions</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <QuickActionButton title="New Watak" icon={BookCopy} onClick={() => router.push('/sales')} className="bg-green-600 hover:bg-green-700" />
-                        <QuickActionButton title="Add Customer" icon={UserCheck} onClick={() => router.push('/khata')} className="bg-blue-600 hover:bg-blue-700" />
-                        <QuickActionButton title="Add Product" icon={PlusCircle} onClick={() => router.push('/products')} className="bg-purple-600 hover:bg-purple-700" />
-                        <QuickActionButton title="Record Expense" icon={FileText} onClick={() => router.push('/expenses')} className="bg-orange-600 hover:bg-orange-700" />
-                    </div>
-                </div>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>App Navigation</CardTitle>
+                        <CardDescription>Access all sections of the application from here.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2">
+                        <NavLink href="/sales" icon={FileText} title="Sales Invoices" description="Create Wataks, Receipts, Challans" />
+                        <NavLink href="/watak-register" icon={BookOpen} title="Watak Register" description="View all sales invoices" />
+                        <NavLink href="/purchase-register" icon={ShoppingCart} title="Purchases" description="View all purchase records" />
+                        <NavLink href="/outside-sales" icon={Globe} title="Outside Sales (Bikris)" description="Calculate profit on outside sales" />
+                        <NavLink href="/products" icon={Package} title="Products" description="Manage inventory items" />
+                        <NavLink href="/expenses" icon={DollarSign} title="Expenses" description="Track all business expenses" />
+                        <NavLink href="/advances" icon={Banknote} title="Advances" description="Manage loans and repayments" />
+                        <NavLink href="/cold-storage" icon={Snowflake} title="Cold Storage" description="Track items in cold storage" />
+                        <NavLink href="/khata" icon={BookOpen} title="Khata Ledger" description="View party account balances" />
+                        <NavLink href="/rates" icon={TrendingUp} title="Fruit Rates" description="Check market rates" />
+                        <NavLink href="/fertilizers" icon={FlaskConical} title="Fertilizers/Pesticides" description="Manage chemical rates" />
+                        <NavLink href="/accessories" icon={Box} title="Accessories" description="Manage supply sales" />
+                        <NavLink href="/activity-log" icon={History} title="Activity Log" description="Monitor customer portal activity" />
+                        <NavLink href="/settings" icon={Cog} title="Settings" description="Configure app settings" />
+                    </CardContent>
+                </Card>
+
             </div>
              <Card className="lg:col-span-1 shadow-lg">
                 <CardHeader>
@@ -582,3 +604,5 @@ export default function DashboardPage() {
     </Tabs>
   );
 }
+
+    
