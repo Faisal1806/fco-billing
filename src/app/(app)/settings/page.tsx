@@ -1,468 +1,196 @@
-'use client'
+'use client';
 
-import * as React from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { 
+    LayoutDashboard, ShoppingCart, Package, Settings, Phone, BookCopy, Globe, Receipt,
+    Banknote, Snowflake, Tags, FlaskConical, Shapes, History, Hash, Menu, FileText, Truck
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Header } from '@/components/Header';
+import React from 'react';
+import { Logo } from '@/components/logo';
 import { useToast } from '@/hooks/use-toast';
-import { Paintbrush, Palette, CheckCircle, Upload, Type, Move, QrCode, SlidersHorizontal, List, Truck, User, Phone, Box, TreePine, Banknote, Percent, Package, Pencil, Building, Snowflake, Weight, Signature, Lock, MessageSquare, Hash, FileText, DownloadCloud, Rocket } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { CompanyInfoForm } from "@/components/profile-form";
-import { Factory, BellRing, CloudUpload } from 'lucide-react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { getClientMessaging } from '@/lib/firebase';
-import { saveDocument } from '@/lib/actions';
-import { getToken } from 'firebase/messaging';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import * as XLSX from 'xlsx';
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { Toaster } from '@/components/ui/toaster';
+import { LanguageProvider } from '@/contexts/language-context';
+import { ThemeProvider } from '@/components/theme-provider';
+import './print.css';
+import { Inter } from 'next/font/google';
 
+const inter = Inter({ subsets: ['latin'] });
 
-const InvoicePreview = ({ title, colors, logoPosition, qrPosition, font, footer, features, children }: {
-    title: string,
-    colors: string,
-    logoPosition: string,
-    qrPosition: string,
-    font: string,
-    footer: string,
-    features?: string[],
-    children: React.ReactNode,
-}) => (
-    <Card className="w-full h-full flex flex-col">
-        <CardHeader>
-            <CardTitle>{title}</CardTitle>
-            <CardDescription>{children}</CardDescription>
-        </CardHeader>
-        <CardContent className="flex-grow">
-            <div className={`relative w-full h-48 rounded-md border-2 border-dashed p-2 flex flex-col ${colors}`}>
-                <div className={`absolute ${logoPosition}`}>🍎</div>
-                <div className={`absolute ${qrPosition}`}>🔲</div>
-                <div className={`flex-grow flex items-center justify-center text-xs ${font}`}>
-                    <p>...bill content...</p>
-                </div>
-                <div className="text-center text-[8px] p-1 bg-black/10 rounded-b-md">{footer}</div>
-            </div>
-        </CardContent>
-        <CardFooter className="flex-wrap gap-2">
-            {features?.map(f => <Badge key={f} variant="secondary">{f}</Badge>)}
-        </CardFooter>
-    </Card>
-);
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  const pathname = usePathname();
+  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/portal');
+  const isPrintPage = pathname.startsWith('/invoice/') || pathname.startsWith('/purchase-bill/') || pathname.startsWith('/receipt/') || pathname.startsWith('/challan/') || pathname.startsWith('/pesticide-invoice/') || pathname.startsWith('/bikri-bill/');
 
-const CustomFieldSuggestion = ({ icon, title, example, children } : { icon: React.ElementType, title: string, example: string, children: React.ReactNode }) => (
-    <div className="flex items-start gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors">
-        <div className="p-2 bg-primary/10 rounded-md">
-            <icon className="h-5 w-5 text-primary" />
-        </div>
-        <div>
-            <h4 className="font-semibold">{title}</h4>
-            <p className="text-sm text-muted-foreground">{children}</p>
-            <p className="text-xs font-mono bg-muted px-2 py-1 rounded-md mt-1 inline-block">e.g., {example}</p>
-        </div>
-    </div>
-);
-
-
-export default function SettingsPage() {
-    const { toast } = useToast();
-    const [isSyncing, setIsSyncing] = React.useState(false);
-    const [invoiceStyle, setInvoiceStyle] = React.useState('classic');
-
-    React.useEffect(() => {
-        const savedStyle = localStorage.getItem('invoiceStyle');
-        if (savedStyle) {
-            setInvoiceStyle(savedStyle);
-        }
-    }, []);
-
-    const handleStyleChange = (style: string) => {
-        setInvoiceStyle(style);
-        localStorage.setItem('invoiceStyle', style);
-        toast({
-            title: "Style Updated",
-            description: `Invoice style set to ${style}.`,
-        })
-    };
-    
-    const handleFactoryReset = () => {
-        try {
-            localStorage.clear();
-            toast({
-                title: "Factory Reset Successful",
-                description: "All application data has been cleared.",
-            })
-            window.location.reload();
-        } catch (error) {
-            toast({
-                variant: "destructive",
-                title: "Factory Reset Failed",
-                description: "Could not clear application data.",
-            })
-        }
-    }
-
-    const handleBackupAllData = () => {
-        toast({ title: 'Generating Backup', description: 'Please wait while we gather all your data.' });
-
-        try {
-            const allData: { [key: string]: any[] } = {
-                'Wataks (Invoices)': [],
-                'Purchases': [],
-                'Receipts': [],
-                'Challans': [],
-                'Pesticide_Invoices': [],
-                'Products': [],
-                'Accessory_Ledger': [],
-                'Expenses': [],
-                'Advances': [],
-                'Cold_Storage': [],
-                'Manual_Fertilizer_Rates': [],
-                'Outside_Sales (Bikri)': [],
-                'Activity_Log': [],
-            };
-
-            const keyPrefixToSheetMap: { [key: string]: keyof typeof allData } = {
-                'invoice-': 'Wataks (Invoices)',
-                'purchase-': 'Purchases',
-                'receipt-': 'Receipts',
-                'challan-': 'Challans',
-                'pesticide-invoice-': 'Pesticide_Invoices',
-                'product-': 'Products',
-                'accessory-ledger-': 'Accessory_Ledger',
-                'expense-': 'Expenses',
-                'advance-': 'Advances',
-                'cs-': 'Cold_Storage',
-                'manual-fertilizer-rates-': 'Manual_Fertilizer_Rates',
-                'bikri-': 'Outside_Sales (Bikri)',
-                'activityLogs': 'Activity_Log',
-            };
-            
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (!key) continue;
-
-                // Special case for activity log which doesn't have a prefix
-                if (key === 'activityLogs') {
-                    allData['Activity_Log'] = JSON.parse(localStorage.getItem(key)!);
-                    continue;
-                }
-
-                const matchingPrefix = Object.keys(keyPrefixToSheetMap).find(prefix => key.startsWith(prefix));
-                if (matchingPrefix) {
-                    const sheetName = keyPrefixToSheetMap[matchingPrefix];
-                    allData[sheetName].push(JSON.parse(localStorage.getItem(key)!));
-                }
-            }
-
-            const wb = XLSX.utils.book_new();
-
-            for (const sheetName in allData) {
-                if (allData[sheetName].length > 0) {
-                    // Flatten nested objects like 'totals' and 'entries' for better readability
-                    const flattenedData = allData[sheetName].map((item: any) => {
-                       const flatItem: {[key: string]: any} = {};
-                       for(const prop in item){
-                           if(typeof item[prop] === 'object' && item[prop] !== null && !Array.isArray(item[prop])){
-                               for(const nestedProp in item[prop]){
-                                   flatItem[`${prop}_${nestedProp}`] = item[prop][nestedProp];
-                               }
-                           } else if(Array.isArray(item[prop])){
-                               flatItem[prop] = JSON.stringify(item[prop]);
-                           } else {
-                               flatItem[prop] = item[prop];
-                           }
-                       }
-                       return flatItem;
-                    });
-                    const ws = XLSX.utils.json_to_sheet(flattenedData);
-                    XLSX.utils.book_append_sheet(wb, ws, sheetName.replace(/_/g, ' '));
-                }
-            }
-
-            if (wb.SheetNames.length === 0) {
-                toast({ variant: 'destructive', title: 'No Data Found', description: 'There is no data to back up.' });
-                return;
-            }
-
-            XLSX.writeFile(wb, `SwiftSale-Backup-${new Date().toISOString().split('T')[0]}.xlsx`);
-
-            toast({ title: 'Backup Successful', description: 'Your data has been exported to an Excel file.' });
-
-        } catch (error) {
-            console.error("Backup failed:", error);
-            toast({ variant: 'destructive', title: 'Backup Failed', description: 'An unexpected error occurred during backup.' });
-        }
-    };
-
-
-    const handleEnableNotifications = async () => {
-        const messaging = getClientMessaging();
-        if (!messaging) {
-            toast({
-                variant: 'destructive',
-                title: 'Unsupported Browser',
-                description: 'Push notifications are not supported on this browser or environment.',
-            });
-            return;
-        }
-
-        try {
-            const permission = await Notification.requestPermission();
-            if (permission === 'granted') {
-                const fcmToken = await getToken(messaging, { vapidKey: 'BDrkE0XgA5wWlPz9sUeS_gZ4-N9xY6kIuX0eY3oD2hM0c4b1Z7n8R6J4k9sQ1xZ5m4w3j6p9yIuQ8c4jGkY' }); 
-                
-                if (fcmToken) {
-                    await saveDocument('fcm-tokens', fcmToken, { token: fcmToken, enabledAt: new Date().toISOString() });
-                    toast({
-                        title: 'Notifications Enabled',
-                        description: 'You will now receive push notifications.',
-                    });
-                } else {
-                     toast({ variant: 'destructive', title: 'Token Error', description: 'Could not get notification token. Is your service worker set up?' });
-                }
-            } else {
-                 toast({ variant: 'destructive', title: 'Permission Denied', description: 'Please enable notifications in your browser settings.' });
-            }
-        } catch (error) {
-            console.error('Error getting FCM token:', error);
-            toast({ variant: 'destructive', title: 'Notification Error', description: `An error occurred: ${(error as Error).message}` });
-        }
-    };
-
-    const ColorPill = ({ gradient, name }: { gradient: string, name: string}) => (
-        <div className="flex items-center gap-2">
-            <div className={`w-10 h-6 rounded-full ${gradient}`}></div>
-            <span className="font-medium">{name}</span>
-        </div>
-    );
-    
-    return (
-        <div className="space-y-6">
-             <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-3"><Rocket className="h-6 w-6 text-blue-500" /> Deploy to Web</CardTitle>
-                    <CardDescription>Publish your application to a permanent URL on the web.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <p className="mb-4">Click the button below to start the deployment process. This will publish your app to a live, shareable URL. This is an alternative to using the command-line interface.</p>
-                     <a href="https://apphosting.dev/onboarding/swiftsale-ewd7o/us-central1/main" target="_blank" rel="noopener noreferrer">
-                        <Button className="w-full gap-2 bg-blue-600 hover:bg-blue-700 text-white">
-                            <Rocket className="h-4 w-4" /> Deploy to Firebase App Hosting
-                        </Button>
-                    </a>
-                </CardContent>
-                 <CardFooter>
-                    <p className="text-xs text-muted-foreground">This will open a new tab to guide you through the final authentication and deployment steps.</p>
-                </CardFooter>
-            </Card>
-
-             <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-3"><Paintbrush className="h-6 w-6" /> Appearance &amp; Customization</CardTitle>
-                    <CardDescription>This section will allow you to change invoice styles, colors, fonts, and layouts for all your documents (Bills, Wataks, Challans, Receipts).</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Accordion type="multiple" defaultValue={['styles', 'fields']} className="w-full">
-                        <AccordionItem value="styles">
-                            <AccordionTrigger className="text-lg font-semibold">Invoice & Bill Styles</AccordionTrigger>
-                            <AccordionContent>
-                                <Tabs value={invoiceStyle} onValueChange={handleStyleChange} className="w-full mt-2">
-                                    <TabsList className="grid w-full grid-cols-3">
-                                        <TabsTrigger value="classic">Classic Style</TabsTrigger>
-                                        <TabsTrigger value="modern">Modern Style</TabsTrigger>
-                                        <TabsTrigger value="urdu">Urdu-English Mix</TabsTrigger>
-                                    </TabsList>
-                                    <TabsContent value="classic" className="mt-4">
-                                        <InvoicePreview title="Classic Style (Professional + Clean)" colors="bg-white text-black" logoPosition="top-2 left-1/2 -translate-x-1/2" qrPosition="top-2 right-2" font="font-serif" footer="Thank you for your business – F.Co" features={["Professional & Clean", "Red Headers", "Traditional Look"]}>
-                                            Looks like a traditional Sopore Mandi bill. Ideal for formal record-keeping.
-                                        </InvoicePreview>
-                                    </TabsContent>
-                                    <TabsContent value="modern" className="mt-4">
-                                        <InvoicePreview title="Modern Style (Textured + Stylish)" colors="bg-gradient-to-br from-red-500 to-green-500 text-white" logoPosition="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-10 text-5xl" qrPosition="bottom-10 right-2" font="font-sans" footer="Your Satisfaction is Our Success – Subject to Sopore Jurisdiction Only" features={["Textured & Stylish", "Icons for items", "Great for Sharing"]}>
-                                            Stylish and modern, perfect for sharing on WhatsApp or email. Uses gradients and icons for a fresh look.
-                                        </InvoicePreview>
-                                    </TabsContent>
-                                    <TabsContent value="urdu" className="mt-4">
-                                        <InvoicePreview title="Urdu-English Mix (Dual Language Print)" colors="bg-amber-50 text-black border-green-700" logoPosition="top-2 left-2" qrPosition="top-2 right-2" font="font-urdu" footer="F.Co – Fruit Merchant & Commission Agent | Sopore Mandi" features={["Bilingual Fields", "Nastaliq Font", "Beige Paper Look"]}>
-                                            A bilingual design perfect for both English and Urdu-speaking customers, with elegant Nastaliq font for headings.
-                                        </InvoicePreview>
-                                    </TabsContent>
-                                </Tabs>
-                            </AccordionContent>
-                        </AccordionItem>
-                        
-                        <AccordionItem value="branding">
-                             <AccordionTrigger className="text-lg font-semibold">Color Theme & Branding</AccordionTrigger>
-                             <AccordionContent className="pt-4 space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><Palette className="h-5 w-5 text-primary" /> Color Gradients</h3>
-                                        <p className="text-sm text-muted-foreground mb-4">Each document type gets a unique theme so you can instantly recognize it.</p>
-                                        <div className="space-y-3">
-                                            <ColorPill gradient="bg-gradient-to-r from-red-500 to-green-500" name="Bills" />
-                                            <ColorPill gradient="bg-gradient-to-r from-blue-500 to-purple-500" name="Wataks" />
-                                            <ColorPill gradient="bg-gradient-to-r from-orange-500 to-yellow-500" name="Challans" />
-                                            <ColorPill gradient="bg-gradient-to-r from-gray-600 to-gray-400" name="Receipts" />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-4">
-                                        <div>
-                                            <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><Upload className="h-5 w-5 text-primary" /> Company Logo</h3>
-                                            <p className="text-sm text-muted-foreground mb-2">Upload your company logo. Appears on bills and headers.</p>
-                                            <Input type="file" />
-                                        </div>
-                                         <div>
-                                            <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><Type className="h-5 w-5 text-primary" /> Font Style</h3>
-                                            <p className="text-sm text-muted-foreground mb-2">Select the font style for your documents.</p>
-                                            <Select defaultValue="sans">
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="sans">Sans-serif (Modern)</SelectItem>
-                                                    <SelectItem value="serif">Serif (Classic)</SelectItem>
-                                                    <SelectItem value="urdu">Urdu-English Mix</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
-                                </div>
-                             </AccordionContent>
-                        </AccordionItem>
-
-                        <AccordionItem value="fields">
-                            <AccordionTrigger className="text-lg font-semibold">Header, Footer &amp; Custom Fields</AccordionTrigger>
-                            <AccordionContent className="pt-4 space-y-6">
-                                <div className="space-y-4">
-                                     <div className="space-y-2">
-                                        <Label htmlFor="footerText">Footer Text</Label>
-                                        <Textarea id="footerText" placeholder="e.g., Your Satisfaction is Our Success..." defaultValue="Your Satisfaction is Our Success – Subject to Sopore Jurisdiction Only" />
-                                        <p className="text-xs text-muted-foreground">This text will appear at the bottom of your documents.</p>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <Input type="checkbox" id="show-qr" defaultChecked />
-                                        <Label htmlFor="show-qr" className="cursor-pointer">Show QR Code in Footer</Label>
-                                    </div>
-                                </div>
-                                <Separator />
-                                 <div>
-                                    <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><Pencil className="h-5 w-5 text-primary" /> Suggested Custom Fields</h3>
-                                    <p className="text-sm text-muted-foreground mb-4">Every grower, customer, or truck has different details. These fields will appear automatically in print, PDF, or WhatsApp export.</p>
-                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                                        <CustomFieldSuggestion icon={Truck} title="Vehicle No." example="JK05X 1234">For tracking transport and logistics.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={User} title="Broker Name" example="Abdul Rashid Shah">To record the agent involved in a sale.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={User} title="Driver Name" example="Mohammad Yousuf">For challans and transport records.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Phone} title="Contact No." example="+91 9797002164">Add a secondary contact number.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Box} title="Load Type" example="Full Truck / Pickup">Specify the size of the consignment.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={TreePine} title="Grower's Village" example="Bomai, Sopore">For better tracking of produce origin.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Banknote} title="Payment Mode" example="Cash / UPI / Credit">Record how a transaction was paid.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Percent} title="Commission %" example="10%">Adjust commission for specific growers.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Package} title="Packing Type" example="5 Layer Box">Detail the specific packaging used.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Pencil} title="Delivery Remarks" example="Handle with care">Add special instructions for delivery.</CustomFieldSuggestion>
-                                    </div>
-                                 </div>
-                                <Separator />
-                                 <div>
-                                    <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><SlidersHorizontal className="h-5 w-5 text-primary" /> Extra Optional Custom Fields</h3>
-                                    <p className="text-sm text-muted-foreground mb-4">Enable these for more advanced scenarios like GST billing, cold storage, or transport management. You can toggle them ON/OFF per template.</p>
-                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                                        <CustomFieldSuggestion icon={FileText} title="GST / Tax No." example="01ABCDE1234F1Z5">For customers outside J&K or for future compliance.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Building} title="Consignee Name" example="To M/S XYZ Traders, Delhi">Party name at the destination market.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Truck} title="Transport Agency" example="ABC Transport Pvt Ltd">The name of the transport company used.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Lock} title="Seal/Invoice No." example="SEAL-5921">Transport company's unique seal or invoice number.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Snowflake} title="Cold Store No." example="C-14, Chamber 5">Track produce stored in local cold storage facilities.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Banknote} title="Loading/Unloading Charges" example="500.00">Option to show these charges separately on the bill.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Weight} title="Weight Slip No." example="T-889-A">Reference number from mandi weighing slips (Taar/Net).</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={MessageSquare} title="Payment Remarks" example="Advance ₹20,000 received">Add notes about advance payments or khata status.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Signature} title="Digital Signature Space" example="Enable a blank space">Add space for digital or scanned signatures.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Hash} title="UPI Payment Reference" example="UPI Ref: 4165...">Optional field to show UPI transaction ID on bills.</CustomFieldSuggestion>
-                                    </div>
-                                 </div>
-                            </AccordionContent>
-                        </AccordionItem>
-                    </Accordion>
-                </CardContent>
-            </Card>
-
-            <CompanyInfoForm />
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Data Portability & Backup</CardTitle>
-                    <CardDescription>
-                        Export all your application data into a single Excel file for backup or use in other applications.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                     <Button onClick={handleBackupAllData} className="gap-2" disabled={isSyncing}>
-                        <DownloadCloud className="h-4 w-4" />
-                        Backup All Data to Excel
-                    </Button>
-                </CardContent>
-                 <CardFooter>
-                    <p className="text-xs text-muted-foreground">A restore feature will be added in a future update.</p>
-                </CardFooter>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Notifications</CardTitle>
-                    <CardDescription>
-                        Enable push notifications to receive real-time updates about your business.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Button onClick={handleEnableNotifications} className="gap-2">
-                        <BellRing className="h-4 w-4" />
-                        Enable Notifications
-                    </Button>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Factory Reset</CardTitle>
-                    <CardDescription>
-                        This will permanently delete all your data from this device's local storage. This action cannot be undone.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive" className="gap-2">
-                            <Factory className="h-4 w-4" />
-                            Perform Factory Reset
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete all your application data from your browser's local storage.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleFactoryReset}>Continue</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                </CardContent>
-            </Card>
-        </div>
-    );
+  
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body className={cn(inter.className)}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem
+        >
+          <LanguageProvider>
+              {isAuthPage || isPrintPage ? children : <AppLayout>{children}</AppLayout>}
+              <Toaster />
+          </LanguageProvider>
+        </ThemeProvider>
+      </body>
+    </html>
+  );
 }
+
+const AppLayout = ({ children }: { children: React.ReactNode }) => {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [userRole, setUserRole] = React.useState<string | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const role = localStorage.getItem('userRole');
+      if (!role) {
+        router.push('/login');
+      } else {
+        setUserRole(role);
+        setIsLoading(false);
+      }
+    }
+  }, [router, pathname]);
+  
+  const getPageTitle = () => {
+    const item = navItems.find(item => pathname.startsWith(item.href));
+    return item ? item.label : 'Dashboard';
+  }
+
+  if (isLoading) {
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <p className="ml-4">Loading...</p>
+        </div>
+    );
+  }
+  
+  if (!userRole) return null;
+
+  return (
+    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+      <div className="hidden border-r bg-background md:block">
+        <NavContent isMobile={false} />
+      </div>
+      <div className="flex flex-col">
+        <Header title={getPageTitle()} />
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-muted/40">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+const navItems = [
+    { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { href: '/sales', icon: ShoppingCart, label: 'Invoices' },
+    { href: '/purchases', icon: Package, label: 'Purchases' },
+    { href: '/purchase-register', icon: BookCopy, label: 'Purchase Register' },
+    { href: '/outside-sales', icon: Globe, label: 'Outside Sales' },
+    { href: '/products', icon: Package, label: 'Products' },
+    { href: '/expenses', icon: Receipt, label: 'Expenses' },
+    { href: '/advances', icon: Banknote, label: 'Advances' },
+    { href: '/cold-storage', icon: Snowflake, label: 'Cold Storage' },
+    { href: '/watak-register', icon: BookCopy, label: 'Sales Register' },
+    { href: '/khata', icon: BookCopy, label: 'Khata Ledger' },
+    { href: '/rates', icon: Tags, label: 'Market Rates' },
+    { href: '/fertilizers', icon: FlaskConical, label: 'Fertilizers & Pesticides' },
+    { href: '/accessories', icon: Shapes, label: 'Supplies' },
+    { href: '/activity-log', icon: History, label: 'Activity Log' },
+];
+
+const NavLinks = ({ isMobile }: { isMobile: boolean }) => {
+  const pathname = usePathname();
+  const Wrapper = isMobile ? SheetClose : React.Fragment;
+
+  return (
+    <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+      {navItems.map((item) => {
+        const link = (
+           <Link
+              href={item.href}
+              className={cn(
+                'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted',
+                pathname.startsWith(item.href) && 'bg-muted text-primary'
+              )}
+            >
+              <item.icon className="h-4 w-4" />
+              {item.label}
+            </Link>
+        );
+        return isMobile ? <Wrapper asChild key={item.label}>{link}</Wrapper> : <React.Fragment key={item.label}>{link}</React.Fragment>;
+      })}
+    </nav>
+  );
+};
+
+const NavContent = ({ isMobile }: { isMobile: boolean }) => {
+    const pathname = usePathname();
+    const SettingsLinkWrapper = isMobile ? SheetClose : React.Fragment;
+    return (
+      <div className="flex h-full max-h-screen flex-col gap-2">
+          <div className="flex h-24 items-center border-b px-4 lg:px-6">
+              <Link href="/" className="flex items-center gap-4 font-semibold text-foreground">
+                  <div className="bg-primary/90 p-3 rounded-lg shadow-md">
+                      <Logo className="h-8 w-8 text-white" />
+                  </div>
+                  <div>
+                      <h1 className="text-xl font-bold">F.Co</h1>
+                      <p className="text-xs text-muted-foreground">FIRDOUS AHMAD & COMPANY</p>
+                      <p className="text-sm font-semibold text-primary/90">Sopore, Kashmir</p>
+                  </div>
+              </Link>
+          </div>
+          <div className="flex-1 overflow-auto py-2">
+              <NavLinks isMobile={isMobile} />
+          </div>
+          <div className="mt-auto p-4 border-t">
+              <div className="px-4 mb-4">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Quick Contact</h3>
+                  <div className="space-y-2 text-sm">
+                      <a href="tel:7006136330" className="flex items-center gap-3 text-muted-foreground hover:text-primary">
+                          <Phone className="h-4 w-4" />
+                          <span>7006136330</span>
+                      </a>
+                      <p className="text-xs text-muted-foreground">Apple Town, Sopore</p>
+                      <p className="text-xs font-semibold text-primary">Fruit Mandi Operations</p>
+                  </div>
+              </div>
+              <div className="border-t pt-4">
+                   <SettingsLinkWrapper {...(isMobile ? {asChild: true} : {})}>
+                      <Link
+                          href="/settings"
+                          className={cn(
+                              'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted',
+                              pathname.startsWith('/settings') && 'bg-muted text-primary'
+                          )}
+                          >
+                          <Settings className="h-4 w-4" />
+                          Settings
+                      </Link>
+                  </SettingsLinkWrapper>
+              </div>
+              <div className="text-center text-xs text-muted-foreground mt-4">
+                  <p>© 2025 F.Co</p>
+                  <p>Firdous Ahmad & Company</p>
+              </div>
+          </div>
+      </div>
+  )
+};

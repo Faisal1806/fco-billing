@@ -1,331 +1,196 @@
-'use client'
+'use client';
 
-import * as React from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { ChevronDown, PlusCircle, Share2, Loader2, FilePenLine, Trash2, List, LayoutGrid, Search, FileDown } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { 
+    LayoutDashboard, ShoppingCart, Package, Settings, Phone, BookCopy, Globe, Receipt,
+    Banknote, Snowflake, Tags, FlaskConical, Shapes, History, Hash, Menu, FileText, Truck
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Header } from '@/components/Header';
+import React from 'react';
+import { Logo } from '@/components/logo';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
-import DocumentCard from '@/components/DocumentCard';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
-import { FaWhatsapp } from 'react-icons/fa';
-import { Badge } from '@/components/ui/badge';
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { Toaster } from '@/components/ui/toaster';
+import { LanguageProvider } from '@/contexts/language-context';
+import { ThemeProvider } from '@/components/theme-provider';
+import './print.css';
+import { Inter } from 'next/font/google';
 
-export interface PurchaseEntry {
-    billNo: string;
-    date: string;
-    growerName: string;
-    entries: {
-        type: 'Patti' | 'Dabba';
-        qty: number;
-    }[];
-    totals: {
-        grandTotal: number;
-    }
-}
+const inter = Inter({ subsets: ['latin'] });
 
-export default function PurchaseRegisterPage() {
-  const router = useRouter();
-  const { toast } = useToast();
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  const pathname = usePathname();
+  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/portal');
+  const isPrintPage = pathname.startsWith('/invoice/') || pathname.startsWith('/purchase-bill/') || pathname.startsWith('/receipt/') || pathname.startsWith('/challan/') || pathname.startsWith('/pesticide-invoice/') || pathname.startsWith('/bikri-bill/');
 
-  const [purchases, setPurchases] = React.useState<PurchaseEntry[]>([]);
-  const [growers, setGrowers] = React.useState<string[]>([]);
-  const [selectedGrower, setSelectedGrower] = React.useState('All Growers');
-  const [searchTerm, setSearchTerm] = React.useState('');
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [viewMode, setViewMode] = React.useState<'grid' | 'table'>('grid');
-  const [userRole, setUserRole] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setUserRole(localStorage.getItem('userRole'));
-    }
-  }, []);
-
-
-  const fetchPurchases = () => {
-    setIsLoading(true);
-    if (typeof window !== 'undefined') {
-        const items = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key?.startsWith('purchase-')) {
-                items.push(JSON.parse(localStorage.getItem(key)!));
-            }
-        }
-        setPurchases(items);
-        const uniqueGrowers = ['All Growers', ...new Set(items.map(p => p.growerName))];
-        setGrowers(uniqueGrowers);
-    }
-    setIsLoading(false);
-  }
-
-  React.useEffect(() => {
-    fetchPurchases();
-  }, [toast]);
   
-  const yearlyCount = React.useMemo(() => {
-    if(!purchases) return 0;
-    const currentYear = new Date().getFullYear();
-    return purchases.filter(p => new Date(p.date).getFullYear() === currentYear).length;
-  }, [purchases]);
-
-  const filteredPurchases = purchases
-    .filter(p => selectedGrower === 'All Growers' || p.growerName === selectedGrower)
-    .filter(p => {
-        if (!searchTerm) return true;
-        const lowerCaseSearch = searchTerm.toLowerCase();
-        return (
-            p.growerName.toLowerCase().includes(lowerCaseSearch) ||
-            p.billNo.toLowerCase().includes(lowerCaseSearch)
-        )
-    });
-
-
-  const footerTotals = filteredPurchases.reduce((acc, purchase) => {
-    acc.grandTotal += purchase.totals.grandTotal || 0;
-    const patti = purchase.entries.filter(e => e.type === 'Patti').reduce((sum, e) => sum + e.qty, 0);
-    const dabba = purchase.entries.filter(e => e.type === 'Dabba').reduce((sum, e) => sum + e.qty, 0);
-    acc.patti += patti;
-    acc.dabba += dabba;
-    return acc;
-  }, { grandTotal: 0, patti: 0, dabba: 0 });
-
-  const navigateToBill = (id: string) => {
-    router.push(`/purchase-bill/${id}`);
-  }
-
-  const handleDelete = (billNo: string) => {
-    if (userRole !== 'admin') {
-      toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to delete purchase bills.' });
-      return;
-    }
-    if(!window.confirm(`Are you sure you want to delete Purchase Bill #${billNo}? This cannot be undone.`)) return;
-
-    localStorage.removeItem(`purchase-${billNo}`);
-    fetchPurchases();
-    toast({ title: "Purchase Bill Deleted", description: `Bill #${billNo} has been deleted locally.`});
-  }
-
-  const exportToPDF = () => {
-    const doc = new jsPDF();
-    doc.text(`Purchase Register - ${selectedGrower}`, 14, 15);
-    doc.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, 14, 22);
-
-    const tableData = filteredPurchases.map(p => [
-        new Date(p.date).toLocaleDateString('en-GB'),
-        p.billNo,
-        p.growerName,
-        p.entries.filter(e => e.type === 'Patti').reduce((acc, e) => acc + (e.qty || 0), 0),
-        p.entries.filter(e => e.type === 'Dabba').reduce((acc, e) => acc + (e.qty || 0), 0),
-        `Rs. ${p.totals.grandTotal.toFixed(2)}`
-    ]);
-
-    autoTable(doc, {
-        head: [['Date', 'Bill No.', 'Grower', 'Patti', 'Dabba', 'Grand Total']],
-        body: tableData,
-        foot: [[
-            'Total', '', '', footerTotals.patti, footerTotals.dabba, `Rs. ${footerTotals.grandTotal.toFixed(2)}`
-        ]],
-        startY: 30,
-        theme: 'striped',
-        headStyles: { fillColor: [22, 163, 74] }
-    });
-
-    doc.save(`Purchase-Register-${selectedGrower}.pdf`);
-  };
-
-  const exportToExcel = () => {
-    const worksheetData = filteredPurchases.map(p => ({
-        'Date': new Date(p.date).toLocaleDateString('en-GB'),
-        'Bill No.': p.billNo,
-        'Grower': p.growerName,
-        'Patti': p.entries.filter(e => e.type === 'Patti').reduce((acc, e) => acc + (e.qty || 0), 0),
-        'Dabba': p.entries.filter(e => e.type === 'Dabba').reduce((acc, e) => acc + (e.qty || 0), 0),
-        'Grand Total': p.totals.grandTotal
-    }));
-    
-    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
-    XLSX.utils.sheet_add_aoa(worksheet, [
-        ["Total", "", "", footerTotals.patti, footerTotals.dabba, footerTotals.grandTotal]
-    ], { origin: -1 });
-
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Purchases');
-    XLSX.writeFile(workbook, `Purchase-Register-${selectedGrower}.xlsx`);
-  };
-    
-  const handleShare = () => {
-    if (selectedGrower === 'All Growers') {
-        toast({
-            variant: 'destructive',
-            title: 'Select a Grower',
-            description: 'Please select a specific grower from the dropdown to share their portal link.',
-        });
-        return;
-    }
-
-    let message = `Salaam ${selectedGrower},\n\n`;
-    message += `You can view your complete account ledger with Firdous Ahmad & Company by clicking the link below. The portal will open directly to your account.\n\n`;
-    const encodedCustomerName = encodeURIComponent(selectedGrower);
-    message += `Portal Link: ${window.location.origin}/portal/login?customer=${encodedCustomerName}\n\n`;
-    message += `Thank you for your business!`;
-
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-  };
-
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-start gap-4 flex-wrap">
-            <div className="flex items-center gap-4">
-                <CardTitle className="flex items-center gap-2">
-                    Purchase Register
-                    {!isLoading && <Badge variant="outline">{yearlyCount} This Year</Badge>}
-                </CardTitle>
-                 <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        type="search"
-                        placeholder="Search by Bill No, Name..."
-                        className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="flex items-center gap-2 min-w-[200px]">
-                           <span className="flex-1 text-left">{selectedGrower}</span>
-                           <ChevronDown className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start">
-                        {growers.map(grower => (
-                             <DropdownMenuItem key={grower} onSelect={() => setSelectedGrower(grower)}>
-                                {grower}
-                             </DropdownMenuItem>
-                        ))}
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </div>
-            <div className="flex items-center gap-2">
-                 <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setViewMode(viewMode === 'table' ? 'grid' : 'table')}
-                    title={viewMode === 'table' ? 'Grid View' : 'Table View'}
-                    >
-                    {viewMode === 'table' ? <LayoutGrid className="h-4 w-4" /> : <List className="h-4 w-4" />}
-                </Button>
-                 <Button size="sm" variant="outline" className="gap-1" onClick={handleShare}>
-                    <FaWhatsapp className="h-4 w-4 text-green-500" />
-                    Share Portal
-                 </Button>
-                <Button size="sm" variant="outline" className="gap-1" onClick={exportToPDF}>
-                    <FileDown className="h-3.5 w-3.5" />
-                    PDF
-                </Button>
-                <Button size="sm" variant="outline" className="gap-1" onClick={exportToExcel}>
-                    <FileDown className="h-3.5 w-3.5" />
-                    Excel
-                </Button>
-                <Button size="sm" className="gap-1" onClick={() => router.push('/purchases')}>
-                    <PlusCircle className="h-3.5 w-3.5" />
-                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                        Add Purchase
-                    </span>
-                </Button>
-            </div>
-        </div>
-        <CardDescription>Review all recorded purchases from growers.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-            <div className="flex justify-center items-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-        ) : viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {filteredPurchases.map((purchase) => (
-                     <div key={purchase.billNo} onClick={() => navigateToBill(purchase.billNo)} className="cursor-pointer">
-                        <DocumentCard type="bill" title={`Purchase #${purchase.billNo}`}>
-                            <p className="text-lg font-semibold">{purchase.growerName}</p>
-                            <p className="text-sm mt-2">Date: {new Date(purchase.date).toLocaleDateString()}</p>
-                            <p className="text-2xl font-bold mt-4">₹{purchase.totals.grandTotal.toFixed(2)}</p>
-                        </DocumentCard>
-                    </div>
-                ))}
-            </div>
-        ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Bill No.</TableHead>
-              <TableHead>Grower</TableHead>
-              <TableHead>Patti</TableHead>
-              <TableHead>Dabba</TableHead>
-              <TableHead className="text-right">Grand Total</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredPurchases.map((purchase: PurchaseEntry) => (
-              <TableRow key={purchase.billNo}>
-                <TableCell>{new Date(purchase.date).toLocaleDateString('en-GB')}</TableCell>
-                <TableCell>{purchase.billNo}</TableCell>
-                <TableCell className="font-medium">{purchase.growerName}</TableCell>
-                <TableCell>{purchase.entries.filter(e=>e.type === 'Patti').reduce((acc, e) => acc + (e.qty || 0), 0)}</TableCell>
-                <TableCell>{purchase.entries.filter(e=>e.type === 'Dabba').reduce((acc, e) => acc + (e.qty || 0), 0)}</TableCell>
-                <TableCell className="text-right">₹{purchase.totals.grandTotal.toFixed(2)}</TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" onClick={() => navigateToBill(purchase.billNo)}>
-                    <FilePenLine className="h-4 w-4" />
-                  </Button>
-                  {userRole === 'admin' && (
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(purchase.billNo)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-             <TableRow className="font-bold bg-muted">
-                <TableCell colSpan={3} className="text-right">Total</TableCell>
-                <TableCell>{footerTotals.patti}</TableCell>
-                <TableCell>{footerTotals.dabba}</TableCell>
-                <TableCell className="text-right">₹{footerTotals.grandTotal.toFixed(2)}</TableCell>
-                <TableCell></TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-        )}
-      </CardContent>
-    </Card>
+    <html lang="en" suppressHydrationWarning>
+      <body className={cn(inter.className)}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem
+        >
+          <LanguageProvider>
+              {isAuthPage || isPrintPage ? children : <AppLayout>{children}</AppLayout>}
+              <Toaster />
+          </LanguageProvider>
+        </ThemeProvider>
+      </body>
+    </html>
   );
 }
+
+const AppLayout = ({ children }: { children: React.ReactNode }) => {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [userRole, setUserRole] = React.useState<string | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const role = localStorage.getItem('userRole');
+      if (!role) {
+        router.push('/login');
+      } else {
+        setUserRole(role);
+        setIsLoading(false);
+      }
+    }
+  }, [router, pathname]);
+  
+  const getPageTitle = () => {
+    const item = navItems.find(item => pathname.startsWith(item.href));
+    return item ? item.label : 'Dashboard';
+  }
+
+  if (isLoading) {
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <p className="ml-4">Loading...</p>
+        </div>
+    );
+  }
+  
+  if (!userRole) return null;
+
+  return (
+    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+      <div className="hidden border-r bg-background md:block">
+        <NavContent isMobile={false} />
+      </div>
+      <div className="flex flex-col">
+        <Header title={getPageTitle()} />
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-muted/40">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+const navItems = [
+    { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { href: '/sales', icon: ShoppingCart, label: 'Invoices' },
+    { href: '/purchases', icon: Package, label: 'Purchases' },
+    { href: '/purchase-register', icon: BookCopy, label: 'Purchase Register' },
+    { href: '/outside-sales', icon: Globe, label: 'Outside Sales' },
+    { href: '/products', icon: Package, label: 'Products' },
+    { href: '/expenses', icon: Receipt, label: 'Expenses' },
+    { href: '/advances', icon: Banknote, label: 'Advances' },
+    { href: '/cold-storage', icon: Snowflake, label: 'Cold Storage' },
+    { href: '/watak-register', icon: BookCopy, label: 'Sales Register' },
+    { href: '/khata', icon: BookCopy, label: 'Khata Ledger' },
+    { href: '/rates', icon: Tags, label: 'Market Rates' },
+    { href: '/fertilizers', icon: FlaskConical, label: 'Fertilizers & Pesticides' },
+    { href: '/accessories', icon: Shapes, label: 'Supplies' },
+    { href: '/activity-log', icon: History, label: 'Activity Log' },
+];
+
+const NavLinks = ({ isMobile }: { isMobile: boolean }) => {
+  const pathname = usePathname();
+  const Wrapper = isMobile ? SheetClose : React.Fragment;
+
+  return (
+    <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+      {navItems.map((item) => {
+        const link = (
+           <Link
+              href={item.href}
+              className={cn(
+                'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted',
+                pathname.startsWith(item.href) && 'bg-muted text-primary'
+              )}
+            >
+              <item.icon className="h-4 w-4" />
+              {item.label}
+            </Link>
+        );
+        return isMobile ? <Wrapper asChild key={item.label}>{link}</Wrapper> : <React.Fragment key={item.label}>{link}</React.Fragment>;
+      })}
+    </nav>
+  );
+};
+
+const NavContent = ({ isMobile }: { isMobile: boolean }) => {
+    const pathname = usePathname();
+    const SettingsLinkWrapper = isMobile ? SheetClose : React.Fragment;
+    return (
+      <div className="flex h-full max-h-screen flex-col gap-2">
+          <div className="flex h-24 items-center border-b px-4 lg:px-6">
+              <Link href="/" className="flex items-center gap-4 font-semibold text-foreground">
+                  <div className="bg-primary/90 p-3 rounded-lg shadow-md">
+                      <Logo className="h-8 w-8 text-white" />
+                  </div>
+                  <div>
+                      <h1 className="text-xl font-bold">F.Co</h1>
+                      <p className="text-xs text-muted-foreground">FIRDOUS AHMAD & COMPANY</p>
+                      <p className="text-sm font-semibold text-primary/90">Sopore, Kashmir</p>
+                  </div>
+              </Link>
+          </div>
+          <div className="flex-1 overflow-auto py-2">
+              <NavLinks isMobile={isMobile} />
+          </div>
+          <div className="mt-auto p-4 border-t">
+              <div className="px-4 mb-4">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Quick Contact</h3>
+                  <div className="space-y-2 text-sm">
+                      <a href="tel:7006136330" className="flex items-center gap-3 text-muted-foreground hover:text-primary">
+                          <Phone className="h-4 w-4" />
+                          <span>7006136330</span>
+                      </a>
+                      <p className="text-xs text-muted-foreground">Apple Town, Sopore</p>
+                      <p className="text-xs font-semibold text-primary">Fruit Mandi Operations</p>
+                  </div>
+              </div>
+              <div className="border-t pt-4">
+                   <SettingsLinkWrapper {...(isMobile ? {asChild: true} : {})}>
+                      <Link
+                          href="/settings"
+                          className={cn(
+                              'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted',
+                              pathname.startsWith('/settings') && 'bg-muted text-primary'
+                          )}
+                          >
+                          <Settings className="h-4 w-4" />
+                          Settings
+                      </Link>
+                  </SettingsLinkWrapper>
+              </div>
+              <div className="text-center text-xs text-muted-foreground mt-4">
+                  <p>© 2025 F.Co</p>
+                  <p>Firdous Ahmad & Company</p>
+              </div>
+          </div>
+      </div>
+  )
+};

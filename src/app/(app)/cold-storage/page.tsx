@@ -1,404 +1,196 @@
-'use client'
+'use client';
 
-import * as React from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { useLanguage } from '@/contexts/language-context';
-import { ChevronDown, PlusCircle, Loader2, FilePenLine, Trash2, List, LayoutGrid, Search, FileDown } from 'lucide-react';
-import { FaWhatsapp } from 'react-icons/fa';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { 
+    LayoutDashboard, ShoppingCart, Package, Settings, Phone, BookCopy, Globe, Receipt,
+    Banknote, Snowflake, Tags, FlaskConical, Shapes, History, Hash, Menu, FileText, Truck
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Header } from '@/components/Header';
+import React from 'react';
+import { Logo } from '@/components/logo';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
-import DocumentCard from '@/components/DocumentCard';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
-import { Badge } from '@/components/ui/badge';
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { Toaster } from '@/components/ui/toaster';
+import { LanguageProvider } from '@/contexts/language-context';
+import { ThemeProvider } from '@/components/theme-provider';
+import './print.css';
+import { Inter } from 'next/font/google';
 
-export interface WatakEntry {
-    id: string;
-    sNo: string;
-    date: string;
-    watakNo: string;
-    customerName: string;
-    customerUrdu?: string;
-    entries: {
-        peti: number;
-        daba: number;
-        variety: string;
-        rate: number;
-        type: 'Patti' | 'Dabba';
-        qty: number;
-        total: number;
-    }[];
-    totals: {
-      pattiQty: number;
-      dabbaQty: number;
-      totalQty: number;
-      grossSale: number;
-      totalExpenses: number;
-      netSale: number;
-    }
-    freight: number;
+const inter = Inter({ subsets: ['latin'] });
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  const pathname = usePathname();
+  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/portal');
+  const isPrintPage = pathname.startsWith('/invoice/') || pathname.startsWith('/purchase-bill/') || pathname.startsWith('/receipt/') || pathname.startsWith('/challan/') || pathname.startsWith('/pesticide-invoice/') || pathname.startsWith('/bikri-bill/');
+
+  
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body className={cn(inter.className)}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem
+        >
+          <LanguageProvider>
+              {isAuthPage || isPrintPage ? children : <AppLayout>{children}</AppLayout>}
+              <Toaster />
+          </LanguageProvider>
+        </ThemeProvider>
+      </body>
+    </html>
+  );
 }
 
-const normalizeName = (name: string): string => {
-    if (!name) return '';
-    
-    const suffixes = ["S/P", "B/P", "K/P", "(LAMA)"];
-    let mainName = name.toUpperCase();
-    let suffix = '';
-
-    for (const s of suffixes) {
-        if (mainName.endsWith(s)) {
-            mainName = mainName.substring(0, mainName.length - s.length).trim();
-            suffix = ` ${s}`;
-            break;
-        }
-    }
-    
-    return mainName
-        .replace(/\b(MOHAMMAD|MOHD|MD)\b/g, 'MOHAMMAD')
-        .replace(/\b(AHMAD|AH)\b/g, 'AHMAD')
-        .replace(/\./g, '') // Remove dots
-        .replace(/\s+/g, ' ') // Collapse multiple spaces
-        .trim() + suffix;
-};
-
-
-
-export default function SalesRegisterPage() {
-  const { t } = useLanguage();
+const AppLayout = ({ children }: { children: React.ReactNode }) => {
+  const pathname = usePathname();
   const router = useRouter();
-  const { toast } = useToast();
-
-  const [wataks, setWataks] = React.useState<WatakEntry[]>([]);
-  const [growers, setGrowers] = React.useState<string[]>([]);
-  const [selectedGrower, setSelectedGrower] = React.useState('All Growers');
-  const [searchTerm, setSearchTerm] = React.useState('');
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [viewMode, setViewMode] = React.useState<'table' | 'grid'>('grid');
   const [userRole, setUserRole] = React.useState<string | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
-      setUserRole(localStorage.getItem('userRole'));
+      const role = localStorage.getItem('userRole');
+      if (!role) {
+        router.push('/login');
+      } else {
+        setUserRole(role);
+        setIsLoading(false);
+      }
     }
-    fetchWataks();
-  }, []);
-
-  const fetchWataks = () => {
-    setIsLoading(true);
-    if(typeof window !== 'undefined') {
-        const items = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key?.startsWith('invoice-')) {
-                try {
-                    items.push(JSON.parse(localStorage.getItem(key)!));
-                } catch(e) {
-                    console.error("Failed to parse watak from local storage", e);
-                }
-            }
-        }
-        setWataks(items.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-        
-        const growerMap = new Map<string, string>();
-        items.forEach(w => {
-            const normalized = normalizeName(w.customerName);
-            if (!growerMap.has(normalized)) {
-                growerMap.set(normalized, w.customerName);
-            }
-        });
-        const uniqueGrowers = ['All Growers', ...Array.from(growerMap.values()).sort()];
-        setGrowers(uniqueGrowers);
-    }
-    setIsLoading(false);
+  }, [router, pathname]);
+  
+  const getPageTitle = () => {
+    const item = navItems.find(item => pathname.startsWith(item.href));
+    return item ? item.label : 'Dashboard';
   }
 
-  const yearlyCount = React.useMemo(() => {
-    if(!wataks) return 0;
-    const currentYear = new Date().getFullYear();
-    return wataks.filter(w => new Date(w.date).getFullYear() === currentYear).length;
-  }, [wataks]);
-
-
-  React.useEffect(() => {
-    fetchWataks();
-  }, [toast]);
-
-  const filteredWataks = wataks
-    .filter(w => {
-        if (selectedGrower === 'All Growers') return true;
-        return normalizeName(w.customerName) === normalizeName(selectedGrower);
-    })
-    .filter(w => {
-      if (!searchTerm) return true;
-      const lowerCaseSearch = searchTerm.toLowerCase();
-      return (
-        w.customerName.toLowerCase().includes(lowerCaseSearch) ||
-        w.sNo.toLowerCase().includes(lowerCaseSearch) ||
-        (w.watakNo && w.watakNo.toLowerCase().includes(lowerCaseSearch))
-      );
-    });
-
-  const footerTotals = filteredWataks.reduce((acc, watak) => {
-    acc.grossSale += watak.totals.grossSale || 0;
-    acc.totalExpenses += watak.totals.totalExpenses || 0;
-    acc.netSale += watak.totals.netSale || 0;
-    acc.pattiQty += watak.totals.pattiQty || 0;
-    acc.dabbaQty += watak.totals.dabbaQty || 0;
-    return acc;
-  }, { grossSale: 0, totalExpenses: 0, netSale: 0, pattiQty: 0, dabbaQty: 0 });
-
-  const exportToPDF = () => {
-    const doc = new jsPDF();
-    doc.text(`Sales Register - ${selectedGrower}`, 14, 15);
-    doc.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, 14, 22);
-
-    const tableData = filteredWataks.map(w => [
-        new Date(w.date).toLocaleDateString('en-GB'),
-        w.sNo,
-        w.watakNo,
-        w.customerName,
-        w.totals.pattiQty || 0,
-        w.totals.dabbaQty || 0,
-        `Rs. ${w.totals.grossSale.toFixed(2)}`,
-        `Rs. ${w.totals.totalExpenses.toFixed(2)}`,
-        `Rs. ${w.totals.netSale.toFixed(2)}`
-    ]);
-
-    autoTable(doc, {
-        head: [['Date', 'Invoice No.', 'Watak No.', 'Khata (Grower)', 'Patti', 'Dabba', 'Gross Sale', 'Total Exp.', 'Net Sale']],
-        body: tableData,
-        foot: [[
-            'Total', '', '', '', footerTotals.pattiQty, footerTotals.dabbaQty, `Rs. ${footerTotals.grossSale.toFixed(2)}`, `Rs. ${footerTotals.totalExpenses.toFixed(2)}`, `Rs. ${footerTotals.netSale.toFixed(2)}`
-        ]],
-        startY: 30,
-        theme: 'striped',
-        headStyles: { fillColor: [22, 163, 74] }
-    });
-
-    doc.save(`Sales-Register-${selectedGrower}.pdf`);
-  };
-
-  const exportToExcel = () => {
-      const worksheetData = filteredWataks.map(w => ({
-        'Date': new Date(w.date).toLocaleDateString('en-GB'),
-        'Invoice No.': w.sNo,
-        'Watak No.': w.watakNo,
-        'Khata (Grower)': w.customerName,
-        'Peti': w.totals.pattiQty || 0,
-        'Dabba': w.totals.dabbaQty || 0,
-        'Gross Sale': w.totals.grossSale,
-        'Total Expenses': w.totals.totalExpenses,
-        'Net Sale': w.totals.netSale
-    }));
-    
-    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
-    XLSX.utils.sheet_add_aoa(worksheet, [
-        ["Total", "", "", "", footerTotals.pattiQty, footerTotals.dabbaQty, footerTotals.grossSale, footerTotals.totalExpenses, footerTotals.netSale]
-    ], { origin: -1 });
-
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sales');
-    XLSX.writeFile(workbook, `Sales-Register-${selectedGrower}.xlsx`);
-  };
-
-  const handleShare = () => {
-    if (selectedGrower === 'All Growers') {
-        toast({
-            variant: 'destructive',
-            title: 'Select a Grower',
-            description: 'Please select a specific grower from the dropdown to share their portal link.',
-        });
-        return;
-    }
-
-    let message = `Salaam ${selectedGrower},\n\n`;
-    message += `You can view your complete account ledger with Firdous Ahmad & Company by clicking the link below. The portal will open directly to your account.\n\n`;
-    const encodedCustomerName = encodeURIComponent(selectedGrower);
-    const portalUrl = `${window.location.origin}/portal/login?customer=${encodedCustomerName}`;
-    message += `Portal Link: ${portalUrl}\n\n`;
-    message += `Thank you for your business!`;
-
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-  };
-
-  const navigateToBill = (id: string) => {
-    router.push(`/invoice/${id}`);
+  if (isLoading) {
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <p className="ml-4">Loading...</p>
+        </div>
+    );
   }
-
-  const handleDelete = async (sNo: string) => {
-    if(userRole !== 'admin') {
-      toast({ variant: "destructive", title: "Permission Denied", description: "You do not have permission to delete invoices."});
-      return;
-    }
-    if(!window.confirm(`Are you sure you want to delete Invoice #${sNo}? This cannot be undone.`)) return;
-    
-    localStorage.removeItem(`invoice-${sNo}`);
-    toast({ title: "Invoice Deleted", description: `Invoice #${sNo} has been deleted locally.`});
-    fetchWataks();
-  }
+  
+  if (!userRole) return null;
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-start gap-4 flex-wrap">
-            <div className="flex items-center gap-4">
-                <CardTitle className="flex items-center gap-2">
-                    Sales Register
-                    {!isLoading && <Badge variant="outline">{yearlyCount} This Year</Badge>}
-                </CardTitle>
-                <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        type="search"
-                        placeholder="Search by Invoice No, Watak No, Name..."
-                        className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
-                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="flex items-center gap-2 min-w-[200px]">
-                           <span className="flex-1 text-left">{selectedGrower}</span>
-                           <ChevronDown className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start">
-                        {growers.map(grower => (
-                             <DropdownMenuItem key={grower} onSelect={() => setSelectedGrower(grower)}>
-                                {grower}
-                             </DropdownMenuItem>
-                        ))}
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </div>
-            <div className="flex items-center gap-2">
-                 <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setViewMode(viewMode === 'table' ? 'grid' : 'table')}
-                    title={viewMode === 'table' ? 'Grid View' : 'Table View'}
-                    >
-                    {viewMode === 'table' ? <LayoutGrid className="h-4 w-4" /> : <List className="h-4 w-4" />}
-                </Button>
-                <Button size="sm" onClick={handleShare} variant="outline" className="gap-1">
-                    <FaWhatsapp className="h-4 w-4 text-green-500" />
-                     Share Portal
-                </Button>
-                 <Button size="sm" variant="outline" className="gap-1" onClick={exportToPDF}>
-                    <FileDown className="h-3.5 w-3.5" />
-                    PDF
-                </Button>
-                <Button size="sm" variant="outline" className="gap-1" onClick={exportToExcel}>
-                    <FileDown className="h-3.5 w-3.5" />
-                    Excel
-                </Button>
-                <Button size="sm" className="gap-1" onClick={() => router.push('/sales')}>
-                    <PlusCircle className="h-3.5 w-3.5" />
-                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                        Add Invoice
-                    </span>
-                </Button>
-            </div>
-        </div>
-        <CardDescription>Track and manage customer credit and sales invoices.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-            <div className="flex justify-center items-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-        ) : viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {filteredWataks.map((watak) => (
-                     <div key={watak.id} onClick={() => navigateToBill(watak.sNo)} className="cursor-pointer">
-                        <DocumentCard type="watak" title={`Invoice #${watak.watakNo || watak.sNo}`}>
-                            <p className="text-lg font-semibold">{watak.customerName}</p>
-                            {watak.customerUrdu && <p className="font-urdu text-xl mt-1">{watak.customerUrdu}</p>}
-                            <p className="text-sm mt-2">Date: {new Date(watak.date).toLocaleDateString()}</p>
-                            <p className="text-2xl font-bold mt-4">₹{watak.totals.netSale.toFixed(2)}</p>
-                        </DocumentCard>
-                    </div>
-                ))}
-            </div>
-        ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Invoice No.</TableHead>
-              <TableHead>Watak No.</TableHead>
-              <TableHead>Khata (Grower)</TableHead>
-              <TableHead>Peti</TableHead>
-              <TableHead>Dabba</TableHead>
-              <TableHead className="text-right">Gross Sale</TableHead>
-              <TableHead className="text-right">Total Exp.</TableHead>
-              <TableHead className="text-right">Net Sale</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredWataks.map((watak: WatakEntry) => (
-              <TableRow key={watak.id}>
-                <TableCell>{new Date(watak.date).toLocaleDateString('en-GB')}</TableCell>
-                <TableCell>{watak.sNo}</TableCell>
-                <TableCell>{watak.watakNo}</TableCell>
-                <TableCell className="font-medium">{watak.customerName}</TableCell>
-                <TableCell>{watak.totals.pattiQty || 0}</TableCell>
-                <TableCell>{watak.totals.dabbaQty || 0}</TableCell>
-                <TableCell className="text-right">₹{watak.totals.grossSale.toFixed(2)}</TableCell>
-                <TableCell className="text-right">₹{watak.totals.totalExpenses.toFixed(2)}</TableCell>
-                <TableCell className="text-right">₹{watak.totals.netSale.toFixed(2)}</TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" onClick={() => navigateToBill(watak.sNo)}>
-                    <FilePenLine className="h-4 w-4" />
-                  </Button>
-                  {userRole === 'admin' && (
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(watak.sNo)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-             <TableRow className="font-bold bg-muted">
-                <TableCell colSpan={4} className="text-right">Total</TableCell>
-                <TableCell>{footerTotals.pattiQty}</TableCell>
-                <TableCell>{footerTotals.dabbaQty}</TableCell>
-                <TableCell className="text-right">₹{footerTotals.grossSale.toFixed(2)}</TableCell>
-                <TableCell className="text-right">₹{footerTotals.totalExpenses.toFixed(2)}</TableCell>
-                <TableCell className="text-right">₹{footerTotals.netSale.toFixed(2)}</TableCell>
-                <TableCell></TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-        )}
-      </CardContent>
-    </Card>
+    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+      <div className="hidden border-r bg-background md:block">
+        <NavContent isMobile={false} />
+      </div>
+      <div className="flex flex-col">
+        <Header title={getPageTitle()} />
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-muted/40">
+          {children}
+        </main>
+      </div>
+    </div>
   );
 }
+
+const navItems = [
+    { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { href: '/sales', icon: ShoppingCart, label: 'Invoices' },
+    { href: '/purchases', icon: Package, label: 'Purchases' },
+    { href: '/purchase-register', icon: BookCopy, label: 'Purchase Register' },
+    { href: '/outside-sales', icon: Globe, label: 'Outside Sales' },
+    { href: '/products', icon: Package, label: 'Products' },
+    { href: '/expenses', icon: Receipt, label: 'Expenses' },
+    { href: '/advances', icon: Banknote, label: 'Advances' },
+    { href: '/cold-storage', icon: Snowflake, label: 'Cold Storage' },
+    { href: '/watak-register', icon: BookCopy, label: 'Sales Register' },
+    { href: '/khata', icon: BookCopy, label: 'Khata Ledger' },
+    { href: '/rates', icon: Tags, label: 'Market Rates' },
+    { href: '/fertilizers', icon: FlaskConical, label: 'Fertilizers & Pesticides' },
+    { href: '/accessories', icon: Shapes, label: 'Supplies' },
+    { href: '/activity-log', icon: History, label: 'Activity Log' },
+];
+
+const NavLinks = ({ isMobile }: { isMobile: boolean }) => {
+  const pathname = usePathname();
+  const Wrapper = isMobile ? SheetClose : React.Fragment;
+
+  return (
+    <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+      {navItems.map((item) => {
+        const link = (
+           <Link
+              href={item.href}
+              className={cn(
+                'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted',
+                pathname.startsWith(item.href) && 'bg-muted text-primary'
+              )}
+            >
+              <item.icon className="h-4 w-4" />
+              {item.label}
+            </Link>
+        );
+        return isMobile ? <Wrapper asChild key={item.label}>{link}</Wrapper> : <React.Fragment key={item.label}>{link}</React.Fragment>;
+      })}
+    </nav>
+  );
+};
+
+const NavContent = ({ isMobile }: { isMobile: boolean }) => {
+    const pathname = usePathname();
+    const SettingsLinkWrapper = isMobile ? SheetClose : React.Fragment;
+    return (
+      <div className="flex h-full max-h-screen flex-col gap-2">
+          <div className="flex h-24 items-center border-b px-4 lg:px-6">
+              <Link href="/" className="flex items-center gap-4 font-semibold text-foreground">
+                  <div className="bg-primary/90 p-3 rounded-lg shadow-md">
+                      <Logo className="h-8 w-8 text-white" />
+                  </div>
+                  <div>
+                      <h1 className="text-xl font-bold">F.Co</h1>
+                      <p className="text-xs text-muted-foreground">FIRDOUS AHMAD & COMPANY</p>
+                      <p className="text-sm font-semibold text-primary/90">Sopore, Kashmir</p>
+                  </div>
+              </Link>
+          </div>
+          <div className="flex-1 overflow-auto py-2">
+              <NavLinks isMobile={isMobile} />
+          </div>
+          <div className="mt-auto p-4 border-t">
+              <div className="px-4 mb-4">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Quick Contact</h3>
+                  <div className="space-y-2 text-sm">
+                      <a href="tel:7006136330" className="flex items-center gap-3 text-muted-foreground hover:text-primary">
+                          <Phone className="h-4 w-4" />
+                          <span>7006136330</span>
+                      </a>
+                      <p className="text-xs text-muted-foreground">Apple Town, Sopore</p>
+                      <p className="text-xs font-semibold text-primary">Fruit Mandi Operations</p>
+                  </div>
+              </div>
+              <div className="border-t pt-4">
+                   <SettingsLinkWrapper {...(isMobile ? {asChild: true} : {})}>
+                      <Link
+                          href="/settings"
+                          className={cn(
+                              'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted',
+                              pathname.startsWith('/settings') && 'bg-muted text-primary'
+                          )}
+                          >
+                          <Settings className="h-4 w-4" />
+                          Settings
+                      </Link>
+                  </SettingsLinkWrapper>
+              </div>
+              <div className="text-center text-xs text-muted-foreground mt-4">
+                  <p>© 2025 F.Co</p>
+                  <p>Firdous Ahmad & Company</p>
+              </div>
+          </div>
+      </div>
+  )
+};
