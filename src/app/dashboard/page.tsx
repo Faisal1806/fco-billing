@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Package, UserCheck, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, History, BookOpen, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Hash, ShoppingCart, Globe, DollarSign, Banknote, Snowflake, Cog, CheckCircle } from 'lucide-react';
+import { Loader2, Package, UserCheck, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, History, BookOpen, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Hash, ShoppingCart, Globe, DollarSign, Banknote, Snowflake, Cog, CheckCircle, FileDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import RateList from '@/components/RateList';
@@ -131,7 +131,7 @@ const FeaturesDialog = () => {
         { name: "Advances & Loans", description: "Track advances given to growers and repayments received from them.", icon: Banknote },
         { name: "Expense Tracking", description: "Monitor both automatic expenses from sales and manual company expenses like rent.", icon: DollarSign },
         { name: "Inventory Management", description: "Manage stock levels for fruits, accessories, and other products with reorder alerts.", icon: Package },
-        { name-g: "Cold Storage Register", description: "Track stock placed in cold storage, including inward and outward movements.", icon: Snowflake },
+        { name: "Cold Storage Register", description: "Track stock placed in cold storage, including inward and outward movements.", icon: Snowflake },
         { name: "Rate Lists", description: "View automatically generated rate lists from your sales and live official mandi rates.", icon: TrendingUp },
         { name: "Customer Portal", description: "A secure portal for customers to view their own ledger history.", icon: UserCheck },
         { name: "Data Portability", description: "Export your data to PDF and Excel from almost any register for backup and analysis.", icon: FileDown },
