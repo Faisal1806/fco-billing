@@ -43,7 +43,7 @@ const sidebarSections = [
         { name: "Sales Invoices", href: "/sales", icon: FileText },
         { name: "Watak Register", href: "/watak-register", icon: FileSpreadsheet },
         { name: "Purchases", href: "/purchase-register", icon: ShoppingCart },
-        { name: "Delivery Notes", href: "/sales?tab=challan", icon: Truck },
+        { name: "Delivery Notes", href: "/challan-register", icon: Truck },
         { name: "Outside Sales (Bikris)", href: "/outside-sales", icon: Globe },
       ],
     },
@@ -94,8 +94,8 @@ export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
        <Link
         href={href}
         className={cn(
-          "flex items-center gap-3 rounded-lg px-3 py-2 text-gray-300 transition-all hover:bg-[#23262F] hover:text-white",
-          isActive && "bg-[#313236] text-[#03DAC5] font-bold"
+          "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+          isActive && "bg-muted text-primary"
         )}
       >
         <Icon className="h-4 w-4" />
@@ -110,33 +110,33 @@ export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
   };
 
   return (
-    <div className="flex h-full max-h-screen flex-col bg-[#181A1B] text-gray-200 shadow-xl">
-      <div className="flex h-14 items-center border-b border-gray-800 px-4 lg:h-[60px] lg:px-6">
-        <Link href="/" className="flex items-center gap-2 font-semibold text-white">
-            <div className="bg-purple-600 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold">
-              F
-            </div>
-            <span>F.Co</span>
+    <div className="flex h-full max-h-screen flex-col gap-2">
+      <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+        <Link href="/" className="flex items-center gap-2 font-semibold">
+          <div className="bg-purple-600 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold">
+            F
+          </div>
+          <span className="">F.Co</span>
         </Link>
       </div>
 
        {/* Quick Contact */}
-      <div className="px-4 py-4 text-sm text-gray-400 space-y-1 border-b border-gray-800">
+      <div className="px-4 py-2 text-sm text-muted-foreground space-y-1 border-b">
         <div className="flex items-center gap-2">
-          <Phone size={14} className="text-purple-400" />
+          <Phone size={14} className="text-primary" />
           <span>+91 9797002164</span>
         </div>
         <div className="flex items-center gap-2">
-          <MapPin size={14} className="text-green-400" />
+          <MapPin size={14} className="text-primary" />
           <span>Shed No. 13, Fud No. 12A</span>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <nav className="grid items-start p-2 text-sm font-medium lg:p-4">
+        <nav className="grid items-start p-2 text-sm font-medium lg:px-4">
           {sidebarSections.map((section) => (
             <div key={section.title} className="mb-2">
-              <h3 className="mb-2 px-2 text-xs font-bold uppercase tracking-wider text-gray-500">
+              <h3 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 {section.title}
               </h3>
               <div className="grid grid-flow-row auto-rows-max text-sm">
@@ -149,8 +149,8 @@ export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
         </nav>
       </div>
 
-      <div className="mt-auto p-4 border-t border-gray-800">
-        <Button variant="ghost" onClick={handleLogout} className="flex items-center gap-3 w-full justify-start rounded-md px-3 py-2 text-gray-300 hover:bg-red-800/80 hover:text-white">
+      <div className="mt-auto p-4 border-t">
+        <Button variant="ghost" onClick={handleLogout} className="flex items-center gap-3 w-full justify-start rounded-md px-3 py-2 text-muted-foreground hover:bg-red-800/20 hover:text-red-500">
             <LogOut className="h-4 w-4" />
             <span>Logout</span>
         </Button>
@@ -162,7 +162,7 @@ export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
 
 export default function Sidebar() {
     return (
-        <div className="hidden border-r border-gray-800 bg-[#181A1B] md:block">
+        <div className="hidden border-r bg-muted/40 md:block">
             <SidebarContent />
         </div>
     )
