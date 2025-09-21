@@ -26,85 +26,108 @@ import { Logo } from './logo';
 import { cn } from '@/lib/utils';
 import { SheetClose } from './ui/sheet';
 
+const iconMap: { [key: string]: React.ElementType } = {
+  "Dashboard": LayoutGrid,
+  "Sales Invoices": FileText,
+  "Watak Register": BookCopy,
+  "Purchases": ShoppingCart,
+  "Purchase Register": List,
+  "Outside Sales (Bikris)": Globe,
+  "Products": Package,
+  "Expenses": FileText,
+  "Advances": HandCoins,
+  "Cold Storage": Snowflake,
+  "Khata Ledger": BookOpen,
+  "Fruit Rates": Apple,
+  "Fertilizers And Pesticides": FlaskConical,
+  "Accessories": Boxes,
+  "Activity Log": History,
+  "Settings": Settings,
+};
+
+const hrefMap: { [key: string]: string } = {
+  "Dashboard": "/dashboard",
+  "Sales Invoices": "/sales",
+  "Watak Register": "/watak-register",
+  "Purchases": "/purchases",
+  "Purchase Register": "/purchase-register",
+  "Outside Sales (Bikris)": "/outside-sales",
+  "Products": "/products",
+  "Expenses": "/expenses",
+  "Advances": "/advances",
+  "Cold Storage": "/cold-storage",
+  "Khata Ledger": "/khata",
+  "Fruit Rates": "/rates",
+  "Fertilizers And Pesticides": "/fertilizers",
+  "Accessories": "/accessories",
+  "Activity Log": "/activity-log",
+  "Settings": "/settings",
+};
+
 const sidebarSections = [
   {
     title: "ANALYTICS",
-    items: [
-      { name: "Dashboard", href: "/dashboard", icon: LayoutGrid },
-    ]
+    items: ["Dashboard"]
   },
   {
     title: "SALES AND PURCHASES",
     items: [
-      { name: "Sales Invoices", href: "/sales", icon: FileText },
-      { name: "Watak Register", href: "/watak-register", icon: BookCopy },
-      { name: "Purchases", href: "/purchases", icon: ShoppingCart },
-      { name: "Purchase Register", href: "/purchase-register", icon: List },
-      { name: "Outside Sales (Bikris)", href: "/outside-sales", icon: Globe },
+      "Sales Invoices",
+      "Watak Register",
+      "Purchases",
+      "Purchase Register",
+      "Outside Sales (Bikris)"
     ]
   },
   {
     title: "MANAGEMENT",
     items: [
-      { name: "Products", href: "/products", icon: Package },
-      { name: "Expenses", href: "/expenses", icon: FileText },
-      { name: "Advances", href: "/advances", icon: HandCoins },
-      { name: "Cold Storage", href: "/cold-storage", icon: Snowflake },
-      { name: "Khata Ledger", href: "/khata", icon: BookOpen },
+      "Products",
+      "Expenses",
+      "Advances",
+      "Cold Storage",
+      "Khata Ledger"
     ]
   },
   {
     title: "RESOURCES",
     items: [
-      { name: "Fruit Rates", href: "/rates", icon: Apple },
-      { name: "Fertilizers And Pesticides", href: "/fertilizers", icon: FlaskConical },
-      { name: "Accessories", href: "/accessories", icon: Boxes },
-      { name: "Activity Log", href: "/activity-log", icon: History },
+      "Fruit Rates",
+      "Fertilizers And Pesticides",
+      "Accessories",
+      "Activity Log"
     ]
   },
   {
     title: "CONFIGURATION",
-    items: [
-      { name: "Settings", href: "/settings", icon: Settings },
-    ]
+    items: ["Settings"]
   }
 ];
 
-
-const NavLink = ({ href, icon: Icon, children, isMobile }: { href: string; icon: React.ElementType; children: React.ReactNode; isMobile?: boolean }) => {
+const NavLink = ({ name, isMobile }: { name: string; isMobile?: boolean }) => {
   const pathname = usePathname();
+  const href = hrefMap[name] || '/';
+  const Icon = iconMap[name] || FileText;
   const isActive = pathname === href;
-  
+
   const LinkContent = () => (
-     <Link
+    <Link
       href={href}
       className={cn(
-        "sidebar-item flex items-center gap-4 px-7 py-2.5 text-sm font-medium text-gray-300 transition-colors hover:bg-[#23262f] hover:text-white",
+        "sidebar-item flex items-center gap-4 px-7 py-2.5 text-sm font-medium text-gray-300 transition-colors hover:bg-[#23262f] hover:text-white rounded-md mb-px",
         isActive && "bg-[#313236] text-[#03dac5] font-bold"
       )}
     >
       <Icon className="h-4 w-4" />
-      {children}
+      {name}
     </Link>
   );
 
   if (isMobile) {
-    return <SheetClose asChild><LinkContent /></SheetClose>
+    return <SheetClose asChild><LinkContent /></SheetClose>;
   }
   return <LinkContent />;
 };
-
-const NavGroup = ({ title, items, isMobile }: { title: string; items: { name: string, href: string, icon: React.ElementType }[], isMobile?: boolean }) => (
-    <div className="sidebar-section mb-4">
-        <h3 className="sidebar-section-title px-5 py-2 text-xs font-bold uppercase text-gray-500 tracking-wider">
-            {title}
-        </h3>
-        <div className="space-y-1">
-            {items.map(item => <NavLink key={item.href} href={item.href} icon={item.icon} isMobile={isMobile}>{item.name}</NavLink>)}
-        </div>
-    </div>
-);
-
 
 export const SidebarContent = ({ isMobile = false }) => {
   return (
@@ -115,10 +138,19 @@ export const SidebarContent = ({ isMobile = false }) => {
           <span className="text-lg">F.Co</span>
         </Link>
       </div>
-      <div className="flex-1 overflow-y-auto pt-4">
+      <div className="flex-1 overflow-y-auto pt-4 px-2">
         <nav className="grid items-start text-sm font-medium">
-          {sidebarSections.map((section) => (
-            <NavGroup key={section.title} title={section.title} items={section.items} isMobile={isMobile} />
+          {sidebarSections.map((section, i) => (
+            <div className="sidebar-section mb-4" key={i}>
+              <div className="sidebar-section-title px-5 py-2 text-xs font-bold uppercase text-gray-500 tracking-wider">
+                {section.title}
+              </div>
+              <div className="space-y-1">
+                {section.items.map((item, j) => (
+                  <NavLink key={j} name={item} isMobile={isMobile} />
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
       </div>
@@ -132,9 +164,8 @@ export const SidebarContent = ({ isMobile = false }) => {
           </div>
       </div>
     </div>
-  )
+  );
 };
-
 
 export default function Sidebar() {
   return (
