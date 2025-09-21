@@ -1,4 +1,3 @@
-
 'use client';
 
 import AutomaticRateList from "@/components/AutomaticRateList";
