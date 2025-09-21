@@ -37,7 +37,7 @@ export default function RootLayout({
       <body className={cn(inter.className)}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
+          defaultTheme="dark"
           enableSystem
         >
           <LanguageProvider>
