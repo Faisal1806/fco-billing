@@ -403,5 +403,3 @@ export default function SalesRegisterPage() {
     </Card>
   );
 }
-
-    
