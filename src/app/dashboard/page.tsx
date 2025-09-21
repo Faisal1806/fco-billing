@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Package, UserCheck, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, History, BookOpen, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Hash, ShoppingCart, Globe, DollarSign, Banknote, Snowflake, Cog, CheckCircle, FileDown } from 'lucide-react';
+import { Loader2, Package, UserCheck, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, History, BookOpen, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Hash, ShoppingCart, Globe, DollarSign, Banknote, Snowflake, Cog, CheckCircle, FileDown, FileSpreadsheet, Settings } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import RateList from '@/components/RateList';
@@ -119,53 +119,42 @@ const StatCard = ({ title, value, icon: Icon, note, iconBgColor }: { title: stri
     </Card>
 );
 
-const FeaturesDialog = () => {
-    const features = [
-        { name: "Sales Invoices (Watak)", description: "Create, manage, and print sales invoices with automatic expense calculations.", icon: FileText },
-        { name: "Purchase Register", description: "Record purchases from growers and manage bills for items bought at the mandi.", icon: ShoppingCart },
-        { name: "Khata Ledger", description: "Comprehensive ledger for tracking receivables from customers and payables to growers.", icon: BookOpen },
-        { name: "Outside Sales (Bikri)", description: "Manage sales to outside markets, linking them to challans and calculating profit/loss.", icon: Globe },
-        { name: "Delivery Notes (Challan)", description: "Generate and print delivery notes for goods being transported.", icon: FileText },
-        { name: "Goods Receipts", description: "Record goods received from growers before they are sold.", icon: FileText },
-        { name: "Pesticide & Fertilizer Sales", description: "A dedicated module for creating bills for pesticides, fertilizers, and other farm inputs.", icon: FlaskConical },
-        { name: "Advances & Loans", description: "Track advances given to growers and repayments received from them.", icon: Banknote },
-        { name: "Expense Tracking", description: "Monitor both automatic expenses from sales and manual company expenses like rent.", icon: DollarSign },
-        { name: "Inventory Management", description: "Manage stock levels for fruits, accessories, and other products with reorder alerts.", icon: Package },
-        { name: "Cold Storage Register", description: "Track stock placed in cold storage, including inward and outward movements.", icon: Snowflake },
-        { name: "Rate Lists", description: "View automatically generated rate lists from your sales and live official mandi rates.", icon: TrendingUp },
-        { name: "Customer Portal", description: "A secure portal for customers to view their own ledger history.", icon: UserCheck },
-        { name: "Data Portability", description: "Export your data to PDF and Excel from almost any register for backup and analysis.", icon: FileDown },
-        { name: "Customization", description: "Change invoice styles and themes to match your branding.", icon: Cog },
-    ];
-    return (
-    <Dialog>
-        <DialogTrigger asChild>
-            <Button variant="outline" className="w-full">View App Features</Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-                <DialogTitle>Application Features</DialogTitle>
-                <CardDescription>A complete overview of the modules available in your SwiftSale application.</CardDescription>
-            </DialogHeader>
-            <ScrollArea className="h-96 pr-4">
-            <div className="space-y-4">
-                {features.map(feature => (
-                    <div key={feature.name} className="flex items-start gap-4">
-                         <div className="p-2 bg-muted rounded-full mt-1">
-                           <feature.icon className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                            <h4 className="font-semibold">{feature.name}</h4>
-                            <p className="text-sm text-muted-foreground">{feature.description}</p>
-                        </div>
-                    </div>
-                ))}
-            </div>
-            </ScrollArea>
-        </DialogContent>
-    </Dialog>
-    )
-}
+const navSections = [
+    {
+      title: "SALES AND PURCHASES",
+      items: [
+        { name: "Sales Invoices", href: "/sales", icon: FileText },
+        { name: "Watak Register", href: "/watak-register", icon: FileSpreadsheet },
+        { name: "Purchases", href: "/purchase-register", icon: ShoppingCart },
+        { name: "Outside Sales (Bikris)", href: "/outside-sales", icon: Globe },
+      ],
+    },
+    {
+      title: "MANAGEMENT",
+      items: [
+        { name: "Products", href: "/products", icon: Package },
+        { name: "Expenses", href: "/expenses", icon: DollarSign },
+        { name: "Advances", href: "/advances", icon: Banknote },
+        { name: "Cold Storage", href: "/cold-storage", icon: Snowflake },
+        { name: "Khata Ledger", href: "/khata", icon: BookOpen },
+      ],
+    },
+    {
+      title: "RESOURCES & LOGS",
+      items: [
+        { name: "Fruit Rates", href: "/rates", icon: TrendingUp },
+        { name: "Fertilizers/Pesticides", href: "/fertilizers", icon: FlaskConical },
+        { name: "Accessories", href: "/accessories", icon: Box },
+        { name: "Activity Log", href: "/activity-log", icon: History },
+      ],
+    },
+     {
+      title: "CONFIGURATION",
+      items: [
+        { name: "Settings", href: "/settings", icon: Settings },
+      ],
+    },
+];
 
 const FruitDashboard = ({ stats, yearlyStats, accessoryStats, growerProfits, router }: { stats: DailyStats | null, yearlyStats: YearlyStats | null, accessoryStats: AccessoryStats | null, growerProfits: GrowerProfit[], router: any }) => (
     <div className="space-y-6">
@@ -282,13 +271,20 @@ const FruitDashboard = ({ stats, yearlyStats, accessoryStats, growerProfits, rou
                         )}
                     </CardContent>
                 </Card>
-                 <Card>
+                <Card>
                     <CardHeader>
-                        <CardTitle>App Features</CardTitle>
-                        <CardDescription>Click to see what this app can do.</CardDescription>
+                        <CardTitle>App Navigation</CardTitle>
+                        <CardDescription>Quickly jump to any section of the application.</CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        <FeaturesDialog />
+                    <CardContent className="grid grid-cols-2 gap-2">
+                         {navSections.flatMap(section => section.items).map((item) => (
+                            <Button key={item.name} variant="outline" className="justify-start gap-2" asChild>
+                               <Link href={item.href}>
+                                 <item.icon className="h-4 w-4" />
+                                 {item.name}
+                               </Link>
+                            </Button>
+                        ))}
                     </CardContent>
                 </Card>
             </div>
