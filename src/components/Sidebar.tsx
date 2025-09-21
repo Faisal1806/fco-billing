@@ -20,10 +20,11 @@ import {
   History,
   Phone,
   Settings,
+  ShoppingCart,
 } from 'lucide-react';
 import { Logo } from './logo';
 import { cn } from '@/lib/utils';
-import { Sheet } from './ui/sheet';
+import { SheetClose } from './ui/sheet';
 
 
 const mainNavLinks = [
@@ -33,6 +34,7 @@ const mainNavLinks = [
 const salesNavLinks = [
     { name: 'Sales Invoices', href: '/sales', icon: FileText },
     { name: 'Watak Register', href: '/watak-register', icon: BookCopy },
+    { name: 'Purchases', href: '/purchases', icon: ShoppingCart },
     { name: 'Purchase Register', href: '/purchase-register', icon: List },
     { name: 'Outside Sales', href: '/outside-sales', icon: Globe },
 ];
@@ -57,12 +59,11 @@ const settingsNavLinks = [
 ];
 
 
-const NavLink = ({ href, icon: Icon, children }: { href: string; icon: React.ElementType; children: React.ReactNode }) => {
+const NavLink = ({ href, icon: Icon, children, isMobile }: { href: string; icon: React.ElementType; children: React.ReactNode; isMobile?: boolean }) => {
   const pathname = usePathname();
   const isActive = pathname === href;
-
-  return (
-    <Link
+  const LinkContent = () => (
+     <Link
       href={href}
       className={cn(
         'flex items-center gap-3 rounded-lg px-3 py-2 text-gray-400 transition-all hover:text-gray-50',
@@ -73,6 +74,11 @@ const NavLink = ({ href, icon: Icon, children }: { href: string; icon: React.Ele
       {children}
     </Link>
   );
+
+  if (isMobile) {
+    return <SheetClose asChild><LinkContent /></SheetClose>
+  }
+  return <LinkContent />;
 };
 
 const NavGroup = ({ title, children }: { title: string; children: React.ReactNode }) => (
@@ -88,7 +94,6 @@ const NavGroup = ({ title, children }: { title: string; children: React.ReactNod
 
 
 export const SidebarContent = ({ isMobile = false }) => {
-  const SheetCloseOrFragment = isMobile ? Sheet : React.Fragment;
   return (
     <div className="flex h-full max-h-screen flex-col gap-2">
       <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
@@ -100,19 +105,19 @@ export const SidebarContent = ({ isMobile = false }) => {
       <div className="flex-1 overflow-y-auto">
         <nav className="grid items-start px-2 text-sm font-medium lg:px-4 space-y-4 py-4">
           <NavGroup title="Analytics">
-             {mainNavLinks.map(link => <NavLink key={link.href} href={link.href} icon={link.icon}>{link.name}</NavLink>)}
+             {mainNavLinks.map(link => <NavLink key={link.href} href={link.href} icon={link.icon} isMobile={isMobile}>{link.name}</NavLink>)}
           </NavGroup>
           <NavGroup title="Sales & Purchases">
-            {salesNavLinks.map(link => <NavLink key={link.href} href={link.href} icon={link.icon}>{link.name}</NavLink>)}
+            {salesNavLinks.map(link => <NavLink key={link.href} href={link.href} icon={link.icon} isMobile={isMobile}>{link.name}</NavLink>)}
           </NavGroup>
            <NavGroup title="Management">
-            {managementNavLinks.map(link => <NavLink key={link.href} href={link.href} icon={link.icon}>{link.name}</NavLink>)}
+            {managementNavLinks.map(link => <NavLink key={link.href} href={link.href} icon={link.icon} isMobile={isMobile}>{link.name}</NavLink>)}
           </NavGroup>
            <NavGroup title="Resources">
-            {resourcesNavLinks.map(link => <NavLink key={link.href} href={link.href} icon={link.icon}>{link.name}</NavLink>)}
+            {resourcesNavLinks.map(link => <NavLink key={link.href} href={link.href} icon={link.icon} isMobile={isMobile}>{link.name}</NavLink>)}
           </NavGroup>
            <NavGroup title="Configuration">
-            {settingsNavLinks.map(link => <NavLink key={link.href} href={link.href} icon={link.icon}>{link.name}</NavLink>)}
+            {settingsNavLinks.map(link => <NavLink key={link.href} href={link.href} icon={link.icon} isMobile={isMobile}>{link.name}</NavLink>)}
           </NavGroup>
         </nav>
       </div>
