@@ -22,6 +22,81 @@ import { Inter } from 'next/font/google';
 
 const inter = Inter({ subsets: ['latin'] });
 
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  const pathname = usePathname();
+  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/portal');
+  const isPrintPage = pathname.startsWith('/invoice/') || pathname.startsWith('/purchase-bill/') || pathname.startsWith('/receipt/') || pathname.startsWith('/challan/') || pathname.startsWith('/pesticide-invoice/') || pathname.startsWith('/bikri-bill/');
+
+  
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body className={cn(inter.className)}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem
+        >
+          <LanguageProvider>
+              {isAuthPage || isPrintPage ? children : <AppLayout>{children}</AppLayout>}
+              <Toaster />
+          </LanguageProvider>
+        </ThemeProvider>
+      </body>
+    </html>
+  );
+}
+
+const AppLayout = ({ children }: { children: React.ReactNode }) => {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [userRole, setUserRole] = React.useState<string | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const role = localStorage.getItem('userRole');
+      if (!role) {
+        router.push('/login');
+      } else {
+        setUserRole(role);
+        setIsLoading(false);
+      }
+    }
+  }, [router, pathname]);
+  
+  const getPageTitle = () => {
+    const item = navItems.find(item => pathname.startsWith(item.href));
+    return item ? item.label : 'Dashboard';
+  }
+
+  if (isLoading) {
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <p className="ml-4">Loading...</p>
+        </div>
+    );
+  }
+  
+  if (!userRole) return null;
+
+  return (
+    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+      <div className="hidden border-r bg-background md:block">
+        <NavContent isMobile={false} />
+      </div>
+      <div className="flex flex-col">
+        <Header title={getPageTitle()} />
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-muted/40">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}
 
 const navItems = [
     { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -121,84 +196,4 @@ const NavContent = ({ isMobile }: { isMobile: boolean }) => {
   )
 };
 
-const AppContent = ({ children }: { children: React.ReactNode }) => {
-  const pathname = usePathname();
-  const router = useRouter();
-  const [userRole, setUserRole] = React.useState<string | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
-
-  React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const role = localStorage.getItem('userRole');
-      if (!role) {
-        router.push('/login');
-      } else {
-        setUserRole(role);
-        setIsLoading(false);
-      }
-    }
-  }, [router, pathname]);
-  
-  const getPageTitle = () => {
-    if (pathname.startsWith('/invoice/')) return 'Invoice';
-    if (pathname.startsWith('/purchase-bill/')) return 'Purchase Bill';
-    if (pathname.startsWith('/receipt/')) return 'Payment';
-    if (pathname.startsWith('/challan/')) return 'Delivery Note';
-    if (pathname.startsWith('/pesticide-invoice/')) return 'Pesticide Bill';
-    if (pathname.startsWith('/bikri-bill/')) return 'Bikri Bill';
     
-    const item = navItems.find(item => pathname.startsWith(item.href));
-    return item ? item.label : 'SwiftSale';
-  }
-
-  if (isLoading) {
-    return (
-        <div className="min-h-screen flex items-center justify-center bg-background">
-          <p className="ml-4">Loading...</p>
-        </div>
-    );
-  }
-  
-  if (!userRole) return null;
-
-  return (
-    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <div className="hidden border-r bg-background md:block">
-        <NavContent isMobile={false} />
-      </div>
-      <div className="flex flex-col">
-        <Header title={getPageTitle()} />
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-muted/40">
-          {children}
-        </main>
-      </div>
-    </div>
-  );
-};
-
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  const pathname = usePathname();
-  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/portal');
-  
-  return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={cn(inter.className)}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-        >
-          <LanguageProvider>
-              {isAuthPage ? children : <AppContent>{children}</AppContent>}
-              <Toaster />
-          </LanguageProvider>
-        </ThemeProvider>
-      </body>
-    </html>
-  );
-}
