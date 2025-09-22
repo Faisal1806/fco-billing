@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -59,6 +60,45 @@ const emptyFormState: Omit<Party, 'id'> = {
     notes: '',
 };
 
+const defaultGrowers: Omit<Party, 'id'>[] = [
+    { name: 'GH. Mohiuddin Lone ®. R/o Nadihal Baramulla', type: 'Grower' },
+    { name: 'AB. Majeed Lone S/P. R/o Nadihal Bla.', type: 'Grower' },
+    { name: 'AB. Salaam Lone K/P. R/o', type: 'Grower' },
+    { name: 'Mohd. Ayoub Khan. R/o', type: 'Grower' },
+    { name: 'Nazir Ahmad Dar (Happa). R/o', type: 'Grower' },
+    { name: 'Mohd. Maqbool Dar (Happa). R/o', type: 'Grower' },
+    { name: 'Mushtaq Ahmad Lone K/P. R/o', type: 'Grower' },
+    { name: 'Manzoor Ahmad Lone K/P. R/o', type: 'Grower' },
+    { name: 'Naseer Ahmad Bhat. R/o', type: 'Grower' },
+    { name: 'GH. Mohd. Lone B/P. R/o', type: 'Grower' },
+    { name: 'GH. Mohd. Bhat. R/o', type: 'Grower' },
+    { name: 'Nazir Ahmad Lone B/P. R/o', type: 'Grower' },
+    { name: 'Mushtaq Ahmad Lone B/P. R/o', type: 'Grower' },
+    { name: 'Mohd. Maqbool Baigh. R/o', type: 'Grower' },
+    { name: 'Mohd. Shabaan Ahangar. R/o', type: 'Grower' },
+    { name: 'Mohd. Akbar Lone B/P. R/o', type: 'Grower' },
+    { name: 'Tanveer Ahmad Lone B/P. R/o', type: 'Grower' },
+    { name: 'Mohd. Shabaan Lone (Lama). R/o', type: 'Grower' },
+    { name: 'Mohd. Arif Lone (Uffa). R/o', type: 'Grower' },
+    { name: 'Mohd. Subhan Parry. R/o', type: 'Grower' },
+    { name: 'GH. Mohiuddin Lone (Potty). R/o', type: 'Grower' },
+    { name: 'GH. Mohd Bhat. R/o', type: 'Grower' },
+    { name: 'Majoor Ahmad Lone ®. R/o', type: 'Grower' },
+    { name: 'Mohd. Akbar Lone (Lama). R/o', type: 'Grower' },
+    { name: 'Jaana ® B/P. R/o', type: 'Grower' },
+    { name: 'Rayees Rajab ®. R/o', type: 'Grower' },
+    { name: 'GH. Nabi Lone. R/o', type: 'Grower' },
+    { name: 'Hilal Ahmad Wani. R/o', type: 'Grower' },
+    { name: 'Javid Ahmad Sheikh. R/o Shanoo, Mawer Handwara', type: 'Grower' },
+    { name: 'Manzoor Ah. Lone B/P. R/o Nadihal Bla.', type: 'Grower' },
+    { name: 'Farooq Ahmad Lone (Lama) R/o', type: 'Grower' },
+    { name: 'Mohd. Ashraf wani. R/o', type: 'Grower' },
+    { name: 'Mohd. Yousuf Lone B/P R/o Nadihal Bla', type: 'Grower' },
+    { name: 'Mohd. Yousuf Lone (Waza) R/o Nadihal Bla.', type: 'Grower' },
+    { name: 'Farooq Ahmad Bhat R/o Nadihal Bla.', type: 'Grower' },
+    { name: 'GH. Nabi Wani R/o Nadihal Bla.', type: 'Grower' }
+];
+
 // Re-using the normalization logic from khata page
 const normalizeName = (name: string): string => {
     if (!name) return '';
@@ -98,7 +138,15 @@ export default function PartiesPage() {
     const transactionCounts: {[key: string]: {sales: number, purchases: number, expenses: number}} = {};
     const localBalances: {[key: string]: number} = {};
 
-    // 1. Load explicitly saved parties
+    // 1. Load default growers
+    defaultGrowers.forEach(g => {
+      const normalized = normalizeName(g.name);
+      if (!loadedParties[normalized]) {
+        loadedParties[normalized] = { ...g, id: `${PARTY_STORAGE_PREFIX}${normalized}` };
+      }
+    });
+
+    // 2. Load explicitly saved parties from localStorage (will overwrite defaults if names match)
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key?.startsWith(PARTY_STORAGE_PREFIX)) {
@@ -108,7 +156,7 @@ export default function PartiesPage() {
       }
     }
 
-    // 2. Infer parties and calculate balances from transactions
+    // 3. Infer parties and calculate balances from transactions
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (!key) continue;
@@ -176,7 +224,7 @@ export default function PartiesPage() {
         }
     }
     
-    // 3. Determine party type
+    // 4. Determine party type based on transactions
     Object.keys(loadedParties).forEach(normalized => {
         const counts = transactionCounts[normalized];
         const party = loadedParties[normalized];
@@ -189,11 +237,12 @@ export default function PartiesPage() {
             if (hasSales && hasPurchases) party.type = 'Both';
             else if (hasSales) party.type = 'Grower';
             else if (hasPurchases) party.type = 'Customer';
-            else if (hasExpenses) party.type = 'Outside Party';
+            else if (hasExpenses && party.type === 'Grower') { 
+              // Don't override if it's already a grower/customer
+            } else if (hasExpenses) {
+                party.type = 'Outside Party';
+            }
         }
-        // If 'type' was manually set, it will be preserved if no transactions exist.
-        // If a party has multiple transaction types, the most specific one is prioritized.
-        // e.g., a grower who is also an expense party will be shown as 'Grower'.
     });
     
     setParties(Object.values(loadedParties).sort((a,b) => a.name.localeCompare(b.name)));
@@ -452,3 +501,5 @@ export default function PartiesPage() {
     </Card>
   );
 }
+
+    
