@@ -60,58 +60,56 @@ const emptyFormState: Omit<Party, 'id'> = {
     notes: '',
 };
 
-const defaultGrowers: Omit<Party, 'id' | 'address'> & { address?: string }[] = [
-    { name: 'GH. Mohiuddin Lone ®. R/o Nadihal Baramulla', type: 'Grower' },
-    { name: 'AB. Majeed Lone S/P', type: 'Grower' },
-    { name: 'AB. Salaam Lone K/P', type: 'Grower' },
-    { name: 'Mohd. Ayoub Khan', type: 'Grower' },
-    { name: 'Nazir Ahmad Dar (Happa)', type: 'Grower' },
-    { name: 'Mohd. Maqbool Dar (Happa)', type: 'Grower' },
-    { name: 'Mushtaq Ahmad Lone K/P', type: 'Grower' },
-    { name: 'Manzoor Ahmad Lone K/P', type: 'Grower' },
-    { name: 'Naseer Ahmad Bhat', type: 'Grower' },
-    { name: 'GH. Mohd. Lone B/P', type: 'Grower' },
-    { name: 'GH. Mohd. Bhat', type: 'Grower' },
-    { name: 'Nazir Ahmad Lone B/P', type: 'Grower' },
-    { name: 'Mushtaq Ahmad Lone B/P', type: 'Grower' },
-    { name: 'Mohd. Maqbool Baigh', type: 'Grower' },
-    { name: 'Mohd. Shabaan Ahangar', type: 'Grower' },
-    { name: 'Mohd. Akbar Lone B/P', type: 'Grower' },
-    { name: 'Tanveer Ahmad Lone B/P', type: 'Grower' },
-    { name: 'Mohd. Shabaan Lone (Lama)', type: 'Grower' },
-    { name: 'Mohd. Arif Lone (Uffa)', type: 'Grower' },
-    { name: 'Mohd. Subhan Parry', type: 'Grower' },
-    { name: 'GH. Mohiuddin Lone (Potty)', type: 'Grower' },
-    { name: 'GH. Mohd Bhat', type: 'Grower' },
-    { name: 'Majoor Ahmad Lone ®', type: 'Grower' },
-    { name: 'Mohd. Akbar Lone (Lama)', type: 'Grower' },
-    { name: 'Jaana ® B/P', type: 'Grower' },
-    { name: 'Rayees Rajab ®', type: 'Grower' },
-    { name: 'GH. Nabi Lone', type: 'Grower' },
-    { name: 'Hilal Ahmad Wani', type: 'Grower' },
+const defaultGrowers: Omit<Party, 'id'>[] = [
+    { name: 'AB. Majeed Lone S/P', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'AB. Salaam Lone K/P', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Ayoub Khan', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'Nazir Ahmad Dar (Happa)', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Maqbool Dar (Happa)', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'Mushtaq Ahmad Lone K/P', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'Manzoor Ahmad Lone K/P', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'Naseer Ahmad Bhat', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Mohd. Lone B/P', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Mohd. Bhat', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'Nazir Ahmad Lone B/P', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'Mushtaq Ahmad Lone B/P', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Maqbool Baigh', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Shabaan Ahangar', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Akbar Lone B/P', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'Tanveer Ahmad Lone B/P', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Shabaan Lone (Lama)', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Arif Lone (Uffa)', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Subhan Parry', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Mohiuddin Lone (Potty)', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'Majoor Ahmad Lone ®', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Akbar Lone (Lama)', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'Jaana ® B/P', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'Rayees Rajab ®', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Nabi Lone', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'Hilal Ahmad Wani', type: 'Grower', address: 'R/o Nadihal Bla.' },
     { name: 'Javid Ahmad Sheikh', type: 'Grower', address: 'R/o Shanoo, Mawer Handwara' },
-    { name: 'Manzoor Ah. Lone B/P', type: 'Grower' },
-    { name: 'Farooq Ahmad Lone (Lama)', type: 'Grower' },
-    { name: 'Mohd. Ashraf wani', type: 'Grower' },
-    { name: 'Mohd. Yousuf Lone B/P', type: 'Grower' },
-    { name: 'Mohd. Yousuf Lone (Waza)', type: 'Grower' },
-    { name: 'Farooq Ahmad Bhat', type: 'Grower' },
-    { name: 'GH. Nabi Wani', type: 'Grower' }
-].map(g => ({...g, address: g.address || 'R/o Nadihal Bla.'}));
+    { name: 'Manzoor Ah. Lone B/P', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'Farooq Ahmad Lone (Lama)', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Ashraf wani', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Yousuf Lone B/P', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Yousuf Lone (Waza)', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'Farooq Ahmad Bhat', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Nabi Wani', type: 'Grower', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Mohiuddin Lone ®', type: 'Grower', address: 'R/o Nadihal Baramulla' },
+    { name: 'Bashir Ah. Lone B/P', type: 'Grower', address: 'R/o Nadihal Bla.' }
+];
 
-
-// Re-using the normalization logic from khata page
 const normalizeName = (name: string): string => {
     if (!name) return '';
     return name
         .toUpperCase()
-        .replace(/R\/O.*$/i, '') // Remove address part
-        .replace(/\(.*\)/, '') // Remove anything in parentheses like (LAMA)
-        .replace(/\b(MOHAMMAD|MOHD|MD|GH)\b/g, 'MOHAMMAD')
+        .replace(/R\/O.*$/i, '')
+        .replace(/\(.*\)/, '')
+        .replace(/\b(MOHAMMAD|MOHD|MD|GH\.)\b/g, 'MOHAMMAD')
         .replace(/\b(AHMAD|AH)\b/g, 'AHMAD')
-        .replace(/S\/P|B\/P|K\/P|®/g, '') // Remove suffixes
-        .replace(/[\.\,\']/g, '') // Remove punctuation
-        .replace(/\s+/g, ' ') // Collapse multiple spaces
+        .replace(/S\/P|B\/P|K\/P|®|\(R\)/g, '')
+        .replace(/[\.\,\']/g, '')
+        .replace(/\s+/g, ' ')
         .trim();
 };
 
@@ -158,7 +156,9 @@ export default function PartiesPage() {
       if (key?.startsWith(PARTY_STORAGE_PREFIX)) {
         const party = JSON.parse(localStorage.getItem(key)!);
         const normalized = normalizeName(party.name);
-        loadedParties[normalized] = party;
+        if (!loadedParties[normalized]) {
+          loadedParties[normalized] = party;
+        }
       }
     }
 
@@ -198,10 +198,6 @@ export default function PartiesPage() {
             if(doc.partyName){
                 partyName = doc.partyName;
                 isExpense = true;
-                // Expenses are money you pay out, so they are a payable that you clear.
-                // Or you can think of them as a negative balance from your side.
-                // For simplicity, we can treat them as a "cost" and not directly impact party balance in this view,
-                // as that's handled in expense ledgers. We'll just use it for type inference.
             }
         }
         
@@ -226,13 +222,6 @@ export default function PartiesPage() {
                     name: partyName, // Use original name for display
                     type: 'Grower' // Default, will be updated below
                 };
-            } else {
-                 // Prioritize the name from the default list if it exists
-                 const defaultParty = defaultGrowers.find(p => normalizeName(p.name) === normalized);
-                 if (defaultParty) {
-                    loadedParties[normalized].name = defaultParty.name;
-                    loadedParties[normalized].address = defaultParty.address;
-                 }
             }
         }
     }
@@ -242,6 +231,8 @@ export default function PartiesPage() {
         const counts = transactionCounts[normalized];
         const party = loadedParties[normalized];
 
+        if (party.type && party.type !== 'Grower') return; // Do not override manual setting
+
         if (counts) {
             const hasSales = counts.sales > 0;
             const hasPurchases = counts.purchases > 0;
@@ -250,9 +241,7 @@ export default function PartiesPage() {
             if (hasSales && hasPurchases) party.type = 'Both';
             else if (hasSales) party.type = 'Grower';
             else if (hasPurchases) party.type = 'Customer';
-            else if (hasExpenses && party.type === 'Grower') { 
-              // Don't override if it's already a grower/customer
-            } else if (hasExpenses) {
+            else if (hasExpenses) {
                 party.type = 'Outside Party';
             }
         }

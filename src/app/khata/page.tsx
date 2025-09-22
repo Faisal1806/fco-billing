@@ -66,13 +66,13 @@ const normalizeName = (name: string): string => {
     if (!name) return '';
     return name
         .toUpperCase()
-        .replace(/R\/O.*$/i, '') // Remove address part
-        .replace(/\(.*\)/, '') // Remove anything in parentheses like (LAMA)
-        .replace(/\b(MOHAMMAD|MOHD|MD|GH)\b/g, 'MOHAMMAD')
+        .replace(/R\/O.*$/i, '')
+        .replace(/\(.*\)/, '')
+        .replace(/\b(MOHAMMAD|MOHD|MD|GH\.)\b/g, 'MOHAMMAD')
         .replace(/\b(AHMAD|AH)\b/g, 'AHMAD')
-        .replace(/S\/P|B\/P|K\/P|®/g, '') // Remove suffixes
-        .replace(/[\.\,\']/g, '') // Remove punctuation
-        .replace(/\s+/g, ' ') // Collapse multiple spaces
+        .replace(/S\/P|B\/P|K\/P|®|\(R\)/g, '')
+        .replace(/[\.\,\']/g, '')
+        .replace(/\s+/g, ' ')
         .trim();
 };
 
@@ -177,12 +177,10 @@ export default function KhataLedgerPage() {
             Object.keys(calculatedLedgers).forEach(partyKey => {
                 let runningBalance = 0;
                 calculatedLedgers[partyKey].transactions.forEach(trans => {
-                    // Credit (you owe them): Sale
+                    // Credit (you owe them): Sale, Repayment
                     // Debit (they owe you): Purchase, Advance
-                    if (trans.type === 'Sale') {
+                    if (trans.type === 'Sale' || trans.type === 'Repayment') {
                         runningBalance += trans.amount;
-                    } else if (trans.type === 'Repayment') {
-                         runningBalance += trans.amount;
                     } else { // Purchase or Advance
                         runningBalance -= trans.amount;
                     }
@@ -252,9 +250,7 @@ export default function KhataLedgerPage() {
         if (!selectedLedger) return [];
         let runningBalance = 0;
         return selectedLedger.transactions.map(tx => {
-            if(tx.type === 'Sale') {
-                runningBalance += tx.amount;
-            } else if (tx.type === 'Repayment') {
+            if(tx.type === 'Sale' || tx.type === 'Repayment') {
                 runningBalance += tx.amount;
             } else { // Advance or Purchase
                 runningBalance -= tx.amount;
@@ -479,10 +475,10 @@ export default function KhataLedgerPage() {
                                 <TableCell>
                                    <Badge variant={getBadgeVariant(tx.type)}>{tx.type}</Badge>
                                 </TableCell>
-                                <TableCell className="text-right font-mono text-green-600">
+                                <TableCell className="text-right font-mono text-red-500">
                                     {(tx.type === 'Purchase' || tx.type === 'Advance') ? `₹${tx.amount.toFixed(2)}` : '-'}
                                 </TableCell>
-                                <TableCell className="text-right font-mono text-red-500">
+                                <TableCell className="text-right font-mono text-green-600">
                                     {(tx.type === 'Sale' || tx.type === 'Repayment') ? `₹${tx.amount.toFixed(2)}` : '-'}
                                 </TableCell>
                                 <TableCell className="text-right font-mono">₹{tx.runningBalance.toFixed(2)}</TableCell>
@@ -492,16 +488,16 @@ export default function KhataLedgerPage() {
                         <TableFooter>
                             <TableRow className="font-bold">
                                 <TableCell colSpan={3} className="text-right">Totals</TableCell>
-                                <TableCell className="text-right text-green-600">₹{totals.debit.toFixed(2)}</TableCell>
-                                <TableCell className="text-right text-red-500">₹{totals.credit.toFixed(2)}</TableCell>
+                                <TableCell className="text-right text-red-500">₹{totals.debit.toFixed(2)}</TableCell>
+                                <TableCell className="text-right text-green-600">₹{totals.credit.toFixed(2)}</TableCell>
                                 <TableCell></TableCell>
                             </TableRow>
                              <TableRow className="font-bold text-lg bg-muted">
                                 <TableCell colSpan={5} className="text-right">Final Balance</TableCell>
-                                <TableCell className={`text-right ${selectedLedger.balance >= 0 ? 'text-red-700' : 'text-green-700'}`}>
+                                <TableCell className={`text-right ${selectedLedger.balance < 0 ? 'text-red-700' : 'text-green-700'}`}>
                                     ₹{Math.abs(selectedLedger.balance).toFixed(2)}
                                     <span className="text-xs text-muted-foreground ml-1">
-                                        {selectedLedger.balance >= 0 ? '(Payable)' : '(Receivable)'}
+                                        {selectedLedger.balance < 0 ? '(Receivable)' : '(Payable)'}
                                     </span>
                                 </TableCell>
                             </TableRow>
