@@ -63,7 +63,7 @@ const emptyFormState: Omit<Party, 'id'> = {
 const normalizeName = (name: string): string => {
     if (!name) return '';
     return name.toUpperCase()
-        .replace(/\b(MOHAMMAD|MOHD|MD)\b/g, 'MOHAMMAD')
+        .replace(/\b(MOHAMMAD|MOHD|MD|GH)\b/g, 'MOHAMMAD')
         .replace(/\b(AHMAD|AH)\b/g, 'AHMAD')
         .replace(/\./g, '')
         .replace(/\s+/g, ' ')
@@ -292,10 +292,10 @@ export default function PartiesPage() {
 
   const PartyTypeBadge = ({type}: {type: Party['type']}) => {
     switch (type) {
-        case 'Grower': return <Badge variant="default" className="bg-green-600">Grower</Badge>;
+        case 'Grower': return <Badge variant="default" className="bg-green-600 hover:bg-green-700">Grower</Badge>;
         case 'Customer': return <Badge variant="secondary">Customer</Badge>;
         case 'Both': return <Badge variant="outline">Both</Badge>;
-        case 'Outside Party': return <Badge variant="destructive">Outside Party</Badge>;
+        case 'Outside Party': return <Badge variant="destructive" className="bg-orange-500 hover:bg-orange-600">Outside Party</Badge>;
         default: return <Badge>{type}</Badge>;
     }
   }
@@ -452,5 +452,3 @@ export default function PartiesPage() {
     </Card>
   );
 }
-
-    

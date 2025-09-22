@@ -30,10 +30,49 @@ type Party = {
 
 type PartyTypeFilter = 'all' | 'grower' | 'customer' | 'outside';
 
+const defaultGrowers: Omit<Party, 'id'>[] = [
+    { name: 'GH. Mohiuddin Lone ®. R/o Nadihal Baramulla', type: 'Grower' },
+    { name: 'AB. Majeed Lone S/P. R/o Nadihal Bla.', type: 'Grower' },
+    { name: 'AB. Salaam Lone K/P. R/o', type: 'Grower' },
+    { name: 'Mohd. Ayoub Khan. R/o', type: 'Grower' },
+    { name: 'Nazir Ahmad Dar (Happa). R/o', type: 'Grower' },
+    { name: 'Mohd. Maqbool Dar (Happa). R/o', type: 'Grower' },
+    { name: 'Mushtaq Ahmad Lone K/P. R/o', type: 'Grower' },
+    { name: 'Manzoor Ahmad Lone K/P. R/o', type: 'Grower' },
+    { name: 'Naseer Ahmad Bhat. R/o', type: 'Grower' },
+    { name: 'GH. Mohd. Lone B/P. R/o', type: 'Grower' },
+    { name: 'GH. Mohd. Bhat. R/o', type: 'Grower' },
+    { name: 'Nazir Ahmad Lone B/P. R/o', type: 'Grower' },
+    { name: 'Mushtaq Ahmad Lone B/P. R/o', type: 'Grower' },
+    { name: 'Mohd. Maqbool Baigh. R/o', type: 'Grower' },
+    { name: 'Mohd. Shabaan Ahangar. R/o', type: 'Grower' },
+    { name: 'Mohd. Akbar Lone B/P. R/o', type: 'Grower' },
+    { name: 'Tanveer Ahmad Lone B/P. R/o', type: 'Grower' },
+    { name: 'Mohd. Shabaan Lone (Lama). R/o', type: 'Grower' },
+    { name: 'Mohd. Arif Lone (Uffa). R/o', type: 'Grower' },
+    { name: 'Mohd. Subhan Parry. R/o', type: 'Grower' },
+    { name: 'GH. Mohiuddin Lone (Potty). R/o', type: 'Grower' },
+    { name: 'GH. Mohd Bhat. R/o', type: 'Grower' },
+    { name: 'Majoor Ahmad Lone ®. R/o', type: 'Grower' },
+    { name: 'Mohd. Akbar Lone (Lama). R/o', type: 'Grower' },
+    { name: 'Jaana ® B/P. R/o', type: 'Grower' },
+    { name: 'Rayees Rajab ®. R/o', type: 'Grower' },
+    { name: 'GH. Nabi Lone. R/o', type: 'Grower' },
+    { name: 'Hilal Ahmad Wani. R/o', type: 'Grower' },
+    { name: 'Javid Ahmad Sheikh. R/o Shanoo, Mawer Handwara', type: 'Grower' },
+    { name: 'Manzoor Ah. Lone B/P. R/o Nadihal Bla.', type: 'Grower' },
+    { name: 'Farooq Ahmad Lone (Lama) R/o', type: 'Grower' },
+    { name: 'Mohd. Ashraf wani. R/o', type: 'Grower' },
+    { name: 'Mohd. Yousuf Lone B/P R/o Nadihal Bla', type: 'Grower' },
+    { name: 'Mohd. Yousuf Lone (Waza) R/o Nadihal Bla.', type: 'Grower' },
+    { name: 'Farooq Ahmad Bhat R/o Nadihal Bla.', type: 'Grower' },
+    { name: 'GH. Nabi Wani R/o Nadihal Bla.', type: 'Grower' }
+];
+
 const normalizeName = (name: string): string => {
     if (!name) return '';
     return name.toUpperCase()
-        .replace(/\b(MOHAMMAD|MOHD|MD)\b/g, 'MOHAMMAD')
+        .replace(/\b(MOHAMMAD|MOHD|MD|GH)\b/g, 'MOHAMMAD')
         .replace(/\b(AHMAD|AH)\b/g, 'AHMAD')
         .replace(/\./g, '')
         .replace(/\s+/g, ' ')
@@ -61,6 +100,12 @@ export function PartySelector({ value, onChange, filter = 'all', disabled = fals
 
   React.useEffect(() => {
     const loadedParties: {[key: string]: Party} = {};
+
+    defaultGrowers.forEach(g => {
+        const normalized = normalizeName(g.name);
+        loadedParties[normalized] = { ...g, id: `${PARTY_STORAGE_PREFIX}${normalized}`};
+    });
+    
     const transactionCounts: {[key: string]: {sales: number, purchases: number, expenses: number}} = {};
 
     for (let i = 0; i < localStorage.length; i++) {
@@ -119,7 +164,7 @@ export function PartySelector({ value, onChange, filter = 'all', disabled = fals
         const counts = transactionCounts[normalized];
         const party = loadedParties[normalized];
 
-        if (party.type && party.type !== 'Grower') return; // Don't override manually set type
+        if (party.type && party.type !== 'Grower') return; // Don't override manually set type unless it's default
 
         if (counts) {
             const hasSales = counts.sales > 0;
@@ -138,8 +183,8 @@ export function PartySelector({ value, onChange, filter = 'all', disabled = fals
     const filtered = allPartiesList.filter(p => {
         if (filter === 'all') return true;
         if (filter === 'grower') return p.type === 'Grower' || p.type === 'Both';
-        if (filter === 'customer') return p.type === 'Customer' || p.type === 'Both';
-        if (filter === 'outside') return p.type === 'Outside Party';
+        if (filter === 'customer') return p.type === 'Customer' || p.type === 'Both' || p.type === 'Outside Party'; // Let customers also be outside parties
+        if (filter === 'outside') return p.type === 'Outside Party' || p.type === 'Customer' || p.type === 'Both'; // Let outside parties be customers
         return false;
     });
 
@@ -195,5 +240,3 @@ export function PartySelector({ value, onChange, filter = 'all', disabled = fals
     </Popover>
   )
 }
-
-    
