@@ -53,8 +53,8 @@ export default function PurchaseRegisterPage() {
   const { toast } = useToast();
 
   const [purchases, setPurchases] = React.useState<PurchaseEntry[]>([]);
-  const [growers, setGrowers] = React.useState<string[]>([]);
-  const [selectedGrower, setSelectedGrower] = React.useState('All Growers');
+  const [customers, setCustomers] = React.useState<string[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = React.useState('All Customers');
   const [searchTerm, setSearchTerm] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(true);
   const [viewMode, setViewMode] = React.useState<'grid' | 'table'>('grid');
@@ -78,8 +78,8 @@ export default function PurchaseRegisterPage() {
             }
         }
         setPurchases(items);
-        const uniqueGrowers = ['All Growers', ...new Set(items.map(p => p.growerName))];
-        setGrowers(uniqueGrowers);
+        const uniqueCustomers = ['All Customers', ...new Set(items.map(p => p.growerName))];
+        setCustomers(uniqueCustomers);
     }
     setIsLoading(false);
   }
@@ -95,7 +95,7 @@ export default function PurchaseRegisterPage() {
   }, [purchases]);
 
   const filteredPurchases = purchases
-    .filter(p => selectedGrower === 'All Growers' || p.growerName === selectedGrower)
+    .filter(p => selectedCustomer === 'All Customers' || p.growerName === selectedCustomer)
     .filter(p => {
         if (!searchTerm) return true;
         const lowerCaseSearch = searchTerm.toLowerCase();
@@ -133,7 +133,7 @@ export default function PurchaseRegisterPage() {
 
   const exportToPDF = () => {
     const doc = new jsPDF();
-    doc.text(`Purchase Register - ${selectedGrower}`, 14, 15);
+    doc.text(`Purchase Register - ${selectedCustomer}`, 14, 15);
     doc.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, 14, 22);
 
     const tableData = filteredPurchases.map(p => [
@@ -146,7 +146,7 @@ export default function PurchaseRegisterPage() {
     ]);
 
     autoTable(doc, {
-        head: [['Date', 'Bill No.', 'Grower', 'Patti', 'Dabba', 'Grand Total']],
+        head: [['Date', 'Bill No.', 'Customer', 'Patti', 'Dabba', 'Grand Total']],
         body: tableData,
         foot: [[
             'Total', '', '', footerTotals.patti, footerTotals.dabba, `Rs. ${footerTotals.grandTotal.toFixed(2)}`
@@ -156,14 +156,14 @@ export default function PurchaseRegisterPage() {
         headStyles: { fillColor: [22, 163, 74] }
     });
 
-    doc.save(`Purchase-Register-${selectedGrower}.pdf`);
+    doc.save(`Purchase-Register-${selectedCustomer}.pdf`);
   };
 
   const exportToExcel = () => {
     const worksheetData = filteredPurchases.map(p => ({
         'Date': new Date(p.date).toLocaleDateString('en-GB'),
         'Bill No.': p.billNo,
-        'Grower': p.growerName,
+        'Customer': p.growerName,
         'Patti': p.entries.filter(e => e.type === 'Patti').reduce((acc, e) => acc + (e.qty || 0), 0),
         'Dabba': p.entries.filter(e => e.type === 'Dabba').reduce((acc, e) => acc + (e.qty || 0), 0),
         'Grand Total': p.totals.grandTotal
@@ -176,22 +176,22 @@ export default function PurchaseRegisterPage() {
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Purchases');
-    XLSX.writeFile(workbook, `Purchase-Register-${selectedGrower}.xlsx`);
+    XLSX.writeFile(workbook, `Purchase-Register-${selectedCustomer}.xlsx`);
   };
     
   const handleShare = () => {
-    if (selectedGrower === 'All Growers') {
+    if (selectedCustomer === 'All Customers') {
         toast({
             variant: 'destructive',
-            title: 'Select a Grower',
-            description: 'Please select a specific grower from the dropdown to share their portal link.',
+            title: 'Select a Customer',
+            description: 'Please select a specific customer from the dropdown to share their portal link.',
         });
         return;
     }
 
-    let message = `Salaam ${selectedGrower},\n\n`;
+    let message = `Salaam ${selectedCustomer},\n\n`;
     message += `You can view your complete account ledger with Firdous Ahmad & Company by clicking the link below. The portal will open directly to your account.\n\n`;
-    const encodedCustomerName = encodeURIComponent(selectedGrower);
+    const encodedCustomerName = encodeURIComponent(selectedCustomer);
     message += `Portal Link: ${window.location.origin}/portal/login?customer=${encodedCustomerName}\n\n`;
     message += `Thank you for your business!`;
 
@@ -221,14 +221,14 @@ export default function PurchaseRegisterPage() {
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline" className="flex items-center gap-2 min-w-[200px]">
-                           <span className="flex-1 text-left">{selectedGrower}</span>
+                           <span className="flex-1 text-left">{selectedCustomer}</span>
                            <ChevronDown className="h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start">
-                        {growers.map(grower => (
-                             <DropdownMenuItem key={grower} onSelect={() => setSelectedGrower(grower)}>
-                                {grower}
+                        {customers.map(customer => (
+                             <DropdownMenuItem key={customer} onSelect={() => setSelectedCustomer(customer)}>
+                                {customer}
                              </DropdownMenuItem>
                         ))}
                     </DropdownMenuContent>
@@ -263,7 +263,7 @@ export default function PurchaseRegisterPage() {
                 </Button>
             </div>
         </div>
-        <CardDescription>Review all recorded purchases from growers.</CardDescription>
+        <CardDescription>Review all recorded purchases from customers.</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -288,7 +288,7 @@ export default function PurchaseRegisterPage() {
             <TableRow>
               <TableHead>Date</TableHead>
               <TableHead>Bill No.</TableHead>
-              <TableHead>Grower</TableHead>
+              <TableHead>Customer</TableHead>
               <TableHead>Patti</TableHead>
               <TableHead>Dabba</TableHead>
               <TableHead className="text-right">Grand Total</TableHead>
