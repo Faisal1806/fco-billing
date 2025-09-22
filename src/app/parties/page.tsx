@@ -60,43 +60,44 @@ const emptyFormState: Omit<Party, 'id'> = {
     notes: '',
 };
 
-const defaultGrowers: Omit<Party, 'id'>[] = [
-    { name: 'AB. Majeed Lone S/P', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'AB. Salaam Lone K/P', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Ayoub Khan', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'Nazir Ahmad Dar (Happa)', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Maqbool Dar (Happa)', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'Mushtaq Ahmad Lone K/P', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'Manzoor Ahmad Lone K/P', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'Naseer Ahmad Bhat', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'GH. Mohd. Lone B/P', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'GH. Mohd. Bhat', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'Nazir Ahmad Lone B/P', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'Mushtaq Ahmad Lone B/P', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Maqbool Baigh', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Shabaan Ahangar', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Akbar Lone B/P', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'Tanveer Ahmad Lone B/P', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Shabaan Lone (Lama)', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Arif Lone (Uffa)', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Subhan Parry', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'GH. Mohiuddin Lone (Potty)', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'Majoor Ahmad Lone ®', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Akbar Lone (Lama)', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'Jaana ® B/P', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'Rayees Rajab ®', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'GH. Nabi Lone', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'Hilal Ahmad Wani', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'Javid Ahmad Sheikh', type: 'Grower', address: 'R/o Shanoo, Mawer Handwara' },
-    { name: 'Manzoor Ah. Lone B/P', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'Farooq Ahmad Lone (Lama)', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Ashraf wani', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Yousuf Lone B/P', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Yousuf Lone (Waza)', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'Farooq Ahmad Bhat', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'GH. Nabi Wani', type: 'Grower', address: 'R/o Nadihal Bla.' },
-    { name: 'GH. Mohiuddin Lone ®', type: 'Grower', address: 'R/o Nadihal Baramulla' },
-    { name: 'Bashir Ah. Lone B/P', type: 'Grower', address: 'R/o Nadihal Bla.' }
+const defaultGrowers: { name: string, address: string }[] = [
+    { name: 'AB. Majeed Lone S/P', address: 'R/o Nadihal Bla.' },
+    { name: 'AB. Salaam Lone K/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Ayoub Khan', address: 'R/o Nadihal Bla.' },
+    { name: 'Nazir Ahmad Dar (Happa)', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Maqbool Dar (Happa)', address: 'R/o Nadihal Bla.' },
+    { name: 'Mushtaq Ahmad Lone K/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Manzoor Ahmad Lone K/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Naseer Ahmad Bhat', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Mohd. Lone B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Mohd. Bhat', address: 'R/o Nadihal Bla.' },
+    { name: 'Nazir Ahmad Lone B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Mushtaq Ahmad Lone B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Maqbool Baigh', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Shabaan Ahangar', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Akbar Lone B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Tanveer Ahmad Lone B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Shabaan Lone (Lama)', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Arif Lone (Uffa)', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Subhan Parry', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Mohiuddin Lone (Potty)', address: 'R/o Nadihal Bla.' },
+    { name: 'Majoor Ahmad Lone ®', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Akbar Lone (Lama)', address: 'R/o Nadihal Bla.' },
+    { name: 'Jaana ® B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Rayees Rajab ®', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Nabi Lone', address: 'R/o Nadihal Bla.' },
+    { name: 'Hilal Ahmad Wani', address: 'R/o Nadihal Bla.' },
+    { name: 'Javid Ahmad Sheikh', address: 'R/o Shanoo, Mawer Handwara' },
+    { name: 'Manzoor Ah. Lone B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Farooq Ahmad Lone (Lama)', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Ashraf wani', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Yousuf Lone B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Yousuf Lone (Waza)', address: 'R/o Nadihal Bla.' },
+    { name: 'Farooq Ahmad Bhat', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Nabi Wani', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Mohiuddin Lone ®', address: 'R/o Nadihal Baramulla' },
+    { name: 'Bashir Ah. Lone B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Mohiuddin Lone (H)', address: 'R/o Nadihal Bla.' }
 ];
 
 const normalizeName = (name: string): string => {
@@ -146,7 +147,7 @@ export default function PartiesPage() {
     defaultGrowers.forEach(g => {
       const normalized = normalizeName(g.name);
       if (!loadedParties[normalized]) {
-        loadedParties[normalized] = { ...g, id: `${PARTY_STORAGE_PREFIX}${normalized}` };
+        loadedParties[normalized] = { ...g, id: `${PARTY_STORAGE_PREFIX}${normalized}`, type: 'Grower' };
       }
     });
 

@@ -112,7 +112,8 @@ const defaultGrowers: { name: string, address: string }[] = [
     { name: 'Farooq Ahmad Bhat', address: 'R/o Nadihal Bla.' },
     { name: 'GH. Nabi Wani', address: 'R/o Nadihal Bla.' },
     { name: 'GH. Mohiuddin Lone ®', address: 'R/o Nadihal Baramulla' },
-    { name: 'Bashir Ah. Lone B/P', address: 'R/o Nadihal Bla.' }
+    { name: 'Bashir Ah. Lone B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Mohiuddin Lone (H)', address: 'R/o Nadihal Bla.' }
 ];
 
 export default function KhataLedgerPage() {
