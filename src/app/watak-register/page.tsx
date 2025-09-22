@@ -65,25 +65,16 @@ export interface WatakEntry {
 
 const normalizeName = (name: string): string => {
     if (!name) return '';
-    
-    const suffixes = ["S/P", "B/P", "K/P", "(LAMA)"];
-    let mainName = name.toUpperCase();
-    let suffix = '';
-
-    for (const s of suffixes) {
-        if (mainName.endsWith(s)) {
-            mainName = mainName.substring(0, mainName.length - s.length).trim();
-            suffix = ` ${s}`;
-            break;
-        }
-    }
-    
-    return mainName
-        .replace(/\b(MOHAMMAD|MOHD|MD)\b/g, 'MOHAMMAD')
+    return name
+        .toUpperCase()
+        .replace(/R\/O.*$/i, '') // Remove address part
+        .replace(/\(.*\)/, '') // Remove anything in parentheses like (LAMA)
+        .replace(/\b(MOHAMMAD|MOHD|MD|GH)\b/g, 'MOHAMMAD')
         .replace(/\b(AHMAD|AH)\b/g, 'AHMAD')
-        .replace(/\./g, '') // Remove dots
+        .replace(/S\/P|B\/P|K\/P|®/g, '') // Remove suffixes
+        .replace(/[\.\,\']/g, '') // Remove punctuation
         .replace(/\s+/g, ' ') // Collapse multiple spaces
-        .trim() + suffix;
+        .trim();
 };
 
 
@@ -100,6 +91,7 @@ export default function SalesRegisterPage() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [viewMode, setViewMode] = React.useState<'table' | 'grid'>('grid');
   const [userRole, setUserRole] = React.useState<string | null>(null);
+  const [partyNameMap, setPartyNameMap] = React.useState<Map<string, string>>(new Map());
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -112,25 +104,82 @@ export default function SalesRegisterPage() {
     setIsLoading(true);
     if(typeof window !== 'undefined') {
         const items = [];
+        const growerMap = new Map<string, string>();
+        
+        // Populate map from default growers first to establish canonical names
+        const defaultParties = [
+            { name: 'GH. Mohiuddin Lone ®. R/o Nadihal Baramulla', type: 'Grower' },
+            { name: 'AB. Majeed Lone S/P', type: 'Grower' },
+            { name: 'AB. Salaam Lone K/P', type: 'Grower' },
+            { name: 'Mohd. Ayoub Khan', type: 'Grower' },
+            { name: 'Nazir Ahmad Dar (Happa)', type: 'Grower' },
+            { name: 'Mohd. Maqbool Dar (Happa)', type: 'Grower' },
+            { name: 'Mushtaq Ahmad Lone K/P', type: 'Grower' },
+            { name: 'Manzoor Ahmad Lone K/P', type: 'Grower' },
+            { name: 'Naseer Ahmad Bhat', type: 'Grower' },
+            { name: 'GH. Mohd. Lone B/P', type: 'Grower' },
+            { name: 'GH. Mohd. Bhat', type: 'Grower' },
+            { name: 'Nazir Ahmad Lone B/P', type: 'Grower' },
+            { name: 'Mushtaq Ahmad Lone B/P', type: 'Grower' },
+            { name: 'Mohd. Maqbool Baigh', type: 'Grower' },
+            { name: 'Mohd. Shabaan Ahangar', type: 'Grower' },
+            { name: 'Mohd. Akbar Lone B/P', type: 'Grower' },
+            { name: 'Tanveer Ahmad Lone B/P', type: 'Grower' },
+            { name: 'Mohd. Shabaan Lone (Lama)', type: 'Grower' },
+            { name: 'Mohd. Arif Lone (Uffa)', type: 'Grower' },
+            { name: 'Mohd. Subhan Parry', type: 'Grower' },
+            { name: 'GH. Mohiuddin Lone (Potty)', type: 'Grower' },
+            { name: 'Majoor Ahmad Lone ®', type: 'Grower' },
+            { name: 'Mohd. Akbar Lone (Lama)', type: 'Grower' },
+            { name: 'Jaana ® B/P', type: 'Grower' },
+            { name: 'Rayees Rajab ®', type: 'Grower' },
+            { name: 'GH. Nabi Lone', type: 'Grower' },
+            { name: 'Hilal Ahmad Wani', type: 'Grower' },
+            { name: 'Javid Ahmad Sheikh', type: 'Grower', address: 'R/o Shanoo, Mawer Handwara' },
+            { name: 'Manzoor Ah. Lone B/P', type: 'Grower' },
+            { name: 'Farooq Ahmad Lone (Lama)', type: 'Grower' },
+            { name: 'Mohd. Ashraf wani', type: 'Grower' },
+            { name: 'Mohd. Yousuf Lone B/P', type: 'Grower' },
+            { name: 'Mohd. Yousuf Lone (Waza)', type: 'Grower' },
+            { name: 'Farooq Ahmad Bhat', type: 'Grower' },
+            { name: 'GH. Nabi Wani', type: 'Grower' }
+        ];
+
+        defaultParties.forEach(p => {
+             const normalized = normalizeName(p.name);
+             if (!growerMap.has(normalized)) {
+                growerMap.set(normalized, p.name);
+            }
+        });
+
+
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             if (key?.startsWith('invoice-')) {
                 try {
-                    items.push(JSON.parse(localStorage.getItem(key)!));
+                    const watak = JSON.parse(localStorage.getItem(key)!);
+                    items.push(watak);
+                    const normalized = normalizeName(watak.customerName);
+                    if (!growerMap.has(normalized)) {
+                        growerMap.set(normalized, watak.customerName);
+                    }
                 } catch(e) {
                     console.error("Failed to parse watak from local storage", e);
+                }
+            } else if (key?.startsWith('party-')) {
+                try {
+                    const party = JSON.parse(localStorage.getItem(key)!);
+                    const normalized = normalizeName(party.name);
+                    if (!growerMap.has(normalized)) {
+                        growerMap.set(normalized, party.name);
+                    }
+                } catch(e) {
+                    console.error("Failed to parse party from local storage", e);
                 }
             }
         }
         setWataks(items.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-        
-        const growerMap = new Map<string, string>();
-        items.forEach(w => {
-            const normalized = normalizeName(w.customerName);
-            if (!growerMap.has(normalized)) {
-                growerMap.set(normalized, w.customerName);
-            }
-        });
+        setPartyNameMap(growerMap);
         const uniqueGrowers = ['All Growers', ...Array.from(growerMap.values()).sort()];
         setGrowers(uniqueGrowers);
     }
@@ -151,13 +200,15 @@ export default function SalesRegisterPage() {
   const filteredWataks = wataks
     .filter(w => {
         if (selectedGrower === 'All Growers') return true;
-        return normalizeName(w.customerName) === normalizeName(selectedGrower);
+        const canonicalName = partyNameMap.get(normalizeName(w.customerName));
+        return canonicalName === selectedGrower;
     })
     .filter(w => {
       if (!searchTerm) return true;
       const lowerCaseSearch = searchTerm.toLowerCase();
+      const canonicalName = partyNameMap.get(normalizeName(w.customerName)) || w.customerName;
       return (
-        w.customerName.toLowerCase().includes(lowerCaseSearch) ||
+        canonicalName.toLowerCase().includes(lowerCaseSearch) ||
         w.sNo.toLowerCase().includes(lowerCaseSearch) ||
         (w.watakNo && w.watakNo.toLowerCase().includes(lowerCaseSearch))
       );
@@ -177,17 +228,20 @@ export default function SalesRegisterPage() {
     doc.text(`Sales Register - ${selectedGrower}`, 14, 15);
     doc.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, 14, 22);
 
-    const tableData = filteredWataks.map(w => [
-        new Date(w.date).toLocaleDateString('en-GB'),
-        w.sNo,
-        w.watakNo,
-        w.customerName,
-        w.totals.pattiQty || 0,
-        w.totals.dabbaQty || 0,
-        `Rs. ${w.totals.grossSale.toFixed(2)}`,
-        `Rs. ${w.totals.totalExpenses.toFixed(2)}`,
-        `Rs. ${w.totals.netSale.toFixed(2)}`
-    ]);
+    const tableData = filteredWataks.map(w => {
+        const canonicalName = partyNameMap.get(normalizeName(w.customerName)) || w.customerName;
+        return [
+            new Date(w.date).toLocaleDateString('en-GB'),
+            w.sNo,
+            w.watakNo,
+            canonicalName,
+            w.totals.pattiQty || 0,
+            w.totals.dabbaQty || 0,
+            `Rs. ${w.totals.grossSale.toFixed(2)}`,
+            `Rs. ${w.totals.totalExpenses.toFixed(2)}`,
+            `Rs. ${w.totals.netSale.toFixed(2)}`
+        ]
+    });
 
     autoTable(doc, {
         head: [['Date', 'Invoice No.', 'Watak No.', 'Khata (Grower)', 'Patti', 'Dabba', 'Gross Sale', 'Total Exp.', 'Net Sale']],
@@ -204,17 +258,20 @@ export default function SalesRegisterPage() {
   };
 
   const exportToExcel = () => {
-      const worksheetData = filteredWataks.map(w => ({
-        'Date': new Date(w.date).toLocaleDateString('en-GB'),
-        'Invoice No.': w.sNo,
-        'Watak No.': w.watakNo,
-        'Khata (Grower)': w.customerName,
-        'Peti': w.totals.pattiQty || 0,
-        'Dabba': w.totals.dabbaQty || 0,
-        'Gross Sale': w.totals.grossSale,
-        'Total Expenses': w.totals.totalExpenses,
-        'Net Sale': w.totals.netSale
-    }));
+      const worksheetData = filteredWataks.map(w => {
+        const canonicalName = partyNameMap.get(normalizeName(w.customerName)) || w.customerName;
+        return {
+            'Date': new Date(w.date).toLocaleDateString('en-GB'),
+            'Invoice No.': w.sNo,
+            'Watak No.': w.watakNo,
+            'Khata (Grower)': canonicalName,
+            'Peti': w.totals.pattiQty || 0,
+            'Dabba': w.totals.dabbaQty || 0,
+            'Gross Sale': w.totals.grossSale,
+            'Total Expenses': w.totals.totalExpenses,
+            'Net Sale': w.totals.netSale
+        }
+      });
     
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
     XLSX.utils.sheet_add_aoa(worksheet, [
@@ -336,16 +393,18 @@ export default function SalesRegisterPage() {
             </div>
         ) : viewMode === 'grid' ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {filteredWataks.map((watak) => (
+                {filteredWataks.map((watak) => {
+                    const canonicalName = partyNameMap.get(normalizeName(watak.customerName)) || watak.customerName;
+                    return (
                      <div key={watak.id} onClick={() => navigateToBill(watak.sNo)} className="cursor-pointer">
                         <DocumentCard type="watak" title={`Invoice #${watak.watakNo || watak.sNo}`}>
-                            <p className="text-lg font-semibold">{watak.customerName}</p>
+                            <p className="text-lg font-semibold">{canonicalName}</p>
                             {watak.customerUrdu && <p className="font-urdu text-xl mt-1">{watak.customerUrdu}</p>}
                             <p className="text-sm mt-2">Date: {new Date(watak.date).toLocaleDateString()}</p>
                             <p className="text-2xl font-bold mt-4">₹{watak.totals.netSale.toFixed(2)}</p>
                         </DocumentCard>
                     </div>
-                ))}
+                )})}
             </div>
         ) : (
         <Table>
@@ -364,12 +423,14 @@ export default function SalesRegisterPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredWataks.map((watak: WatakEntry) => (
+            {filteredWataks.map((watak: WatakEntry) => {
+              const canonicalName = partyNameMap.get(normalizeName(watak.customerName)) || watak.customerName;
+              return (
               <TableRow key={watak.id}>
                 <TableCell>{new Date(watak.date).toLocaleDateString('en-GB')}</TableCell>
                 <TableCell>{watak.sNo}</TableCell>
                 <TableCell>{watak.watakNo}</TableCell>
-                <TableCell className="font-medium">{watak.customerName}</TableCell>
+                <TableCell className="font-medium">{canonicalName}</TableCell>
                 <TableCell>{watak.totals.pattiQty || 0}</TableCell>
                 <TableCell>{watak.totals.dabbaQty || 0}</TableCell>
                 <TableCell className="text-right">₹{watak.totals.grossSale.toFixed(2)}</TableCell>
@@ -386,7 +447,7 @@ export default function SalesRegisterPage() {
                   )}
                 </TableCell>
               </TableRow>
-            ))}
+            )})}
              <TableRow className="font-bold bg-muted">
                 <TableCell colSpan={4} className="text-right">Total</TableCell>
                 <TableCell>{footerTotals.pattiQty}</TableCell>
