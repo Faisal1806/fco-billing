@@ -22,9 +22,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, Trash2, Receipt, Users, Building, Percent, Truck } from 'lucide-react';
+import { PlusCircle, Trash2, Receipt, Users, Building, Percent, Truck, Handshake } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { PartySelector } from '@/components/party-selector';
 
 type ExpenseEntry = {
     id: string;
@@ -33,6 +34,7 @@ type ExpenseEntry = {
     description: string;
     amount: number;
     type: 'manual' | 'auto';
+    partyName?: string;
 };
 
 type ExpenseStats = {
@@ -47,6 +49,7 @@ const emptyFormState = {
     category: '',
     description: '',
     amount: 0,
+    partyName: '',
 }
 
 const ExpenseTable = ({ title, icon, description, expenses, total, children, showActions, onDelete }: {
@@ -74,6 +77,7 @@ const ExpenseTable = ({ title, icon, description, expenses, total, children, sho
                         <TableRow>
                             <TableHead>Date</TableHead>
                             <TableHead>Category</TableHead>
+                            <TableHead>Payee/Party</TableHead>
                             <TableHead>Description</TableHead>
                             <TableHead>Type</TableHead>
                             <TableHead className="text-right">Amount</TableHead>
@@ -85,6 +89,7 @@ const ExpenseTable = ({ title, icon, description, expenses, total, children, sho
                             <TableRow key={exp.id}>
                                 <TableCell>{new Date(exp.date).toLocaleDateString('en-GB')}</TableCell>
                                 <TableCell className="font-medium">{exp.category}</TableCell>
+                                <TableCell>{exp.partyName}</TableCell>
                                 <TableCell>{exp.description}</TableCell>
                                 <TableCell>
                                     <Badge variant={exp.type === 'auto' ? 'secondary' : 'default'}>{exp.type}</Badge>
@@ -104,7 +109,7 @@ const ExpenseTable = ({ title, icon, description, expenses, total, children, sho
                     </TableBody>
                         <TableFooter>
                         <TableRow className="font-bold text-lg">
-                            <TableCell colSpan={showActions ? 5 : 4} className="text-right">Total</TableCell>
+                            <TableCell colSpan={showActions ? 6 : 5} className="text-right">Total</TableCell>
                             <TableCell className="text-right font-mono">₹{total.toFixed(2)}</TableCell>
                             {showActions && <TableCell></TableCell>}
                         </TableRow>
@@ -368,14 +373,18 @@ export default function ExpensesPage() {
                 <Card className="w-full">
                      <CardHeader>
                         <CardTitle>Add Manual Company Expense</CardTitle>
-                        <CardDescription>Record any other business expenses here (e.g. Shop Rent).</CardDescription>
+                        <CardDescription>Record any other business expenses here (e.g. Shop Rent, Labour Payment).</CardDescription>
                     </CardHeader>
-                    <CardContent className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <CardContent className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                          <div>
                             <Label htmlFor="date">Date</Label>
                             <Input id="date" name="date" type="date" value={formState.date} onChange={handleInputChange} />
                         </div>
                         <div>
+                            <Label htmlFor="partyName">Payee / Party</Label>
+                            <PartySelector value={formState.partyName || ''} onChange={(val) => setFormState(prev => ({...prev, partyName: val}))} filter="outside" />
+                        </div>
+                         <div>
                             <Label htmlFor="category">Category</Label>
                             <Input id="category" name="category" placeholder="e.g., Shop Rent" value={formState.category} onChange={handleInputChange} />
                         </div>
@@ -398,3 +407,5 @@ export default function ExpensesPage() {
         </div>
     );
 }
+
+    

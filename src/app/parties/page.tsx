@@ -29,7 +29,7 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import { PlusCircle, Edit, Trash2, Users, Search, FileDown, Loader2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Users, Search, FileDown, Loader2, Leaf, ShoppingCart, Handshake } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -43,7 +43,7 @@ const PARTY_STORAGE_PREFIX = 'party-';
 interface Party {
   id: string; // Unique ID, can be derived from name for existing, or new for added
   name: string;
-  type: 'Grower' | 'Customer' | 'Both';
+  type: 'Grower' | 'Customer' | 'Both' | 'Outside Party';
   address?: string;
   phone?: string;
   email?: string;
@@ -95,7 +95,7 @@ export default function PartiesPage() {
   const fetchPartiesAndTransactions = () => {
     setIsLoading(true);
     const loadedParties: {[key: string]: Party} = {};
-    const transactionCounts: {[key: string]: {sales: number, purchases: number}} = {};
+    const transactionCounts: {[key: string]: {sales: number, purchases: number, expenses: number}} = {};
     const localBalances: {[key: string]: number} = {};
 
     // 1. Load explicitly saved parties
@@ -116,6 +116,7 @@ export default function PartiesPage() {
         let partyName: string | undefined;
         let isSale = false;
         let isPurchase = false;
+        let isExpense = false;
         let amount = 0;
 
         if (key.startsWith('invoice-')) {
@@ -138,12 +139,22 @@ export default function PartiesPage() {
                 isSale = true; // Treat as payable received
                 amount = doc.amount;
             }
+        } else if (key.startsWith('expense-')) {
+            const doc = JSON.parse(localStorage.getItem(key)!);
+            if(doc.partyName){
+                partyName = doc.partyName;
+                isExpense = true;
+                // Expenses are money you pay out, so they are a payable that you clear.
+                // Or you can think of them as a negative balance from your side.
+                // For simplicity, we can treat them as a "cost" and not directly impact party balance in this view,
+                // as that's handled in expense ledgers. We'll just use it for type inference.
+            }
         }
         
         if(partyName) {
             const normalized = normalizeName(partyName);
             if (!transactionCounts[normalized]) {
-                transactionCounts[normalized] = { sales: 0, purchases: 0 };
+                transactionCounts[normalized] = { sales: 0, purchases: 0, expenses: 0 };
             }
             if (!localBalances[normalized]) {
                 localBalances[normalized] = 0;
@@ -151,7 +162,9 @@ export default function PartiesPage() {
 
             if(isSale) transactionCounts[normalized].sales++;
             if(isPurchase) transactionCounts[normalized].purchases++;
-            localBalances[normalized] += amount;
+            if(isExpense) transactionCounts[normalized].expenses++;
+
+            if(isSale || isPurchase) localBalances[normalized] += amount;
 
             if (!loadedParties[normalized]) {
                  loadedParties[normalized] = {
@@ -167,18 +180,20 @@ export default function PartiesPage() {
     Object.keys(loadedParties).forEach(normalized => {
         const counts = transactionCounts[normalized];
         const party = loadedParties[normalized];
+
         if (counts) {
             const hasSales = counts.sales > 0;
             const hasPurchases = counts.purchases > 0;
-            if (hasSales && hasPurchases) {
-                party.type = 'Both';
-            } else if (hasSales) {
-                party.type = 'Grower';
-            } else if (hasPurchases) {
-                party.type = 'Customer';
-            }
+            const hasExpenses = counts.expenses > 0;
+
+            if (hasSales && hasPurchases) party.type = 'Both';
+            else if (hasSales) party.type = 'Grower';
+            else if (hasPurchases) party.type = 'Customer';
+            else if (hasExpenses) party.type = 'Outside Party';
         }
-        // If 'type' was manually set, it will be preserved if no transactions exist
+        // If 'type' was manually set, it will be preserved if no transactions exist.
+        // If a party has multiple transaction types, the most specific one is prioritized.
+        // e.g., a grower who is also an expense party will be shown as 'Grower'.
     });
     
     setParties(Object.values(loadedParties).sort((a,b) => a.name.localeCompare(b.name)));
@@ -190,7 +205,7 @@ export default function PartiesPage() {
     return parties
         .filter(p => {
             if (typeFilter === 'all') return true;
-            return p.type.toLowerCase() === typeFilter;
+            return p.type.toLowerCase().replace(' ', '') === typeFilter;
         })
         .filter(p => {
             const lowerCaseSearch = searchTerm.toLowerCase();
@@ -277,9 +292,10 @@ export default function PartiesPage() {
 
   const PartyTypeBadge = ({type}: {type: Party['type']}) => {
     switch (type) {
-        case 'Grower': return <Badge variant="default">Grower</Badge>;
+        case 'Grower': return <Badge variant="default" className="bg-green-600">Grower</Badge>;
         case 'Customer': return <Badge variant="secondary">Customer</Badge>;
         case 'Both': return <Badge variant="outline">Both</Badge>;
+        case 'Outside Party': return <Badge variant="destructive">Outside Party</Badge>;
         default: return <Badge>{type}</Badge>;
     }
   }
@@ -299,7 +315,7 @@ export default function PartiesPage() {
         <div className="flex justify-between items-center flex-wrap gap-4">
           <div>
             <CardTitle className="flex items-center gap-2"><Users className="h-6 w-6" /> Parties Master Directory</CardTitle>
-            <CardDescription>A unified directory for all your Growers and Customers.</CardDescription>
+            <CardDescription>A unified directory for all your Growers, Customers, and Outside Parties.</CardDescription>
           </div>
           <div className="flex items-center gap-2">
              <div className="relative">
@@ -318,9 +334,10 @@ export default function PartiesPage() {
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="Grower">Growers</SelectItem>
-                    <SelectItem value="Customer">Customers</SelectItem>
-                    <SelectItem value="Both">Both</SelectItem>
+                    <SelectItem value="grower">Growers</SelectItem>
+                    <SelectItem value="customer">Customers</SelectItem>
+                    <SelectItem value="both">Both</SelectItem>
+                    <SelectItem value="outsideparty">Outside Parties</SelectItem>
                 </SelectContent>
             </Select>
             <Button onClick={exportToPDF} variant="outline" size="sm" className="gap-1"><FileDown className="h-4 w-4"/>PDF</Button>
@@ -347,12 +364,13 @@ export default function PartiesPage() {
                       </div>
                        <div className="space-y-2">
                           <Label htmlFor="type">Type</Label>
-                          <Select name="type" value={formState.type} onValueChange={(v: 'Grower' | 'Customer' | 'Both') => handleSelectChange('type', v)}>
+                          <Select name="type" value={formState.type} onValueChange={(v: Party['type']) => handleSelectChange('type', v)}>
                               <SelectTrigger><SelectValue /></SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="Grower">Grower</SelectItem>
-                                <SelectItem value="Customer">Customer</SelectItem>
-                                <SelectItem value="Both">Both</SelectItem>
+                                <SelectItem value="Grower">Grower (Sells to you)</SelectItem>
+                                <SelectItem value="Customer">Customer (Buys from you)</SelectItem>
+                                <SelectItem value="Both">Both (Grower & Customer)</SelectItem>
+                                <SelectItem value="Outside Party">Outside Party (e.g., Labour, Transport)</SelectItem>
                               </SelectContent>
                           </Select>
                       </div>
@@ -407,7 +425,7 @@ export default function PartiesPage() {
                   <TableCell>{party.address}</TableCell>
                   <TableCell className={`text-right font-mono ${balance > 0 ? 'text-green-600' : (balance < 0 ? 'text-red-500' : '')}`}>
                     {balance >= 0 ? '₹' : '-₹'}{Math.abs(balance).toFixed(2)}
-                    <p className="text-xs text-muted-foreground">{balance > 0 ? 'Payable' : (balance < 0 ? 'Receivable' : '')}</p>
+                    <p className="text-xs text-muted-foreground">{balance > 0 ? 'Payable' : (balance < 0 ? 'Receivable' : 'Settled')}</p>
                   </TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="icon" onClick={() => handleEditClick(party)}>
@@ -434,3 +452,5 @@ export default function PartiesPage() {
     </Card>
   );
 }
+
+    

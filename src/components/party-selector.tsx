@@ -1,7 +1,8 @@
+
 "use client"
 
 import * as React from "react"
-import { Check, ChevronsUpDown, Leaf, ShoppingCart, Users, Building } from "lucide-react"
+import { Check, ChevronsUpDown, Leaf, ShoppingCart, Users, Handshake } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -24,10 +25,10 @@ const PARTY_STORAGE_PREFIX = 'party-';
 type Party = {
   id: string;
   name: string;
-  type: 'Grower' | 'Customer' | 'Both';
+  type: 'Grower' | 'Customer' | 'Both' | 'Outside Party';
 };
 
-type PartyTypeFilter = 'all' | 'grower' | 'customer';
+type PartyTypeFilter = 'all' | 'grower' | 'customer' | 'outside';
 
 const normalizeName = (name: string): string => {
     if (!name) return '';
@@ -42,6 +43,7 @@ const normalizeName = (name: string): string => {
 const PartyIcon = ({ type }: { type: Party['type'] }) => {
     if (type === 'Grower') return <Leaf className="h-4 w-4 mr-2 text-green-500" />;
     if (type === 'Customer') return <ShoppingCart className="h-4 w-4 mr-2 text-blue-500" />;
+    if (type === 'Outside Party') return <Handshake className="h-4 w-4 mr-2 text-orange-500" />;
     return <Users className="h-4 w-4 mr-2 text-purple-500" />;
 };
 
@@ -59,7 +61,7 @@ export function PartySelector({ value, onChange, filter = 'all', disabled = fals
 
   React.useEffect(() => {
     const loadedParties: {[key: string]: Party} = {};
-    const transactionCounts: {[key: string]: {sales: number, purchases: number}} = {};
+    const transactionCounts: {[key: string]: {sales: number, purchases: number, expenses: number}} = {};
 
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
@@ -74,6 +76,7 @@ export function PartySelector({ value, onChange, filter = 'all', disabled = fals
       let partyName: string | undefined;
       let isSale = false;
       let isPurchase = false;
+      let isExpense = false;
 
       if (key.startsWith('invoice-')) {
           const doc = JSON.parse(localStorage.getItem(key)!);
@@ -87,13 +90,21 @@ export function PartySelector({ value, onChange, filter = 'all', disabled = fals
           const doc = JSON.parse(localStorage.getItem(key)!);
           partyName = doc.partyName;
           if(doc.type === 'Advance Given') isPurchase = true; else isSale = true;
+      } else if (key.startsWith('expense-')) {
+          const doc = JSON.parse(localStorage.getItem(key)!);
+          if (doc.partyName) {
+              partyName = doc.partyName;
+              isExpense = true;
+          }
       }
       
       if(partyName) {
           const normalized = normalizeName(partyName);
-          if (!transactionCounts[normalized]) transactionCounts[normalized] = { sales: 0, purchases: 0 };
+          if (!transactionCounts[normalized]) transactionCounts[normalized] = { sales: 0, purchases: 0, expenses: 0 };
           if(isSale) transactionCounts[normalized].sales++;
           if(isPurchase) transactionCounts[normalized].purchases++;
+          if(isExpense) transactionCounts[normalized].expenses++;
+          
           if (!loadedParties[normalized]) {
                loadedParties[normalized] = {
                   id: `${PARTY_STORAGE_PREFIX}${normalized}`,
@@ -107,12 +118,18 @@ export function PartySelector({ value, onChange, filter = 'all', disabled = fals
     Object.keys(loadedParties).forEach(normalized => {
         const counts = transactionCounts[normalized];
         const party = loadedParties[normalized];
+
+        if (party.type && party.type !== 'Grower') return; // Don't override manually set type
+
         if (counts) {
             const hasSales = counts.sales > 0;
             const hasPurchases = counts.purchases > 0;
+            const hasExpenses = counts.expenses > 0;
+            
             if (hasSales && hasPurchases) party.type = 'Both';
             else if (hasSales) party.type = 'Grower';
             else if (hasPurchases) party.type = 'Customer';
+            else if (hasExpenses) party.type = 'Outside Party';
         }
     });
     
@@ -122,6 +139,7 @@ export function PartySelector({ value, onChange, filter = 'all', disabled = fals
         if (filter === 'all') return true;
         if (filter === 'grower') return p.type === 'Grower' || p.type === 'Both';
         if (filter === 'customer') return p.type === 'Customer' || p.type === 'Both';
+        if (filter === 'outside') return p.type === 'Outside Party';
         return false;
     });
 
@@ -177,3 +195,5 @@ export function PartySelector({ value, onChange, filter = 'all', disabled = fals
     </Popover>
   )
 }
+
+    
