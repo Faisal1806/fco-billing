@@ -76,6 +76,44 @@ const normalizeName = (name: string): string => {
         .trim();
 };
 
+const defaultGrowers: { name: string, address: string }[] = [
+    { name: 'AB. Majeed Lone S/P', address: 'R/o Nadihal Bla.' },
+    { name: 'AB. Salaam Lone K/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Ayoub Khan', address: 'R/o Nadihal Bla.' },
+    { name: 'Nazir Ahmad Dar (Happa)', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Maqbool Dar (Happa)', address: 'R/o Nadihal Bla.' },
+    { name: 'Mushtaq Ahmad Lone K/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Manzoor Ahmad Lone K/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Naseer Ahmad Bhat', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Mohd. Lone B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Mohd. Bhat', address: 'R/o Nadihal Bla.' },
+    { name: 'Nazir Ahmad Lone B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Mushtaq Ahmad Lone B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Maqbool Baigh', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Shabaan Ahangar', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Akbar Lone B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Tanveer Ahmad Lone B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Shabaan Lone (Lama)', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Arif Lone (Uffa)', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Subhan Parry', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Mohiuddin Lone (Potty)', address: 'R/o Nadihal Bla.' },
+    { name: 'Majoor Ahmad Lone ®', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Akbar Lone (Lama)', address: 'R/o Nadihal Bla.' },
+    { name: 'Jaana ® B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Rayees Rajab ®', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Nabi Lone', address: 'R/o Nadihal Bla.' },
+    { name: 'Hilal Ahmad Wani', address: 'R/o Nadihal Bla.' },
+    { name: 'Javid Ahmad Sheikh', address: 'R/o Shanoo, Mawer Handwara' },
+    { name: 'Manzoor Ah. Lone B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Farooq Ahmad Lone (Lama)', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Ashraf wani', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Yousuf Lone B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Yousuf Lone (Waza)', address: 'R/o Nadihal Bla.' },
+    { name: 'Farooq Ahmad Bhat', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Nabi Wani', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Mohiuddin Lone ®', address: 'R/o Nadihal Baramulla' },
+    { name: 'Bashir Ah. Lone B/P', address: 'R/o Nadihal Bla.' }
+];
 
 export default function KhataLedgerPage() {
     const router = useRouter();
@@ -85,11 +123,44 @@ export default function KhataLedgerPage() {
     const [selectedParty, setSelectedParty] = React.useState<string | null>(null);
     const [activeTab, setActiveTab] = React.useState('growers');
     const [isLoading, setIsLoading] = React.useState(true);
+    const [partyNameMap, setPartyNameMap] = React.useState<Map<string, string>>(new Map());
 
     React.useEffect(() => {
         function fetchLedgerData() {
             if (typeof window === 'undefined') return;
             setIsLoading(true);
+
+            // 1. Create a canonical name map
+            const canonicalMap = new Map<string, string>();
+            const displayNameMap = new Map<string, string>();
+            const allKnownParties: { name: string, type: PartyType }[] = [];
+
+            // Add default growers to establish canonical names
+            defaultGrowers.forEach(p => {
+                const normalized = normalizeName(p.name);
+                if (!canonicalMap.has(normalized)) {
+                    canonicalMap.set(normalized, p.name);
+                    displayNameMap.set(p.name, p.name);
+                    allKnownParties.push({ name: p.name, type: 'supplier' });
+                }
+            });
+
+            // Load all other parties from storage
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key?.startsWith('party-')) {
+                    const party = JSON.parse(localStorage.getItem(key)!);
+                    const normalized = normalizeName(party.name);
+                    if (!canonicalMap.has(normalized)) {
+                        canonicalMap.set(normalized, party.name);
+                        displayNameMap.set(party.name, party.name);
+                        allKnownParties.push({ name: party.name, type: party.type === 'Grower' ? 'supplier' : 'customer' });
+                    }
+                }
+            }
+             setPartyNameMap(displayNameMap);
+            
+            // 2. Process all transactions
             const allTransactions: Transaction[] = [];
 
             for (let i = 0; i < localStorage.length; i++) {
@@ -103,7 +174,7 @@ export default function KhataLedgerPage() {
                             id: `sale-${doc.sNo}`,
                             date: doc.date,
                             type: 'Sale',
-                            amount: doc.totals.netSale, // Money you OWE the grower for their produce
+                            amount: doc.totals.netSale,
                             grossAmount: doc.totals.grossSale,
                             expenses: doc.totals.totalExpenses,
                             party: doc.customerName,
@@ -115,10 +186,10 @@ export default function KhataLedgerPage() {
                             id: `purchase-${doc.billNo}`,
                             date: doc.date,
                             type: 'Purchase',
-                            amount: doc.totals.grandTotal, // Money Owed TO YOU for goods you sold them
+                            amount: doc.totals.grandTotal,
                             grossAmount: doc.totals.grandTotal,
                             expenses: 0,
-                            party: doc.growerName, // This is the "buyer" in a purchase scenario
+                            party: doc.growerName,
                             docId: doc.billNo,
                         });
                     } else if (key.startsWith('advance-')) {
@@ -127,7 +198,7 @@ export default function KhataLedgerPage() {
                             id: doc.id,
                             date: doc.date,
                             type: doc.type === 'Advance Given' ? 'Advance' : 'Repayment',
-                            amount: doc.amount, // Advance is money they owe YOU. Repayment is money they give YOU.
+                            amount: doc.amount,
                             grossAmount: doc.amount,
                             expenses: 0,
                             party: doc.partyName,
@@ -142,31 +213,27 @@ export default function KhataLedgerPage() {
 
             allTransactions.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
             
+            // 3. Build ledgers using canonical names
             const calculatedLedgers: Ledger = {};
 
             for (const trans of allTransactions) {
                 if (!trans.party) continue;
-                const normalizedName = normalizeName(trans.party);
-                if (!calculatedLedgers[normalizedName]) {
-                    calculatedLedgers[normalizedName] = { 
+                const normalized = normalizeName(trans.party);
+                const canonicalName = canonicalMap.get(normalized) || trans.party;
+                
+                if (!calculatedLedgers[canonicalName]) {
+                    calculatedLedgers[canonicalName] = { 
                         transactions: [], 
                         balance: 0, 
                         partyType: 'customer', // Default
-                        displayName: trans.party 
+                        displayName: canonicalName 
                     };
                 }
                 
-                const ledger = calculatedLedgers[normalizedName];
-                // Use the display name from the first transaction to keep it consistent
-                if (ledger.transactions.length === 0) {
-                    ledger.displayName = trans.party;
-                }
-
+                const ledger = calculatedLedgers[canonicalName];
                 ledger.transactions.push(trans);
                 
                 const isSupplierTx = trans.type === 'Sale';
-                const isCustomerTx = trans.type === 'Purchase' || trans.type === 'Advance' || trans.type === 'Repayment';
-
                 if (isSupplierTx && ledger.partyType === 'customer') {
                     ledger.partyType = 'both';
                 } else if (isSupplierTx) {
@@ -177,8 +244,6 @@ export default function KhataLedgerPage() {
             Object.keys(calculatedLedgers).forEach(partyKey => {
                 let runningBalance = 0;
                 calculatedLedgers[partyKey].transactions.forEach(trans => {
-                    // Credit (you owe them): Sale, Repayment
-                    // Debit (they owe you): Purchase, Advance
                     if (trans.type === 'Sale' || trans.type === 'Repayment') {
                         runningBalance += trans.amount;
                     } else { // Purchase or Advance
@@ -187,10 +252,8 @@ export default function KhataLedgerPage() {
                 });
                 calculatedLedgers[partyKey].balance = runningBalance;
             });
-
-            const sortedParties = Object.values(calculatedLedgers)
-                .map(l => l.displayName)
-                .sort((a, b) => a.localeCompare(b));
+            
+            const sortedParties = [...new Set([...Object.keys(calculatedLedgers), ...Array.from(canonicalMap.values())])].sort((a, b) => a.localeCompare(b));
             
             setLedgers(calculatedLedgers);
             setAllParties(sortedParties);
@@ -211,17 +274,17 @@ export default function KhataLedgerPage() {
             const parties = allParties.filter(p => {
                 if (tab === 'all') return true;
                 if (!p || p === fcoName) return false;
-                const ledger = ledgers[normalizeName(p)];
-                if (!ledger) return false;
-
+                const ledger = ledgers[p]; // Use direct key since it's already canonical
+                
                 if (tab === 'growers') {
-                    return ledger.transactions.some(t => t.type === 'Sale');
+                    return ledger?.transactions.some(t => t.type === 'Sale');
                 }
                 if (tab === 'customers') {
-                    return ledger.transactions.some(t => t.type === 'Purchase' || t.type === 'Advance' || t.type === 'Repayment');
+                    return ledger?.transactions.some(t => t.type === 'Purchase' || t.type === 'Advance' || t.type === 'Repayment');
                 }
                 return false;
             });
+
             setFilteredParties(parties);
             if(parties.length > 0) {
                 if (!selectedParty || !parties.includes(selectedParty)) {
@@ -235,7 +298,7 @@ export default function KhataLedgerPage() {
         filterAndSetParties(activeTab as any);
     }, [activeTab, allParties, ledgers]);
 
-    const selectedLedger = selectedParty ? ledgers[normalizeName(selectedParty)] : null;
+    const selectedLedger = selectedParty ? ledgers[selectedParty] : null;
 
     const navigateToDoc = (type: TransactionType, docId: string) => {
         let path = '';
@@ -429,7 +492,7 @@ export default function KhataLedgerPage() {
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="outline" className="flex items-center gap-2 min-w-[250px]">
-                                {selectedParty && ledgers[normalizeName(selectedParty)] && <PartyIcon type={ledgers[normalizeName(selectedParty)].partyType} />}
+                                {selectedParty && ledgers[selectedParty] && <PartyIcon type={ledgers[selectedParty].partyType} />}
                                 <span className="flex-1 text-left">{selectedParty || 'Select a Party'}</span>
                                 <ChevronDown className="h-4 w-4" />
                                 </Button>
@@ -437,7 +500,7 @@ export default function KhataLedgerPage() {
                             <DropdownMenuContent align="start" className="max-h-96 overflow-y-auto">
                                 {filteredParties.map(party => (
                                     <DropdownMenuItem key={party} onSelect={() => setSelectedParty(party)}>
-                                        {ledgers[normalizeName(party)] && <PartyIcon type={ledgers[normalizeName(party)].partyType} />}
+                                        {ledgers[party] && <PartyIcon type={ledgers[party].partyType} />}
                                         {party}
                                     </DropdownMenuItem>
                                 ))}

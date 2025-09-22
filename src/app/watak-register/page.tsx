@@ -78,6 +78,44 @@ const normalizeName = (name: string): string => {
 };
 
 
+const defaultGrowers: { name: string, address: string }[] = [
+    { name: 'AB. Majeed Lone S/P', address: 'R/o Nadihal Bla.' },
+    { name: 'AB. Salaam Lone K/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Ayoub Khan', address: 'R/o Nadihal Bla.' },
+    { name: 'Nazir Ahmad Dar (Happa)', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Maqbool Dar (Happa)', address: 'R/o Nadihal Bla.' },
+    { name: 'Mushtaq Ahmad Lone K/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Manzoor Ahmad Lone K/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Naseer Ahmad Bhat', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Mohd. Lone B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Mohd. Bhat', address: 'R/o Nadihal Bla.' },
+    { name: 'Nazir Ahmad Lone B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Mushtaq Ahmad Lone B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Maqbool Baigh', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Shabaan Ahangar', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Akbar Lone B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Tanveer Ahmad Lone B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Shabaan Lone (Lama)', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Arif Lone (Uffa)', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Subhan Parry', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Mohiuddin Lone (Potty)', address: 'R/o Nadihal Bla.' },
+    { name: 'Majoor Ahmad Lone ®', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Akbar Lone (Lama)', address: 'R/o Nadihal Bla.' },
+    { name: 'Jaana ® B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Rayees Rajab ®', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Nabi Lone', address: 'R/o Nadihal Bla.' },
+    { name: 'Hilal Ahmad Wani', address: 'R/o Nadihal Bla.' },
+    { name: 'Javid Ahmad Sheikh', address: 'R/o Shanoo, Mawer Handwara' },
+    { name: 'Manzoor Ah. Lone B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Farooq Ahmad Lone (Lama)', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Ashraf wani', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Yousuf Lone B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Yousuf Lone (Waza)', address: 'R/o Nadihal Bla.' },
+    { name: 'Farooq Ahmad Bhat', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Nabi Wani', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Mohiuddin Lone ®', address: 'R/o Nadihal Baramulla' },
+    { name: 'Bashir Ah. Lone B/P', address: 'R/o Nadihal Bla.' }
+];
 
 export default function SalesRegisterPage() {
   const { t } = useLanguage();
@@ -106,46 +144,7 @@ export default function SalesRegisterPage() {
         const items = [];
         const growerMap = new Map<string, string>();
         
-        // Populate map from default growers first to establish canonical names
-        const defaultParties = [
-            { name: 'GH. Mohiuddin Lone ®. R/o Nadihal Baramulla', type: 'Grower' },
-            { name: 'AB. Majeed Lone S/P', type: 'Grower' },
-            { name: 'AB. Salaam Lone K/P', type: 'Grower' },
-            { name: 'Mohd. Ayoub Khan', type: 'Grower' },
-            { name: 'Nazir Ahmad Dar (Happa)', type: 'Grower' },
-            { name: 'Mohd. Maqbool Dar (Happa)', type: 'Grower' },
-            { name: 'Mushtaq Ahmad Lone K/P', type: 'Grower' },
-            { name: 'Manzoor Ahmad Lone K/P', type: 'Grower' },
-            { name: 'Naseer Ahmad Bhat', type: 'Grower' },
-            { name: 'GH. Mohd. Lone B/P', type: 'Grower' },
-            { name: 'GH. Mohd. Bhat', type: 'Grower' },
-            { name: 'Nazir Ahmad Lone B/P', type: 'Grower' },
-            { name: 'Mushtaq Ahmad Lone B/P', type: 'Grower' },
-            { name: 'Mohd. Maqbool Baigh', type: 'Grower' },
-            { name: 'Mohd. Shabaan Ahangar', type: 'Grower' },
-            { name: 'Mohd. Akbar Lone B/P', type: 'Grower' },
-            { name: 'Tanveer Ahmad Lone B/P', type: 'Grower' },
-            { name: 'Mohd. Shabaan Lone (Lama)', type: 'Grower' },
-            { name: 'Mohd. Arif Lone (Uffa)', type: 'Grower' },
-            { name: 'Mohd. Subhan Parry', type: 'Grower' },
-            { name: 'GH. Mohiuddin Lone (Potty)', type: 'Grower' },
-            { name: 'Majoor Ahmad Lone ®', type: 'Grower' },
-            { name: 'Mohd. Akbar Lone (Lama)', type: 'Grower' },
-            { name: 'Jaana ® B/P', type: 'Grower' },
-            { name: 'Rayees Rajab ®', type: 'Grower' },
-            { name: 'GH. Nabi Lone', type: 'Grower' },
-            { name: 'Hilal Ahmad Wani', type: 'Grower' },
-            { name: 'Javid Ahmad Sheikh', type: 'Grower', address: 'R/o Shanoo, Mawer Handwara' },
-            { name: 'Manzoor Ah. Lone B/P', type: 'Grower' },
-            { name: 'Farooq Ahmad Lone (Lama)', type: 'Grower' },
-            { name: 'Mohd. Ashraf wani', type: 'Grower' },
-            { name: 'Mohd. Yousuf Lone B/P', type: 'Grower' },
-            { name: 'Mohd. Yousuf Lone (Waza)', type: 'Grower' },
-            { name: 'Farooq Ahmad Bhat', type: 'Grower' },
-            { name: 'GH. Nabi Wani', type: 'Grower' }
-        ];
-
-        defaultParties.forEach(p => {
+        defaultGrowers.forEach(p => {
              const normalized = normalizeName(p.name);
              if (!growerMap.has(normalized)) {
                 growerMap.set(normalized, p.name);
