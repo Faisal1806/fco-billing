@@ -72,7 +72,6 @@ const defaultGrowers: { name: string, address: string }[] = [
     { name: 'GH. Mohd. Lone B/P', address: 'R/o Nadihal Bla.' },
     { name: 'GH. Mohd. Bhat', address: 'R/o Nadihal Bla.' },
     { name: 'Nazir Ahmad Lone B/P', address: 'R/o Nadihal Bla.' },
-    { name: 'Mushtaq Ahmad Lone B/P', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Maqbool Baigh', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Shabaan Ahangar', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Akbar Lone B/P', address: 'R/o Nadihal Bla.' },
@@ -82,19 +81,20 @@ const defaultGrowers: { name: string, address: string }[] = [
     { name: 'Mohd. Subhan Parry', address: 'R/o Nadihal Bla.' },
     { name: 'GH. Mohiuddin Lone (Potty)', address: 'R/o Nadihal Bla.' },
     { name: 'Majoor Ahmad Lone ®', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Akbar Lone (Lama)', address: 'R/o Nadihal Bla.' },
     { name: 'Jaana ® B/P', address: 'R/o Nadihal Bla.' },
     { name: 'Rayees Rajab ®', address: 'R/o Nadihal Bla.' },
     { name: 'Hilal Ahmad Wani', address: 'R/o Nadihal Bla.' },
     { name: 'Javid Ahmad Sheikh', address: 'R/o Shanoo, Mawer Handwara' },
-    { name: 'Manzoor Ah. Lone B/P', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Ashraf wani', address: 'R/o Nadihal Bla.' },
     { name: 'Bashir Ah. Lone B/P', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Yousuf Lone B/P', address: 'R/o Nadihal Bla.' },
-    { name: 'Farooq Ahmad Lone (Lama)', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Nabi Lone', address: 'R/o Nadihal Bla.' },
     { name: 'GH. Mohiuddin Lone (H)', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd Yousuf Lone (Waza)', address: 'R/o Nadihal Bla.' },
-    { name: 'GH. Nabi Lone', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Akbar Lone (Lama)', address: 'R/o Nadihal Bla.' },
+    { name: 'Mushtaq Ahmed Lone B/P', address: 'R/o Nadihal Bla.'},
+    { name: 'Manzoor Ahmad Lone B/P', address: 'R/o Nadihal Bla.'},
+    { name: 'Mohd. Yousuf Lone B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Farooq Ahmad Lone (Lama)', address: 'R/o Nadihal Bla.' },
     { name: 'Farooq Ahmad Bhat', address: 'R/o Nadihal Bla.' },
     { name: 'GH. Nabi Wani', address: 'R/o Nadihal Bla.' }
 ];
@@ -107,7 +107,7 @@ const normalizeName = (name: string): string => {
         .replace(/\(.*\)/, '')
         .replace(/\b(MOHAMMAD|MOHD|MD|GH\.)\b/g, 'MOHAMMAD')
         .replace(/\b(AHMAD|AH)\b/g, 'AHMAD')
-        .replace(/S\/P|B\/P|K\/P|®|\(R\)/g, '')
+        .replace(/S\/P|B\/P|K\/P|®|\(R\)|S\/O/g, '')
         .replace(/[\.\,\']/g, '')
         .replace(/\s+/g, ' ')
         .trim();
@@ -156,9 +156,7 @@ export default function PartiesPage() {
       if (key?.startsWith(PARTY_STORAGE_PREFIX)) {
         const party = JSON.parse(localStorage.getItem(key)!);
         const normalized = normalizeName(party.name);
-        if (!loadedParties[normalized]) {
-          loadedParties[normalized] = party;
-        }
+        loadedParties[normalized] = party;
       }
     }
 
@@ -169,8 +167,6 @@ export default function PartiesPage() {
 
         let partyName: string | undefined;
         let isSale = false;
-        let isPurchase = false;
-        let isExpense = false;
         let amount = 0;
 
         if (key.startsWith('invoice-')) {
@@ -181,23 +177,14 @@ export default function PartiesPage() {
         } else if (key.startsWith('purchase-')) {
             const doc = JSON.parse(localStorage.getItem(key)!);
             partyName = doc.growerName;
-            isPurchase = true;
-            amount = -doc.totals.grandTotal; // Receivable
+            amount = -doc.totals.grandTotal;
         } else if (key.startsWith('advance-')) {
             const doc = JSON.parse(localStorage.getItem(key)!);
             partyName = doc.partyName;
             if(doc.type === 'Advance Given') {
-                isPurchase = true; // Treat as receivable
                 amount = -doc.amount;
             } else { // Repayment
-                isSale = true; // Treat as payable received
-                amount = doc.amount;
-            }
-        } else if (key.startsWith('expense-')) {
-            const doc = JSON.parse(localStorage.getItem(key)!);
-            if(doc.partyName){
-                partyName = doc.partyName;
-                isExpense = true;
+                amount = doc.amount; // A repayment reduces what a customer owes, so it's a positive adjustment to their negative balance
             }
         }
         
@@ -211,16 +198,15 @@ export default function PartiesPage() {
             }
 
             if(isSale) transactionCounts[normalized].sales++;
-            if(isPurchase) transactionCounts[normalized].purchases++;
-            if(isExpense) transactionCounts[normalized].expenses++;
+            else transactionCounts[normalized].purchases++;
 
-            if(isSale || isPurchase) localBalances[normalized] += amount;
+            localBalances[normalized] += amount;
 
             if (!loadedParties[normalized]) {
                  loadedParties[normalized] = {
                     id: `${PARTY_STORAGE_PREFIX}${normalized}`,
-                    name: partyName, // Use original name for display
-                    type: 'Grower' // Default, will be updated below
+                    name: partyName, 
+                    type: 'Grower'
                 };
             }
         }
@@ -228,22 +214,12 @@ export default function PartiesPage() {
     
     // 4. Determine party type based on transactions
     Object.keys(loadedParties).forEach(normalized => {
-        const counts = transactionCounts[normalized];
         const party = loadedParties[normalized];
-
-        if (party.type && party.type !== 'Grower') return; // Do not override manual setting
-
+        const counts = transactionCounts[normalized];
         if (counts) {
-            const hasSales = counts.sales > 0;
-            const hasPurchases = counts.purchases > 0;
-            const hasExpenses = counts.expenses > 0;
-
-            if (hasSales && hasPurchases) party.type = 'Both';
-            else if (hasSales) party.type = 'Grower';
-            else if (hasPurchases) party.type = 'Customer';
-            else if (hasExpenses) {
-                party.type = 'Outside Party';
-            }
+            if (counts.sales > 0 && counts.purchases > 0) party.type = 'Both';
+            else if (counts.sales > 0) party.type = 'Grower';
+            else if (counts.purchases > 0) party.type = 'Customer';
         }
     });
     
@@ -274,7 +250,7 @@ export default function PartiesPage() {
   };
   
   const handleSelectChange = (name: keyof Omit<Party, 'id'>, value: string) => {
-    setFormState(prev => ({...prev, [name]: value}));
+    setFormState(prev => ({...prev, [name]: value as Party['type']}));
   }
 
   const handleSaveParty = () => {
@@ -507,5 +483,3 @@ export default function PartiesPage() {
     </Card>
   );
 }
-
-    

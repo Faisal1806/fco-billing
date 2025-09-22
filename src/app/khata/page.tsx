@@ -54,9 +54,9 @@ type PartyType = 'customer' | 'supplier' | 'both';
 type Ledger = {
     [normalizedPartyName: string]: {
         transactions: Transaction[];
-        balance: number; // positive means we owe them (payable), negative means they owe us (receivable)
+        balance: number;
         partyType: PartyType;
-        displayName: string; // The original, non-normalized name to display
+        displayName: string; 
     }
 }
 
@@ -70,7 +70,7 @@ const normalizeName = (name: string): string => {
         .replace(/\(.*\)/, '')
         .replace(/\b(MOHAMMAD|MOHD|MD|GH\.)\b/g, 'MOHAMMAD')
         .replace(/\b(AHMAD|AH)\b/g, 'AHMAD')
-        .replace(/S\/P|B\/P|K\/P|®|\(R\)/g, '')
+        .replace(/S\/P|B\/P|K\/P|®|\(R\)|S\/O/g, '')
         .replace(/[\.\,\']/g, '')
         .replace(/\s+/g, ' ')
         .trim();
@@ -88,7 +88,6 @@ const defaultGrowers: { name: string, address: string }[] = [
     { name: 'GH. Mohd. Lone B/P', address: 'R/o Nadihal Bla.' },
     { name: 'GH. Mohd. Bhat', address: 'R/o Nadihal Bla.' },
     { name: 'Nazir Ahmad Lone B/P', address: 'R/o Nadihal Bla.' },
-    { name: 'Mushtaq Ahmad Lone B/P', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Maqbool Baigh', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Shabaan Ahangar', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Akbar Lone B/P', address: 'R/o Nadihal Bla.' },
@@ -98,19 +97,20 @@ const defaultGrowers: { name: string, address: string }[] = [
     { name: 'Mohd. Subhan Parry', address: 'R/o Nadihal Bla.' },
     { name: 'GH. Mohiuddin Lone (Potty)', address: 'R/o Nadihal Bla.' },
     { name: 'Majoor Ahmad Lone ®', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Akbar Lone (Lama)', address: 'R/o Nadihal Bla.' },
     { name: 'Jaana ® B/P', address: 'R/o Nadihal Bla.' },
     { name: 'Rayees Rajab ®', address: 'R/o Nadihal Bla.' },
     { name: 'Hilal Ahmad Wani', address: 'R/o Nadihal Bla.' },
     { name: 'Javid Ahmad Sheikh', address: 'R/o Shanoo, Mawer Handwara' },
-    { name: 'Manzoor Ah. Lone B/P', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Ashraf wani', address: 'R/o Nadihal Bla.' },
     { name: 'Bashir Ah. Lone B/P', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Yousuf Lone B/P', address: 'R/o Nadihal Bla.' },
-    { name: 'Farooq Ahmad Lone (Lama)', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Nabi Lone', address: 'R/o Nadihal Bla.' },
     { name: 'GH. Mohiuddin Lone (H)', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd Yousuf Lone (Waza)', address: 'R/o Nadihal Bla.' },
-    { name: 'GH. Nabi Lone', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Akbar Lone (Lama)', address: 'R/o Nadihal Bla.' },
+    { name: 'Mushtaq Ahmed Lone B/P', address: 'R/o Nadihal Bla.'},
+    { name: 'Manzoor Ahmad Lone B/P', address: 'R/o Nadihal Bla.'},
+    { name: 'Mohd. Yousuf Lone B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Farooq Ahmad Lone (Lama)', address: 'R/o Nadihal Bla.' },
     { name: 'Farooq Ahmad Bhat', address: 'R/o Nadihal Bla.' },
     { name: 'GH. Nabi Wani', address: 'R/o Nadihal Bla.' }
 ];
@@ -132,7 +132,6 @@ export default function KhataLedgerPage() {
 
             // 1. Create a canonical name map
             const canonicalMap = new Map<string, string>();
-            const displayNameMap = new Map<string, string>();
             const allKnownParties: { name: string, type: PartyType }[] = [];
 
             // Add default growers to establish canonical names
@@ -140,7 +139,6 @@ export default function KhataLedgerPage() {
                 const normalized = normalizeName(p.name);
                 if (!canonicalMap.has(normalized)) {
                     canonicalMap.set(normalized, p.name);
-                    displayNameMap.set(p.name, p.name);
                     allKnownParties.push({ name: p.name, type: 'supplier' });
                 }
             });
@@ -149,16 +147,17 @@ export default function KhataLedgerPage() {
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key?.startsWith('party-')) {
-                    const party = JSON.parse(localStorage.getItem(key)!);
-                    const normalized = normalizeName(party.name);
-                    if (!canonicalMap.has(normalized)) {
-                        canonicalMap.set(normalized, party.name);
-                        displayNameMap.set(party.name, party.name);
-                        allKnownParties.push({ name: party.name, type: party.type === 'Grower' ? 'supplier' : 'customer' });
-                    }
+                    try {
+                        const party = JSON.parse(localStorage.getItem(key)!);
+                        const normalized = normalizeName(party.name);
+                        if (!canonicalMap.has(normalized)) {
+                            canonicalMap.set(normalized, party.name);
+                            allKnownParties.push({ name: party.name, type: party.type === 'Grower' ? 'supplier' : 'customer' });
+                        }
+                    } catch(e) { console.error("Error parsing party:", e); }
                 }
             }
-             setPartyNameMap(displayNameMap);
+             setPartyNameMap(new Map(Array.from(canonicalMap.entries()).map(([norm, orig]) => [orig, orig])));
             
             // 2. Process all transactions
             const allTransactions: Transaction[] = [];
@@ -244,9 +243,12 @@ export default function KhataLedgerPage() {
             Object.keys(calculatedLedgers).forEach(partyKey => {
                 let runningBalance = 0;
                 calculatedLedgers[partyKey].transactions.forEach(trans => {
-                    if (trans.type === 'Sale' || trans.type === 'Repayment') {
+                    // Credit (money you owe or get)
+                    if (trans.type === 'Sale') {
                         runningBalance += trans.amount;
-                    } else { // Purchase or Advance
+                    } 
+                    // Debit (money you give or is owed to you)
+                    else { 
                         runningBalance -= trans.amount;
                     }
                 });
@@ -313,9 +315,9 @@ export default function KhataLedgerPage() {
         if (!selectedLedger) return [];
         let runningBalance = 0;
         return selectedLedger.transactions.map(tx => {
-            if(tx.type === 'Sale' || tx.type === 'Repayment') {
+            if(tx.type === 'Sale') { // Money we owe the grower
                 runningBalance += tx.amount;
-            } else { // Advance or Purchase
+            } else { // Advance, Purchase, Repayment - Money grower owes us or we paid out
                 runningBalance -= tx.amount;
             }
             return {...tx, runningBalance};
@@ -374,8 +376,8 @@ export default function KhataLedgerPage() {
             Date: new Date(tx.date).toLocaleDateString('en-GB'),
             'Document ID': `#${tx.docId}`,
             Type: tx.type,
-            'Debit (You Get)': (tx.type === 'Purchase' || tx.type === 'Advance') ? tx.amount : '',
-            'Credit (You Give)': (tx.type === 'Sale' || tx.type === 'Repayment') ? tx.amount : '',
+            'Debit (Receivable)': (tx.type === 'Purchase' || tx.type === 'Advance' || tx.type === 'Repayment') ? tx.amount : '',
+            'Credit (Payable)': (tx.type === 'Sale') ? tx.amount : '',
             'Running Balance': tx.runningBalance,
             'Notes': tx.notes || '',
         }));
@@ -404,10 +406,10 @@ export default function KhataLedgerPage() {
     const totals = React.useMemo(() => {
         if (!selectedLedger) return { debit: 0, credit: 0 };
         return selectedLedger.transactions.reduce((acc, tx) => {
-            if (tx.type === 'Purchase' || tx.type === 'Advance') {
-                acc.debit += tx.amount;
-            } else { // Sale, Repayment
+             if (tx.type === 'Sale') {
                 acc.credit += tx.amount;
+            } else { // Purchase, Advance, Repayment
+                acc.debit += tx.amount;
             }
             return acc;
         }, { debit: 0, credit: 0 });
@@ -539,10 +541,10 @@ export default function KhataLedgerPage() {
                                    <Badge variant={getBadgeVariant(tx.type)}>{tx.type}</Badge>
                                 </TableCell>
                                 <TableCell className="text-right font-mono text-red-500">
-                                    {(tx.type === 'Purchase' || tx.type === 'Advance') ? `₹${tx.amount.toFixed(2)}` : '-'}
+                                    {(tx.type === 'Purchase' || tx.type === 'Advance' || tx.type === 'Repayment') ? `₹${tx.amount.toFixed(2)}` : '-'}
                                 </TableCell>
                                 <TableCell className="text-right font-mono text-green-600">
-                                    {(tx.type === 'Sale' || tx.type === 'Repayment') ? `₹${tx.amount.toFixed(2)}` : '-'}
+                                    {(tx.type === 'Sale') ? `₹${tx.amount.toFixed(2)}` : '-'}
                                 </TableCell>
                                 <TableCell className="text-right font-mono">₹{tx.runningBalance.toFixed(2)}</TableCell>
                             </TableRow>
@@ -560,7 +562,7 @@ export default function KhataLedgerPage() {
                                 <TableCell className={`text-right ${selectedLedger.balance < 0 ? 'text-red-700' : 'text-green-700'}`}>
                                     ₹{Math.abs(selectedLedger.balance).toFixed(2)}
                                     <span className="text-xs text-muted-foreground ml-1">
-                                        {selectedLedger.balance < 0 ? '(Receivable)' : '(Payable)'}
+                                        {selectedLedger.balance > 0 ? '(Payable)' : '(Receivable)'}
                                     </span>
                                 </TableCell>
                             </TableRow>
