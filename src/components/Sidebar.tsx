@@ -95,32 +95,37 @@ export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
   };
 
   return (
-    <div className="hidden border-r bg-muted/40 md:block">
-      <div className="flex h-full max-h-screen flex-col gap-2">
-        <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-          <Link href="/" className="flex items-center gap-2 font-semibold">
-            <Logo className="h-6 w-6" />
-            <span className="">F.Co SwiftSale</span>
-          </Link>
-        </div>
-        <div className="flex-1">
-          <nav className="grid items-start p-2 text-sm font-medium lg:px-4">
-            {sidebarSections.map((section) => (
-              <div key={section.title} className="py-2">
-                <h3 className="mb-2 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {section.title}
-                </h3>
-                {section.items.map((item) => (
-                  <div key={item.name}>{renderLink(item)}</div>
-                ))}
-              </div>
-            ))}
-          </nav>
-        </div>
+    <div className="flex h-full max-h-screen flex-col gap-2">
+      <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+        <Link href="/" className="flex items-center gap-2 font-semibold">
+          <Logo className="h-6 w-6" />
+          <span className="">SwiftSale</span>
+        </Link>
+      </div>
+      <div className="flex-1">
+        <nav className="grid items-start p-2 text-sm font-medium lg:px-4">
+          {sidebarSections.map((section) => (
+            <div key={section.title} className="py-2">
+              <h3 className="mb-2 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {section.title}
+              </h3>
+              {section.items.map((item) => (
+                <div key={item.name}>{renderLink(item)}</div>
+              ))}
+            </div>
+          ))}
+        </nav>
       </div>
     </div>
   );
 }
 
+const Sidebar = () => {
+    return (
+        <div className="hidden border-r bg-muted/40 md:block">
+            <SidebarContent />
+        </div>
+    );
+};
 
 export default Sidebar;
