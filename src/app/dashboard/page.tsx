@@ -1,11 +1,10 @@
 
-
 'use client'
 
 import * as React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Package, UserCheck, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, History, BookOpen, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Hash, ShoppingCart, Globe, DollarSign, Banknote, Snowflake, Cog, CheckCircle, FileDown, FileSpreadsheet, Settings, Users, Menu } from 'lucide-react';
+import { Loader2, Package, UserCheck, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, History, BookOpen, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Hash, ShoppingCart, Globe, DollarSign, Banknote, Snowflake, Cog, CheckCircle, FileDown, FileSpreadsheet, Settings, Users, Menu, LayoutDashboard, File, ShoppingBasket } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import RateList from '@/components/RateList';
@@ -15,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { sidebarSections } from '@/components/Sidebar';
 
 
 interface DailyStats {
@@ -85,7 +85,7 @@ interface CategorizedProducts {
 const normalizeName = (name: string): string => {
     if (!name) return '';
     
-    const suffixes = ["S/P", "B/P", "K/P", "(Lama)"];
+    const suffixes = ["S/P", "B/P", "K/P", "(LAMA)"];
     let mainName = name;
     let suffix = '';
 
@@ -249,6 +249,32 @@ const FruitDashboard = ({ stats, yearlyStats, accessoryStats, growerProfits, rou
                             <CardTitle className="flex items-center gap-2"><Trophy className="h-6 w-6 text-amber-500" /> Top Growers</CardTitle>
                             <CardDescription>This session's top growers by net sales.</CardDescription>
                         </div>
+                         <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="icon">
+                                    <Menu className="h-4 w-4" />
+                                    <span className="sr-only">App Navigation</span>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                 {sidebarSections.map((section, index) => (
+                                    <React.Fragment key={section.title}>
+                                        {index > 0 && <DropdownMenuSeparator />}
+                                        <DropdownMenuLabel>{section.title}</DropdownMenuLabel>
+                                        <DropdownMenuGroup>
+                                            {section.items.map(item => (
+                                                <Link href={item.href} passHref key={item.name}>
+                                                    <DropdownMenuItem>
+                                                        <item.icon className="h-4 w-4 mr-2" />
+                                                        {item.name}
+                                                    </DropdownMenuItem>
+                                                </Link>
+                                            ))}
+                                        </DropdownMenuGroup>
+                                    </React.Fragment>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </CardHeader>
                     <CardContent>
                         {growerProfits.length > 0 ? (
