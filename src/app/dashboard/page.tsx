@@ -4,7 +4,7 @@
 import * as React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Package, UserCheck, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, History, BookOpen, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Hash, ShoppingCart, Globe, DollarSign, Banknote, Snowflake, Cog, CheckCircle, FileDown, FileSpreadsheet, Settings, Users, Menu, LayoutDashboard, File, ShoppingBasket } from 'lucide-react';
+import { Loader2, Package, UserCheck, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, History, BookOpen, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Hash, ShoppingCart, Globe, DollarSign, Banknote, Snowflake, Cog, CheckCircle, FileDown, FileSpreadsheet, Settings, Users, Menu, LayoutDashboard, File, ShoppingBasket, Truck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import RateList from '@/components/RateList';
@@ -34,6 +34,13 @@ interface YearlyStats {
     yearTotalDabba: number;
     yearTotalNugs: number;
 }
+
+interface OutsideSalesStats {
+    yearTotalPattiSent: number;
+    yearTotalDabbaSent: number;
+    yearTotalNugsSent: number;
+}
+
 
 type GrowerProfit = {
     name: string;
@@ -74,6 +81,13 @@ interface Invoice {
     };
     entries: any[];
     customerName: string;
+}
+
+interface Challan {
+    date: string;
+    totalPetti: number;
+    totalDabba: number;
+    totalNugs: number;
 }
 
 interface CategorizedProducts {
@@ -160,7 +174,7 @@ const QuickActions = () => {
     )
 }
 
-const FruitDashboard = ({ stats, yearlyStats, accessoryStats, growerProfits, router }: { stats: DailyStats | null, yearlyStats: YearlyStats | null, accessoryStats: AccessoryStats | null, growerProfits: GrowerProfit[], router: any }) => (
+const FruitDashboard = ({ stats, yearlyStats, outsideSalesStats, accessoryStats, growerProfits, router }: { stats: DailyStats | null, yearlyStats: YearlyStats | null, outsideSalesStats: OutsideSalesStats | null, accessoryStats: AccessoryStats | null, growerProfits: GrowerProfit[], router: any }) => (
     <div className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
@@ -222,22 +236,43 @@ const FruitDashboard = ({ stats, yearlyStats, accessoryStats, growerProfits, rou
                         title="Total Patti Sold (This Year)"
                         value={yearlyStats?.yearTotalPatti.toLocaleString('en-IN') ?? '0'}
                         icon={Box}
-                        note="Total patti volume this year"
+                        note="Local sales volume"
                         iconBgColor="bg-indigo-500"
                      />
                      <StatCard 
                         title="Total Dabba Sold (This Year)"
                         value={yearlyStats?.yearTotalDabba.toLocaleString('en-IN') ?? '0'}
                         icon={Package}
-                        note="Total dabba volume this year"
+                        note="Local sales volume"
                         iconBgColor="bg-cyan-500"
                      />
                      <StatCard 
                         title="Total Nugs Sold (This Year)"
                         value={yearlyStats?.yearTotalNugs.toLocaleString('en-IN') ?? '0'}
                         icon={Hash}
-                        note="Patti + Dabba"
+                        note="Patti + Dabba (Local)"
                         iconBgColor="bg-slate-500"
+                     />
+                      <StatCard 
+                        title="Total Patti Sent Outside (Year)"
+                        value={outsideSalesStats?.yearTotalPattiSent.toLocaleString('en-IN') ?? '0'}
+                        icon={Truck}
+                        note="Forwarding volume"
+                        iconBgColor="bg-lime-600"
+                     />
+                     <StatCard 
+                        title="Total Dabba Sent Outside (Year)"
+                        value={outsideSalesStats?.yearTotalDabbaSent.toLocaleString('en-IN') ?? '0'}
+                        icon={Truck}
+                        note="Forwarding volume"
+                        iconBgColor="bg-emerald-600"
+                     />
+                     <StatCard 
+                        title="Total Nugs Sent Outside (Year)"
+                        value={outsideSalesStats?.yearTotalNugsSent.toLocaleString('en-IN') ?? '0'}
+                        icon={Globe}
+                        note="Total Forwarding"
+                        iconBgColor="bg-teal-600"
                      />
                 </div>
                  <QuickActions />
@@ -419,6 +454,7 @@ export default function DashboardPage() {
   const [allInvoices, setAllInvoices] = useState<Invoice[]>([]);
   const [allAccessories, setAllAccessories] = useState<AccessoryLedgerEntry[]>([]);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [allChallans, setAllChallans] = useState<Challan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -429,6 +465,7 @@ export default function DashboardPage() {
         const invoices: Invoice[] = [];
         const accessories: AccessoryLedgerEntry[] = [];
         const products: Product[] = [];
+        const challans: Challan[] = [];
 
         for(let i=0; i<localStorage.length; i++) {
             const key = localStorage.key(i);
@@ -438,11 +475,14 @@ export default function DashboardPage() {
                 accessories.push(JSON.parse(localStorage.getItem(key)!));
             } else if (key?.startsWith('product-')) {
                 products.push(JSON.parse(localStorage.getItem(key)!));
+            } else if (key?.startsWith('challan-')) {
+                challans.push(JSON.parse(localStorage.getItem(key)!));
             }
         }
         setAllInvoices(invoices);
         setAllAccessories(accessories);
         setAllProducts(products);
+        setAllChallans(challans);
         setIsLoading(false);
     }
     fetchData();
@@ -517,6 +557,27 @@ export default function DashboardPage() {
         yearTotalNugs: yearTotalPatti + yearTotalDabba,
     };
   }, [allInvoices, isLoading]);
+
+  const outsideSalesStats = useMemo(() => {
+    if (isLoading) return null;
+    const currentYear = new Date().getFullYear();
+    let yearTotalPattiSent = 0;
+    let yearTotalDabbaSent = 0;
+
+    allChallans.forEach(challan => {
+        const challanDate = new Date(challan.date);
+        if (challanDate.getFullYear() === currentYear) {
+            yearTotalPattiSent += challan.totalPetti || 0;
+            yearTotalDabbaSent += challan.totalDabba || 0;
+        }
+    });
+
+    return {
+        yearTotalPattiSent,
+        yearTotalDabbaSent,
+        yearTotalNugsSent: yearTotalPattiSent + yearTotalDabbaSent,
+    };
+  }, [allChallans, isLoading]);
 
   const growerProfits = useMemo(() => {
     if (isLoading) return [];
@@ -628,7 +689,7 @@ export default function DashboardPage() {
             <TabsTrigger value="inventory"><Package className="w-4 h-4 mr-2" />Inventory</TabsTrigger>
         </TabsList>
         <TabsContent value="fruit">
-            <FruitDashboard stats={stats} yearlyStats={yearlyStats} accessoryStats={accessoryStats} growerProfits={growerProfits} router={router} />
+            <FruitDashboard stats={stats} yearlyStats={yearlyStats} outsideSalesStats={outsideSalesStats} accessoryStats={accessoryStats} growerProfits={growerProfits} router={router} />
         </TabsContent>
         <TabsContent value="accessories">
             <AccessoriesDashboard stats={accessoryStats} router={router} />
@@ -639,3 +700,5 @@ export default function DashboardPage() {
     </Tabs>
   );
 }
+
+    
