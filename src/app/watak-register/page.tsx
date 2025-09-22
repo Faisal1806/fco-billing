@@ -66,15 +66,17 @@ export interface WatakEntry {
 
 const normalizeName = (name: string): string => {
     if (!name) return '';
+    // This version is more aggressive for matching but preserves the original look less.
+    // Good for finding the canonical name.
     return name
         .toUpperCase()
-        .replace(/R\/O.*$/i, '') // Remove address part
-        .replace(/\(.*\)/, '') // Remove anything in parentheses like (LAMA)
+        .replace(/R\/O.*$/i, '')
+        .replace(/\(.*\)/, '')
         .replace(/\b(MOHAMMAD|MOHD|MD|GH\.)\b/g, 'MOHAMMAD')
         .replace(/\b(AHMAD|AH)\b/g, 'AHMAD')
-        .replace(/S\/P|B\/P|K\/P|®|\(R\)/g, '') // Remove suffixes
-        .replace(/[\.\,\']/g, '') // Remove punctuation
-        .replace(/\s+/g, ' ') // Collapse multiple spaces
+        .replace(/S\/P|B\/P|K\/P|®/g, '') // Remove specific suffixes
+        .replace(/[\.\,']/g, '')
+        .replace(/\s+/g, ' ')
         .trim();
 };
 
@@ -143,38 +145,37 @@ export default function SalesRegisterPage() {
     setIsLoading(true);
     if(typeof window !== 'undefined') {
         const items = [];
-        const growerMap = new Map<string, string>();
+        const growerMap = new Map<string, string>(); // Map from normalized name -> canonical name
         
-        defaultGrowers.forEach(p => {
-             const normalized = normalizeName(p.name);
+        const addPartyToMap = (name: string) => {
+             const normalized = normalizeName(name);
              if (!growerMap.has(normalized)) {
-                growerMap.set(normalized, p.name);
+                growerMap.set(normalized, name);
             }
-        });
+        };
 
+        defaultGrowers.forEach(p => addPartyToMap(p.name));
 
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key?.startsWith('party-')) {
+                try {
+                    addPartyToMap(JSON.parse(localStorage.getItem(key)!).name);
+                } catch(e) { console.error("Failed to parse party:", e); }
+            }
+        }
+        
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             if (key?.startsWith('invoice-')) {
                 try {
                     const watak = JSON.parse(localStorage.getItem(key)!);
                     items.push(watak);
-                    const normalized = normalizeName(watak.customerName);
-                    if (!growerMap.has(normalized)) {
-                        growerMap.set(normalized, watak.customerName);
-                    }
+                    // Also ensure any name from an invoice is considered for mapping,
+                    // in case it wasn't in the parties list
+                    addPartyToMap(watak.customerName);
                 } catch(e) {
                     console.error("Failed to parse watak from local storage", e);
-                }
-            } else if (key?.startsWith('party-')) {
-                try {
-                    const party = JSON.parse(localStorage.getItem(key)!);
-                    const normalized = normalizeName(party.name);
-                    if (!growerMap.has(normalized)) {
-                        growerMap.set(normalized, party.name);
-                    }
-                } catch(e) {
-                    console.error("Failed to parse party from local storage", e);
                 }
             }
         }
@@ -265,6 +266,7 @@ export default function SalesRegisterPage() {
             'Invoice No.': w.sNo,
             'Watak No.': w.watakNo,
             'Khata (Grower)': canonicalName,
+            'Original Name': w.customerName,
             'Peti': w.totals.pattiQty || 0,
             'Dabba': w.totals.dabbaQty || 0,
             'Gross Sale': w.totals.grossSale,
@@ -275,7 +277,7 @@ export default function SalesRegisterPage() {
     
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
     XLSX.utils.sheet_add_aoa(worksheet, [
-        ["Total", "", "", "", footerTotals.pattiQty, footerTotals.dabbaQty, footerTotals.grossSale, footerTotals.totalExpenses, footerTotals.netSale]
+        ["Total", "", "", "", "", footerTotals.pattiQty, footerTotals.dabbaQty, footerTotals.grossSale, footerTotals.totalExpenses, footerTotals.netSale]
     ], { origin: -1 });
 
     const workbook = XLSX.utils.book_new();

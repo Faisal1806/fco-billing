@@ -52,7 +52,7 @@ type Transaction = {
 type PartyType = 'customer' | 'supplier' | 'both';
 
 type Ledger = {
-    [normalizedPartyName: string]: {
+    [canonicalPartyName: string]: {
         transactions: Transaction[];
         balance: number;
         partyType: PartyType;
@@ -64,14 +64,16 @@ type LedgerEntryWithRunningBalance = Transaction & { runningBalance: number };
 
 const normalizeName = (name: string): string => {
     if (!name) return '';
+    // This version is more aggressive for matching but preserves the original look less.
+    // Good for finding the canonical name.
     return name
         .toUpperCase()
         .replace(/R\/O.*$/i, '')
         .replace(/\(.*\)/, '')
         .replace(/\b(MOHAMMAD|MOHD|MD|GH\.)\b/g, 'MOHAMMAD')
         .replace(/\b(AHMAD|AH)\b/g, 'AHMAD')
-        .replace(/S\/P|B\/P|K\/P|®|\(R\)|S\/O/g, '')
-        .replace(/[\.\,\']/g, '')
+        .replace(/S\/P|B\/P|K\/P|®/g, '') // Remove specific suffixes
+        .replace(/[\.\,']/g, '')
         .replace(/\s+/g, ' ')
         .trim();
 };
@@ -123,45 +125,35 @@ export default function KhataLedgerPage() {
     const [selectedParty, setSelectedParty] = React.useState<string | null>(null);
     const [activeTab, setActiveTab] = React.useState('growers');
     const [isLoading, setIsLoading] = React.useState(true);
-    const [partyNameMap, setPartyNameMap] = React.useState<Map<string, string>>(new Map());
-
+    
     React.useEffect(() => {
         function fetchLedgerData() {
             if (typeof window === 'undefined') return;
             setIsLoading(true);
 
-            // 1. Create a canonical name map
-            const canonicalMap = new Map<string, string>();
-            const allKnownParties: { name: string, type: PartyType }[] = [];
-
-            // Add default growers to establish canonical names
-            defaultGrowers.forEach(p => {
-                const normalized = normalizeName(p.name);
+            // 1. Create a canonical name map from all known "official" party names
+            const canonicalMap = new Map<string, string>(); // Map from normalized name -> canonical name
+            
+            const addPartyToMap = (party: {name: string}) => {
+                const normalized = normalizeName(party.name);
                 if (!canonicalMap.has(normalized)) {
-                    canonicalMap.set(normalized, p.name);
-                    allKnownParties.push({ name: p.name, type: 'supplier' });
+                    canonicalMap.set(normalized, party.name);
                 }
-            });
+            };
+            
+            defaultGrowers.forEach(addPartyToMap);
 
-            // Load all other parties from storage
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key?.startsWith('party-')) {
                     try {
-                        const party = JSON.parse(localStorage.getItem(key)!);
-                        const normalized = normalizeName(party.name);
-                        if (!canonicalMap.has(normalized)) {
-                            canonicalMap.set(normalized, party.name);
-                            allKnownParties.push({ name: party.name, type: party.type === 'Grower' ? 'supplier' : 'customer' });
-                        }
+                        addPartyToMap(JSON.parse(localStorage.getItem(key)!));
                     } catch(e) { console.error("Error parsing party:", e); }
                 }
             }
-             setPartyNameMap(new Map(Array.from(canonicalMap.entries()).map(([norm, orig]) => [orig, orig])));
             
             // 2. Process all transactions
             const allTransactions: Transaction[] = [];
-
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (!key) continue;
@@ -176,7 +168,7 @@ export default function KhataLedgerPage() {
                             amount: doc.totals.netSale,
                             grossAmount: doc.totals.grossSale,
                             expenses: doc.totals.totalExpenses,
-                            party: doc.customerName,
+                            party: doc.customerName, // Keep original name from invoice
                             docId: doc.sNo,
                         });
                     } else if (key.startsWith('purchase-')) {
@@ -218,6 +210,7 @@ export default function KhataLedgerPage() {
             for (const trans of allTransactions) {
                 if (!trans.party) continue;
                 const normalized = normalizeName(trans.party);
+                // Find the official name, or use the original name if it's a new/unknown party
                 const canonicalName = canonicalMap.get(normalized) || trans.party;
                 
                 if (!calculatedLedgers[canonicalName]) {
@@ -232,22 +225,20 @@ export default function KhataLedgerPage() {
                 const ledger = calculatedLedgers[canonicalName];
                 ledger.transactions.push(trans);
                 
-                const isSupplierTx = trans.type === 'Sale';
-                if (isSupplierTx && ledger.partyType === 'customer') {
-                    ledger.partyType = 'both';
-                } else if (isSupplierTx) {
-                     ledger.partyType = 'supplier';
+                const isSaleTx = trans.type === 'Sale';
+                if (isSaleTx) {
+                    ledger.partyType = ledger.partyType === 'customer' ? 'both' : 'supplier';
                 }
             }
             
             Object.keys(calculatedLedgers).forEach(partyKey => {
                 let runningBalance = 0;
                 calculatedLedgers[partyKey].transactions.forEach(trans => {
-                    // Credit (money you owe or get)
+                    // Credit (money we owe the grower)
                     if (trans.type === 'Sale') {
                         runningBalance += trans.amount;
                     } 
-                    // Debit (money you give or is owed to you)
+                    // Debit (money grower owes us)
                     else { 
                         runningBalance -= trans.amount;
                     }
@@ -276,12 +267,14 @@ export default function KhataLedgerPage() {
             const parties = allParties.filter(p => {
                 if (tab === 'all') return true;
                 if (!p || p === fcoName) return false;
-                const ledger = ledgers[p]; // Use direct key since it's already canonical
+                const ledger = ledgers[p];
                 
                 if (tab === 'growers') {
+                    // A grower is anyone who has made a sale to us.
                     return ledger?.transactions.some(t => t.type === 'Sale');
                 }
                 if (tab === 'customers') {
+                    // A customer is anyone who has a purchase, advance, or repayment.
                     return ledger?.transactions.some(t => t.type === 'Purchase' || t.type === 'Advance' || t.type === 'Repayment');
                 }
                 return false;
@@ -298,7 +291,7 @@ export default function KhataLedgerPage() {
         };
         
         filterAndSetParties(activeTab as any);
-    }, [activeTab, allParties, ledgers]);
+    }, [activeTab, allParties, ledgers, selectedParty]);
 
     const selectedLedger = selectedParty ? ledgers[selectedParty] : null;
 
@@ -342,10 +335,10 @@ export default function KhataLedgerPage() {
 
         autoTable(doc, {
             startY: 35,
-            head: [['Date', 'Doc ID', 'Type', 'Debit (You Get)', 'Credit (You Give)', 'Balance']],
+            head: [['Date', 'Doc ID / Particulars', 'Type', 'Debit (Receivable)', 'Credit (Payable)', 'Balance']],
             body: ledgerForExport.map(tx => [
                 new Date(tx.date).toLocaleDateString('en-GB'),
-                `#${tx.docId}`,
+                tx.type === 'Sale' ? `Bill #${tx.docId}` : tx.type === 'Purchase' ? `Purchase #${tx.docId}` : tx.notes || tx.type,
                 tx.type,
                 (tx.type === 'Purchase' || tx.type === 'Advance') ? `₹${tx.amount.toFixed(2)}` : '-',
                 (tx.type === 'Sale' || tx.type === 'Repayment') ? `₹${tx.amount.toFixed(2)}` : '-',
@@ -374,10 +367,11 @@ export default function KhataLedgerPage() {
 
         const worksheetData = ledgerForExport.map(tx => ({
             Date: new Date(tx.date).toLocaleDateString('en-GB'),
-            'Document ID': `#${tx.docId}`,
+            'Document ID': tx.docId,
+            'Particulars (Original Name)': tx.party,
             Type: tx.type,
-            'Debit (Receivable)': (tx.type === 'Purchase' || tx.type === 'Advance' || tx.type === 'Repayment') ? tx.amount : '',
-            'Credit (Payable)': (tx.type === 'Sale') ? tx.amount : '',
+            'Debit (Receivable)': (tx.type === 'Purchase' || tx.type === 'Advance') ? tx.amount : '',
+            'Credit (Payable)': (tx.type === 'Sale' || tx.type === 'Repayment') ? tx.amount : '',
             'Running Balance': tx.runningBalance,
             'Notes': tx.notes || '',
         }));
@@ -387,7 +381,7 @@ export default function KhataLedgerPage() {
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Ledger');
         
         XLSX.utils.sheet_add_aoa(worksheet, [
-            ["", "", "", "", "", "Final Balance", selectedLedger.balance]
+            ["", "", "", "", "","Final Balance", selectedLedger.balance]
         ], { origin: -1 });
 
         XLSX.writeFile(workbook, `Ledger-${selectedParty}.xlsx`);
@@ -406,9 +400,9 @@ export default function KhataLedgerPage() {
     const totals = React.useMemo(() => {
         if (!selectedLedger) return { debit: 0, credit: 0 };
         return selectedLedger.transactions.reduce((acc, tx) => {
-             if (tx.type === 'Sale') {
+             if (tx.type === 'Sale' || tx.type === 'Repayment') {
                 acc.credit += tx.amount;
-            } else { // Purchase, Advance, Repayment
+            } else { // Purchase, Advance
                 acc.debit += tx.amount;
             }
             return acc;
@@ -536,15 +530,16 @@ export default function KhataLedgerPage() {
                                         {tx.type === 'Sale' ? `Bill #${tx.docId}` : tx.type === 'Purchase' ? `Purchase #${tx.docId}` : tx.notes || tx.type}
                                     </Button>
                                     <span className="hidden print:inline">{tx.type === 'Sale' ? `Bill #${tx.docId}` : tx.type === 'Purchase' ? `Purchase #${tx.docId}` : tx.notes || tx.type}</span>
+                                     <p className="text-xs text-muted-foreground hidden print:block">({tx.party})</p>
                                 </TableCell>
                                 <TableCell>
                                    <Badge variant={getBadgeVariant(tx.type)}>{tx.type}</Badge>
                                 </TableCell>
                                 <TableCell className="text-right font-mono text-red-500">
-                                    {(tx.type === 'Purchase' || tx.type === 'Advance' || tx.type === 'Repayment') ? `₹${tx.amount.toFixed(2)}` : '-'}
+                                    {(tx.type === 'Purchase' || tx.type === 'Advance') ? `₹${tx.amount.toFixed(2)}` : '-'}
                                 </TableCell>
                                 <TableCell className="text-right font-mono text-green-600">
-                                    {(tx.type === 'Sale') ? `₹${tx.amount.toFixed(2)}` : '-'}
+                                    {(tx.type === 'Sale' || tx.type === 'Repayment') ? `₹${tx.amount.toFixed(2)}` : '-'}
                                 </TableCell>
                                 <TableCell className="text-right font-mono">₹{tx.runningBalance.toFixed(2)}</TableCell>
                             </TableRow>
