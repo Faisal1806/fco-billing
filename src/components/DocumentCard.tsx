@@ -10,8 +10,8 @@ type Props = {
 };
 
 const gradients: Record<string, string> = {
-  watak: "bg-gradient-to-br from-green-400 to-teal-600",
-  bill: "bg-gradient-to-br from-red-400 to-rose-600",
+  watak: "bg-gradient-to-br from-red-400 to-rose-600",
+  bill: "bg-gradient-to-br from-green-400 to-teal-600",
   challan: "bg-gradient-to-br from-blue-400 to-purple-600",
   receipt: "bg-gradient-to-br from-yellow-400 to-amber-600",
   "pesticide-bill": "bg-gradient-to-br from-cyan-400 to-sky-600",
