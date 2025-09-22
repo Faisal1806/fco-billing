@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import * as React from 'react';
@@ -63,40 +64,16 @@ type LedgerEntryWithRunningBalance = Transaction & { runningBalance: number };
 
 const normalizeName = (name: string): string => {
     if (!name) return '';
-    
-    // Suffixes that define a separate entity even if the base name is the same
-    const definingSuffixes = ["(LAMA)", "S/O", "W/O"];
-    // Suffixes that are part of the name but don't define a new entity
-    const nonDefiningSuffixes = ["B/P", "K/P", "S/P"];
-
-    let mainName = name.toUpperCase();
-    let suffix = '';
-
-    // First check for defining suffixes
-    for (const s of definingSuffixes) {
-        if (mainName.includes(s)) {
-            // Keep the suffix as part of the main name to ensure uniqueness
-            // e.g., "MOHD SHABAAN LONE (LAMA)" stays distinct
-            break; // Found a defining suffix, no need to strip others.
-        }
-    }
-    
-    // Handle non-defining suffixes by appending them at the end
-    for (const s of nonDefiningSuffixes) {
-        if (mainName.endsWith(s)) {
-            mainName = mainName.substring(0, mainName.length - s.length).trim();
-            suffix = ` ${s}`;
-            break;
-        }
-    }
-    
-    // Normalize common name variations AFTER handling suffixes
-    return mainName
-        .replace(/\b(MOHAMMAD|MOHD|MD)\b/g, 'MOHAMMAD')
+    return name
+        .toUpperCase()
+        .replace(/R\/O.*$/i, '') // Remove address part
+        .replace(/\(.*\)/, '') // Remove anything in parentheses like (LAMA)
+        .replace(/\b(MOHAMMAD|MOHD|MD|GH)\b/g, 'MOHAMMAD')
         .replace(/\b(AHMAD|AH)\b/g, 'AHMAD')
-        .replace(/\./g, '') // Remove dots
+        .replace(/S\/P|B\/P|K\/P|®/g, '') // Remove suffixes
+        .replace(/[\.\,\']/g, '') // Remove punctuation
         .replace(/\s+/g, ' ') // Collapse multiple spaces
-        .trim() + suffix;
+        .trim();
 };
 
 
@@ -180,6 +157,11 @@ export default function KhataLedgerPage() {
                 }
                 
                 const ledger = calculatedLedgers[normalizedName];
+                // Use the display name from the first transaction to keep it consistent
+                if (ledger.transactions.length === 0) {
+                    ledger.displayName = trans.party;
+                }
+
                 ledger.transactions.push(trans);
                 
                 const isSupplierTx = trans.type === 'Sale';

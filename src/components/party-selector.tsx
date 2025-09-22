@@ -30,52 +30,56 @@ type Party = {
 
 type PartyTypeFilter = 'all' | 'grower' | 'customer' | 'outside';
 
-const defaultGrowers: Omit<Party, 'id'>[] = [
+const defaultGrowers: Omit<Party, 'id' | 'address'> & { address?: string }[] = [
     { name: 'GH. Mohiuddin Lone ®. R/o Nadihal Baramulla', type: 'Grower' },
-    { name: 'AB. Majeed Lone S/P. R/o Nadihal Bla.', type: 'Grower' },
-    { name: 'AB. Salaam Lone K/P. R/o', type: 'Grower' },
-    { name: 'Mohd. Ayoub Khan. R/o', type: 'Grower' },
-    { name: 'Nazir Ahmad Dar (Happa). R/o', type: 'Grower' },
-    { name: 'Mohd. Maqbool Dar (Happa). R/o', type: 'Grower' },
-    { name: 'Mushtaq Ahmad Lone K/P. R/o', type: 'Grower' },
-    { name: 'Manzoor Ahmad Lone K/P. R/o', type: 'Grower' },
-    { name: 'Naseer Ahmad Bhat. R/o', type: 'Grower' },
-    { name: 'GH. Mohd. Lone B/P. R/o', type: 'Grower' },
-    { name: 'GH. Mohd. Bhat. R/o', type: 'Grower' },
-    { name: 'Nazir Ahmad Lone B/P. R/o', type: 'Grower' },
-    { name: 'Mushtaq Ahmad Lone B/P. R/o', type: 'Grower' },
-    { name: 'Mohd. Maqbool Baigh. R/o', type: 'Grower' },
-    { name: 'Mohd. Shabaan Ahangar. R/o', type: 'Grower' },
-    { name: 'Mohd. Akbar Lone B/P. R/o', type: 'Grower' },
-    { name: 'Tanveer Ahmad Lone B/P. R/o', type: 'Grower' },
-    { name: 'Mohd. Shabaan Lone (Lama). R/o', type: 'Grower' },
-    { name: 'Mohd. Arif Lone (Uffa). R/o', type: 'Grower' },
-    { name: 'Mohd. Subhan Parry. R/o', type: 'Grower' },
-    { name: 'GH. Mohiuddin Lone (Potty). R/o', type: 'Grower' },
-    { name: 'GH. Mohd Bhat. R/o', type: 'Grower' },
-    { name: 'Majoor Ahmad Lone ®. R/o', type: 'Grower' },
-    { name: 'Mohd. Akbar Lone (Lama). R/o', type: 'Grower' },
-    { name: 'Jaana ® B/P. R/o', type: 'Grower' },
-    { name: 'Rayees Rajab ®. R/o', type: 'Grower' },
-    { name: 'GH. Nabi Lone. R/o', type: 'Grower' },
-    { name: 'Hilal Ahmad Wani. R/o', type: 'Grower' },
-    { name: 'Javid Ahmad Sheikh. R/o Shanoo, Mawer Handwara', type: 'Grower' },
-    { name: 'Manzoor Ah. Lone B/P. R/o Nadihal Bla.', type: 'Grower' },
-    { name: 'Farooq Ahmad Lone (Lama) R/o', type: 'Grower' },
-    { name: 'Mohd. Ashraf wani. R/o', type: 'Grower' },
-    { name: 'Mohd. Yousuf Lone B/P R/o Nadihal Bla', type: 'Grower' },
-    { name: 'Mohd. Yousuf Lone (Waza) R/o Nadihal Bla.', type: 'Grower' },
-    { name: 'Farooq Ahmad Bhat R/o Nadihal Bla.', type: 'Grower' },
-    { name: 'GH. Nabi Wani R/o Nadihal Bla.', type: 'Grower' }
-];
+    { name: 'AB. Majeed Lone S/P', type: 'Grower' },
+    { name: 'AB. Salaam Lone K/P', type: 'Grower' },
+    { name: 'Mohd. Ayoub Khan', type: 'Grower' },
+    { name: 'Nazir Ahmad Dar (Happa)', type: 'Grower' },
+    { name: 'Mohd. Maqbool Dar (Happa)', type: 'Grower' },
+    { name: 'Mushtaq Ahmad Lone K/P', type: 'Grower' },
+    { name: 'Manzoor Ahmad Lone K/P', type: 'Grower' },
+    { name: 'Naseer Ahmad Bhat', type: 'Grower' },
+    { name: 'GH. Mohd. Lone B/P', type: 'Grower' },
+    { name: 'GH. Mohd. Bhat', type: 'Grower' },
+    { name: 'Nazir Ahmad Lone B/P', type: 'Grower' },
+    { name: 'Mushtaq Ahmad Lone B/P', type: 'Grower' },
+    { name: 'Mohd. Maqbool Baigh', type: 'Grower' },
+    { name: 'Mohd. Shabaan Ahangar', type: 'Grower' },
+    { name: 'Mohd. Akbar Lone B/P', type: 'Grower' },
+    { name: 'Tanveer Ahmad Lone B/P', type: 'Grower' },
+    { name: 'Mohd. Shabaan Lone (Lama)', type: 'Grower' },
+    { name: 'Mohd. Arif Lone (Uffa)', type: 'Grower' },
+    { name: 'Mohd. Subhan Parry', type: 'Grower' },
+    { name: 'GH. Mohiuddin Lone (Potty)', type: 'Grower' },
+    { name: 'GH. Mohd Bhat', type: 'Grower' },
+    { name: 'Majoor Ahmad Lone ®', type: 'Grower' },
+    { name: 'Mohd. Akbar Lone (Lama)', type: 'Grower' },
+    { name: 'Jaana ® B/P', type: 'Grower' },
+    { name: 'Rayees Rajab ®', type: 'Grower' },
+    { name: 'GH. Nabi Lone', type: 'Grower' },
+    { name: 'Hilal Ahmad Wani', type: 'Grower' },
+    { name: 'Javid Ahmad Sheikh', type: 'Grower', address: 'R/o Shanoo, Mawer Handwara' },
+    { name: 'Manzoor Ah. Lone B/P', type: 'Grower' },
+    { name: 'Farooq Ahmad Lone (Lama)', type: 'Grower' },
+    { name: 'Mohd. Ashraf wani', type: 'Grower' },
+    { name: 'Mohd. Yousuf Lone B/P', type: 'Grower' },
+    { name: 'Mohd. Yousuf Lone (Waza)', type: 'Grower' },
+    { name: 'Farooq Ahmad Bhat', type: 'Grower' },
+    { name: 'GH. Nabi Wani', type: 'Grower' }
+].map(g => ({...g, address: g.address || 'R/o Nadihal Bla.'}));
 
 const normalizeName = (name: string): string => {
     if (!name) return '';
-    return name.toUpperCase()
+    return name
+        .toUpperCase()
+        .replace(/R\/O.*$/i, '') // Remove address part
+        .replace(/\(.*\)/, '') // Remove anything in parentheses like (LAMA)
         .replace(/\b(MOHAMMAD|MOHD|MD|GH)\b/g, 'MOHAMMAD')
         .replace(/\b(AHMAD|AH)\b/g, 'AHMAD')
-        .replace(/\./g, '')
-        .replace(/\s+/g, ' ')
+        .replace(/S\/P|B\/P|K\/P|®/g, '') // Remove suffixes
+        .replace(/[\.\,\']/g, '') // Remove punctuation
+        .replace(/\s+/g, ' ') // Collapse multiple spaces
         .trim();
 };
 
@@ -103,7 +107,9 @@ export function PartySelector({ value, onChange, filter = 'all', disabled = fals
 
     defaultGrowers.forEach(g => {
         const normalized = normalizeName(g.name);
-        loadedParties[normalized] = { ...g, id: `${PARTY_STORAGE_PREFIX}${normalized}`};
+        if (!loadedParties[normalized]) {
+            loadedParties[normalized] = { ...g, id: `${PARTY_STORAGE_PREFIX}${normalized}`};
+        }
     });
     
     const transactionCounts: {[key: string]: {sales: number, purchases: number, expenses: number}} = {};
