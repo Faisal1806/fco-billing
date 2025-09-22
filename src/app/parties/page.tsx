@@ -314,8 +314,9 @@ export default function PartiesPage() {
     const doc = new jsPDF();
     doc.text("Parties Master Directory", 14, 15);
     autoTable(doc, {
-        head: [['Name', 'Type', 'Phone', 'Address', 'Balance']],
-        body: filteredParties.map(p => [
+        head: [['S.No.', 'Name', 'Type', 'Phone', 'Address', 'Balance']],
+        body: filteredParties.map((p, index) => [
+            index + 1,
             p.name,
             p.type,
             p.phone || '',
@@ -327,7 +328,8 @@ export default function PartiesPage() {
   };
 
   const exportToExcel = () => {
-      const ws = XLSX.utils.json_to_sheet(filteredParties.map(p => ({
+      const ws = XLSX.utils.json_to_sheet(filteredParties.map((p, index) => ({
+          'S.No.': index + 1,
           'Name': p.name,
           'Type': p.type,
           'Phone': p.phone,
@@ -457,6 +459,7 @@ export default function PartiesPage() {
             <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[50px]">S.No.</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Phone</TableHead>
@@ -466,10 +469,11 @@ export default function PartiesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredParties.map((party) => {
+              {filteredParties.map((party, index) => {
                 const balance = balances[normalizeName(party.name)] || 0;
                 return (
                 <TableRow key={party.id}>
+                  <TableCell>{index + 1}</TableCell>
                   <TableCell className="font-medium">{party.name}</TableCell>
                   <TableCell><PartyTypeBadge type={party.type} /></TableCell>
                   <TableCell>{party.phone}</TableCell>
