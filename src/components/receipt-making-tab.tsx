@@ -20,6 +20,7 @@ import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
 import type { ReceiptExtractOutput } from '@/ai/flows/extract-receipt-flow';
 import { Badge } from '@/components/ui/badge';
+import { PartySelector } from './party-selector';
 
 
 type ReceiptEntry = {
@@ -288,8 +289,8 @@ export function ReceiptMakingTab() {
                         <Input type="date" value={receiptDetails.date} onChange={e => handleDetailChange('date', e.target.value)} />
                     </div>
                     <div className="space-y-2 col-span-2 md:col-span-1">
-                        <Label>M/s</Label>
-                        <Input placeholder="Customer Name" value={receiptDetails.customerName} onChange={e => handleDetailChange('customerName', e.target.value)} />
+                        <Label>M/s (Grower)</Label>
+                        <PartySelector value={receiptDetails.customerName} onChange={(val) => handleDetailChange('customerName', val)} filter="grower" />
                     </div>
                     <div className="space-y-2 col-span-2">
                         <Label>R/o</Label>

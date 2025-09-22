@@ -26,6 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PlusCircle, Trash2, Banknote, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { PartySelector } from '@/components/party-selector';
 
 const STORAGE_PREFIX = 'advance-';
 
@@ -85,6 +86,10 @@ export default function AdvancesPage() {
             const { value, type } = e.target;
             setFormState(prev => ({...prev, [name]: type === 'number' ? parseFloat(value) || 0 : value}));
         }
+    }
+    
+    const handlePartyChange = (value: string) => {
+        setFormState(prev => ({...prev, partyName: value}));
     }
 
     const handleSaveEntry = async () => {
@@ -147,8 +152,8 @@ export default function AdvancesPage() {
                     <Input id="date" type="date" value={formState.date} onChange={(e) => handleInputChange(e, 'date')} />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="partyName">Party Name (Grower)</Label>
-                    <Input id="partyName" placeholder="e.g., John Doe" value={formState.partyName} onChange={(e) => handleInputChange(e, 'partyName')} />
+                    <Label htmlFor="partyName">Party Name (Grower/Customer)</Label>
+                    <PartySelector value={formState.partyName} onChange={handlePartyChange} filter="all" />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="type">Transaction Type</Label>

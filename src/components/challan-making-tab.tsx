@@ -18,6 +18,7 @@ import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
 import { saveDocument, deleteDocument } from '@/lib/actions';
 import { Badge } from '@/components/ui/badge';
+import { PartySelector } from './party-selector';
 
 type ChallanEntry = {
   peti: number;
@@ -271,8 +272,8 @@ export function ChallanMakingTab() {
                         <Input type="date" value={details.date} onChange={e => handleDetailChange('date', e.target.value)} />
                     </div>
                     <div className="space-y-2 col-span-2">
-                        <Label>To, M/s</Label>
-                        <Input placeholder="Consignee Name" value={details.toMs} onChange={e => handleDetailChange('toMs', e.target.value)} />
+                        <Label>To, M/s (Customer)</Label>
+                        <PartySelector value={details.toMs} onChange={(val) => handleDetailChange('toMs', val)} filter="customer" />
                     </div>
                      <div className="space-y-2">
                         <Label>Vehicle No.</Label>

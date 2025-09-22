@@ -15,6 +15,7 @@ import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, FileText } from 'lu
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { saveDocument, deleteDocument } from '@/lib/actions';
 import { Badge } from '@/components/ui/badge';
+import { PartySelector } from '@/components/party-selector';
 
 type PurchaseRow = {
   type: 'Patti' | 'Dabba';
@@ -253,13 +254,15 @@ export default function PurchasesPage() {
                         <Label htmlFor="companyName">
                             {purchaseFor === 'Customer' ? 'Customer Name' : 'Company Name'}
                         </Label>
-                        <Input 
-                            id="companyName" 
-                            value={purchaseFor === 'Own Stock (F.Co)' ? 'F.Co (Own Stock)' : companyName} 
-                            onChange={e => setCompanyName(e.target.value)} 
-                            placeholder="e.g., Ahmad Traders" 
-                            disabled={purchaseFor === 'Own Stock (F.Co)'}
-                        />
+                         {purchaseFor === 'Customer' ? (
+                            <PartySelector value={companyName} onChange={setCompanyName} filter="customer" />
+                        ) : (
+                            <Input 
+                                id="companyName" 
+                                value="F.Co (Own Stock)"
+                                disabled
+                            />
+                        )}
                     </div>
                 </div>
 

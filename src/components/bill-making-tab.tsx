@@ -17,6 +17,7 @@ import { ScrollArea } from './ui/scroll-area';
 import type { WatakExtractOutput } from '@/ai/flows/extract-watak-flow';
 import { useApiKey } from '@/hooks/use-api-key';
 import { Badge } from '@/components/ui/badge';
+import { PartySelector } from './party-selector';
 
 
 type Row = {
@@ -320,8 +321,8 @@ export function BillMakingTab() {
                         <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
                     </div>
                     <div className="col-span-2">
-                        <Label>M/S (Customer)</Label>
-                        <Input value={ms} onChange={e => setMs(e.target.value)} />
+                        <Label>M/S (Grower)</Label>
+                        <PartySelector value={ms} onChange={setMs} filter="grower" />
                     </div>
                     <div>
                         <Label>Khata</Label>
