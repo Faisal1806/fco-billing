@@ -32,7 +32,7 @@ export const sidebarSections = [
       ],
     },
     {
-      title: "SALES AND PURCHASES",
+      title: "SALES & PURCHASES",
       items: [
         { name: "Sales Invoices", href: "/sales", icon: FileText },
         { name: "Watak Register", href: "/watak-register", icon: FileSpreadsheet },
@@ -54,7 +54,7 @@ export const sidebarSections = [
       title: "RESOURCES",
       items: [
         { name: "Fruit Rates", href: "/rates", icon: TrendingUp },
-        { name: "Fertilizers/Pesticides", href: "/fertilizers", icon: FlaskConical },
+        { name: "Fertilizers & Pesticides", href: "/fertilizers", icon: FlaskConical },
         { name: "Accessories", href: "/accessories", icon: Box },
         { name: "Activity Log", href: "/activity-log", icon: History },
       ],
@@ -78,7 +78,7 @@ export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
         href={href}
         className={cn(
           "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
-          isActive && "bg-muted text-primary"
+          isActive && "bg-primary text-primary-foreground hover:text-primary/90"
         )}
       >
         <Icon className="h-4 w-4" />

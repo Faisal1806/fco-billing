@@ -121,43 +121,6 @@ const StatCard = ({ title, value, icon: Icon, note, iconBgColor }: { title: stri
     </Card>
 );
 
-const navSections = [
-    {
-      title: "SALES AND PURCHASES",
-      items: [
-        { name: "Sales Invoices", href: "/sales", icon: FileText },
-        { name: "Watak Register", href: "/watak-register", icon: FileSpreadsheet },
-        { name: "Purchases", href: "/purchase-register", icon: ShoppingCart },
-        { name: "Outside Sales (Bikris)", href: "/outside-sales", icon: Globe },
-      ],
-    },
-    {
-      title: "MANAGEMENT",
-      items: [
-        { name: "Products", href: "/products", icon: Package },
-        { name: "Expenses", href: "/expenses", icon: DollarSign },
-        { name: "Advances", href: "/advances", icon: Banknote },
-        { name: "Cold Storage", href: "/cold-storage", icon: Snowflake },
-        { name: "Khata Ledger", href: "/khata", icon: BookOpen },
-      ],
-    },
-    {
-      title: "RESOURCES & LOGS",
-      items: [
-        { name: "Fruit Rates", href: "/rates", icon: TrendingUp },
-        { name: "Fertilizers/Pesticides", href: "/fertilizers", icon: FlaskConical },
-        { name: "Accessories", href: "/accessories", icon: Box },
-        { name: "Activity Log", href: "/activity-log", icon: History },
-      ],
-    },
-     {
-      title: "CONFIGURATION",
-      items: [
-        { name: "Settings", href: "/settings", icon: Settings },
-      ],
-    },
-];
-
 const QuickActions = () => {
     const router = useRouter();
     return (
@@ -286,31 +249,6 @@ const FruitDashboard = ({ stats, yearlyStats, accessoryStats, growerProfits, rou
                             <CardTitle className="flex items-center gap-2"><Trophy className="h-6 w-6 text-amber-500" /> Top Growers</CardTitle>
                             <CardDescription>This session's top growers by net sales.</CardDescription>
                         </div>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="icon">
-                                    <Menu className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                 {navSections.map((section, index) => (
-                                    <React.Fragment key={section.title}>
-                                        {index > 0 && <DropdownMenuSeparator />}
-                                        <DropdownMenuLabel>{section.title}</DropdownMenuLabel>
-                                        <DropdownMenuGroup>
-                                            {section.items.map(item => (
-                                                <Link href={item.href} passHref key={item.name}>
-                                                    <DropdownMenuItem>
-                                                        <item.icon className="mr-2 h-4 w-4" />
-                                                        <span>{item.name}</span>
-                                                    </DropdownMenuItem>
-                                                </Link>
-                                            ))}
-                                        </DropdownMenuGroup>
-                                    </React.Fragment>
-                                ))}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
                     </CardHeader>
                     <CardContent>
                         {growerProfits.length > 0 ? (
