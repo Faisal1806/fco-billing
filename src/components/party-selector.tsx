@@ -55,16 +55,16 @@ const defaultGrowers: { name: string, address: string }[] = [
     { name: 'Mohd. Akbar Lone (Lama)', address: 'R/o Nadihal Bla.' },
     { name: 'Jaana ® B/P', address: 'R/o Nadihal Bla.' },
     { name: 'Rayees Rajab ®', address: 'R/o Nadihal Bla.' },
-    { name: 'GH. Nabi Lone', address: 'R/o Nadihal Bla.' },
     { name: 'Hilal Ahmad Wani', address: 'R/o Nadihal Bla.' },
     { name: 'Javid Ahmad Sheikh', address: 'R/o Shanoo, Mawer Handwara' },
     { name: 'Manzoor Ah. Lone B/P', address: 'R/o Nadihal Bla.' },
-    { name: 'Farooq Ahmad Lone (Lama)', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Ashraf wani', address: 'R/o Nadihal Bla.' },
     { name: 'Bashir Ah. Lone B/P', address: 'R/o Nadihal Bla.' },
     { name: 'GH. Mohiuddin Lone (H)', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Yousuf Lone B/P', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Yousuf Lone (Waza)', address: 'R/o Nadihal Bla.' },
+    { name: 'Farooq Ahmad Lone (Lama)', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Nabi Lone', address: 'R/o Nadihal Bla.' },
     { name: 'Farooq Ahmad Bhat', address: 'R/o Nadihal Bla.' },
     { name: 'GH. Nabi Wani', address: 'R/o Nadihal Bla.' }
 ];
