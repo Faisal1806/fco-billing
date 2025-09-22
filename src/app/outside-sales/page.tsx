@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { saveDocument, deleteDocument } from '@/lib/actions';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { PartySelector } from '@/components/party-selector';
 
 type EntryRow = {
     type: 'Patti' | 'Dabba';
@@ -282,8 +283,8 @@ export default function OutsideSalesPage() {
                             <Input id="bikriDate" type="date" value={date} onChange={e => setDate(e.target.value)} />
                         </div>
                         <div>
-                            <Label htmlFor="market">Market</Label>
-                            <Input id="market" placeholder="e.g., Delhi, Kolkata" value={market} onChange={e => setMarket(e.target.value)} />
+                            <Label htmlFor="market">Market / Outside Party</Label>
+                            <PartySelector value={market} onChange={setMarket} filter="outside" />
                         </div>
                     </div>
                     

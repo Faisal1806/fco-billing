@@ -272,7 +272,7 @@ export function ChallanMakingTab() {
                         <Input type="date" value={details.date} onChange={e => handleDetailChange('date', e.target.value)} />
                     </div>
                     <div className="space-y-2 col-span-2">
-                        <Label>To, M/s (Customer)</Label>
+                        <Label>To, M/s (Customer / Outside Party)</Label>
                         <PartySelector value={details.toMs} onChange={(val) => handleDetailChange('toMs', val)} filter="customer" />
                     </div>
                      <div className="space-y-2">
@@ -384,5 +384,3 @@ export function ChallanMakingTab() {
     </div>
   );
 }
-
-    
