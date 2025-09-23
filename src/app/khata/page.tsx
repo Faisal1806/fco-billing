@@ -105,6 +105,7 @@ const defaultGrowers: { name: string, address: string }[] = [
     { name: 'Javid Ahmad Sheikh', address: 'R/o Shanoo, Mawer Handwara' },
     { name: 'Mohd. Ashraf wani', address: 'R/o Nadihal Bla.' },
     { name: 'Bashir Ah. Lone B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Nabi Lone', address: 'R/o Nadihal Bla.' },
     { name: 'GH. Mohiuddin Lone (H)', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd Yousuf Lone (Waza)', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Akbar Lone (Lama)', address: 'R/o Nadihal Bla.' },
@@ -112,7 +113,6 @@ const defaultGrowers: { name: string, address: string }[] = [
     { name: 'Manzoor Ahmad Lone B/P', address: 'R/o Nadihal Bla.'},
     { name: 'Mohd. Yousuf Lone B/P', address: 'R/o Nadihal Bla.' },
     { name: 'Farooq Ahmad Lone (Lama)', address: 'R/o Nadihal Bla.' },
-    { name: 'GH. Nabi Lone', address: 'R/o Nadihal Bla.' },
     { name: 'Farooq Ahmad Bhat', address: 'R/o Nadihal Bla.' },
     { name: 'GH. Nabi Wani', address: 'R/o Nadihal Bla.' }
 ];
@@ -469,20 +469,19 @@ export default function KhataLedgerPage() {
         let balanceText: string;
         let balanceColor: string;
         
-        // For outside sales, the logic is inverted
         if (activeTab === 'outside') {
-            if (selectedLedger.balance >= 0) { // Profit
+            if (selectedLedger.balance >= 0) { // Profit is owed to you
                 balanceText = '(Receivable)';
                 balanceColor = 'text-green-600';
-            } else { // Loss
+            } else { // Loss is owed by you
                 balanceText = '(Payable)';
                 balanceColor = 'text-red-500';
             }
         } else { // For Growers and Customers
-             if (selectedLedger.balance >= 0) {
+             if (selectedLedger.balance >= 0) { // You owe the grower
                 balanceText = '(Payable)';
                 balanceColor = 'text-red-500';
-            } else {
+            } else { // Customer owes you
                 balanceText = '(Receivable)';
                 balanceColor = 'text-green-600';
             }
@@ -630,5 +629,3 @@ export default function KhataLedgerPage() {
     </>
   );
 }
-
-    
