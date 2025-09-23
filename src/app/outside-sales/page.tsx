@@ -79,20 +79,22 @@ export default function OutsideSalesPage() {
         if (selectedChallan && !isEditing) {
             setMarket(selectedChallan.toMs);
 
-            const newSaleRows: EntryRow[] = [];
+            const newRows: EntryRow[] = [];
             selectedChallan.entries.forEach((entry: any) => {
                 if (entry.peti > 0) {
-                    newSaleRows.push({ type: 'Patti', variety: entry.kind, qty: entry.peti, rate: 0 });
+                    newRows.push({ type: 'Patti', variety: entry.kind, qty: entry.peti, rate: 0 });
                 }
                 if (entry.daba > 0) {
-                    newSaleRows.push({ type: 'Dabba', variety: entry.kind, qty: entry.daba, rate: 0 });
+                    newRows.push({ type: 'Dabba', variety: entry.kind, qty: entry.daba, rate: 0 });
                 }
             });
 
-            if(newSaleRows.length > 0) {
-                setSaleRows(newSaleRows);
+            if(newRows.length > 0) {
+                setSaleRows(newRows);
+                setPurchaseRows(newRows); // Populate both sections
             } else {
                 setSaleRows([emptyRow]);
+                setPurchaseRows([emptyRow]);
             }
         }
     }, [selectedChallan, isEditing]);
