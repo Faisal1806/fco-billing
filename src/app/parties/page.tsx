@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -108,7 +107,7 @@ const normalizeName = (name: string): string => {
         .replace(/\b(MOHAMMAD|MOHD|MD|GH\.)\b/g, 'MOHAMMAD')
         .replace(/\b(AHMAD|AH)\b/g, 'AHMAD')
         .replace(/S\/P|B\/P|K\/P|®|\(R\)|S\/O/g, '')
-        .replace(/[\.\,\']/g, '')
+        .replace(/[\.\,']/g, '')
         .replace(/\s+/g, ' ')
         .trim();
 };
@@ -129,35 +128,41 @@ export default function PartiesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-        setUserRole(localStorage.getItem('userRole'));
-        fetchPartiesAndTransactions();
-    }
-  }, []);
-
   const fetchPartiesAndTransactions = () => {
     setIsLoading(true);
-    const loadedParties: {[key: string]: Party} = {};
-    const transactionCounts: {[key: string]: {sales: number, purchases: number, expenses: number}} = {};
-    const localBalances: {[key: string]: number} = {};
+    const partiesMap = new Map<string, Party>();
+    const transactionCounts = new Map<string, { sales: number; purchases: number }>();
+    const localBalances = new Map<string, number>();
 
-    // 1. Load default growers
-    defaultGrowers.forEach(g => {
-      const normalized = normalizeName(g.name);
-      if (!loadedParties[normalized]) {
-        loadedParties[normalized] = { ...g, id: `${PARTY_STORAGE_PREFIX}${normalized}`, type: 'Grower' };
-      }
-    });
+    const addOrUpdateParty = (name: string, details: Partial<Party> = {}) => {
+        if (!name) return;
+        const normalized = normalizeName(name);
+        if (!partiesMap.has(normalized)) {
+            partiesMap.set(normalized, {
+                id: `${PARTY_STORAGE_PREFIX}${normalized}`,
+                name: name, // Use first-seen name as display name
+                type: 'Grower', // Default type
+                ...details,
+            });
+        }
+    };
 
-    // 2. Load explicitly saved parties from localStorage (will overwrite defaults if names match)
+    // 1. Load default growers to establish a base set of canonical names
+    defaultGrowers.forEach(g => addOrUpdateParty(g.name, { address: g.address, type: 'Grower' }));
+
+    // 2. Load explicitly saved parties from localStorage, overwriting defaults
     for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key?.startsWith(PARTY_STORAGE_PREFIX)) {
-        const party = JSON.parse(localStorage.getItem(key)!);
-        const normalized = normalizeName(party.name);
-        loadedParties[normalized] = party;
-      }
+        const key = localStorage.key(i);
+        if (key?.startsWith(PARTY_STORAGE_PREFIX)) {
+            try {
+                const party: Party = JSON.parse(localStorage.getItem(key)!);
+                const normalized = normalizeName(party.name);
+                // Overwrite any existing entry with the saved one
+                partiesMap.set(normalized, party);
+            } catch (e) {
+                console.error("Error parsing party:", e);
+            }
+        }
     }
 
     // 3. Infer parties and calculate balances from transactions
@@ -181,57 +186,68 @@ export default function PartiesPage() {
         } else if (key.startsWith('advance-')) {
             const doc = JSON.parse(localStorage.getItem(key)!);
             partyName = doc.partyName;
-            if(doc.type === 'Advance Given') {
+            if (doc.type === 'Advance Given') {
                 amount = -doc.amount;
             } else { // Repayment
-                amount = doc.amount; // A repayment reduces what a customer owes, so it's a positive adjustment to their negative balance
+                amount = doc.amount; // A repayment reduces what a customer owes, so it's a positive adjustment
             }
         }
-        
-        if(partyName) {
+
+        if (partyName) {
             const normalized = normalizeName(partyName);
-            if (!transactionCounts[normalized]) {
-                transactionCounts[normalized] = { sales: 0, purchases: 0, expenses: 0 };
-            }
-            if (!localBalances[normalized]) {
-                localBalances[normalized] = 0;
-            }
+            addOrUpdateParty(partyName); // Ensure party exists from transaction
 
-            if(isSale) transactionCounts[normalized].sales++;
-            else transactionCounts[normalized].purchases++;
+            // Update transaction counts
+            const counts = transactionCounts.get(normalized) || { sales: 0, purchases: 0 };
+            if (isSale) counts.sales++;
+            else counts.purchases++;
+            transactionCounts.set(normalized, counts);
 
-            localBalances[normalized] += amount;
-
-            if (!loadedParties[normalized]) {
-                 loadedParties[normalized] = {
-                    id: `${PARTY_STORAGE_PREFIX}${normalized}`,
-                    name: partyName, 
-                    type: 'Grower'
-                };
-            }
+            // Update balances
+            const currentBalance = localBalances.get(normalized) || 0;
+            localBalances.set(normalized, currentBalance + amount);
         }
     }
-    
+
     // 4. Determine party type based on transactions
-    Object.keys(loadedParties).forEach(normalized => {
-        const party = loadedParties[normalized];
-        const counts = transactionCounts[normalized];
+    partiesMap.forEach((party, normalized) => {
+        const counts = transactionCounts.get(normalized);
         if (counts) {
-            if (counts.sales > 0 && counts.purchases > 0) party.type = 'Both';
-            else if (counts.sales > 0) party.type = 'Grower';
-            else if (counts.purchases > 0) party.type = 'Customer';
+            const hasSales = counts.sales > 0;
+            const hasPurchases = counts.purchases > 0;
+            // Only update type if it hasn't been explicitly set to something else
+            if (party.type === 'Grower' || party.type === 'Customer') {
+              if (hasSales && hasPurchases) party.type = 'Both';
+              else if (hasSales) party.type = 'Grower';
+              else if (hasPurchases) party.type = 'Customer';
+            }
         }
     });
-    
-    setParties(Object.values(loadedParties).sort((a,b) => a.name.localeCompare(b.name)));
-    setBalances(localBalances);
+
+    const balancesObject: { [key: string]: number } = {};
+    localBalances.forEach((value, key) => {
+        balancesObject[key] = value;
+    });
+
+    setParties(Array.from(partiesMap.values()).sort((a, b) => a.name.localeCompare(b.name)));
+    setBalances(balancesObject);
     setIsLoading(false);
   };
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+        setUserRole(localStorage.getItem('userRole'));
+        fetchPartiesAndTransactions();
+    }
+  }, []);
 
   const filteredParties = useMemo(() => {
     return parties
         .filter(p => {
             if (typeFilter === 'all') return true;
+            if (typeFilter === 'grower') return p.type === 'Grower' || p.type === 'Both';
+            if (typeFilter === 'customer') return p.type === 'Customer' || p.type === 'Both';
+            if (typeFilter === 'outsideparty') return p.type === 'Outside Party';
             return p.type.toLowerCase().replace(' ', '') === typeFilter;
         })
         .filter(p => {
@@ -333,7 +349,7 @@ export default function PartiesPage() {
     return (
         <div className="flex justify-center items-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <p className="ml-4">Loading Parties...</p>
+            <p className="ml-4">Consolidating Parties...</p>
         </div>
     )
   }
