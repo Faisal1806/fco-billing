@@ -1,29 +1,21 @@
 
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Globe, ArrowRight, Percent, Minus, Package, ShoppingCart, Truck, FileText } from 'lucide-react';
+import { Loader2, FilePenLine, FilePlus, Globe, Percent, Minus, Package, ShoppingCart, Truck, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { saveDocument, deleteDocument } from '@/lib/actions';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PartySelector } from '@/components/party-selector';
+import { EntryTable, emptyRow, type EntryRow } from '@/components/outside-sales-entry-table';
 
-type EntryRow = {
-    type: 'Patti' | 'Dabba';
-    qty: number;
-    variety: string;
-    rate: number;
-};
-
-const emptyRow: EntryRow = { type: 'Patti', qty: 0, variety: '', rate: 0 };
 
 export default function OutsideSalesPage() {
     const { toast } = useToast();
@@ -202,56 +194,26 @@ export default function OutsideSalesPage() {
         }
     };
 
-    const updateEntryRow = (setter: React.Dispatch<React.SetStateAction<EntryRow[]>>, i: number, patch: Partial<EntryRow>) => {
-        setter(prev => {
+    const updatePurchaseRow = useCallback((i: number, patch: Partial<EntryRow>) => {
+        setPurchaseRows(prev => {
           const copy = [...prev];
           copy[i] = { ...copy[i], ...patch };
           return copy;
         });
-    };
+    }, []);
+    const addPurchaseRow = useCallback(() => setPurchaseRows(prev => [...prev, { ...emptyRow }]), []);
+    const removePurchaseRow = useCallback((i: number) => setPurchaseRows(prev => (prev.length > 1 ? prev.filter((_, idx) => idx !== i) : prev)), []);
 
-    const addEntryRow = (setter: React.Dispatch<React.SetStateAction<EntryRow[]>>) => setter(prev => [...prev, { ...emptyRow }]);
-    const removeEntryRow = (setter: React.Dispatch<React.SetStateAction<EntryRow[]>>, i: number) => setter(prev => (prev.length > 1 ? prev.filter((_, idx) => idx !== i) : prev));
+    const updateSaleRow = useCallback((i: number, patch: Partial<EntryRow>) => {
+        setSaleRows(prev => {
+          const copy = [...prev];
+          copy[i] = { ...copy[i], ...patch };
+          return copy;
+        });
+    }, []);
+    const addSaleRow = useCallback(() => setSaleRows(prev => [...prev, { ...emptyRow }]), []);
+    const removeSaleRow = useCallback((i: number) => setSaleRows(prev => (prev.length > 1 ? prev.filter((_, idx) => idx !== i) : prev)), []);
     
-    const EntryTable = ({ title, rows, setter, icon }: { title: string, rows: EntryRow[], setter: React.Dispatch<React.SetStateAction<EntryRow[]>>, icon: React.ReactNode }) => (
-         <div>
-            <Label className="text-base font-semibold flex items-center gap-2 mb-2">{icon} {title}</Label>
-            <Table>
-                 <TableHeader>
-                    <TableRow>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Variety</TableHead>
-                        <TableHead className="text-right">Qty</TableHead>
-                        <TableHead className="text-right">Rate</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                        <TableHead className="w-12"></TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {rows.map((r, i) => (
-                        <TableRow key={i}>
-                            <TableCell>
-                                <Select value={r.type} onValueChange={(v: EntryRow['type']) => updateEntryRow(setter, i, { type: v })}>
-                                    <SelectTrigger><SelectValue/></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Patti">Patti</SelectItem>
-                                        <SelectItem value="Dabba">Dabba</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </TableCell>
-                            <TableCell><Input placeholder="Variety" value={r.variety} onChange={e => updateEntryRow(setter, i, { variety: e.target.value })}/></TableCell>
-                            <TableCell><Input type="number" className="text-right" value={r.qty || ''} onChange={e => updateEntryRow(setter, i, { qty: Number(e.target.value) })} /></TableCell>
-                            <TableCell><Input type="number" className="text-right" value={r.rate || ''} onChange={e => updateEntryRow(setter, i, { rate: Number(e.target.value) })}/></TableCell>
-                            <TableCell className="text-right font-medium">₹{((r.qty || 0) * (r.rate || 0)).toFixed(2)}</TableCell>
-                            <TableCell><Button variant="ghost" size="icon" onClick={() => removeEntryRow(setter, i)}><Trash2 className="text-red-500 h-4 w-4"/></Button></TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-            <Button onClick={() => addEntryRow(setter)} variant="outline" size="sm" className="mt-2 gap-2"><PlusCircle className="h-4 w-4" /> Add Row</Button>
-        </div>
-    );
-
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="lg:col-span-2">
@@ -303,8 +265,22 @@ export default function OutsideSalesPage() {
                     <Separator />
                     
                     <div className="space-y-6">
-                         <EntryTable title="Original Purchase Cost (in Sopore)" rows={purchaseRows} setter={setPurchaseRows} icon={<ShoppingCart className="h-5 w-5 text-blue-500" />} />
-                         <EntryTable title="Bikri Sale Entries" rows={saleRows} setter={setSaleRows} icon={<Package className="h-5 w-5 text-green-500" />} />
+                         <EntryTable 
+                            title="Original Purchase Cost (in Sopore)" 
+                            rows={purchaseRows} 
+                            icon={<ShoppingCart className="h-5 w-5 text-blue-500" />}
+                            onUpdate={updatePurchaseRow}
+                            onAdd={addPurchaseRow}
+                            onRemove={removePurchaseRow}
+                        />
+                         <EntryTable
+                            title="Bikri Sale Entries" 
+                            rows={saleRows} 
+                            icon={<Package className="h-5 w-5 text-green-500" />}
+                            onUpdate={updateSaleRow}
+                            onAdd={addSaleRow}
+                            onRemove={removeSaleRow}
+                        />
                     </div>
 
                     <Separator />
@@ -378,7 +354,7 @@ export default function OutsideSalesPage() {
                                         <div className="flex justify-between items-start">
                                             <div>
                                                 <p className="font-semibold">{bikri.market} Market</p>
-                                                <p className="text-sm text-muted-foreground">Challan #{bikri.challanNo} <ArrowRight className="h-3 w-3 inline"/> Bikri #{bikri.bikriNo}</p>
+                                                <p className="text-sm text-muted-foreground">Challan #{bikri.challanNo} &rarr; Bikri #{bikri.bikriNo}</p>
                                                  <p className={`text-lg font-bold ${bikri.calculation.netProfitOrLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                                     Profit: ₹{bikri.calculation.netProfitOrLoss.toFixed(2)}
                                                  </p>
