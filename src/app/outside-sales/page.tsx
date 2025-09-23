@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -8,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, FilePenLine, FilePlus, Globe, Percent, Minus, Package, ShoppingCart, Truck, FileText } from 'lucide-react';
+import { Loader2, FilePenLine, FilePlus, Globe, Percent, Minus, Package, ShoppingCart, Truck, FileText, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { saveDocument, deleteDocument } from '@/lib/actions';
@@ -75,6 +74,28 @@ export default function OutsideSalesPage() {
     const selectedChallan = useMemo(() => {
         return availableChallans.find(c => c.challanNo === selectedChallanNo);
     }, [selectedChallanNo, availableChallans]);
+
+     useEffect(() => {
+        if (selectedChallan && !isEditing) {
+            setMarket(selectedChallan.toMs);
+
+            const newSaleRows: EntryRow[] = [];
+            selectedChallan.entries.forEach((entry: any) => {
+                if (entry.peti > 0) {
+                    newSaleRows.push({ type: 'Patti', variety: entry.kind, qty: entry.peti, rate: 0 });
+                }
+                if (entry.daba > 0) {
+                    newSaleRows.push({ type: 'Dabba', variety: entry.kind, qty: entry.daba, rate: 0 });
+                }
+            });
+
+            if(newSaleRows.length > 0) {
+                setSaleRows(newSaleRows);
+            } else {
+                setSaleRows([emptyRow]);
+            }
+        }
+    }, [selectedChallan, isEditing]);
 
     const calculation = useMemo(() => {
         const totalPurchaseCost = purchaseRows.reduce((acc, row) => acc + (Number(row.qty) || 0) * (Number(row.rate) || 0), 0);
@@ -315,10 +336,10 @@ export default function OutsideSalesPage() {
                             <h3 className="font-bold text-lg mb-2">Profit / Loss Calculation</h3>
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between"><span>Gross Sale from Bikri:</span> <span className="font-medium">₹{calculation.grossSale.toFixed(2)}</span></div>
-                                <div className="flex justify-between text-red-500"><span>(-) Total Purchase Cost:</span> <span className="font-medium">₹{calculation.totalPurchaseCost.toFixed(2)}</span></div>
-                                <div className="flex justify-between text-red-500"><span>(-) Calculated Freight:</span> <span className="font-medium">₹{calculation.calculatedFreight.toFixed(2)}</span></div>
-                                <div className="flex justify-between text-red-500"><span>(-) Commission:</span> <span className="font-medium">₹{calculation.commissionAmount.toFixed(2)}</span></div>
-                                <div className="flex justify-between text-red-500"><span>(-) Other Expenses:</span> <span className="font-medium">₹{(Number(expenses) || 0).toFixed(2)}</span></div>
+                                <div className="flex justify-between text-destructive"><span>(-) Total Purchase Cost:</span> <span className="font-medium">₹{calculation.totalPurchaseCost.toFixed(2)}</span></div>
+                                <div className="flex justify-between text-destructive"><span>(-) Calculated Freight:</span> <span className="font-medium">₹{calculation.calculatedFreight.toFixed(2)}</span></div>
+                                <div className="flex justify-between text-destructive"><span>(-) Commission:</span> <span className="font-medium">₹{calculation.commissionAmount.toFixed(2)}</span></div>
+                                <div className="flex justify-between text-destructive"><span>(-) Other Expenses:</span> <span className="font-medium">₹{(Number(expenses) || 0).toFixed(2)}</span></div>
                                 <Separator />
                                 <div className={`flex justify-between font-bold text-lg ${calculation.netProfitOrLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                     <span>Net Profit / Loss:</span>
