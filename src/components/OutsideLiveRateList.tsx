@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -16,16 +15,16 @@ interface LiveRate {
 
 // Data is hardcoded here to simulate a live feed for outside markets.
 const liveOutsideRates: LiveRate[] = [
-    { market: 'Assam', variety: 'Delicious (Dabba)', rate: '900 - 1200' },
-    { market: 'Bihar', variety: 'Delicious (Dabba)', rate: '850 - 1150' },
-    { market: 'Delhi', variety: 'American (Dabba)', rate: '600 - 850' },
-    { market: 'Delhi', variety: 'Delicious (Dabba)', rate: '800 - 1200' },
-    { market: 'Guwahati', variety: 'Delicious (Dabba)', rate: '950 - 1300' },
-    { market: 'Jammu', variety: 'American (Dabba)', rate: '550 - 750' },
-    { market: 'Kanpur', variety: 'Delicious (Dabba)', rate: '750 - 1100' },
-    { market: 'Kolkata', variety: 'Delicious (Dabba)', rate: '1000 - 1400' },
-    { market: 'Kolkata', variety: 'Gala (Dabba)', rate: '900 - 1250' },
-    { market: 'Malda', variety: 'Kulu (Dabba)', rate: '1100 - 1500' },
+    { market: 'Assam', variety: 'Delicious (Dabba)', rate: '800 - 1100' },
+    { market: 'Bihar', variety: 'Delicious (Dabba)', rate: '750 - 1050' },
+    { market: 'Delhi', variety: 'American (Dabba)', rate: '500 - 700' },
+    { market: 'Delhi', variety: 'Delicious (Dabba)', rate: '700 - 1000' },
+    { market: 'Guwahati', variety: 'Delicious (Dabba)', rate: '850 - 1150' },
+    { market: 'Jammu', variety: 'American (Dabba)', rate: '450 - 650' },
+    { market: 'Kanpur', variety: 'Delicious (Dabba)', rate: '650 - 950' },
+    { market: 'Kolkata', variety: 'Delicious (Dabba)', rate: '900 - 1200' },
+    { market: 'Kolkata', variety: 'Gala (Dabba)', rate: '800 - 1100' },
+    { market: 'Malda', variety: 'Kulu (Dabba)', rate: '1000 - 1300' },
 ];
 
 
