@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import * as React from 'react';
@@ -462,6 +463,45 @@ export default function KhataLedgerPage() {
         }
     }
 
+    const FinalBalanceDisplay = () => {
+        if (!selectedLedger) return null;
+
+        let balanceText: string;
+        let balanceColor: string;
+        
+        // For outside sales, the logic is inverted
+        if (activeTab === 'outside') {
+            if (selectedLedger.balance >= 0) { // Profit
+                balanceText = '(Receivable)';
+                balanceColor = 'text-green-600';
+            } else { // Loss
+                balanceText = '(Payable)';
+                balanceColor = 'text-red-500';
+            }
+        } else { // For Growers and Customers
+             if (selectedLedger.balance >= 0) {
+                balanceText = '(Payable)';
+                balanceColor = 'text-red-500';
+            } else {
+                balanceText = '(Receivable)';
+                balanceColor = 'text-green-600';
+            }
+        }
+        
+        return (
+            <TableRow className="font-bold text-lg bg-muted">
+                <TableCell colSpan={5} className="text-right">Final Balance</TableCell>
+                <TableCell className={`text-right ${balanceColor}`}>
+                    ₹{Math.abs(selectedLedger.balance).toFixed(2)}
+                    <span className="text-xs text-muted-foreground ml-1">
+                        {balanceText}
+                    </span>
+                </TableCell>
+            </TableRow>
+        );
+    }
+
+
     return (
     <>
         <Card className="printable-area">
@@ -575,15 +615,7 @@ export default function KhataLedgerPage() {
                                 <TableCell className="text-right text-green-600">₹{totals.credit.toFixed(2)}</TableCell>
                                 <TableCell></TableCell>
                             </TableRow>
-                             <TableRow className="font-bold text-lg bg-muted">
-                                <TableCell colSpan={5} className="text-right">Final Balance</TableCell>
-                                <TableCell className={`text-right ${selectedLedger.balance >= 0 ? 'text-red-700' : 'text-green-700'}`}>
-                                    ₹{Math.abs(selectedLedger.balance).toFixed(2)}
-                                    <span className="text-xs text-muted-foreground ml-1">
-                                        {selectedLedger.balance >= 0 ? '(Payable)' : '(Receivable)'}
-                                    </span>
-                                </TableCell>
-                            </TableRow>
+                            <FinalBalanceDisplay />
                         </TableFooter>
                     </Table>
                 ) : (
@@ -598,3 +630,5 @@ export default function KhataLedgerPage() {
     </>
   );
 }
+
+    
