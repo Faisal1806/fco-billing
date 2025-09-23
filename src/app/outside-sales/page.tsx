@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -379,7 +380,7 @@ export default function OutsideSalesPage() {
                                                 <p className="font-semibold">{bikri.market} Market</p>
                                                 <p className="text-sm text-muted-foreground">Challan #{bikri.challanNo} &rarr; Bikri #{bikri.bikriNo}</p>
                                                  <p className={`text-lg font-bold ${bikri.calculation.netProfitOrLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                    Profit: ₹{bikri.calculation.netProfitOrLoss.toFixed(2)}
+                                                    {bikri.calculation.netProfitOrLoss >= 0 ? 'Profit' : 'Loss'}: ₹{Math.abs(bikri.calculation.netProfitOrLoss).toFixed(2)}
                                                  </p>
                                             </div>
                                             <div className="flex flex-col items-end">
