@@ -17,21 +17,21 @@ interface LiveRate {
 // Data is hardcoded here to simulate a live feed.
 // This can be replaced with a real API call in the future.
 const liveSoporeRates: LiveRate[] = [
-    { variety: 'Delicious', type: 'Dabba', rate: '600 - 950' },
-    { variety: 'Delicious', type: 'Patti', rate: '400 - 800' },
     { variety: 'American', type: 'Dabba', rate: '400 - 650' },
     { variety: 'American', type: 'Patti', rate: '250 - 500' },
+    { variety: 'BG', type: 'Patti', rate: '200 - 450' },
+    { variety: 'Delicious', type: 'Dabba', rate: '600 - 950' },
+    { variety: 'Delicious', type: 'Patti', rate: '400 - 800' },
     { variety: 'Gala', type: 'Dabba', rate: '500 - 800' },
     { variety: 'Gala', type: 'Patti', rate: '300 - 600' },
+    { variety: 'Golden Delicious', type: 'Dabba', rate: '400 - 700' },
+    { variety: 'Golden Delicious', type: 'Patti', rate: '200 - 450' },
     { variety: 'Kulu', type: 'Dabba', rate: '700 - 1100' },
     { variety: 'Kulu', type: 'Patti', rate: '500 - 850' },
     { variety: 'Maharaji', type: 'Dabba', rate: '800 - 1300' },
     { variety: 'Maharaji', type: 'Patti', rate: '600 - 1000' },
-    { variety: 'Golden Delicious', type: 'Dabba', rate: '400 - 700' },
-    { variety: 'Golden Delicious', type: 'Patti', rate: '200 - 450' },
-    { variety: 'Shimla', type: 'Dabba', rate: '450 - 750' },
     { variety: 'Nakh', type: 'Patti', rate: '150 - 350' },
-    { variety: 'BG', type: 'Patti', rate: '200 - 450' },
+    { variety: 'Shimla', type: 'Dabba', rate: '450 - 750' },
 ];
 
 
