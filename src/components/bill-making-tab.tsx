@@ -55,7 +55,7 @@ export function BillMakingTab() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [availableReceipts, setAvailableReceipts] = useState<any[]>([]);
   const [receiptPopoverOpen, setReceiptPopoverOpen] = useState(false);
-  const [usedReceiptNos, setUsedReceiptNos] = useState<Set<string>>(new Set());
+  const [usedReceiptsMap, setUsedReceiptsMap] = useState<Map<string, string>>(new Map());
 
 
   // Voice Input State
@@ -66,7 +66,7 @@ export function BillMakingTab() {
     setIsLoading(true);
     const bills = [];
     const receipts = [];
-    const usedNos = new Set<string>();
+    const usedNos = new Map<string, string>();
 
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
@@ -75,7 +75,7 @@ export function BillMakingTab() {
                 const bill = JSON.parse(localStorage.getItem(key)!);
                 bills.push(bill);
                 if (bill.linkedReceiptNo) {
-                    usedNos.add(bill.linkedReceiptNo);
+                    usedNos.set(bill.linkedReceiptNo, bill.sNo);
                 }
             } catch(e) {
                 console.error("Failed to parse bill from local storage", e);
@@ -92,7 +92,7 @@ export function BillMakingTab() {
     }
     setSavedBills(bills.sort((a,b) => (Number(a.sNo) > Number(b.sNo)) ? -1 : 1));
     setAvailableReceipts(receipts.sort((a,b) => (a.no > b.no) ? 1 : -1));
-    setUsedReceiptNos(usedNos);
+    setUsedReceiptsMap(usedNos);
     setIsLoading(false);
   };
 
@@ -387,7 +387,8 @@ export function BillMakingTab() {
                                 <CommandEmpty>No receipt found.</CommandEmpty>
                                 <CommandGroup>
                                   {availableReceipts.map((r) => {
-                                    const isUsed = usedReceiptNos.has(r.no);
+                                    const isUsed = usedReceiptsMap.has(r.no);
+                                    const usedForInvoice = usedReceiptsMap.get(r.no);
                                     return (
                                     <CommandItem
                                       key={r.no}
@@ -399,7 +400,7 @@ export function BillMakingTab() {
                                         }
                                       }}
                                       disabled={isUsed}
-                                      className={isUsed ? 'text-muted-foreground cursor-not-allowed' : ''}
+                                      className={cn('cursor-pointer', isUsed ? 'text-muted-foreground' : '')}
                                     >
                                       <Check
                                         className={cn(
@@ -408,7 +409,7 @@ export function BillMakingTab() {
                                         )}
                                       />
                                       Receipt #{r.no} - {r.customerName}
-                                      {isUsed && <span className="ml-auto text-xs text-destructive">(Watak Made)</span>}
+                                      {isUsed && <span className="ml-auto text-xs text-destructive">(Used in Invoice #{usedForInvoice})</span>}
                                     </CommandItem>
                                   )})}
                                 </CommandGroup>
