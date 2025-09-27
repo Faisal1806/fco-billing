@@ -27,23 +27,18 @@ import { Logo } from "./logo";
 
 export const sidebarSections = [
     {
-      title: "ANALYTICS",
+      title: "",
       items: [
         { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       ],
     },
     {
-      title: "SALES & PURCHASES",
+      title: "Management",
       items: [
         { name: "Sales Invoices", href: "/sales", icon: FileText },
         { name: "Watak Register", href: "/watak-register", icon: FileSpreadsheet },
-        { name: "Purchases", href: "/purchase-register", icon: ShoppingCart },
+        { name: "Purchase Register", href: "/purchases", icon: ShoppingCart },
         { name: "Outside Sales (Bikris)", href: "/outside-sales", icon: Globe },
-      ],
-    },
-    {
-      title: "MANAGEMENT",
-      items: [
         { name: "Parties Directory", href: "/parties", icon: Users },
         { name: "Products", href: "/products", icon: Package },
         { name: "Expenses", href: "/expenses", icon: DollarSign },
@@ -53,17 +48,17 @@ export const sidebarSections = [
       ],
     },
     {
-      title: "RESOURCES",
+      title: "Resources",
       items: [
         { name: "Fruit Rates", href: "/rates", icon: TrendingUp },
         { name: "Fertilizers & Pesticides", href: "/fertilizers", icon: FlaskConical },
         { name: "Accessories", href: "/accessories", icon: Box },
-        { name: "Activity Log", href: "/activity-log", icon: History },
       ],
     },
     {
-      title: "CONFIGURATION",
+      title: "Admin",
       items: [
+        { name: "Activity Log", href: "/activity-log", icon: History },
         { name: "Settings", href: "/settings", icon: Cog },
       ],
     },
@@ -105,10 +100,10 @@ export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
       <div className="flex-1">
         <nav className="grid items-start p-2 text-sm font-medium lg:px-4">
           {sidebarSections.map((section) => (
-            <div key={section.title} className="py-2">
-              <h3 className="mb-2 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <div key={section.title || 'dashboard'} className="py-2">
+             {section.title && <h3 className="mb-2 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 {section.title}
-              </h3>
+              </h3>}
               {section.items.map((item) => (
                 <div key={item.name}>{renderLink(item)}</div>
               ))}
