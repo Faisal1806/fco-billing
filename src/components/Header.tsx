@@ -11,7 +11,7 @@ import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { SidebarContent } from './Sidebar';
 
 
-export default function Header() {
+export default function Header({ title }: { title: string }) {
     const router = useRouter();
     const { toast } = useToast();
 
@@ -41,7 +41,7 @@ export default function Header() {
         </SheetContent>
       </Sheet>
       <div className="w-full flex-1">
-        {/* The title can be managed via a context or prop if needed */}
+        <h1 className="text-xl font-semibold">{title}</h1>
       </div>
       <div className="flex items-center gap-2">
         <ThemeSwitcher />
