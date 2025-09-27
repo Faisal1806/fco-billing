@@ -12,7 +12,9 @@ export default function AppLayout({
   const pathname = usePathname();
   
   const allItems = sidebarSections.flatMap(section => section.items);
-  const currentPage = allItems.find(item => item.href === pathname);
+  // Find the item whose href is the start of the current pathname.
+  // This handles nested routes like /invoice/[id] correctly matching /invoice.
+  const currentPage = allItems.find(item => pathname.startsWith(item.href));
 
   const title = currentPage ? currentPage.name : 'Dashboard';
 
