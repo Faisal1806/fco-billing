@@ -14,12 +14,12 @@ import {
   TrendingUp,
   FlaskConical,
   Box,
-  History,
   Cog,
   Snowflake,
   Banknote,
   FileSpreadsheet,
   Users,
+  ShoppingBasket,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SheetClose } from "@/components/ui/sheet";
@@ -30,35 +30,16 @@ export const sidebarSections = [
       title: "",
       items: [
         { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-      ],
-    },
-    {
-      title: "Management",
-      items: [
-        { name: "Sales Invoices", href: "/sales", icon: FileText },
-        { name: "Watak Register", href: "/watak-register", icon: FileSpreadsheet },
-        { name: "Purchase Register", href: "/purchases", icon: ShoppingCart },
-        { name: "Outside Sales (Bikris)", href: "/outside-sales", icon: Globe },
-        { name: "Parties Directory", href: "/parties", icon: Users },
+        { name: "Sales", href: "/sales", icon: ShoppingCart },
+        { name: "Purchases", href: "/purchases", icon: ShoppingBasket },
+        { name: "Purchase Register", href: "/purchase-register", icon: FileText },
         { name: "Products", href: "/products", icon: Package },
         { name: "Expenses", href: "/expenses", icon: DollarSign },
-        { name: "Advances", href: "/advances", icon: Banknote },
-        { name: "Cold Storage", href: "/cold-storage", icon: Snowflake },
+        { name: "Watak Register", href: "/watak-register", icon: FileSpreadsheet },
         { name: "Khata Ledger", href: "/khata", icon: BookOpen },
-      ],
-    },
-    {
-      title: "Resources",
-      items: [
         { name: "Fruit Rates", href: "/rates", icon: TrendingUp },
-        { name: "Fertilizers & Pesticides", href: "/fertilizers", icon: FlaskConical },
+        { name: "Fertilizer Rates", href: "/fertilizers", icon: FlaskConical },
         { name: "Accessories", href: "/accessories", icon: Box },
-      ],
-    },
-    {
-      title: "Admin",
-      items: [
-        { name: "Activity Log", href: "/activity-log", icon: History },
         { name: "Settings", href: "/settings", icon: Cog },
       ],
     },
