@@ -39,6 +39,8 @@ export function BillMakingTab() {
   const [date, setDate] = useState('');
   const [freight, setFreight] = useState<number>(0);
   const [rows, setRows] = useState<Row[]>(initialRows);
+  const [selectedReceiptNo, setSelectedReceiptNo] = useState('');
+
 
   // App State
   const { toast } = useToast();
@@ -48,6 +50,8 @@ export function BillMakingTab() {
   const [isLoading, setIsLoading] = useState(true);
   const [savedBills, setSavedBills] = useState<any[]>([]);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [availableReceipts, setAvailableReceipts] = useState<any[]>([]);
+
 
   // Voice Input State
   const { apiKey, isApiKeySet } = useApiKey();
@@ -57,7 +61,7 @@ export function BillMakingTab() {
     if (typeof window !== 'undefined') {
       setUserRole(localStorage.getItem('userRole'));
     }
-    fetchBills();
+    fetchBillsAndReceipts();
 
     // Check for scanned data
     const scannedDataJSON = localStorage.getItem('scannedWatakData');
@@ -96,9 +100,39 @@ export function BillMakingTab() {
 
   }, []);
 
-  const fetchBills = () => {
+  const selectedReceipt = useMemo(() => {
+    return availableReceipts.find(r => r.no === selectedReceiptNo);
+  }, [selectedReceiptNo, availableReceipts]);
+
+  useEffect(() => {
+    if (selectedReceipt && !isEditing) {
+        setMs(selectedReceipt.customerName);
+        setDate(selectedReceipt.date);
+        
+        const newRows: Row[] = [];
+        selectedReceipt.entries.forEach((entry: any) => {
+            if (entry.peti > 0) {
+                newRows.push({ type: 'Patti', variety: entry.kind, qty: entry.peti, rate: 0 });
+            }
+            if (entry.daba > 0) {
+                newRows.push({ type: 'Dabba', variety: entry.kind, qty: entry.daba, rate: 0 });
+            }
+        });
+
+        if(newRows.length > 0) {
+            setRows(newRows);
+        } else {
+            setRows(initialRows);
+        }
+        toast({ title: "Invoice Populated", description: `Loaded details from Receipt #${selectedReceipt.no}. Please enter the rates.` });
+    }
+  }, [selectedReceipt, isEditing, toast]);
+
+
+  const fetchBillsAndReceipts = () => {
     setIsLoading(true);
     const bills = [];
+    const receipts = [];
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && key.startsWith('invoice-')) {
@@ -109,8 +143,17 @@ export function BillMakingTab() {
                 console.error("Failed to parse bill from local storage", e);
             }
         }
+        if (key && key.startsWith('receipt-')) {
+             try {
+                const receipt = JSON.parse(localStorage.getItem(key)!);
+                receipts.push(receipt);
+            } catch(e) {
+                console.error("Failed to parse receipt from local storage", e);
+            }
+        }
     }
     setSavedBills(bills.sort((a,b) => (Number(a.sNo) > Number(b.sNo)) ? -1 : 1));
+    setAvailableReceipts(receipts.sort((a,b) => (a.no > b.no) ? 1 : -1));
     setIsLoading(false);
   };
   
@@ -178,6 +221,7 @@ export function BillMakingTab() {
         setFreight(0);
         setRows(initialRows);
         setIsEditing(false);
+        setSelectedReceiptNo('');
     };
 
 
@@ -223,7 +267,7 @@ export function BillMakingTab() {
         description: `The invoice has been successfully saved to this device.`,
     });
     
-    fetchBills(); // Re-fetch to update the list
+    fetchBillsAndReceipts(); // Re-fetch to update the list
     setIsEditing(true); // Ensure form stays in editing mode for the current bill
     setIsSubmitting(false);
   };
@@ -263,7 +307,7 @@ export function BillMakingTab() {
             description: `Invoice #${billId} has been successfully deleted.`
         });
         
-        fetchBills(); // Re-fetch to update list
+        fetchBillsAndReceipts(); // Re-fetch to update list
         if (sNo === billId) {
             resetForm();
         }
@@ -304,6 +348,18 @@ export function BillMakingTab() {
             </CardHeader>
             <CardContent className="space-y-6">
                  {/* Header fields */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end p-4 border rounded-md bg-muted/50">
+                    <div className="md:col-span-2">
+                        <Label>Load Details from Goods Receipt</Label>
+                        <Select value={selectedReceiptNo} onValueChange={setSelectedReceiptNo} disabled={isEditing}>
+                            <SelectTrigger id="receiptNo"><SelectValue placeholder="Select a receipt to auto-fill..." /></SelectTrigger>
+                            <SelectContent>
+                                {availableReceipts.map(r => <SelectItem key={r.no} value={r.no}>Receipt #{r.no} - {r.customerName} ({new Date(r.date).toLocaleDateString()})</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4 items-end">
                     <div className="md:col-span-2">
                         <Label>Invoice No</Label>
