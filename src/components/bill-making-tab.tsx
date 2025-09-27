@@ -143,8 +143,11 @@ export function BillMakingTab() {
     return availableReceipts.find(r => r.no === selectedReceiptNo);
   }, [selectedReceiptNo, availableReceipts]);
 
+  const isReceiptUsed = usedReceiptsMap.has(selectedReceiptNo);
+  const formDisabled = isEditing || isReceiptUsed;
+
   useEffect(() => {
-    if (selectedReceipt && !isEditing) {
+    if (selectedReceipt) {
         setMs(selectedReceipt.customerName);
         setDate(selectedReceipt.date);
         
@@ -163,9 +166,12 @@ export function BillMakingTab() {
         } else {
             setRows(initialRows);
         }
-        toast({ title: "Invoice Populated", description: `Loaded details from Receipt #${selectedReceipt.no}. Please enter the rates.` });
+        
+        if (!isReceiptUsed) {
+            toast({ title: "Invoice Populated", description: `Loaded details from Receipt #${selectedReceipt.no}. Please enter the rates.` });
+        }
     }
-  }, [selectedReceipt, isEditing, toast]);
+  }, [selectedReceipt]);
 
 
   
@@ -372,7 +378,6 @@ export function BillMakingTab() {
                               role="combobox"
                               aria-expanded={receiptPopoverOpen}
                               className="w-full justify-between"
-                              disabled={isEditing}
                             >
                               {selectedReceiptNo
                                 ? `Receipt #${selectedReceiptNo} - ${availableReceipts.find(r => r.no === selectedReceiptNo)?.customerName}`
@@ -394,13 +399,10 @@ export function BillMakingTab() {
                                       key={r.no}
                                       value={`${r.no} ${r.customerName} ${new Date(r.date).toLocaleDateString()}`}
                                       onSelect={() => {
-                                        if (!isUsed) {
-                                          setSelectedReceiptNo(r.no);
-                                          setReceiptPopoverOpen(false);
-                                        }
+                                        setSelectedReceiptNo(r.no);
+                                        setReceiptPopoverOpen(false);
                                       }}
-                                      disabled={isUsed}
-                                      className={cn('cursor-pointer', isUsed ? 'text-muted-foreground' : '')}
+                                      className={cn('cursor-pointer')}
                                     >
                                       <Check
                                         className={cn(
@@ -417,6 +419,11 @@ export function BillMakingTab() {
                             </Command>
                           </PopoverContent>
                         </Popover>
+                         {isReceiptUsed && (
+                            <Badge variant="destructive" className="mt-2">
+                                Watak already made for Invoice #{usedReceiptsMap.get(selectedReceiptNo)}. Form is in view-only mode.
+                            </Badge>
+                        )}
                     </div>
                 </div>
 
@@ -424,8 +431,8 @@ export function BillMakingTab() {
                     <div className="md:col-span-2">
                         <Label>Invoice No</Label>
                         <div className="flex items-center gap-2">
-                            <Input value={sNo} onChange={e => setSNo(e.target.value)} disabled={isEditing} />
-                             {isEditing && (
+                            <Input value={sNo} onChange={e => setSNo(e.target.value)} disabled={isEditing || isReceiptUsed} />
+                             {(isEditing || isReceiptUsed) && (
                                 <Button variant="outline" size="icon" onClick={resetForm} title="Create a new invoice">
                                     <FilePlus className="h-4 w-4" />
                                 </Button>
@@ -434,19 +441,19 @@ export function BillMakingTab() {
                     </div>
                      <div>
                         <Label>Date</Label>
-                        <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
+                        <Input type="date" value={date} onChange={e => setDate(e.target.value)} disabled={formDisabled} />
                     </div>
                     <div className="col-span-2">
                         <Label>M/S (Grower)</Label>
-                        <PartySelector value={ms} onChange={setMs} filter="grower" />
+                        <PartySelector value={ms} onChange={setMs} filter="grower" disabled={formDisabled} />
                     </div>
                     <div>
                         <Label>Khata</Label>
-                        <Input value={khata} onChange={e => setKhata(e.target.value)} />
+                        <Input value={khata} onChange={e => setKhata(e.target.value)} disabled={formDisabled} />
                     </div>
                     <div>
                         <Label>Watak No</Label>
-                        <Input value={watakNo} onChange={e => setWatakNo(e.target.value)} />
+                        <Input value={watakNo} onChange={e => setWatakNo(e.target.value)} disabled={formDisabled} />
                     </div>
                 </div>
 
@@ -471,7 +478,7 @@ export function BillMakingTab() {
                             <TableRow key={i}>
                             <TableCell>{i + 1}</TableCell>
                             <TableCell>
-                                <Select value={r.type} onValueChange={(value: Row['type']) => updateRow(i, { type: value })}>
+                                <Select value={r.type} onValueChange={(value: Row['type']) => updateRow(i, { type: value })} disabled={formDisabled}>
                                 <SelectTrigger className="w-28">
                                     <SelectValue />
                                 </SelectTrigger>
@@ -486,6 +493,7 @@ export function BillMakingTab() {
                                 placeholder="Variety (e.g., A2/5)"
                                 value={r.variety}
                                 onChange={e => updateRow(i, { variety: e.target.value })}
+                                disabled={formDisabled}
                                 />
                             </TableCell>
                             <TableCell>
@@ -494,6 +502,7 @@ export function BillMakingTab() {
                                 className="w-24 text-right"
                                 value={r.qty || ''}
                                 onChange={e => updateRow(i, { qty: Number(e.target.value) || 0 })}
+                                disabled={formDisabled}
                                 />
                             </TableCell>
                             <TableCell>
@@ -502,11 +511,12 @@ export function BillMakingTab() {
                                 className="w-24 text-right"
                                 value={r.rate || ''}
                                 onChange={e => updateRow(i, { rate: Number(e.target.value) || 0 })}
+                                disabled={formDisabled}
                                 />
                             </TableCell>
                             <TableCell className="text-right">{(totals.rowGross[i] || 0).toFixed(2)}</TableCell>
                             <TableCell className="text-right">
-                                <Button variant="ghost" size="icon" onClick={() => removeRow(i)}>
+                                <Button variant="ghost" size="icon" onClick={() => removeRow(i)} disabled={formDisabled}>
                                     <Trash2 className="text-red-600 h-4 w-4" />
                                 </Button>
                             </TableCell>
@@ -516,7 +526,7 @@ export function BillMakingTab() {
                         <TableFooter>
                             <TableRow>
                                 <TableCell colSpan={7}>
-                                     <Button onClick={addRow} variant="outline" size="sm" className="mt-2">
+                                     <Button onClick={addRow} variant="outline" size="sm" className="mt-2" disabled={formDisabled}>
                                         <PlusCircle className="h-4 w-4 mr-2" />
                                         Add Row
                                     </Button>
@@ -549,6 +559,7 @@ export function BillMakingTab() {
                             className="w-28 text-right"
                             value={freight || ''}
                             onChange={e => setFreight(Number(e.target.value))}
+                            disabled={formDisabled}
                         />
                         </div>
                     </div>
@@ -565,7 +576,7 @@ export function BillMakingTab() {
             </CardContent>
             <CardFooter>
                 <div className="flex w-full justify-center flex-wrap gap-3">
-                    <Button onClick={saveBill} className="flex-1 min-w-[150px]" disabled={isSubmitting}>
+                    <Button onClick={saveBill} className="flex-1 min-w-[150px]" disabled={isSubmitting || formDisabled}>
                         {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                         {isEditing ? 'Update Invoice' : 'Save Invoice'}
                     </Button>
@@ -622,5 +633,3 @@ export function BillMakingTab() {
     </div>
   );
 }
-
-    
