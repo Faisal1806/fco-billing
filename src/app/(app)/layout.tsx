@@ -1,4 +1,3 @@
-
 'use client';
 
 import { usePathname } from 'next/navigation';
@@ -12,9 +11,8 @@ export default function AppLayout({
 }) {
   const pathname = usePathname();
   
-  const currentPage = sidebarSections
-    .flatMap(section => section.items)
-    .find(item => item.href === pathname);
+  const allItems = sidebarSections.flatMap(section => section.items);
+  const currentPage = allItems.find(item => item.href === pathname);
 
   const title = currentPage ? currentPage.name : 'Dashboard';
 
