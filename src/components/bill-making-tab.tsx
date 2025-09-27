@@ -55,11 +55,46 @@ export function BillMakingTab() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [availableReceipts, setAvailableReceipts] = useState<any[]>([]);
   const [receiptPopoverOpen, setReceiptPopoverOpen] = useState(false);
+  const [usedReceiptNos, setUsedReceiptNos] = useState<Set<string>>(new Set());
 
 
   // Voice Input State
   const { apiKey, isApiKeySet } = useApiKey();
 
+
+  const fetchBillsAndReceipts = () => {
+    setIsLoading(true);
+    const bills = [];
+    const receipts = [];
+    const usedNos = new Set<string>();
+
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('invoice-')) {
+            try {
+                const bill = JSON.parse(localStorage.getItem(key)!);
+                bills.push(bill);
+                if (bill.linkedReceiptNo) {
+                    usedNos.add(bill.linkedReceiptNo);
+                }
+            } catch(e) {
+                console.error("Failed to parse bill from local storage", e);
+            }
+        }
+        if (key && key.startsWith('receipt-')) {
+             try {
+                const receipt = JSON.parse(localStorage.getItem(key)!);
+                receipts.push(receipt);
+            } catch(e) {
+                console.error("Failed to parse receipt from local storage", e);
+            }
+        }
+    }
+    setSavedBills(bills.sort((a,b) => (Number(a.sNo) > Number(b.sNo)) ? -1 : 1));
+    setAvailableReceipts(receipts.sort((a,b) => (a.no > b.no) ? 1 : -1));
+    setUsedReceiptNos(usedNos);
+    setIsLoading(false);
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -133,33 +168,6 @@ export function BillMakingTab() {
   }, [selectedReceipt, isEditing, toast]);
 
 
-  const fetchBillsAndReceipts = () => {
-    setIsLoading(true);
-    const bills = [];
-    const receipts = [];
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('invoice-')) {
-            try {
-                const bill = JSON.parse(localStorage.getItem(key)!);
-                bills.push(bill);
-            } catch(e) {
-                console.error("Failed to parse bill from local storage", e);
-            }
-        }
-        if (key && key.startsWith('receipt-')) {
-             try {
-                const receipt = JSON.parse(localStorage.getItem(key)!);
-                receipts.push(receipt);
-            } catch(e) {
-                console.error("Failed to parse receipt from local storage", e);
-            }
-        }
-    }
-    setSavedBills(bills.sort((a,b) => (Number(a.sNo) > Number(b.sNo)) ? -1 : 1));
-    setAvailableReceipts(receipts.sort((a,b) => (a.no > b.no) ? 1 : -1));
-    setIsLoading(false);
-  };
   
   const yearlyCount = useMemo(() => {
     if(!savedBills) return 0;
@@ -262,6 +270,7 @@ export function BillMakingTab() {
         totalExpenses: Number(totals.totalExp.toFixed(2)),
         netSale: Number(totals.netSale.toFixed(2)),
       },
+      linkedReceiptNo: selectedReceiptNo,
     };
     
     localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
@@ -291,6 +300,7 @@ export function BillMakingTab() {
       rate: e.rate
     }));
     setRows(loadedRows.length > 0 ? loadedRows : initialRows);
+    setSelectedReceiptNo(bill.linkedReceiptNo || '');
     setIsEditing(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -376,14 +386,20 @@ export function BillMakingTab() {
                               <CommandList>
                                 <CommandEmpty>No receipt found.</CommandEmpty>
                                 <CommandGroup>
-                                  {availableReceipts.map((r) => (
+                                  {availableReceipts.map((r) => {
+                                    const isUsed = usedReceiptNos.has(r.no);
+                                    return (
                                     <CommandItem
                                       key={r.no}
                                       value={`${r.no} ${r.customerName} ${new Date(r.date).toLocaleDateString()}`}
                                       onSelect={() => {
-                                        setSelectedReceiptNo(r.no);
-                                        setReceiptPopoverOpen(false);
+                                        if (!isUsed) {
+                                          setSelectedReceiptNo(r.no);
+                                          setReceiptPopoverOpen(false);
+                                        }
                                       }}
+                                      disabled={isUsed}
+                                      className={isUsed ? 'text-muted-foreground cursor-not-allowed' : ''}
                                     >
                                       <Check
                                         className={cn(
@@ -391,9 +407,10 @@ export function BillMakingTab() {
                                           selectedReceiptNo === r.no ? "opacity-100" : "opacity-0"
                                         )}
                                       />
-                                      Receipt #{r.no} - {r.customerName} ({new Date(r.date).toLocaleDateString()})
+                                      Receipt #{r.no} - {r.customerName}
+                                      {isUsed && <span className="ml-auto text-xs text-destructive">(Watak Made)</span>}
                                     </CommandItem>
-                                  ))}
+                                  )})}
                                 </CommandGroup>
                               </CommandList>
                             </Command>
@@ -604,3 +621,5 @@ export function BillMakingTab() {
     </div>
   );
 }
+
+    
