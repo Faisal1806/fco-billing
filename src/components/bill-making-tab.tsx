@@ -11,13 +11,16 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Separator } from './ui/separator';
-import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Share, FileText } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Share, FileText, ChevronsUpDown, Check } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { ScrollArea } from './ui/scroll-area';
 import type { WatakExtractOutput } from '@/ai/flows/extract-watak-flow';
 import { useApiKey } from '@/hooks/use-api-key';
 import { Badge } from '@/components/ui/badge';
 import { PartySelector } from './party-selector';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
+import { cn } from '@/lib/utils';
 
 
 type Row = {
@@ -51,6 +54,7 @@ export function BillMakingTab() {
   const [savedBills, setSavedBills] = useState<any[]>([]);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [availableReceipts, setAvailableReceipts] = useState<any[]>([]);
+  const [receiptPopoverOpen, setReceiptPopoverOpen] = useState(false);
 
 
   // Voice Input State
@@ -351,12 +355,50 @@ export function BillMakingTab() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end p-4 border rounded-md bg-muted/50">
                     <div className="md:col-span-2">
                         <Label>Load Details from Goods Receipt</Label>
-                        <Select value={selectedReceiptNo} onValueChange={setSelectedReceiptNo} disabled={isEditing}>
-                            <SelectTrigger id="receiptNo"><SelectValue placeholder="Select a receipt to auto-fill..." /></SelectTrigger>
-                            <SelectContent>
-                                {availableReceipts.map(r => <SelectItem key={r.no} value={r.no}>Receipt #{r.no} - {r.customerName} ({new Date(r.date).toLocaleDateString()})</SelectItem>)}
-                            </SelectContent>
-                        </Select>
+                        <Popover open={receiptPopoverOpen} onOpenChange={setReceiptPopoverOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={receiptPopoverOpen}
+                              className="w-full justify-between"
+                              disabled={isEditing}
+                            >
+                              {selectedReceiptNo
+                                ? `Receipt #${selectedReceiptNo} - ${availableReceipts.find(r => r.no === selectedReceiptNo)?.customerName}`
+                                : "Select a receipt to auto-fill..."}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                            <Command>
+                              <CommandInput placeholder="Search receipt no. or name..." />
+                              <CommandList>
+                                <CommandEmpty>No receipt found.</CommandEmpty>
+                                <CommandGroup>
+                                  {availableReceipts.map((r) => (
+                                    <CommandItem
+                                      key={r.no}
+                                      value={`${r.no} ${r.customerName} ${new Date(r.date).toLocaleDateString()}`}
+                                      onSelect={() => {
+                                        setSelectedReceiptNo(r.no);
+                                        setReceiptPopoverOpen(false);
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          selectedReceiptNo === r.no ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      Receipt #{r.no} - {r.customerName} ({new Date(r.date).toLocaleDateString()})
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                     </div>
                 </div>
 
