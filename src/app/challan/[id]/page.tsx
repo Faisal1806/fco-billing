@@ -16,6 +16,7 @@ import QRCode from 'qrcode.react';
 
 
 interface ChallanData {
+    id: string;
     challanNo: string;
     date: string;
     toMs: string;
@@ -67,7 +68,8 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
             setLoading(true);
 
             let data: ChallanData | null = null;
-            const storedChallan = localStorage.getItem(`challan-${params.id}`);
+            const decodedId = decodeURIComponent(params.id);
+            const storedChallan = localStorage.getItem(`challan-${decodedId}`);
             if (storedChallan) {
                 data = JSON.parse(storedChallan);
             }

@@ -57,6 +57,10 @@ const ChallanEntryRow = ({
   </div>
 );
 
+const normalizeForId = (name: string) => {
+    return name.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
 export function ChallanMakingTab() {
   const { toast } = useToast();
   const router = useRouter();
@@ -156,8 +160,12 @@ export function ChallanMakingTab() {
         });
         return;
     }
-    const challanId = details.challanNo;
+    // Create a unique ID from party name and challan number
+    const partyIdPart = normalizeForId(details.toMs);
+    const challanId = `${partyIdPart}-${details.challanNo}`;
+
     const challanData = {
+        id: challanId,
         ...details,
         entries: entries.filter(e => e.kind || e.khata || e.peti > 0 || e.daba > 0),
         totalPetti,
@@ -186,11 +194,13 @@ export function ChallanMakingTab() {
   };
 
    const handleViewChallan = () => {
-      if (!isEditing || !details.challanNo) {
+      if (!isEditing || !details.challanNo || !details.toMs) {
           toast({ variant: 'destructive', title: 'Cannot View', description: 'Please save the delivery note first.'});
           return;
       }
-      router.push(`/challan/${details.challanNo}`);
+      const partyIdPart = normalizeForId(details.toMs);
+      const challanId = `${partyIdPart}-${details.challanNo}`;
+      router.push(`/challan/${encodeURIComponent(challanId)}`);
   };
 
   const loadChallanForEdit = (challan: any) => {
@@ -209,22 +219,22 @@ export function ChallanMakingTab() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  const handleDeleteChallan = async (challanId: string) => {
+  const handleDeleteChallan = async (challan: any) => {
     if(userRole !== 'admin') {
       toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to delete delivery notes.' });
       return;
     }
-    if(!window.confirm(`Are you sure you want to delete Delivery Note #${challanId}? This action cannot be undone.`)) {
+    if(!window.confirm(`Are you sure you want to delete Delivery Note #${challan.challanNo} for ${challan.toMs}? This action cannot be undone.`)) {
         return;
     }
     
-    localStorage.removeItem(`challan-${challanId}`);
+    localStorage.removeItem(`challan-${challan.id}`);
 
     try {
-        await deleteDocument('challans', challanId);
+        await deleteDocument('challans', challan.id);
         toast({
             title: "Delivery Note Deleted",
-            description: `Delivery Note #${challanId} has been successfully deleted from local and cloud storage.`
+            description: `Delivery Note #${challan.challanNo} has been successfully deleted from local and cloud storage.`
         });
     } catch (error) {
         toast({
@@ -235,7 +245,7 @@ export function ChallanMakingTab() {
     }
 
     fetchChallans(); // Re-fetch to update list
-    if (details.challanNo === challanId) {
+    if (details.challanNo === challan.challanNo && details.toMs === challan.toMs) {
         resetForm();
     }
   };
@@ -273,7 +283,7 @@ export function ChallanMakingTab() {
                     </div>
                     <div className="space-y-2 col-span-2">
                         <Label>To, M/s (Customer / Outside Party)</Label>
-                        <PartySelector value={details.toMs} onChange={(val) => handleDetailChange('toMs', val)} filter="customer" />
+                        <PartySelector value={details.toMs} onChange={(val) => handleDetailChange('toMs', val)} filter="customer" disabled={isEditing} />
                     </div>
                      <div className="space-y-2">
                         <Label>Vehicle No.</Label>
@@ -358,7 +368,7 @@ export function ChallanMakingTab() {
                 <ScrollArea className="h-96">
                     <div className="space-y-2">
                         {savedChallans.map(challan => (
-                            <div key={challan.challanNo} className="flex justify-between items-center p-2 border rounded-md">
+                            <div key={challan.id} className="flex justify-between items-center p-2 border rounded-md">
                                 <div>
                                     <p className="font-medium">Note #{challan.challanNo}</p>
                                     <p className="text-sm text-muted-foreground">{challan.toMs}</p>
@@ -369,7 +379,7 @@ export function ChallanMakingTab() {
                                         <FilePenLine className="h-4 w-4" />
                                     </Button>
                                     {userRole === 'admin' && (
-                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteChallan(challan.challanNo)}>
+                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteChallan(challan)}>
                                         <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
                                     )}
