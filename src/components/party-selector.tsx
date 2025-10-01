@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -39,7 +40,7 @@ const PARTY_STORAGE_PREFIX = 'party-';
 type Party = {
   id: string;
   name: string;
-  type: 'Grower' | 'Customer' | 'Both' | 'Outside Party';
+  type: 'Grower' | 'Customer' | 'Both' | 'Outside Party' | 'Both (Outside & Customer)';
   address?: string;
   phone?: string;
   email?: string;
@@ -97,7 +98,7 @@ const normalizeName = (name: string): string => {
         .replace(/\b(MOHAMMAD|MOHD|MD|GH\.)\b/g, 'MOHAMMAD')
         .replace(/\b(AHMAD|AH)\b/g, 'AHMAD')
         .replace(/S\/P|B\/P|K\/P|®|\(R\)/g, '')
-        .replace(/[\.\,\']/g, '')
+        .replace(/[\.\,']/g, '')
         .replace(/\s+/g, ' ')
         .trim();
 };
@@ -106,6 +107,7 @@ const PartyIcon = ({ type }: { type: Party['type'] }) => {
     if (type === 'Grower') return <Leaf className="h-4 w-4 mr-2 text-green-500" />;
     if (type === 'Customer') return <ShoppingCart className="h-4 w-4 mr-2 text-blue-500" />;
     if (type === 'Outside Party') return <Handshake className="h-4 w-4 mr-2 text-orange-500" />;
+    if (type === 'Both (Outside & Customer)') return <Users className="h-4 w-4 mr-2 text-cyan-500" />;
     return <Users className="h-4 w-4 mr-2 text-purple-500" />;
 };
 
@@ -161,6 +163,7 @@ const AddPartyDialog = ({ open, setOpen, onPartyAdded }: { open: boolean, setOpe
                                     <SelectItem value="Customer">Customer (Buys from you)</SelectItem>
                                     <SelectItem value="Both">Both (Grower & Customer)</SelectItem>
                                     <SelectItem value="Outside Party">Outside Party</SelectItem>
+                                    <SelectItem value="Both (Outside & Customer)">Both (Outside & Customer)</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -226,8 +229,8 @@ export function PartySelector({ value, onChange, filter = 'all', disabled = fals
     const filtered = allPartiesList.filter(p => {
         if (filter === 'all') return true;
         if (filter === 'grower') return p.type === 'Grower' || p.type === 'Both';
-        if (filter === 'customer') return p.type === 'Customer' || p.type === 'Both' || p.type === 'Outside Party';
-        if (filter === 'outside') return p.type === 'Outside Party' || p.type === 'Customer' || p.type === 'Both';
+        if (filter === 'customer') return p.type === 'Customer' || p.type === 'Both' || p.type === 'Outside Party' || p.type === 'Both (Outside & Customer)';
+        if (filter === 'outside') return p.type === 'Outside Party' || p.type === 'Customer' || p.type === 'Both' || p.type === 'Both (Outside & Customer)';
         return false;
     });
 

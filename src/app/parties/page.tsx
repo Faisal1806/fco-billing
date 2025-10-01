@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -43,7 +44,7 @@ const PARTY_STORAGE_PREFIX = 'party-';
 interface Party {
   id: string; // Unique ID, can be derived from name for existing, or new for added
   name: string;
-  type: 'Grower' | 'Customer' | 'Both' | 'Outside Party';
+  type: 'Grower' | 'Customer' | 'Both' | 'Outside Party' | 'Both (Outside & Customer)';
   address?: string;
   phone?: string;
   email?: string;
@@ -143,7 +144,7 @@ export default function PartiesPage() {
                 name: name, // Use first-seen name as display name
                 type: 'Grower', // Default type
                 ...details,
-            });
+            } as Party);
         }
     };
 
@@ -246,9 +247,9 @@ export default function PartiesPage() {
         .filter(p => {
             if (typeFilter === 'all') return true;
             if (typeFilter === 'grower') return p.type === 'Grower' || p.type === 'Both';
-            if (typeFilter === 'customer') return p.type === 'Customer' || p.type === 'Both';
-            if (typeFilter === 'outsideparty') return p.type === 'Outside Party';
-            return p.type.toLowerCase().replace(' ', '') === typeFilter;
+            if (typeFilter === 'customer') return p.type === 'Customer' || p.type === 'Both' || p.type === 'Both (Outside & Customer)';
+            if (typeFilter === 'outsideparty') return p.type === 'Outside Party' || p.type === 'Both (Outside & Customer)';
+            return p.type.toLowerCase().replace(/\s/g, '') === typeFilter;
         })
         .filter(p => {
             const lowerCaseSearch = searchTerm.toLowerCase();
@@ -339,8 +340,9 @@ export default function PartiesPage() {
     switch (type) {
         case 'Grower': return <Badge variant="default" className="bg-green-600 hover:bg-green-700">Grower</Badge>;
         case 'Customer': return <Badge variant="secondary">Customer</Badge>;
-        case 'Both': return <Badge variant="outline">Both</Badge>;
+        case 'Both': return <Badge variant="outline">Both (Grower & Customer)</Badge>;
         case 'Outside Party': return <Badge variant="destructive" className="bg-orange-500 hover:bg-orange-600">Outside Party</Badge>;
+        case 'Both (Outside & Customer)': return <Badge variant="outline" className="bg-purple-500 text-white hover:bg-purple-600">Both (Outside & Customer)</Badge>;
         default: return <Badge>{type}</Badge>;
     }
   }
@@ -381,8 +383,9 @@ export default function PartiesPage() {
                     <SelectItem value="all">All Types</SelectItem>
                     <SelectItem value="grower">Growers</SelectItem>
                     <SelectItem value="customer">Customers</SelectItem>
-                    <SelectItem value="both">Both</SelectItem>
+                    <SelectItem value="both">Both (Grower & Customer)</SelectItem>
                     <SelectItem value="outsideparty">Outside Parties</SelectItem>
+                    <SelectItem value="both(outside&customer)">Both (Outside & Customer)</SelectItem>
                 </SelectContent>
             </Select>
             <Button onClick={exportToPDF} variant="outline" size="sm" className="gap-1"><FileDown className="h-4 w-4"/>PDF</Button>
@@ -416,6 +419,7 @@ export default function PartiesPage() {
                                 <SelectItem value="Customer">Customer (Buys from you)</SelectItem>
                                 <SelectItem value="Both">Both (Grower & Customer)</SelectItem>
                                 <SelectItem value="Outside Party">Outside Party (e.g., Labour, Transport)</SelectItem>
+                                <SelectItem value="Both (Outside & Customer)">Both (Outside & Customer)</SelectItem>
                               </SelectContent>
                           </Select>
                       </div>
