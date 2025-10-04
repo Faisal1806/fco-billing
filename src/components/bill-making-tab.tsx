@@ -143,8 +143,8 @@ export function BillMakingTab() {
     return availableReceipts.find(r => r.no === selectedReceiptNo);
   }, [selectedReceiptNo, availableReceipts]);
 
-  const isReceiptUsed = usedReceiptsMap.has(selectedReceiptNo);
-  const formDisabled = isEditing || isReceiptUsed;
+  const isReceiptUsed = usedReceiptsMap.has(selectedReceiptNo) && usedReceiptsMap.get(selectedReceiptNo) !== sNo;
+  const formDisabled = isReceiptUsed;
 
   useEffect(() => {
     if (selectedReceipt) {
@@ -403,6 +403,7 @@ export function BillMakingTab() {
                                         setReceiptPopoverOpen(false);
                                       }}
                                       className={cn('cursor-pointer')}
+                                      disabled={isUsed && sNo !== usedForInvoice}
                                     >
                                       <Check
                                         className={cn(
