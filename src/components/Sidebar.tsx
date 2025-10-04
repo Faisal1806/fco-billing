@@ -20,6 +20,7 @@ import {
   FileSpreadsheet,
   Users,
   ShoppingBasket,
+  Smile,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SheetClose } from "@/components/ui/sheet";
@@ -30,19 +31,40 @@ export const sidebarSections = [
       title: "",
       items: [
         { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+      ],
+    },
+     {
+      title: "Management",
+      items: [
         { name: "Sales", href: "/sales", icon: ShoppingCart },
+        { name: "Watak Register", href: "/watak-register", icon: FileText },
         { name: "Purchases", href: "/purchases", icon: ShoppingBasket },
-        { name: "Purchase Register", href: "/purchase-register", icon: FileText },
-        { name: "Products", href: "/products", icon: Package },
-        { name: "Expenses", href: "/expenses", icon: DollarSign },
-        { name: "Watak Register", href: "/watak-register", icon: FileSpreadsheet },
+        { name: "Purchase Register", href: "/purchase-register", icon: FileSpreadsheet },
+        { name: "Outside Sales", href: "/outside-sales", icon: Globe },
         { name: "Khata Ledger", href: "/khata", icon: BookOpen },
+        { name: "Advances & Loans", href: "/advances", icon: Banknote },
+        { name: "Expenses", href: "/expenses", icon: DollarSign },
+      ]
+    },
+    {
+      title: "Resources",
+      items: [
+        { name: "Products", href: "/products", icon: Package },
+        { name: "Parties", href: "/parties", icon: Users },
         { name: "Fruit Rates", href: "/rates", icon: TrendingUp },
         { name: "Fertilizer Rates", href: "/fertilizers", icon: FlaskConical },
         { name: "Accessories", href: "/accessories", icon: Box },
-        { name: "Settings", href: "/settings", icon: Cog },
-      ],
+        { name: "Cold Storage", href: "/cold-storage", icon: Snowflake },
+        { name: "Feedback", href: "/feedback", icon: Smile },
+      ]
     },
+     {
+      title: "Admin",
+      items: [
+         { name: "Activity Log", href: "/activity-log", icon: FileText },
+        { name: "Settings", href: "/settings", icon: Cog },
+      ]
+    }
 ];
 
 export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
