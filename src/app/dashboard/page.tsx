@@ -71,6 +71,8 @@ interface AccessoryLedgerEntry {
 }
 
 interface Invoice {
+    id: string;
+    sNo: string;
     date: string;
     totals: {
         netSale: number;
@@ -174,7 +176,7 @@ const QuickActions = () => {
     )
 }
 
-const FruitDashboard = ({ stats, yearlyStats, outsideSalesStats, accessoryStats, growerProfits, router }: { stats: DailyStats | null, yearlyStats: YearlyStats | null, outsideSalesStats: OutsideSalesStats | null, accessoryStats: AccessoryStats | null, growerProfits: GrowerProfit[], router: any }) => (
+const FruitDashboard = ({ stats, yearlyStats, outsideSalesStats, accessoryStats, growerProfits, router, recentWataks }: { stats: DailyStats | null, yearlyStats: YearlyStats | null, outsideSalesStats: OutsideSalesStats | null, accessoryStats: AccessoryStats | null, growerProfits: GrowerProfit[], router: any, recentWataks: Invoice[] }) => (
     <div className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
@@ -339,12 +341,37 @@ const FruitDashboard = ({ stats, yearlyStats, outsideSalesStats, accessoryStats,
                         )}
                     </CardContent>
                 </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Recent Wataks</CardTitle>
+                        <CardDescription>A list of your 5 most recent sales invoices.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {recentWataks.length > 0 ? (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Invoice No.</TableHead>
+                                    <TableHead>Customer</TableHead>
+                                    <TableHead className="text-right">Net Sale</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {recentWataks.map(watak => (
+                                    <TableRow key={watak.id}>
+                                        <TableCell className="font-medium">{watak.sNo}</TableCell>
+                                        <TableCell>{watak.customerName}</TableCell>
+                                        <TableCell className="text-right font-mono">₹{watak.totals.netSale.toLocaleString('en-IN')}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                        ) : (
+                             <p className="text-sm text-muted-foreground text-center py-4">No wataks found.</p>
+                        )}
+                    </CardContent>
+                </Card>
             </div>
-        </div>
-
-        <div className="mt-6">
-            <h3 className="text-xl font-semibold mb-4">Recent Wataks</h3>
-            <RateList />
         </div>
     </div>
 );
@@ -671,6 +698,13 @@ export default function DashboardPage() {
     return categorized;
   }, [allProducts, allAccessories, isLoading]);
 
+  const recentWataks = useMemo(() => {
+    if (isLoading) return [];
+    return allInvoices
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5);
+  }, [allInvoices, isLoading]);
+
 
   if (isLoading) {
     return (
@@ -689,7 +723,7 @@ export default function DashboardPage() {
             <TabsTrigger value="inventory"><Package className="w-4 h-4 mr-2" />Inventory</TabsTrigger>
         </TabsList>
         <TabsContent value="fruit">
-            <FruitDashboard stats={stats} yearlyStats={yearlyStats} outsideSalesStats={outsideSalesStats} accessoryStats={accessoryStats} growerProfits={growerProfits} router={router} />
+            <FruitDashboard stats={stats} yearlyStats={yearlyStats} outsideSalesStats={outsideSalesStats} accessoryStats={accessoryStats} growerProfits={growerProfits} router={router} recentWataks={recentWataks}/>
         </TabsContent>
         <TabsContent value="accessories">
             <AccessoriesDashboard stats={accessoryStats} router={router} />
