@@ -47,37 +47,32 @@ export default function LoginPage() {
   }
 
   if (!isClient) {
-    return null;
+    return null; // or a loading spinner
   }
 
   return (
     <div className="login-splash-screen">
       <motion.div
-        initial={{ opacity: 0, y: -50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: "easeOut" }}
-        className="flex items-center gap-4 mb-8 text-center"
-      >
-        <div className="bg-slate-800 p-4 rounded-2xl shadow-lg">
-            <Logo className="h-16 w-16 text-white" />
-        </div>
-        <div>
-            <h1 className="text-4xl font-bold text-gray-200">F.Co</h1>
-            <p className="text-lg text-muted-foreground">FIRDOUS AHMAD & COMPANY</p>
-            <p className="text-xl font-semibold text-sky-400">Sopore, Kashmir</p>
-        </div>
-      </motion.div>
-
-      <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, delay: 0.3 }}
-        className="login-box"
+        className="login-container"
       >
-        <div className="login-form">
+        <div className="flex-1 p-8 text-white flex flex-col justify-center items-center text-center">
+            <h2 className="text-3xl font-bold">Welcome Back!</h2>
+            <p className="mt-2 text-gray-300">Your trusted partner in fruit trading.</p>
+        </div>
+        <div className="flex-1 p-8 bg-white/10 flex flex-col justify-center">
+            <div className="flex items-center justify-center gap-4 mb-8">
+                <Logo className="h-16 w-16 text-white" />
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-200">F.Co</h1>
+                    <p className="text-md text-gray-300">FIRDOUS AHMAD & COMPANY</p>
+                </div>
+            </div>
+
             <h2 className="text-2xl font-bold text-center text-white">Admin Login</h2>
-            <p className="text-center text-muted-foreground text-sm mt-2">Enter password to access the app</p>
-            <div className="relative mt-8">
+            <div className="relative mt-6">
               <Input 
                 id="password" 
                 type="password" 
@@ -85,24 +80,24 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyPress={handleKeyPress}
-                className="bg-transparent border-2 border-gray-600 focus:border-sky-400 text-white peer"
+                className="bg-transparent border-2 border-gray-500/50 focus:border-sky-400 text-white peer w-full"
+                autoComplete="current-password"
               />
               <Label 
                 htmlFor="password"
-                className="absolute top-0 left-0 px-3 py-2 text-gray-400 transition-all duration-200 ease-in-out pointer-events-none 
-                           peer-focus:-translate-y-1/2 peer-focus:text-sky-400 peer-focus:text-xs peer-focus:px-1 peer-focus:bg-[#222]
-                           peer-valid:-translate-y-1/2 peer-valid:text-sky-400 peer-valid:text-xs peer-valid:px-1 peer-valid:bg-[#222]"
+                className="absolute top-1/2 -translate-y-1/2 left-3 px-1 text-gray-400 transition-all duration-200 ease-in-out pointer-events-none 
+                           peer-focus:-translate-y-[150%] peer-focus:text-sky-400 peer-focus:text-xs peer-focus:bg-gray-800
+                           peer-valid:-translate-y-[150%] peer-valid:text-sky-400 peer-valid:text-xs peer-valid:bg-gray-800"
               >
                 Password
               </Label>
                <KeyRound className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             </div>
 
-            <Button onClick={handleLogin} className="w-full mt-8 bg-sky-500 hover:bg-sky-600 text-white">
+            <Button onClick={handleLogin} className="w-full mt-6 bg-sky-500 hover:bg-sky-600 text-white">
               Login
             </Button>
-
-            <div className="text-center mt-6">
+            <div className="text-center mt-4">
                 <Button variant="link" size="sm" onClick={() => router.push('/portal/login')} className="text-gray-400 hover:text-sky-400">
                     Go to Customer Portal
                 </Button>
