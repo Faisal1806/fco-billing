@@ -184,7 +184,7 @@ export default function SuppliesPage() {
 
   return (
     <div className="space-y-6 printable-area">
-        <Card className="print-hidden">
+        <Card className="print-hidden bg-card/80 backdrop-blur-sm border border-white/10 rounded-2xl shadow-2xl">
           <CardHeader>
             <CardTitle>Add to Daily Supplies Ledger (Cashbook)</CardTitle>
             <CardDescription>Log sales of fertilizers, packaging materials, and other farm inputs. This is also referred to as a Cashbook.</CardDescription>
@@ -240,7 +240,7 @@ export default function SuppliesPage() {
         </CardFooter>
     </Card>
 
-    <Card>
+    <Card className="bg-card/80 backdrop-blur-sm border border-white/10 rounded-2xl shadow-2xl">
       <CardHeader>
         <div className="flex justify-between items-center">
             <div>
@@ -304,7 +304,7 @@ export default function SuppliesPage() {
                         <TableCell className="text-right font-mono">₹{dailyTotal.toFixed(2)}</TableCell>
                         <TableCell className="print-hidden"></TableCell>
                     </TableRow>
-                     <TableRow className="font-bold text-xl bg-muted">
+                     <TableRow className="font-bold text-xl bg-muted/50">
                         <TableCell colSpan={7} className="text-right">Overall Total</TableCell>
                         <TableCell className="text-right font-mono">₹{overallTotal.toFixed(2)}</TableCell>
                         <TableCell className="print-hidden"></TableCell>

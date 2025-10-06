@@ -2,8 +2,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import Header from "@/components/Header";
-import Sidebar, { sidebarSections } from "@/components/Sidebar";
+import Sidebar from "@/components/Sidebar";
 import { motion } from 'framer-motion';
 
 export default function AppLayout({
@@ -12,11 +11,6 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  
-  const allItems = sidebarSections.flatMap(section => section.items);
-  const currentPage = allItems.find(item => pathname.startsWith(item.href));
-
-  const title = currentPage ? currentPage.name : 'Dashboard';
 
   return (
     <div className="relative min-h-screen w-full">
