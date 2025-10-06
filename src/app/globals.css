@@ -145,6 +145,12 @@
   animation: gradient-animation 18s ease infinite;
 }
 
+.animated-background-field {
+  background: linear-gradient(334deg, #059669, #06b6d4, #8b5cf6);
+  background-size: 180% 180%;
+  animation: gradient-animation 18s ease infinite;
+}
+
 .animated-background::after {
   content: '';
   position: absolute;

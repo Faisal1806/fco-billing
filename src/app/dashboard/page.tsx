@@ -1,4 +1,3 @@
-
 'use client'
 
 import * as React from 'react';
@@ -13,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import placeholderImages from '@/app/lib/placeholder-images.json';
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 
 interface DailyStats {
@@ -138,7 +138,7 @@ const StatCard = ({ title, value, icon: Icon, note, iconBgColor }: { title: stri
 const AnimatedButton = ({ children, className, onClick }: { children: React.ReactNode, className: string, onClick: () => void }) => (
     <motion.button
         onClick={onClick}
-        className={cn("relative overflow-hidden h-20 text-white text-lg flex flex-col gap-1 backdrop-blur-sm", className)}
+        className={cn("relative overflow-hidden h-20 text-white text-lg flex flex-col gap-1 items-center justify-center rounded-xl", className)}
         whileHover={{ scale: 1.05, boxShadow: "0px 0px 15px rgba(255,255,255,0.3)" }}
         whileTap={{ scale: 0.95 }}
         transition={{ type: "spring", stiffness: 400, damping: 17 }}
@@ -721,7 +721,7 @@ export default function DashboardPage() {
                 data-ai-hint={placeholderImages.dashboardHeader.hint}
             />
             <div className="absolute inset-0 bg-black/50 flex flex-col justify-end p-6">
-                <h1 className="text-3xl md:text-4xl font-bold text-white shadow-lg">Welcome to SwiftSale</h1>
+                <h1 className="text-3xl md:text-4xl font-bold text-white shadow-lg">Welcome to F.Co</h1>
                 <p className="text-lg text-white/80 shadow-md">Your complete business management solution.</p>
             </div>
         </div>
