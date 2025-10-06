@@ -88,27 +88,22 @@ export default function LoginPage() {
                 transition={{ duration: 0.7, ease: "easeOut", delay: 1 }}
              >
                 <h2 className="text-2xl font-bold text-center text-white">Admin Login</h2>
-                <div className="relative mt-6">
-                    <div className="absolute inset-0 animated-background-field rounded-md opacity-20"></div>
-                    <Input 
-                        id="password" 
-                        type="password" 
-                        required 
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        onKeyPress={handleKeyPress}
-                        className="bg-transparent border-2 border-gray-500/50 focus:border-sky-400 text-white peer w-full relative z-10"
-                        autoComplete="current-password"
-                    />
-                    <Label 
-                        htmlFor="password"
-                        className="absolute top-1/2 -translate-y-1/2 left-3 px-1 text-gray-400 transition-all duration-200 ease-in-out pointer-events-none z-20
-                                peer-focus:-translate-y-[150%] peer-focus:text-sky-400 peer-focus:text-xs peer-focus:bg-gray-800
-                                peer-valid:-translate-y-[150%] peer-valid:text-sky-400 peer-valid:text-xs peer-valid:bg-gray-800"
-                    >
-                        Password
-                    </Label>
-                    <KeyRound className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 z-10" />
+                <div className="mt-6">
+                    <Label htmlFor="password" className="sr-only">Password</Label>
+                    <div className="relative">
+                        <Input 
+                            id="password" 
+                            type="password" 
+                            placeholder="Password"
+                            required 
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            onKeyPress={handleKeyPress}
+                            className="bg-transparent border-2 border-gray-500/50 focus:border-sky-400 text-white w-full pl-10"
+                            autoComplete="current-password"
+                        />
+                         <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    </div>
                 </div>
 
                 <Button onClick={handleLogin} className="w-full mt-6 bg-sky-500 hover:bg-sky-600 text-white">
