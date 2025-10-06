@@ -21,10 +21,16 @@ import {
   Users,
   ShoppingBasket,
   Smile,
+  LogOut,
+  Menu,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { SheetClose } from "@/components/ui/sheet";
+import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Logo } from "./logo";
+import { Button } from "./ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
+import { ThemeSwitcher } from "./theme-switcher";
 
 export const sidebarSections = [
     {
@@ -69,6 +75,16 @@ export const sidebarSections = [
 
 export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const handleLogout = () => {
+      if (typeof window !== 'undefined') {
+          localStorage.removeItem('userRole');
+      }
+      toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
+      router.push('/login');
+  };
 
   const renderLink = (item: any) => {
     const { name, href, icon: Icon } = item;
@@ -77,8 +93,8 @@ export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
        <Link
         href={href}
         className={cn(
-          "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
-          isActive && "bg-primary text-primary-foreground hover:text-primary-foreground/90"
+          "flex items-center gap-3 rounded-lg px-3 py-2 text-primary-foreground/70 transition-all hover:text-primary-foreground hover:bg-white/10",
+          isActive && "bg-white/20 text-primary-foreground"
         )}
       >
         <Icon className="h-4 w-4" />
@@ -93,18 +109,18 @@ export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
   };
 
   return (
-    <div className="flex h-full max-h-screen flex-col gap-2">
-      <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-        <Link href="/" className="flex items-center gap-2 font-semibold">
-          <Logo className="h-6 w-6" />
+    <div className="flex h-full max-h-screen flex-col gap-2 bg-black/30 backdrop-blur-md">
+      <div className="flex h-16 items-center border-b border-white/10 px-4 shrink-0">
+        <Link href="/" className="flex items-center gap-2 font-semibold text-primary-foreground">
+          <Logo className="h-8 w-8" />
           <span className="">SwiftSale</span>
         </Link>
       </div>
-      <div className="flex-1">
-        <nav className="grid items-start p-2 text-sm font-medium lg:px-4">
+      <div className="flex-1 overflow-y-auto">
+        <nav className="grid items-start p-2 text-sm font-medium">
           {sidebarSections.map((section) => (
             <div key={section.title || 'dashboard'} className="py-2">
-             {section.title && <h3 className="mb-2 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+             {section.title && <h3 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-primary-foreground/50">
                 {section.title}
               </h3>}
               {section.items.map((item) => (
@@ -114,15 +130,42 @@ export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
           ))}
         </nav>
       </div>
+       <div className="mt-auto p-4 border-t border-white/10">
+          <div className="flex items-center justify-between">
+              <ThemeSwitcher />
+              <Button variant="ghost" size="sm" onClick={handleLogout} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-white/10">
+                  <LogOut className="h-4 w-4 mr-2" /> Logout
+              </Button>
+          </div>
+      </div>
     </div>
   );
 }
 
 const Sidebar = () => {
     return (
-        <div className="hidden border-r bg-muted/40 md:block">
+      <>
+        <div className="hidden md:fixed md:inset-y-0 md:z-50 md:w-[220px] lg:w-[280px] md:flex md:flex-col">
             <SidebarContent />
         </div>
+         <div className="fixed top-4 left-4 z-50 md:hidden">
+           <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="shrink-0 bg-black/30 backdrop-blur-md border-white/10 text-primary-foreground hover:bg-black/50"
+              >
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle navigation menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="flex flex-col p-0 bg-transparent border-0 w-[280px]">
+              <SidebarContent isMobile={true}/>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </>
     );
 };
 

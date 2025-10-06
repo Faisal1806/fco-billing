@@ -52,6 +52,7 @@ export default function LoginPage() {
 
   return (
     <div className="login-splash-screen">
+       <div className="animated-background"></div>
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}

@@ -3,6 +3,7 @@
 
 import * as React from 'react';
 import { useState, useEffect, useMemo } from 'react';
+import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, Package, UserCheck, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, History, BookOpen, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Hash, ShoppingCart, Globe, DollarSign, Banknote, Snowflake, Cog, CheckCircle, FileDown, FileSpreadsheet, Settings, Users, Menu, LayoutDashboard, File, ShoppingBasket, Truck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -15,6 +16,7 @@ import Link from 'next/link';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { sidebarSections } from '@/components/Sidebar';
+import placeholderImages from '@/lib/placeholder-images.json';
 
 
 interface DailyStats {
@@ -124,7 +126,7 @@ const normalizeName = (name: string): string => {
 
 
 const StatCard = ({ title, value, icon: Icon, note, iconBgColor }: { title: string, value: string, icon: React.ElementType, note?: string, iconBgColor?: string }) => (
-    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 relative overflow-hidden">
+    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 relative overflow-hidden bg-white/5 backdrop-blur-sm border-white/10">
         <CardContent className="p-4 z-10 relative">
             <p className="text-sm text-muted-foreground">{title}</p>
             <p className="text-2xl font-bold mt-1">{value}</p>
@@ -144,28 +146,28 @@ const QuickActions = () => {
             <h3 className="text-xl font-semibold mb-4">Quick Actions</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Button 
-                    className="h-20 bg-green-500 hover:bg-green-600 text-white text-lg flex flex-col gap-1"
+                    className="h-20 bg-green-500/80 hover:bg-green-600/80 text-white text-lg flex flex-col gap-1 backdrop-blur-sm"
                     onClick={() => router.push('/sales')}
                 >
                     <FileText className="h-6 w-6" />
                     New Watak
                 </Button>
                 <Button 
-                    className="h-20 bg-blue-500 hover:bg-blue-600 text-white text-lg flex flex-col gap-1"
+                    className="h-20 bg-blue-500/80 hover:bg-blue-600/80 text-white text-lg flex flex-col gap-1 backdrop-blur-sm"
                     onClick={() => router.push('/khata')}
                 >
                     <Users className="h-6 w-6" />
                     Add Customer
                 </Button>
                 <Button 
-                    className="h-20 bg-purple-500 hover:bg-purple-600 text-white text-lg flex flex-col gap-1"
+                    className="h-20 bg-purple-500/80 hover:bg-purple-600/80 text-white text-lg flex flex-col gap-1 backdrop-blur-sm"
                     onClick={() => router.push('/products')}
                 >
                     <PlusCircle className="h-6 w-6" />
                     Add Product
                 </Button>
                 <Button 
-                    className="h-20 bg-orange-500 hover:bg-orange-600 text-white text-lg flex flex-col gap-1"
+                    className="h-20 bg-orange-500/80 hover:bg-orange-600/80 text-white text-lg flex flex-col gap-1 backdrop-blur-sm"
                     onClick={() => router.push('/expenses')}
                 >
                     <DollarSign className="h-6 w-6" />
@@ -189,18 +191,7 @@ const FruitDashboard = ({ stats, yearlyStats, outsideSalesStats, accessoryStats,
     <div className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-                <Card className="shadow-lg">
-                    <CardHeader className="flex-row items-center gap-4">
-                        <div className="p-3 bg-primary rounded-lg">
-                            <Apple className="h-8 w-8 text-primary-foreground" />
-                        </div>
-                        <div>
-                            <CardTitle>Business Dashboard</CardTitle>
-                            <CardDescription>Daily, Monthly and Yearly Operations Overview</CardDescription>
-                        </div>
-                    </CardHeader>
-                </Card>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                      <StatCard 
                         title="Today's Sales (Net)"
                         value={`₹${stats?.totalSaleValue.toLocaleString('en-IN') ?? '0'}`}
@@ -289,38 +280,10 @@ const FruitDashboard = ({ stats, yearlyStats, outsideSalesStats, accessoryStats,
                  <QuickActions />
             </div>
              <div className="lg:col-span-1 space-y-6">
-                <Card className="shadow-lg">
-                    <CardHeader className="flex-row items-center justify-between">
-                        <div>
-                            <CardTitle className="flex items-center gap-2"><Trophy className="h-6 w-6 text-amber-500" /> All Growers</CardTitle>
-                            <CardDescription>This session's growers by net sales.</CardDescription>
-                        </div>
-                         <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="icon">
-                                    <Menu className="h-4 w-4" />
-                                    <span className="sr-only">App Navigation</span>
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                 {sidebarSections.map((section, index) => (
-                                    <React.Fragment key={section.title}>
-                                        {index > 0 && <DropdownMenuSeparator />}
-                                        <DropdownMenuLabel>{section.title}</DropdownMenuLabel>
-                                        <DropdownMenuGroup>
-                                            {section.items.map(item => (
-                                                <Link href={item.href} passHref key={item.name}>
-                                                    <DropdownMenuItem>
-                                                        <item.icon className="h-4 w-4 mr-2" />
-                                                        {item.name}
-                                                    </DropdownMenuItem>
-                                                </Link>
-                                            ))}
-                                        </DropdownMenuGroup>
-                                    </React.Fragment>
-                                ))}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                <Card className="shadow-lg bg-white/5 backdrop-blur-sm border-white/10">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Trophy className="h-6 w-6 text-amber-400" /> All Growers</CardTitle>
+                        <CardDescription>This session's growers by net sales.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         {growerProfits.length > 0 ? (
@@ -337,7 +300,7 @@ const FruitDashboard = ({ stats, yearlyStats, outsideSalesStats, accessoryStats,
                                             <TableRow key={grower.name}>
                                                 <TableCell>
                                                     <div className="flex items-center gap-2">
-                                                        <span className={`text-lg font-bold ${index < 3 ? 'text-amber-500' : 'text-muted-foreground'}`}>{index + 1}</span>
+                                                        <span className={`text-lg font-bold ${index < 3 ? 'text-amber-400' : 'text-muted-foreground'}`}>{index + 1}</span>
                                                         <span className="font-medium">{grower.name}</span>
                                                     </div>
                                                 </TableCell>
@@ -362,7 +325,7 @@ const FruitDashboard = ({ stats, yearlyStats, outsideSalesStats, accessoryStats,
                         )}
                     </CardContent>
                 </Card>
-                 <Card>
+                 <Card className="bg-white/5 backdrop-blur-sm border-white/10">
                     <CardHeader>
                         <CardTitle>Recent Wataks</CardTitle>
                         <CardDescription>A list of your 5 most recent sales invoices.</CardDescription>
@@ -399,7 +362,7 @@ const FruitDashboard = ({ stats, yearlyStats, outsideSalesStats, accessoryStats,
 };
 
 const AccessoriesDashboard = ({ stats, router }: { stats: AccessoryStats | null, router: any }) => (
-     <div className="space-y-8">
+     <div className="space-y-8 p-6">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
              <StatCard 
                 title="Today's Supplies Sale"
@@ -427,7 +390,7 @@ const AccessoriesDashboard = ({ stats, router }: { stats: AccessoryStats | null,
              />
         </div>
          <div className="mt-8 text-center">
-             <Button onClick={() => router.push('/accessories')}>
+             <Button onClick={() => router.push('/accessories')} variant="secondary">
                 Go to Full Supplies Ledger
             </Button>
          </div>
@@ -437,7 +400,7 @@ const AccessoriesDashboard = ({ stats, router }: { stats: AccessoryStats | null,
 const InventoryDashboard = ({ inventory, router }: { inventory: CategorizedProducts | null, router: any }) => {
 
     const InventoryTable = ({ title, products, icon: Icon, iconColor }: { title: string, products: Product[], icon: React.ElementType, iconColor: string }) => (
-        <Card>
+        <Card className="bg-white/5 backdrop-blur-sm border-white/10">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Icon className={`h-6 w-6 ${iconColor}`} />
@@ -477,17 +440,10 @@ const InventoryDashboard = ({ inventory, router }: { inventory: CategorizedProdu
     );
 
     return (
-        <div className="space-y-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Inventory Analytics</CardTitle>
-                    <CardDescription>A complete overview of your stock levels and product status.</CardDescription>
-                </CardHeader>
-                <CardContent className="flex justify-end">
-                     <Button onClick={() => router.push('/products')}>Manage Full Inventory</Button>
-                </CardContent>
-            </Card>
-
+        <div className="space-y-6 p-6">
+            <div className="text-center">
+                 <Button onClick={() => router.push('/products')} variant="secondary">Manage Full Inventory</Button>
+            </div>
             <div className="space-y-6">
                 <InventoryTable title="Fruit Products" products={inventory?.fruits ?? []} icon={Apple} iconColor="text-red-500" />
                 <InventoryTable title="Business Supplies" products={inventory?.accessories ?? []} icon={Box} iconColor="text-blue-500" />
@@ -729,7 +685,7 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-        <div className="flex justify-center items-center h-64">
+        <div className="flex justify-center items-center h-64 p-6">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             <p className="ml-4 text-muted-foreground">Calculating summary...</p>
         </div>
@@ -737,23 +693,41 @@ export default function DashboardPage() {
   }
   
   return (
-    <Tabs defaultValue="fruit" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="fruit"><Apple className="w-4 h-4 mr-2" />Fruit Business</TabsTrigger>
-            <TabsTrigger value="accessories"><Box className="w-4 h-4 mr-2" />Accessories</TabsTrigger>
-            <TabsTrigger value="inventory"><Package className="w-4 h-4 mr-2" />Inventory</TabsTrigger>
-        </TabsList>
-        <TabsContent value="fruit">
-            <FruitDashboard stats={stats} yearlyStats={yearlyStats} outsideSalesStats={outsideSalesStats} accessoryStats={accessoryStats} growerProfits={growerProfits} router={router} recentWataks={recentWataks}/>
-        </TabsContent>
-        <TabsContent value="accessories">
-            <AccessoriesDashboard stats={accessoryStats} router={router} />
-        </TabsContent>
-        <TabsContent value="inventory">
-            <InventoryDashboard inventory={inventory} router={router} />
-        </TabsContent>
-    </Tabs>
+    <>
+      <CardHeader>
+        <div className="relative h-48 md:h-64 rounded-xl overflow-hidden">
+            <Image 
+                src={placeholderImages.dashboardHeader.src}
+                alt={placeholderImages.dashboardHeader.alt}
+                fill
+                style={{objectFit: 'cover'}}
+                priority
+                data-ai-hint={placeholderImages.dashboardHeader.hint}
+            />
+            <div className="absolute inset-0 bg-black/50 flex flex-col justify-end p-6">
+                <h1 className="text-3xl md:text-4xl font-bold text-white shadow-lg">Welcome to SwiftSale</h1>
+                <p className="text-lg text-white/80 shadow-md">Your complete business management solution.</p>
+            </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="fruit" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-3 bg-white/10 backdrop-blur-sm">
+                <TabsTrigger value="fruit"><Apple className="w-4 h-4 mr-2" />Fruit Business</TabsTrigger>
+                <TabsTrigger value="accessories"><Box className="w-4 h-4 mr-2" />Accessories</TabsTrigger>
+                <TabsTrigger value="inventory"><Package className="w-4 h-4 mr-2" />Inventory</TabsTrigger>
+            </TabsList>
+            <TabsContent value="fruit">
+                <FruitDashboard stats={stats} yearlyStats={yearlyStats} outsideSalesStats={outsideSalesStats} accessoryStats={accessoryStats} growerProfits={growerProfits} router={router} recentWataks={recentWataks}/>
+            </TabsContent>
+            <TabsContent value="accessories">
+                <AccessoriesDashboard stats={accessoryStats} router={router} />
+            </TabsContent>
+            <TabsContent value="inventory">
+                <InventoryDashboard inventory={inventory} router={router} />
+            </TabsContent>
+        </Tabs>
+      </CardContent>
+    </>
   );
 }
-
-    
