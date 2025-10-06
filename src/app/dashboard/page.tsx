@@ -176,7 +176,16 @@ const QuickActions = () => {
     )
 }
 
-const FruitDashboard = ({ stats, yearlyStats, outsideSalesStats, accessoryStats, growerProfits, router, recentWataks }: { stats: DailyStats | null, yearlyStats: YearlyStats | null, outsideSalesStats: OutsideSalesStats | null, accessoryStats: AccessoryStats | null, growerProfits: GrowerProfit[], router: any, recentWataks: Invoice[] }) => (
+const FruitDashboard = ({ stats, yearlyStats, outsideSalesStats, accessoryStats, growerProfits, router, recentWataks }: { stats: DailyStats | null, yearlyStats: YearlyStats | null, outsideSalesStats: OutsideSalesStats | null, accessoryStats: AccessoryStats | null, growerProfits: GrowerProfit[], router: any, recentWataks: Invoice[] }) => {
+    const [showAllGrowers, setShowAllGrowers] = useState(false);
+    const displayedGrowers = useMemo(() => {
+        if (showAllGrowers) {
+            return growerProfits;
+        }
+        return growerProfits.slice(0, 10);
+    }, [growerProfits, showAllGrowers]);
+
+    return (
     <div className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
@@ -315,27 +324,39 @@ const FruitDashboard = ({ stats, yearlyStats, outsideSalesStats, accessoryStats,
                     </CardHeader>
                     <CardContent>
                         {growerProfits.length > 0 ? (
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Grower</TableHead>
-                                        <TableHead className="text-right">Net Sales</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {growerProfits.map((grower, index) => (
-                                        <TableRow key={grower.name}>
-                                            <TableCell>
-                                                <div className="flex items-center gap-2">
-                                                    <span className={`text-lg font-bold ${index < 3 ? 'text-amber-500' : 'text-muted-foreground'}`}>{index + 1}</span>
-                                                    <span className="font-medium">{grower.name}</span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-right font-mono">₹{grower.profit.toLocaleString('en-IN')}</TableCell>
+                            <>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Grower</TableHead>
+                                            <TableHead className="text-right">Net Sales</TableHead>
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {displayedGrowers.map((grower, index) => (
+                                            <TableRow key={grower.name}>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`text-lg font-bold ${index < 3 ? 'text-amber-500' : 'text-muted-foreground'}`}>{index + 1}</span>
+                                                        <span className="font-medium">{grower.name}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right font-mono">₹{grower.profit.toLocaleString('en-IN')}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                                {growerProfits.length > 10 && (
+                                    <div className="text-center mt-4">
+                                        <Button
+                                            variant="ghost"
+                                            onClick={() => setShowAllGrowers(!showAllGrowers)}
+                                        >
+                                            {showAllGrowers ? 'Show Less' : 'Show More'}
+                                        </Button>
+                                    </div>
+                                )}
+                            </>
                         ) : (
                              <p className="text-sm text-muted-foreground text-center py-4">No sales data recorded this year to calculate grower profits.</p>
                         )}
@@ -374,7 +395,8 @@ const FruitDashboard = ({ stats, yearlyStats, outsideSalesStats, accessoryStats,
             </div>
         </div>
     </div>
-);
+    )
+};
 
 const AccessoriesDashboard = ({ stats, router }: { stats: AccessoryStats | null, router: any }) => (
      <div className="space-y-8">
