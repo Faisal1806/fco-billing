@@ -5,18 +5,14 @@ import * as React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Package, UserCheck, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, History, BookOpen, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Hash, ShoppingCart, Globe, DollarSign, Banknote, Snowflake, Cog, CheckCircle, FileDown, FileSpreadsheet, Settings, Users, Menu, LayoutDashboard, File, ShoppingBasket, Truck } from 'lucide-react';
+import { Loader2, Package, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, Users, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Globe, Truck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import RateList from '@/components/RateList';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import Link from 'next/link';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { sidebarSections } from '@/components/Sidebar';
 import placeholderImages from '@/app/lib/placeholder-images.json';
+import { motion } from 'framer-motion';
 
 
 interface DailyStats {
@@ -126,7 +122,7 @@ const normalizeName = (name: string): string => {
 
 
 const StatCard = ({ title, value, icon: Icon, note, iconBgColor }: { title: string, value: string, icon: React.ElementType, note?: string, iconBgColor?: string }) => (
-    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 relative overflow-hidden bg-white/5 backdrop-blur-sm border-white/10">
+    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 relative overflow-hidden bg-card/80 backdrop-blur-sm border-white/10 rounded-2xl">
         <CardContent className="p-4 z-10 relative">
             <p className="text-sm text-muted-foreground">{title}</p>
             <p className="text-2xl font-bold mt-1">{value}</p>
@@ -139,40 +135,60 @@ const StatCard = ({ title, value, icon: Icon, note, iconBgColor }: { title: stri
     </Card>
 );
 
+const AnimatedButton = ({ children, className, onClick }: { children: React.ReactNode, className: string, onClick: () => void }) => (
+    <motion.button
+        onClick={onClick}
+        className={cn("relative overflow-hidden h-20 text-white text-lg flex flex-col gap-1 backdrop-blur-sm", className)}
+        whileHover={{ scale: 1.05, boxShadow: "0px 0px 15px rgba(255,255,255,0.3)" }}
+        whileTap={{ scale: 0.95 }}
+        transition={{ type: "spring", stiffness: 400, damping: 17 }}
+    >
+        {children}
+        <motion.span
+            className="absolute inset-0 z-0"
+            initial={{ scale: 0, opacity: 0.5 }}
+            animate={{ scale: 4, opacity: 0 }}
+            transition={{ duration: 0.6, ease: "easeInOut" }}
+            key={Math.random()} // Re-trigger animation on each click
+        />
+    </motion.button>
+);
+
+
 const QuickActions = () => {
     const router = useRouter();
     return (
         <div className="my-6">
             <h3 className="text-xl font-semibold mb-4">Quick Actions</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Button 
-                    className="h-20 bg-green-500/80 hover:bg-green-600/80 text-white text-lg flex flex-col gap-1 backdrop-blur-sm"
+                <AnimatedButton 
+                    className="bg-green-500/80 hover:bg-green-600/80"
                     onClick={() => router.push('/sales')}
                 >
                     <FileText className="h-6 w-6" />
                     New Watak
-                </Button>
-                <Button 
-                    className="h-20 bg-blue-500/80 hover:bg-blue-600/80 text-white text-lg flex flex-col gap-1 backdrop-blur-sm"
+                </AnimatedButton>
+                <AnimatedButton 
+                    className="bg-blue-500/80 hover:bg-blue-600/80"
                     onClick={() => router.push('/khata')}
                 >
                     <Users className="h-6 w-6" />
                     Add Customer
-                </Button>
-                <Button 
-                    className="h-20 bg-purple-500/80 hover:bg-purple-600/80 text-white text-lg flex flex-col gap-1 backdrop-blur-sm"
+                </AnimatedButton>
+                <AnimatedButton 
+                    className="bg-purple-500/80 hover:bg-purple-600/80"
                     onClick={() => router.push('/products')}
                 >
                     <PlusCircle className="h-6 w-6" />
                     Add Product
-                </Button>
-                <Button 
-                    className="h-20 bg-orange-500/80 hover:bg-orange-600/80 text-white text-lg flex flex-col gap-1 backdrop-blur-sm"
+                </AnimatedButton>
+                <AnimatedButton 
+                    className="bg-orange-500/80 hover:bg-orange-600/80"
                     onClick={() => router.push('/expenses')}
                 >
-                    <DollarSign className="h-6 w-6" />
+                    <IndianRupee className="h-6 w-6" />
                     Record Expense
-                </Button>
+                </AnimatedButton>
             </div>
         </div>
     )
@@ -213,7 +229,7 @@ const FruitDashboard = ({ stats, yearlyStats, outsideSalesStats, accessoryStats,
                         note="From Watak deductions"
                         iconBgColor="bg-red-500"
                     />
-                    <StatCard 
+                     <StatCard 
                         title="This Year's Gross Sales"
                         value={`₹${yearlyStats?.yearGrossSales.toLocaleString('en-IN') ?? '0'}`}
                         icon={IndianRupee}
@@ -251,7 +267,7 @@ const FruitDashboard = ({ stats, yearlyStats, outsideSalesStats, accessoryStats,
                      <StatCard 
                         title="Total Nugs Sold (This Year)"
                         value={yearlyStats?.yearTotalNugs.toLocaleString('en-IN') ?? '0'}
-                        icon={Hash}
+                        icon={FileText}
                         note="Patti + Dabba (Local)"
                         iconBgColor="bg-slate-500"
                      />
@@ -280,7 +296,7 @@ const FruitDashboard = ({ stats, yearlyStats, outsideSalesStats, accessoryStats,
                  <QuickActions />
             </div>
              <div className="lg:col-span-1 space-y-6">
-                <Card className="shadow-lg bg-white/5 backdrop-blur-sm border-white/10">
+                <Card className="shadow-lg bg-card/80 backdrop-blur-sm border-white/10 rounded-2xl">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Trophy className="h-6 w-6 text-amber-400" /> All Growers</CardTitle>
                         <CardDescription>This session's growers by net sales.</CardDescription>
@@ -325,7 +341,7 @@ const FruitDashboard = ({ stats, yearlyStats, outsideSalesStats, accessoryStats,
                         )}
                     </CardContent>
                 </Card>
-                 <Card className="bg-white/5 backdrop-blur-sm border-white/10">
+                 <Card className="bg-card/80 backdrop-blur-sm border-white/10 rounded-2xl">
                     <CardHeader>
                         <CardTitle>Recent Wataks</CardTitle>
                         <CardDescription>A list of your 5 most recent sales invoices.</CardDescription>
@@ -400,7 +416,7 @@ const AccessoriesDashboard = ({ stats, router }: { stats: AccessoryStats | null,
 const InventoryDashboard = ({ inventory, router }: { inventory: CategorizedProducts | null, router: any }) => {
 
     const InventoryTable = ({ title, products, icon: Icon, iconColor }: { title: string, products: Product[], icon: React.ElementType, iconColor: string }) => (
-        <Card className="bg-white/5 backdrop-blur-sm border-white/10">
+        <Card className="bg-card/80 backdrop-blur-sm border-white/10 rounded-2xl shadow-xl">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Icon className={`h-6 w-6 ${iconColor}`} />
@@ -712,7 +728,7 @@ export default function DashboardPage() {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="fruit" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-3 bg-white/10 backdrop-blur-sm">
+            <TabsList className="grid w-full grid-cols-3 bg-card/80 backdrop-blur-sm border-white/10 rounded-xl">
                 <TabsTrigger value="fruit"><Apple className="w-4 h-4 mr-2" />Fruit Business</TabsTrigger>
                 <TabsTrigger value="accessories"><Box className="w-4 h-4 mr-2" />Accessories</TabsTrigger>
                 <TabsTrigger value="inventory"><Package className="w-4 h-4 mr-2" />Inventory</TabsTrigger>
