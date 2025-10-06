@@ -109,7 +109,7 @@ export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
   };
 
   return (
-    <div className="flex h-full max-h-screen flex-col gap-2 bg-black/30 backdrop-blur-md">
+    <div className="flex h-full max-h-screen flex-col gap-2 bg-black/30 backdrop-blur-md border-r border-white/10">
       <div className="flex h-16 items-center border-b border-white/10 px-4 shrink-0">
         <Link href="/" className="flex items-center gap-2 font-semibold text-primary-foreground">
           <Logo className="h-8 w-8" />
@@ -154,7 +154,7 @@ const Sidebar = () => {
               <Button
                 variant="outline"
                 size="icon"
-                className="shrink-0 bg-black/30 backdrop-blur-md border-white/10 text-primary-foreground hover:bg-black/50"
+                className="shrink-0 bg-black/30 backdrop-blur-md border-white/10 text-primary-foreground hover:bg-black/50 hover:text-white"
               >
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Toggle navigation menu</span>
