@@ -283,8 +283,8 @@ const FruitDashboard = ({ stats, yearlyStats, outsideSalesStats, accessoryStats,
                 <Card className="shadow-lg">
                     <CardHeader className="flex-row items-center justify-between">
                         <div>
-                            <CardTitle className="flex items-center gap-2"><Trophy className="h-6 w-6 text-amber-500" /> Top Growers</CardTitle>
-                            <CardDescription>This session's top growers by net sales.</CardDescription>
+                            <CardTitle className="flex items-center gap-2"><Trophy className="h-6 w-6 text-amber-500" /> All Growers</CardTitle>
+                            <CardDescription>This session's growers by net sales.</CardDescription>
                         </div>
                          <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -626,8 +626,7 @@ export default function DashboardPage() {
     });
 
     return Object.values(profitsByGrower)
-        .sort((a,b) => b.profit - a.profit)
-        .slice(0, 10);
+        .sort((a,b) => b.profit - a.profit);
   }, [allInvoices, isLoading]);
 
   const accessoryStats = useMemo(() => {
