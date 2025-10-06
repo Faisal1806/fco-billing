@@ -16,7 +16,7 @@ import Link from 'next/link';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { sidebarSections } from '@/components/Sidebar';
-import placeholderImages from '@/lib/placeholder-images.json';
+import placeholderImages from '@/app/lib/placeholder-images.json';
 
 
 interface DailyStats {
