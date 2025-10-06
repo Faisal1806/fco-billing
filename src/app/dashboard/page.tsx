@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import placeholderImages from '@/app/lib/placeholder-images.json';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { AnimatedShinyButton } from '@/components/ui/animated-button';
 
 
 interface DailyStats {
@@ -135,25 +136,6 @@ const StatCard = ({ title, value, icon: Icon, note, iconBgColor }: { title: stri
     </Card>
 );
 
-const AnimatedButton = ({ children, className, onClick }: { children: React.ReactNode, className: string, onClick: () => void }) => (
-    <motion.button
-        onClick={onClick}
-        className={cn("relative overflow-hidden h-20 text-white text-lg flex flex-col gap-1 items-center justify-center rounded-xl", className)}
-        whileHover={{ scale: 1.05, boxShadow: "0px 0px 15px rgba(255,255,255,0.3)" }}
-        whileTap={{ scale: 0.95 }}
-        transition={{ type: "spring", stiffness: 400, damping: 17 }}
-    >
-        {children}
-        <motion.span
-            className="absolute inset-0 z-0"
-            initial={{ scale: 0, opacity: 0.5 }}
-            animate={{ scale: 4, opacity: 0 }}
-            transition={{ duration: 0.6, ease: "easeInOut" }}
-            key={Math.random()} // Re-trigger animation on each click
-        />
-    </motion.button>
-);
-
 
 const QuickActions = () => {
     const router = useRouter();
@@ -161,34 +143,34 @@ const QuickActions = () => {
         <div className="my-6">
             <h3 className="text-xl font-semibold mb-4">Quick Actions</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <AnimatedButton 
+                 <AnimatedShinyButton
                     className="bg-green-500/80 hover:bg-green-600/80"
                     onClick={() => router.push('/sales')}
                 >
                     <FileText className="h-6 w-6" />
                     New Watak
-                </AnimatedButton>
-                <AnimatedButton 
+                </AnimatedShinyButton>
+                <AnimatedShinyButton
                     className="bg-blue-500/80 hover:bg-blue-600/80"
                     onClick={() => router.push('/khata')}
                 >
                     <Users className="h-6 w-6" />
                     Add Customer
-                </AnimatedButton>
-                <AnimatedButton 
+                </AnimatedShinyButton>
+                <AnimatedShinyButton
                     className="bg-purple-500/80 hover:bg-purple-600/80"
                     onClick={() => router.push('/products')}
                 >
                     <PlusCircle className="h-6 w-6" />
                     Add Product
-                </AnimatedButton>
-                <AnimatedButton 
+                </AnimatedShinyButton>
+                <AnimatedShinyButton
                     className="bg-orange-500/80 hover:bg-orange-600/80"
                     onClick={() => router.push('/expenses')}
                 >
                     <IndianRupee className="h-6 w-6" />
                     Record Expense
-                </AnimatedButton>
+                </AnimatedShinyButton>
             </div>
         </div>
     )
