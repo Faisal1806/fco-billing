@@ -153,13 +153,13 @@ const Sidebar = () => {
         <div className="hidden md:fixed md:inset-y-0 md:z-50 md:w-[220px] lg:w-[280px] md:flex md:flex-col">
             <SidebarContent />
         </div>
-         <div className="fixed top-4 left-4 z-50 md:hidden">
+         <header className="md:hidden sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-card/80 backdrop-blur-sm px-4">
            <Sheet>
             <SheetTrigger asChild>
               <Button
                 variant="outline"
                 size="icon"
-                className="shrink-0 bg-black/30 backdrop-blur-md border-white/10 text-primary-foreground hover:bg-black/50 hover:text-white"
+                className="shrink-0"
               >
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Toggle navigation menu</span>
@@ -169,7 +169,11 @@ const Sidebar = () => {
               <SidebarContent isMobile={true}/>
             </SheetContent>
           </Sheet>
-        </div>
+           <div className="flex items-center gap-2 font-semibold text-foreground">
+              <Logo className="h-8 w-8" />
+              <span className="">F.Co Billing</span>
+            </div>
+        </header>
       </>
     );
 };
