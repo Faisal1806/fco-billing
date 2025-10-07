@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Package, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, Users, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Globe, Truck } from 'lucide-react';
+import { Loader2, Package, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, Users, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Globe, Truck, BookOpen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -161,14 +161,14 @@ const QuickActions = () => {
                     onClick={() => router.push('/sales')}
                 >
                      <FileText className="h-6 w-6 mr-2" />
-                    New Watak
+                    New Invoice
                 </AnimatedShinyButton>
                 <AnimatedShinyButton
                     className="bg-blue-500/80 hover:bg-blue-600/80"
                     onClick={() => router.push('/khata')}
                 >
-                    <Users className="h-6 w-6 mr-2" />
-                    Add Customer
+                    <BookOpen className="h-6 w-6 mr-2" />
+                    Party Ledgers
                 </AnimatedShinyButton>
                 <AnimatedShinyButton
                     className="bg-purple-500/80 hover:bg-purple-600/80"
