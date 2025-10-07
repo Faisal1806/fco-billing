@@ -124,56 +124,68 @@ const normalizeName = (name: string): string => {
 
 
 const StatCard = ({ title, value, icon: Icon, note, iconBgColor }: { title: string, value: string, icon: React.ElementType, note?: string, iconBgColor?: string }) => (
-    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 relative overflow-hidden bg-card/80 backdrop-blur-sm border-white/10 rounded-2xl">
-        <CardContent className="p-4 z-10 relative">
-            <p className="text-sm text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold mt-1">{value}</p>
-            <p className="text-xs text-muted-foreground mt-1">{note}</p>
-        </CardContent>
-        <div className={`absolute -right-4 -top-2 h-16 w-16 rounded-full ${iconBgColor || 'bg-gray-100'} opacity-30`}></div>
-         <div className={`absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full ${iconBgColor || 'bg:gray-100'}`}>
-            <Icon className="h-6 w-6 text-white" />
-        </div>
-    </Card>
+    <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        whileHover={{ scale: 1.05, boxShadow: "0px 10px 30px -5px rgba(0, 0, 0, 0.3)" }}
+    >
+        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 relative overflow-hidden bg-card/80 backdrop-blur-sm border-white/10 rounded-2xl h-full">
+            <CardContent className="p-4 z-10 relative">
+                <p className="text-sm text-muted-foreground">{title}</p>
+                <p className="text-2xl font-bold mt-1">{value}</p>
+                <p className="text-xs text-muted-foreground mt-1">{note}</p>
+            </CardContent>
+            <div className={`absolute -right-4 -top-2 h-16 w-16 rounded-full ${iconBgColor || 'bg-amber-500'} opacity-30`}></div>
+            <div className={`absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-gradient-to-br from-amber-400 to-orange-500`}>
+                <Icon className="h-6 w-6 text-white" />
+            </div>
+        </Card>
+    </motion.div>
 );
 
 
 const QuickActions = () => {
     const router = useRouter();
     return (
-        <div className="my-6">
+        <motion.div 
+            className="my-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+        >
             <h3 className="text-xl font-semibold mb-4">Quick Actions</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                  <AnimatedShinyButton
                     className="bg-green-500/80 hover:bg-green-600/80"
                     onClick={() => router.push('/sales')}
                 >
-                     <FileText className="h-6 w-6" />
+                     <FileText className="h-6 w-6 mr-2" />
                     New Watak
                 </AnimatedShinyButton>
                 <AnimatedShinyButton
                     className="bg-blue-500/80 hover:bg-blue-600/80"
                     onClick={() => router.push('/khata')}
                 >
-                    <Users className="h-6 w-6" />
+                    <Users className="h-6 w-6 mr-2" />
                     Add Customer
                 </AnimatedShinyButton>
                 <AnimatedShinyButton
                     className="bg-purple-500/80 hover:bg-purple-600/80"
                     onClick={() => router.push('/products')}
                 >
-                    <PlusCircle className="h-6 w-6" />
+                    <PlusCircle className="h-6 w-6 mr-2" />
                     Add Product
                 </AnimatedShinyButton>
                 <AnimatedShinyButton
                     className="bg-orange-500/80 hover:bg-orange-600/80"
                     onClick={() => router.push('/expenses')}
                 >
-                    <IndianRupee className="h-6 w-6" />
+                    <IndianRupee className="h-6 w-6 mr-2" />
                     Record Expense
                 </AnimatedShinyButton>
             </div>
-        </div>
+        </motion.div>
     )
 }
 
@@ -196,84 +208,72 @@ const FruitDashboard = ({ stats, yearlyStats, outsideSalesStats, accessoryStats,
                         value={`₹${stats?.totalSaleValue.toLocaleString('en-IN') ?? '0'}`}
                         icon={TrendingUp}
                         note={`From ${stats?.pattiSold ?? 0} Patti / ${stats?.dabbaSold ?? 0} Dabba`}
-                        iconBgColor="bg-green-500"
                      />
                     <StatCard 
                         title="This Month's Sales (Net)"
                         value={`₹${yearlyStats?.monthSales.toLocaleString('en-IN') ?? '0'}`}
                         icon={Calendar}
                         note="Current calendar month"
-                        iconBgColor="bg-blue-500"
                      />
                     <StatCard
                         title="This Month's Expenses"
                         value={`₹${yearlyStats?.totalExpenses.toLocaleString('en-IN') ?? '0'}`}
                         icon={TrendingDown}
                         note="From Watak deductions"
-                        iconBgColor="bg-red-500"
                     />
                      <StatCard 
                         title="This Year's Gross Sales"
                         value={`₹${yearlyStats?.yearGrossSales.toLocaleString('en-IN') ?? '0'}`}
                         icon={IndianRupee}
                         note="Total sale value this year"
-                        iconBgColor="bg-sky-500"
                      />
                      <StatCard 
                         title="This Year's Net Sales"
                         value={`₹${yearlyStats?.yearNetSales.toLocaleString('en-IN') ?? '0'}`}
                         icon={HandCoins}
                         note="After all expenses"
-                        iconBgColor="bg-amber-500"
                      />
                       <StatCard 
                         title="This Year's Expenses"
                         value={`₹${yearlyStats?.yearTotalExpenses.toLocaleString('en-IN') ?? '0'}`}
                         icon={TrendingDown}
                         note="All Watak deductions this year"
-                        iconBgColor="bg-pink-500"
                      />
                      <StatCard 
                         title="Total Patti Sold (This Year)"
                         value={yearlyStats?.yearTotalPatti.toLocaleString('en-IN') ?? '0'}
                         icon={Box}
                         note="Local sales volume"
-                        iconBgColor="bg-indigo-500"
                      />
                      <StatCard 
                         title="Total Dabba Sold (This Year)"
                         value={yearlyStats?.yearTotalDabba.toLocaleString('en-IN') ?? '0'}
                         icon={Package}
                         note="Local sales volume"
-                        iconBgColor="bg-cyan-500"
                      />
                      <StatCard 
                         title="Total Nugs Sold (This Year)"
                         value={yearlyStats?.yearTotalNugs.toLocaleString('en-IN') ?? '0'}
                         icon={FileText}
                         note="Patti + Dabba (Local)"
-                        iconBgColor="bg-slate-500"
                      />
                       <StatCard 
                         title="Total Patti Sent Outside (Year)"
                         value={outsideSalesStats?.yearTotalPattiSent.toLocaleString('en-IN') ?? '0'}
                         icon={Truck}
                         note="Forwarding volume"
-                        iconBgColor="bg-lime-600"
                      />
                      <StatCard 
                         title="Total Dabba Sent Outside (Year)"
                         value={outsideSalesStats?.yearTotalDabbaSent.toLocaleString('en-IN') ?? '0'}
                         icon={Truck}
                         note="Forwarding volume"
-                        iconBgColor="bg-emerald-600"
                      />
                      <StatCard 
                         title="Total Nugs Sent Outside (Year)"
                         value={outsideSalesStats?.yearTotalNugsSent.toLocaleString('en-IN') ?? '0'}
                         icon={Globe}
                         note="Total Forwarding"
-                        iconBgColor="bg-teal-600"
                      />
                 </div>
                  <QuickActions />
@@ -367,25 +367,21 @@ const AccessoriesDashboard = ({ stats, router }: { stats: AccessoryStats | null,
                 title="Today's Supplies Sale"
                 value={`₹${stats?.todaySales.toLocaleString('en-IN') ?? '0'}`}
                 icon={Package}
-                iconBgColor="bg-green-500"
              />
              <StatCard 
                 title="This Month's Supplies Sale"
                 value={`₹${stats?.monthSales.toLocaleString('en-IN') ?? '0'}`}
                 icon={Calendar}
-                 iconBgColor="bg-blue-500"
              />
              <StatCard 
                 title="Outstanding Credit (Khata)"
                 value={`₹${stats?.outstandingCredit.toLocaleString('en-IN') ?? '0'}`}
                 icon={CreditCard}
-                 iconBgColor="bg-orange-500"
              />
              <StatCard 
                 title="Top Selling Item"
                 value={stats?.topItem ?? 'N/A'}
                 icon={Star}
-                 iconBgColor="bg-purple-500"
              />
         </div>
          <div className="mt-8 text-center">
