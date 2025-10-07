@@ -710,21 +710,21 @@ export default function DashboardPage() {
         </div>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="fruit" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-3 bg-card/80 backdrop-blur-sm border-white/10 rounded-xl">
-                <TabsTrigger value="fruit"><Apple className="w-4 h-4 mr-2" />Fruit Business</TabsTrigger>
-                <TabsTrigger value="accessories"><Box className="w-4 h-4 mr-2" />Accessories</TabsTrigger>
-                <TabsTrigger value="inventory"><Package className="w-4 h-4 mr-2" />Inventory</TabsTrigger>
-            </TabsList>
-            <TabsContent value="fruit">
-                <FruitDashboard stats={stats} yearlyStats={yearlyStats} outsideSalesStats={outsideSalesStats} accessoryStats={accessoryStats} growerProfits={growerProfits} router={router} recentWataks={recentWataks}/>
-            </TabsContent>
-            <TabsContent value="accessories">
-                <AccessoriesDashboard stats={accessoryStats} router={router} />
-            </TabsContent>
-            <TabsContent value="inventory">
-                <InventoryDashboard inventory={inventory} router={router} />
-            </TabsContent>
+        <Tabs defaultValue="fruit" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 bg-card/80 backdrop-blur-sm border-white/10 rounded-xl">
+              <TabsTrigger value="fruit"><Apple className="w-4 h-4 mr-2" />Fruit Business</TabsTrigger>
+              <TabsTrigger value="accessories"><Box className="w-4 h-4 mr-2" />Accessories</TabsTrigger>
+              <TabsTrigger value="inventory"><Package className="w-4 h-4 mr-2" />Inventory</TabsTrigger>
+          </TabsList>
+          <TabsContent value="fruit" className="mt-4">
+              <FruitDashboard stats={stats} yearlyStats={yearlyStats} outsideSalesStats={outsideSalesStats} accessoryStats={accessoryStats} growerProfits={growerProfits} router={router} recentWataks={recentWataks}/>
+          </TabsContent>
+          <TabsContent value="accessories" className="mt-4">
+              <AccessoriesDashboard stats={accessoryStats} router={router} />
+          </TabsContent>
+          <TabsContent value="inventory" className="mt-4">
+              <InventoryDashboard inventory={inventory} router={router} />
+          </TabsContent>
         </Tabs>
       </CardContent>
     </>
