@@ -80,7 +80,7 @@ const ReceiptEntryRow = ({
 );
 
 export function ReceiptMakingTab() {
-  const { toast } = useToast();
+  const { toast, dismiss } = useToast();
   const router = useRouter();
 
   const initialReceiptDetails = {
@@ -206,15 +206,17 @@ export function ReceiptMakingTab() {
     fetchReceipts(); // Re-fetch to update list
     setIsEditing(true);
 
-    toast({
-      title: isEditing ? 'Payment Updated' : 'Payment Saved',
-      description: 'The payment has been successfully saved to this device.',
+    const { id } = toast({
+      lottie: '/animations/bill_saved.json',
+      title: isEditing ? 'Receipt Updated!' : 'Receipt Saved!',
+      description: 'The goods receipt has been successfully saved.',
     });
+    setTimeout(() => dismiss(id), 2000);
   };
 
   const handleViewReceipt = () => {
       if (!isEditing || !receiptDetails.no) {
-          toast({ variant: 'destructive', title: 'Cannot View', description: 'Please save the payment first.'});
+          toast({ variant: 'destructive', title: 'Cannot View', description: 'Please save the receipt first.'});
           return;
       }
       router.push(`/receipt/${receiptDetails.no}`);
@@ -237,11 +239,11 @@ export function ReceiptMakingTab() {
 
   const handleDeleteReceipt = async (receiptId: string) => {
     if(userRole !== 'admin') {
-        toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to delete payments.' });
+        toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to delete receipts.' });
         return;
     }
 
-    if(!window.confirm(`Are you sure you want to delete Payment #${receiptId}? This action cannot be undone.`)) {
+    if(!window.confirm(`Are you sure you want to delete Receipt #${receiptId}? This action cannot be undone.`)) {
         return;
     }
     
@@ -249,8 +251,8 @@ export function ReceiptMakingTab() {
 
     fetchReceipts();
     toast({
-        title: "Payment Deleted",
-        description: `Payment #${receiptId} has been successfully deleted.`
+        title: "Receipt Deleted",
+        description: `Receipt #${receiptId} has been successfully deleted.`
     });
     
     if (receiptDetails.no === receiptId) {
@@ -266,7 +268,7 @@ export function ReceiptMakingTab() {
                     <div className="text-sm font-bold">🍎 F.Co</div>
                     <div className="text-center flex-1">
                         <h2 className="text-2xl font-bold">F.Co - FIRDOUS AHMAD & COMPANY</h2>
-                        <p className="text-sm text-muted-foreground">Goods Payment</p>
+                        <p className="text-sm text-muted-foreground">Goods Receipt</p>
                     </div>
                     <div className="text-sm font-bold">🍎 F.Co</div>
                 </div>
@@ -278,7 +280,7 @@ export function ReceiptMakingTab() {
                         <div className="flex items-center gap-2">
                         <Input value={receiptDetails.no} onChange={e => handleDetailChange('no', e.target.value)} disabled={isEditing} />
                          {isEditing && (
-                            <Button variant="outline" size="icon" onClick={resetForm} title="Create a new payment">
+                            <Button variant="outline" size="icon" onClick={resetForm} title="Create a new receipt">
                                 <FilePlus className="h-4 w-4" />
                             </Button>
                         )}
@@ -347,16 +349,16 @@ export function ReceiptMakingTab() {
                 </div>
             </CardContent>
             <CardFooter className="flex justify-center gap-4">
-                <Button onClick={handleSaveReceipt} className="w-full max-w-xs">{isEditing ? 'Update Payment' : 'Save Payment'}</Button>
+                <Button onClick={handleSaveReceipt} className="w-full max-w-xs">{isEditing ? 'Update Receipt' : 'Save Receipt'}</Button>
                 <Button onClick={handleViewReceipt} variant="secondary" className="w-full max-w-xs gap-2" disabled={!isEditing}>
-                    <FileText className="h-4 w-4" /> View Payment
+                    <FileText className="h-4 w-4" /> View Receipt
                 </Button>
             </CardFooter>
         </Card>
         <Card className="md:col-span-1 h-fit">
             <CardHeader>
                 <h3 className="text-lg font-medium flex items-center gap-2">
-                    Recent Payments
+                    Recent Receipts
                     <Badge variant="secondary">{yearlyCount} This Year</Badge>
                 </h3>
             </CardHeader>
@@ -366,7 +368,7 @@ export function ReceiptMakingTab() {
                         {savedReceipts.map(receipt => (
                             <div key={receipt.no} className="flex justify-between items-center p-2 border rounded-md">
                                 <div>
-                                    <p className="font-medium">Payment #{receipt.no}</p>
+                                    <p className="font-medium">Receipt #{receipt.no}</p>
                                     <p className="text-sm text-muted-foreground">{receipt.customerName}</p>
                                     <p className="text-sm text-muted-foreground">{new Date(receipt.date).toLocaleDateString()}</p>
                                 </div>
@@ -382,7 +384,7 @@ export function ReceiptMakingTab() {
                                 </div>
                             </div>
                         ))}
-                         {savedReceipts.length === 0 && <p className="text-sm text-muted-foreground text-center">No recent payments found.</p>}
+                         {savedReceipts.length === 0 && <p className="text-sm text-muted-foreground text-center">No recent receipts found.</p>}
                     </div>
                 </ScrollArea>
             </CardContent>

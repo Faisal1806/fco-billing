@@ -62,7 +62,7 @@ const normalizeForId = (name: string) => {
 }
 
 export function ChallanMakingTab() {
-  const { toast } = useToast();
+  const { toast, dismiss } = useToast();
   const router = useRouter();
 
   const initialDetails = {
@@ -175,19 +175,12 @@ export function ChallanMakingTab() {
     
     localStorage.setItem(`challan-${challanId}`, JSON.stringify(challanData));
     
-    try {
-        await saveDocument('challans', challanId, challanData);
-        toast({
-            title: isEditing ? 'Delivery Note Updated & Synced' : 'Delivery Note Saved & Synced',
-            description: 'The delivery note has been successfully saved to the cloud.',
-        });
-    } catch (error) {
-         toast({
-            variant: 'destructive',
-            title: 'Cloud Sync Failed',
-            description: 'Could not save the delivery note to the cloud. It is saved locally.',
-        });
-    }
+    const { id } = toast({
+      lottie: '/animations/bill_saved.json',
+      title: isEditing ? 'Delivery Note Updated!' : 'Delivery Note Saved!',
+      description: 'The delivery note has been successfully saved.',
+    });
+    setTimeout(() => dismiss(id), 2000);
 
     fetchChallans(); // Re-fetch to update list
     setIsEditing(true);
