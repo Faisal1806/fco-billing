@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Package, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, Users, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Globe, Truck, BookOpen } from 'lucide-react';
+import { Loader2, Package, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, Users, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Globe, Truck, BookOpen, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,8 @@ import placeholderImages from '@/app/lib/placeholder-images.json';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { AnimatedShinyButton } from '@/components/ui/animated-button';
+import { sidebarSections } from '@/components/Sidebar';
+import Link from 'next/link';
 
 
 interface DailyStats {
@@ -279,6 +281,29 @@ const FruitDashboard = ({ stats, yearlyStats, outsideSalesStats, accessoryStats,
                  <QuickActions />
             </div>
              <div className="lg:col-span-1 space-y-6">
+                <Card className="shadow-lg bg-card/80 backdrop-blur-sm border-white/10 rounded-2xl">
+                    <CardHeader>
+                        <CardTitle>App Sections</CardTitle>
+                        <CardDescription>Navigate to any part of the application.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {sidebarSections.map((section, idx) => (
+                           section.title && <div key={idx}>
+                                <h4 className="text-sm font-semibold uppercase text-muted-foreground tracking-wider mb-2">{section.title}</h4>
+                                <div className="space-y-1">
+                                    {section.items.map(item => (
+                                        <Link href={item.href} key={item.name}>
+                                           <Button variant="ghost" className="w-full justify-start gap-2 text-base">
+                                                <item.icon className="h-4 w-4" />
+                                                {item.name}
+                                           </Button>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
                 <Card className="shadow-lg bg-card/80 backdrop-blur-sm border-white/10 rounded-2xl">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Trophy className="h-6 w-6 text-amber-400" /> All Growers</CardTitle>
