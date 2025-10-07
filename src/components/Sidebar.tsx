@@ -23,6 +23,7 @@ import {
   Smile,
   LogOut,
   Menu,
+  Home,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -33,6 +34,12 @@ import { useRouter } from "next/navigation";
 import { ThemeSwitcher } from "./theme-switcher";
 
 export const sidebarSections = [
+    {
+      title: null,
+      items: [
+        { name: "Home", href: "/dashboard", icon: Home },
+      ]
+    },
     {
       title: "ANALYTICS",
       items: [
@@ -124,7 +131,7 @@ export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
       <div className="flex-1 overflow-y-auto">
         <nav className="grid items-start p-2 text-sm font-medium">
           {sidebarSections.map((section) => (
-            <div key={section.title || 'dashboard'} className="py-2">
+            <div key={section.title || 'home'} className="py-2">
              {section.title && <h3 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-primary-foreground/50">
                 {section.title}
               </h3>}
