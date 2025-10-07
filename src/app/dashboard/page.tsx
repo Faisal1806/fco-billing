@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { AnimatedShinyButton } from '@/components/ui/animated-button';
 import { sidebarSections } from '@/components/Sidebar';
 import Link from 'next/link';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 
 interface DailyStats {
@@ -200,8 +201,40 @@ const FruitDashboard = ({ stats, yearlyStats, outsideSalesStats, accessoryStats,
         return growerProfits.slice(0, 10);
     }, [growerProfits, showAllGrowers]);
 
+    const defaultOpen = sidebarSections.map(s => s.title).filter(Boolean) as string[];
+
     return (
     <div className="space-y-6">
+        <Card className="shadow-lg bg-card/80 backdrop-blur-sm border-white/10 rounded-2xl">
+            <CardHeader>
+                <CardTitle>App Sections</CardTitle>
+                <CardDescription>Navigate to any part of the application.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Accordion type="multiple" defaultValue={defaultOpen} className="w-full">
+                    {sidebarSections.map((section, idx) => (
+                       section.title && <AccordionItem value={section.title} key={idx}>
+                            <AccordionTrigger className="text-base font-semibold uppercase text-muted-foreground tracking-wider hover:text-foreground">
+                                {section.title}
+                            </AccordionTrigger>
+                            <AccordionContent>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 pt-2">
+                                    {section.items.map(item => (
+                                        <Link href={item.href} key={item.name} passHref>
+                                           <Button variant="ghost" className="w-full justify-start gap-3 text-base h-12">
+                                                <item.icon className="h-5 w-5" />
+                                                {item.name}
+                                           </Button>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                    ))}
+                </Accordion>
+            </CardContent>
+        </Card>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -281,29 +314,6 @@ const FruitDashboard = ({ stats, yearlyStats, outsideSalesStats, accessoryStats,
                  <QuickActions />
             </div>
              <div className="lg:col-span-1 space-y-6">
-                <Card className="shadow-lg bg-card/80 backdrop-blur-sm border-white/10 rounded-2xl">
-                    <CardHeader>
-                        <CardTitle>App Sections</CardTitle>
-                        <CardDescription>Navigate to any part of the application.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        {sidebarSections.map((section, idx) => (
-                           section.title && <div key={idx}>
-                                <h4 className="text-sm font-semibold uppercase text-muted-foreground tracking-wider mb-2">{section.title}</h4>
-                                <div className="space-y-1">
-                                    {section.items.map(item => (
-                                        <Link href={item.href} key={item.name}>
-                                           <Button variant="ghost" className="w-full justify-start gap-2 text-base">
-                                                <item.icon className="h-4 w-4" />
-                                                {item.name}
-                                           </Button>
-                                        </Link>
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
-                    </CardContent>
-                </Card>
                 <Card className="shadow-lg bg-card/80 backdrop-blur-sm border-white/10 rounded-2xl">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Trophy className="h-6 w-6 text-amber-400" /> All Growers</CardTitle>
