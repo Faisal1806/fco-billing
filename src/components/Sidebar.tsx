@@ -34,38 +34,41 @@ import { ThemeSwitcher } from "./theme-switcher";
 
 export const sidebarSections = [
     {
-      title: "",
+      title: "ANALYTICS",
       items: [
         { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       ],
     },
      {
-      title: "Management",
+      title: "SALES & PURCHASES",
       items: [
-        { name: "Sales", href: "/sales", icon: ShoppingCart },
+        { name: "Sales Invoices", href: "/sales", icon: ShoppingCart },
         { name: "Watak Register", href: "/watak-register", icon: FileText },
         { name: "Purchases", href: "/purchases", icon: ShoppingBasket },
         { name: "Purchase Register", href: "/purchase-register", icon: FileSpreadsheet },
         { name: "Outside Sales", href: "/outside-sales", icon: Globe },
-        { name: "Khata Ledger", href: "/khata", icon: BookOpen },
-        { name: "Advances & Loans", href: "/advances", icon: Banknote },
-        { name: "Expenses", href: "/expenses", icon: DollarSign },
       ]
     },
     {
-      title: "Resources",
+        title: "MANAGEMENT",
+        items: [
+            { name: "Products", href: "/products", icon: Package },
+            { name: "Expenses", href: "/expenses", icon: DollarSign },
+            { name: "Advances", href: "/advances", icon: Banknote },
+            { name: "Cold Storage", href: "/cold-storage", icon: Snowflake },
+            { name: "Khata Ledger", href: "/khata", icon: BookOpen },
+        ]
+    },
+    {
+      title: "RESOURCES",
       items: [
-        { name: "Products", href: "/products", icon: Package },
-        { name: "Parties", href: "/parties", icon: Users },
         { name: "Fruit Rates", href: "/rates", icon: TrendingUp },
-        { name: "Fertilizer Rates", href: "/fertilizers", icon: FlaskConical },
+        { name: "Fertilizers & Pesticides", href: "/fertilizers", icon: FlaskConical },
         { name: "Accessories", href: "/accessories", icon: Box },
-        { name: "Cold Storage", href: "/cold-storage", icon: Snowflake },
-        { name: "Feedback", href: "/feedback", icon: Smile },
       ]
     },
      {
-      title: "Admin",
+      title: "CONFIGURATION",
       items: [
          { name: "Activity Log", href: "/activity-log", icon: FileText },
         { name: "Settings", href: "/settings", icon: Cog },
