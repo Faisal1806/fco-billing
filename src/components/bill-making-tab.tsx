@@ -46,7 +46,7 @@ export function BillMakingTab() {
 
 
   // App State
-  const { toast, dismiss } = useToast();
+  const { toast } = useToast();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -281,15 +281,10 @@ export function BillMakingTab() {
     
     localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
     
-    const { id } = toast({
-      lottie: '/animations/bill_saved.json',
+    toast({
       title: isEditing ? 'Invoice Updated!' : 'Invoice Saved!',
       description: 'The invoice has been successfully saved.',
     });
-
-    setTimeout(() => {
-      dismiss(id);
-    }, 2000);
     
     fetchBillsAndReceipts(); // Re-fetch to update list
     setIsEditing(true); // Ensure form stays in editing mode for the current bill

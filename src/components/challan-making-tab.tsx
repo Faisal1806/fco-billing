@@ -62,7 +62,7 @@ const normalizeForId = (name: string) => {
 }
 
 export function ChallanMakingTab() {
-  const { toast, dismiss } = useToast();
+  const { toast } = useToast();
   const router = useRouter();
 
   const initialDetails = {
@@ -175,12 +175,10 @@ export function ChallanMakingTab() {
     
     localStorage.setItem(`challan-${challanId}`, JSON.stringify(challanData));
     
-    const { id } = toast({
-      lottie: '/animations/bill_saved.json',
+    toast({
       title: isEditing ? 'Delivery Note Updated!' : 'Delivery Note Saved!',
       description: 'The delivery note has been successfully saved.',
     });
-    setTimeout(() => dismiss(id), 2000);
 
     fetchChallans(); // Re-fetch to update list
     setIsEditing(true);

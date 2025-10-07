@@ -80,7 +80,7 @@ const ReceiptEntryRow = ({
 );
 
 export function ReceiptMakingTab() {
-  const { toast, dismiss } = useToast();
+  const { toast } = useToast();
   const router = useRouter();
 
   const initialReceiptDetails = {
@@ -206,12 +206,10 @@ export function ReceiptMakingTab() {
     fetchReceipts(); // Re-fetch to update list
     setIsEditing(true);
 
-    const { id } = toast({
-      lottie: '/animations/bill_saved.json',
+    toast({
       title: isEditing ? 'Receipt Updated!' : 'Receipt Saved!',
       description: 'The goods receipt has been successfully saved.',
     });
-    setTimeout(() => dismiss(id), 2000);
   };
 
   const handleViewReceipt = () => {
@@ -392,7 +390,3 @@ export function ReceiptMakingTab() {
     </div>
   );
 }
-
-    
-
-    
