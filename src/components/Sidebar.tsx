@@ -42,7 +42,7 @@ export const sidebarSections = [
      {
       title: "SALES & PURCHASES",
       items: [
-        { name: "Sales Invoices", href: "/sales", icon: ShoppingCart },
+        { name: "Sales", href: "/sales", icon: ShoppingCart },
         { name: "Watak Register", href: "/watak-register", icon: FileText },
         { name: "Purchases", href: "/purchases", icon: ShoppingBasket },
         { name: "Purchase Register", href: "/purchase-register", icon: FileSpreadsheet },
@@ -64,7 +64,7 @@ export const sidebarSections = [
       title: "RESOURCES",
       items: [
         { name: "Fruit Rates", href: "/rates", icon: TrendingUp },
-        { name: "Fertilizers & Pesticides", href: "/fertilizers", icon: FlaskConical },
+        { name: "Fertilizers", href: "/fertilizers", icon: FlaskConical },
         { name: "Accessories", href: "/accessories", icon: Box },
       ]
     },
