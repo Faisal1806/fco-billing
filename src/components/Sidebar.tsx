@@ -53,6 +53,7 @@ export const sidebarSections = [
         title: "MANAGEMENT",
         items: [
             { name: "Products", href: "/products", icon: Package },
+            { name: "Parties", href: "/parties", icon: Users },
             { name: "Expenses", href: "/expenses", icon: DollarSign },
             { name: "Advances", href: "/advances", icon: Banknote },
             { name: "Cold Storage", href: "/cold-storage", icon: Snowflake },
@@ -70,7 +71,8 @@ export const sidebarSections = [
      {
       title: "CONFIGURATION",
       items: [
-         { name: "Activity Log", href: "/activity-log", icon: FileText },
+        { name: "Activity Log", href: "/activity-log", icon: FileText },
+        { name: "Feedback", href: "/feedback", icon: Smile },
         { name: "Settings", href: "/settings", icon: Cog },
       ]
     }
