@@ -148,7 +148,7 @@ const QuickActions = () => {
                     className="bg-green-500/80 hover:bg-green-600/80"
                     onClick={() => router.push('/sales')}
                 >
-                    <FileText className="h-6 w-6" />
+                     <FileText className="h-6 w-6" />
                     New Watak
                 </AnimatedShinyButton>
                 <AnimatedShinyButton
