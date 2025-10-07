@@ -201,8 +201,6 @@ const FruitDashboard = ({ stats, yearlyStats, outsideSalesStats, accessoryStats,
         return growerProfits.slice(0, 10);
     }, [growerProfits, showAllGrowers]);
 
-    const defaultOpen = sidebarSections.map(s => s.title).filter(Boolean) as string[];
-
     return (
     <div className="space-y-6">
         <Card className="shadow-lg bg-card/80 backdrop-blur-sm border-white/10 rounded-2xl">
@@ -211,7 +209,7 @@ const FruitDashboard = ({ stats, yearlyStats, outsideSalesStats, accessoryStats,
                 <CardDescription>Navigate to any part of the application.</CardDescription>
             </CardHeader>
             <CardContent>
-                <Accordion type="multiple" defaultValue={defaultOpen} className="w-full">
+                <Accordion type="multiple" className="w-full">
                     {sidebarSections.map((section, idx) => (
                        section.title && <AccordionItem value={section.title} key={idx}>
                             <AccordionTrigger className="text-base font-semibold uppercase text-muted-foreground tracking-wider hover:text-foreground">
