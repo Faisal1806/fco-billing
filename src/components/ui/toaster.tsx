@@ -10,13 +10,27 @@ import {
   ToastTitle,
   ToastViewport,
 } from "@/components/ui/toast"
+import Lottie from 'lottie-react';
 
 export function Toaster() {
   const { toasts } = useToast()
 
   return (
     <ToastProvider>
-      {toasts.map(function ({ id, title, description, action, ...props }) {
+      {toasts.map(function ({ id, title, description, action, isSuccess, ...props }) {
+        if (isSuccess) {
+          return (
+            <Toast key={id} {...props} className="fixed inset-0 bg-black/80 flex items-center justify-center border-none p-0 w-screen h-screen">
+              <Lottie
+                animationData={null}
+                src="/animations/cloud/fco_success.json"
+                loop={false}
+                style={{ width: 300, height: 300 }}
+                onComplete={() => props.onOpenChange?.(false)}
+              />
+            </Toast>
+          )
+        }
         return (
           <Toast key={id} {...props}>
             <div className="grid gap-1">

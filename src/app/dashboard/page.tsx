@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Package, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, Users, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Globe, Truck, BookOpen, ArrowRight } from 'lucide-react';
+import { Package, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, Users, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Globe, Truck, BookOpen, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import placeholderImages from '@/app/lib/placeholder-images.json';
 import { motion } from 'framer-motion';
+import Lottie from 'lottie-react';
 import { cn } from '@/lib/utils';
 import { AnimatedShinyButton } from '@/components/ui/animated-button';
 import { sidebarSections } from '@/components/Sidebar';
@@ -128,9 +129,9 @@ const normalizeName = (name: string): string => {
 
 const StatCard = ({ title, value, icon: Icon, note, iconBgColor }: { title: string, value: string, icon: React.ElementType, note?: string, iconBgColor?: string }) => (
     <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.5, type: 'spring', stiffness: 100, delay: 0.2 }}
         whileHover={{ scale: 1.05, boxShadow: "0px 10px 30px -5px rgba(0, 0, 0, 0.3)" }}
     >
         <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 relative overflow-hidden bg-card/80 backdrop-blur-sm border-white/10 rounded-2xl h-full">
@@ -139,8 +140,8 @@ const StatCard = ({ title, value, icon: Icon, note, iconBgColor }: { title: stri
                 <p className="text-2xl font-bold mt-1">{value}</p>
                 <p className="text-xs text-muted-foreground mt-1">{note}</p>
             </CardContent>
-            <div className={`absolute -right-4 -top-2 h-16 w-16 rounded-full ${iconBgColor || 'bg-amber-500'} opacity-30`}></div>
-            <div className={`absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-gradient-to-br from-amber-400 to-orange-500`}>
+            <div className={`absolute -right-4 -bottom-4 h-20 w-20 rounded-full ${iconBgColor || 'bg-amber-500'} opacity-30 blur-lg`}></div>
+            <div className={`absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg`}>
                 <Icon className="h-6 w-6 text-white" />
             </div>
         </Card>
@@ -203,35 +204,25 @@ const FruitDashboard = ({ stats, yearlyStats, outsideSalesStats, accessoryStats,
 
     return (
     <div className="space-y-6">
-        <Card className="shadow-lg bg-card/80 backdrop-blur-sm border-white/10 rounded-2xl">
-            <CardHeader>
-                <CardTitle>App Sections</CardTitle>
-                <CardDescription>Navigate to any part of the application.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Accordion type="multiple" className="w-full">
-                    {sidebarSections.map((section, idx) => (
-                       section.title && <AccordionItem value={section.title} key={idx}>
-                            <AccordionTrigger className="text-base font-semibold uppercase text-muted-foreground tracking-wider hover:text-foreground">
-                                {section.title}
-                            </AccordionTrigger>
-                            <AccordionContent>
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 pt-2">
-                                    {section.items.map(item => (
-                                        <Link href={item.href} key={item.name} passHref>
-                                           <Button variant="ghost" className="w-full justify-start gap-3 text-base h-12">
-                                                <item.icon className="h-5 w-5" />
-                                                {item.name}
-                                           </Button>
-                                        </Link>
-                                    ))}
-                                </div>
-                            </AccordionContent>
-                        </AccordionItem>
-                    ))}
-                </Accordion>
-            </CardContent>
-        </Card>
+        <Accordion type="single" collapsible className="w-full">
+           <AccordionItem value="sections">
+                <AccordionTrigger className="text-base font-semibold uppercase text-muted-foreground tracking-wider hover:text-foreground">
+                    App Sections
+                </AccordionTrigger>
+                <AccordionContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 pt-2">
+                        {sidebarSections.flatMap(section => section.items).map(item => (
+                            <Link href={item.href} key={item.name} passHref>
+                               <Button variant="ghost" className="w-full justify-start gap-3 text-base h-12">
+                                    <item.icon className="h-5 w-5" />
+                                    {item.name}
+                               </Button>
+                            </Link>
+                        ))}
+                    </div>
+                </AccordionContent>
+            </AccordionItem>
+        </Accordion>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
@@ -714,7 +705,7 @@ export default function DashboardPage() {
   if (isLoading) {
     return (
         <div className="flex justify-center items-center h-64 p-6">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <Lottie animationData={null} src="/animations/forms/fco_loader.json" loop={true} style={{ width: 100, height: 100 }} />
             <p className="ml-4 text-muted-foreground">Calculating summary...</p>
         </div>
     )

@@ -16,6 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { PlusCircle, Trash2, FilePenLine, FilePlus, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
+import Lottie from 'lottie-react';
 import { saveDocument, deleteDocument } from '@/lib/actions';
 import { Badge } from '@/components/ui/badge';
 import { PartySelector } from './party-selector';
@@ -178,6 +179,7 @@ export function ChallanMakingTab() {
     toast({
       title: isEditing ? 'Delivery Note Updated!' : 'Delivery Note Saved!',
       description: 'The delivery note has been successfully saved.',
+      isSuccess: true,
     });
 
     fetchChallans(); // Re-fetch to update list

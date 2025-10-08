@@ -18,6 +18,7 @@ import { Separator } from '@/components/ui/separator';
 import { PlusCircle, Trash2, FilePenLine, FilePlus, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
+import Lottie from 'lottie-react';
 import type { ReceiptExtractOutput } from '@/ai/flows/extract-receipt-flow';
 import { Badge } from '@/components/ui/badge';
 import { PartySelector } from './party-selector';
@@ -209,6 +210,7 @@ export function ReceiptMakingTab() {
     toast({
       title: isEditing ? 'Receipt Updated!' : 'Receipt Saved!',
       description: 'The goods receipt has been successfully saved.',
+      isSuccess: true,
     });
   };
 

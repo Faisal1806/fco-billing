@@ -23,8 +23,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Trash2, FileSignature, Loader2, Printer, FileDown } from 'lucide-react';
+import { PlusCircle, Trash2, FileSignature, Printer, FileDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import Lottie from 'lottie-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -119,6 +120,7 @@ export default function SuppliesPage() {
         toast({
             title: 'Ledger Entry Saved',
             description: 'Your entry has been recorded locally.',
+            isSuccess: true,
         });
         
         fetchEntries();
@@ -257,7 +259,7 @@ export default function SuppliesPage() {
       <CardContent>
          {isLoading ? (
             <div className="flex justify-center items-center h-48">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <Lottie animationData={null} src="/animations/forms/fco_loader.json" loop={true} style={{ width: 100, height: 100 }} />
             </div>
          ) : entries.length > 0 ? (
             <Table>

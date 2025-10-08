@@ -3,6 +3,8 @@
 
 // Inspired by react-hot-toast library
 import * as React from "react"
+import Lottie from 'lottie-react';
+
 
 import type {
   ToastActionElement,
@@ -17,6 +19,7 @@ type ToasterToast = ToastProps & {
   title?: React.ReactNode
   description?: React.ReactNode
   action?: ToastActionElement
+  isSuccess?: boolean
 }
 
 const actionTypes = {
@@ -164,6 +167,12 @@ function toast({ ...props }: Toast) {
       },
     },
   })
+  
+  if (props.isSuccess) {
+    setTimeout(() => {
+        dismiss()
+    }, 2000);
+  }
 
   return {
     id: id,

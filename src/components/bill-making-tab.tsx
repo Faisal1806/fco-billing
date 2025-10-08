@@ -11,9 +11,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Separator } from './ui/separator';
-import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, Share, FileText, ChevronsUpDown, Check } from 'lucide-react';
+import { PlusCircle, Trash2, FilePenLine, FilePlus, Share, FileText, ChevronsUpDown, Check } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { ScrollArea } from './ui/scroll-area';
+import Lottie from 'lottie-react';
 import type { WatakExtractOutput } from '@/ai/flows/extract-watak-flow';
 import { useApiKey } from '@/hooks/use-api-key';
 import { Badge } from '@/components/ui/badge';
@@ -284,6 +285,7 @@ export function BillMakingTab() {
     toast({
       title: isEditing ? 'Invoice Updated!' : 'Invoice Saved!',
       description: 'The invoice has been successfully saved.',
+      isSuccess: true,
     });
     
     fetchBillsAndReceipts(); // Re-fetch to update list
@@ -578,7 +580,9 @@ export function BillMakingTab() {
             <CardFooter>
                 <div className="flex w-full justify-center flex-wrap gap-3">
                     <Button onClick={saveBill} className="flex-1 min-w-[150px]" disabled={isSubmitting || formDisabled}>
-                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        {isSubmitting ? (
+                          <Lottie animationData={null} src="/animations/forms/fco_loader.json" loop={true} style={{ width: 24, height: 24 }} className="mr-2"/>
+                        ) : null}
                         {isEditing ? 'Update Invoice' : 'Save Invoice'}
                     </Button>
                     <Button onClick={navigateToPrint} variant="secondary" className="flex-1 min-w-[150px] gap-2" disabled={!isEditing}>
@@ -602,7 +606,7 @@ export function BillMakingTab() {
                     <div className="space-y-2">
                         {isLoading ? (
                              <div className="flex items-center justify-center p-4">
-                                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                                <Lottie animationData={null} src="/animations/forms/fco_loader.json" loop={true} style={{ width: 60, height: 60 }}/>
                              </div>
                         ) : savedBills.length > 0 ? (
                             savedBills.map(bill => (

@@ -16,6 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { PlusCircle, Trash2, FilePenLine, FilePlus, FlaskConical, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
+import Lottie from 'lottie-react';
 
 type ItemEntry = {
   particulars: string;
@@ -161,6 +162,7 @@ export function PesticideBillTab() {
     toast({
       title: isEditing ? 'Pesticide Bill Updated' : 'Pesticide Bill Saved',
       description: 'The bill has been successfully saved.',
+      isSuccess: true,
     });
     setIsEditing(true);
   };

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Lottie from 'lottie-react';
 import { motion } from 'framer-motion';
 // The Lottie component will fetch this URL at runtime.
-const splashAnimationPath = '/animations/fco_splash.json';
+const splashAnimationPath = '/animations/splash/fco_splash_dark.json';
 
 export default function HomePage() {
   const router = useRouter();
@@ -15,7 +15,7 @@ export default function HomePage() {
     const timer = setTimeout(() => {
       setIsAnimationComplete(true);
       setTimeout(() => router.replace('/login'), 500); // Wait for fade-out
-    }, 3000); // Total splash screen duration
+    }, 3200); // Total splash screen duration from animation file
 
     return () => clearTimeout(timer);
   }, [router]);
@@ -31,16 +31,8 @@ export default function HomePage() {
         animationData={null} // Pass null here and use the src prop
         src={splashAnimationPath} // Use the src prop for URLs
         loop={false}
-        style={{ width: 300, height: 300 }}
+        style={{ width: 400, height: 400 }}
       />
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5, duration: 1.5 }}
-        className="text-white text-lg font-semibold mt-4"
-      >
-        Your Satisfaction is Our Success
-      </motion.p>
     </motion.div>
   );
 }
