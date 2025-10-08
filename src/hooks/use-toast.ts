@@ -169,9 +169,10 @@ function toast({ ...props }: Toast) {
   })
   
   if (props.isSuccess) {
+    // Auto-dismiss the success animation after it plays
     setTimeout(() => {
         dismiss()
-    }, 2000);
+    }, 2800); // Animation duration is approx 2.8s
   }
 
   return {

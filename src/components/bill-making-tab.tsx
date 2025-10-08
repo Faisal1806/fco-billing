@@ -57,6 +57,7 @@ export function BillMakingTab() {
   const [availableReceipts, setAvailableReceipts] = useState<any[]>([]);
   const [receiptPopoverOpen, setReceiptPopoverOpen] = useState(false);
   const [usedReceiptsMap, setUsedReceiptsMap] = useState<Map<string, string>>(new Map());
+  const [loaderAnimation, setLoaderAnimation] = useState(null);
 
 
   // Voice Input State
@@ -101,6 +102,10 @@ export function BillMakingTab() {
     if (typeof window !== 'undefined') {
       setUserRole(localStorage.getItem('userRole'));
     }
+    fetch('/animations/forms/fco_loader.json')
+        .then(res => res.json())
+        .then(data => setLoaderAnimation(data));
+
     fetchBillsAndReceipts();
 
     // Check for scanned data
@@ -172,7 +177,7 @@ export function BillMakingTab() {
             toast({ title: "Invoice Populated", description: `Loaded details from Receipt #${selectedReceipt.no}. Please enter the rates.` });
         }
     }
-  }, [selectedReceipt]);
+  }, [selectedReceipt, isReceiptUsed]);
 
 
   
@@ -580,8 +585,8 @@ export function BillMakingTab() {
             <CardFooter>
                 <div className="flex w-full justify-center flex-wrap gap-3">
                     <Button onClick={saveBill} className="flex-1 min-w-[150px]" disabled={isSubmitting || formDisabled}>
-                        {isSubmitting ? (
-                          <Lottie animationData={null} src="/animations/forms/fco_loader.json" loop={true} style={{ width: 24, height: 24 }} className="mr-2"/>
+                        {isSubmitting && loaderAnimation ? (
+                          <Lottie animationData={loaderAnimation} loop={true} style={{ width: 24, height: 24 }} className="mr-2"/>
                         ) : null}
                         {isEditing ? 'Update Invoice' : 'Save Invoice'}
                     </Button>
@@ -604,9 +609,9 @@ export function BillMakingTab() {
             <CardContent>
                 <ScrollArea className="h-96">
                     <div className="space-y-2">
-                        {isLoading ? (
+                        {isLoading || !loaderAnimation ? (
                              <div className="flex items-center justify-center p-4">
-                                <Lottie animationData={null} src="/animations/forms/fco_loader.json" loop={true} style={{ width: 60, height: 60 }}/>
+                                {loaderAnimation && <Lottie animationData={loaderAnimation} loop={true} style={{ width: 60, height: 60 }}/>}
                              </div>
                         ) : savedBills.length > 0 ? (
                             savedBills.map(bill => (

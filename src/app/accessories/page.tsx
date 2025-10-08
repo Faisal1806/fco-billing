@@ -67,11 +67,13 @@ export default function SuppliesPage() {
     const [formState, setFormState] = useState(emptyFormState);
     const [isLoading, setIsLoading] = useState(true);
     const [userRole, setUserRole] = useState<string | null>(null);
+    const [loaderAnimation, setLoaderAnimation] = useState(null);
 
      useEffect(() => {
         if (typeof window !== 'undefined') {
             setUserRole(localStorage.getItem('userRole'));
         }
+        fetch('/animations/forms/fco_loader.json').then(res => res.json()).then(setLoaderAnimation);
     }, []);
 
     const fetchEntries = () => {
@@ -257,9 +259,9 @@ export default function SuppliesPage() {
         </div>
       </CardHeader>
       <CardContent>
-         {isLoading ? (
+         {isLoading || !loaderAnimation ? (
             <div className="flex justify-center items-center h-48">
-                <Lottie animationData={null} src="/animations/forms/fco_loader.json" loop={true} style={{ width: 100, height: 100 }} />
+                <Lottie animationData={loaderAnimation} loop={true} style={{ width: 100, height: 100 }} />
             </div>
          ) : entries.length > 0 ? (
             <Table>

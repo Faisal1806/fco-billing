@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import Sidebar from "@/components/Sidebar";
 import { motion } from 'framer-motion';
 import Lottie from 'lottie-react';
+import { useEffect, useState } from 'react';
 
 export default function AppLayout({
   children,
@@ -12,16 +13,22 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const [animationData, setAnimationData] = useState(null);
+
+  useEffect(() => {
+    fetch('/animations/extras/fco_particle_glow.json')
+      .then(res => res.json())
+      .then(data => setAnimationData(data));
+  }, []);
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden">
         <div className="fixed inset-0 z-0">
-             <Lottie 
-                animationData={null}
-                src="/animations/extras/fco_particle_glow.json"
+             {animationData && <Lottie 
+                animationData={animationData}
                 loop={true}
                 className="absolute inset-0 w-full h-full object-cover"
-             />
+             />}
              <div className="absolute inset-0 bg-background/80"></div>
         </div>
       <div className="relative z-10">

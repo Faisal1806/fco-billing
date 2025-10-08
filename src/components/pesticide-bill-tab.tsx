@@ -332,5 +332,3 @@ export function PesticideBillTab() {
     </div>
   );
 }
-
-    

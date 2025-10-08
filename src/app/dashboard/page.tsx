@@ -480,11 +480,16 @@ export default function DashboardPage() {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [allChallans, setAllChallans] = useState<Challan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loaderAnimation, setLoaderAnimation] = useState(null);
 
   useEffect(() => {
     function fetchData() {
         if (typeof window === 'undefined') return;
         setIsLoading(true);
+
+        fetch('/animations/forms/fco_loader.json')
+            .then(res => res.json())
+            .then(data => setLoaderAnimation(data));
 
         const invoices: Invoice[] = [];
         const accessories: AccessoryLedgerEntry[] = [];
@@ -702,10 +707,10 @@ export default function DashboardPage() {
   }, [allInvoices, isLoading]);
 
 
-  if (isLoading) {
+  if (isLoading || !loaderAnimation) {
     return (
         <div className="flex justify-center items-center h-64 p-6">
-            <Lottie animationData={null} src="/animations/forms/fco_loader.json" loop={true} style={{ width: 100, height: 100 }} />
+            {loaderAnimation && <Lottie animationData={loaderAnimation} loop={true} style={{ width: 100, height: 100 }} />}
             <p className="ml-4 text-muted-foreground">Calculating summary...</p>
         </div>
     )
@@ -750,5 +755,3 @@ export default function DashboardPage() {
     </>
   );
 }
-
-    

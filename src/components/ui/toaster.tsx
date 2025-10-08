@@ -11,9 +11,17 @@ import {
   ToastViewport,
 } from "@/components/ui/toast"
 import Lottie from 'lottie-react';
+import { useEffect, useState } from "react";
 
 export function Toaster() {
   const { toasts } = useToast()
+  const [successAnimation, setSuccessAnimation] = useState(null);
+
+  useEffect(() => {
+    fetch('/animations/cloud/fco_success.json')
+      .then(res => res.json())
+      .then(data => setSuccessAnimation(data));
+  }, []);
 
   return (
     <ToastProvider>
@@ -21,13 +29,12 @@ export function Toaster() {
         if (isSuccess) {
           return (
             <Toast key={id} {...props} className="fixed inset-0 bg-black/80 flex items-center justify-center border-none p-0 w-screen h-screen">
-              <Lottie
-                animationData={null}
-                src="/animations/cloud/fco_success.json"
+              {successAnimation && <Lottie
+                animationData={successAnimation}
                 loop={false}
                 style={{ width: 300, height: 300 }}
                 onComplete={() => props.onOpenChange?.(false)}
-              />
+              />}
             </Toast>
           )
         }

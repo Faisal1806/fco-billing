@@ -101,11 +101,13 @@ export function ReceiptMakingTab() {
   const [isEditing, setIsEditing] = React.useState(false);
   const [savedReceipts, setSavedReceipts] = React.useState<any[]>([]);
   const [userRole, setUserRole] = React.useState<string | null>(null);
+  const [loaderAnimation, setLoaderAnimation] = React.useState(null);
   
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
         setUserRole(localStorage.getItem('userRole'));
     }
+    fetch('/animations/forms/fco_loader.json').then(res => res.json()).then(setLoaderAnimation);
     fetchReceipts();
 
     const scannedDataJSON = localStorage.getItem('scannedReceiptData');
@@ -384,7 +386,11 @@ export function ReceiptMakingTab() {
                                 </div>
                             </div>
                         ))}
-                         {savedReceipts.length === 0 && <p className="text-sm text-muted-foreground text-center">No recent receipts found.</p>}
+                         {savedReceipts.length === 0 && (!loaderAnimation ? (
+                           <p className="text-sm text-muted-foreground text-center">Loading...</p>
+                         ) : (
+                           <p className="text-sm text-muted-foreground text-center">No recent receipts found.</p>
+                         ))}
                     </div>
                 </ScrollArea>
             </CardContent>
