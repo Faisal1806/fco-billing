@@ -34,6 +34,7 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import './print.css';
+import Lottie from 'lottie-react';
 
 type TransactionType = 'Sale' | 'Purchase' | 'Advance' | 'Repayment' | 'Bikri';
 
@@ -125,11 +126,14 @@ export default function KhataLedgerPage() {
     const [selectedParty, setSelectedParty] = React.useState<string | null>(null);
     const [activeTab, setActiveTab] = React.useState('growers');
     const [isLoading, setIsLoading] = React.useState(true);
+    const [loaderAnimation, setLoaderAnimation] = React.useState(null);
     
     React.useEffect(() => {
         function fetchLedgerData() {
             if (typeof window === 'undefined') return;
             setIsLoading(true);
+            
+            fetch('/animations/forms/fco_loader.json').then(res => res.json()).then(setLoaderAnimation);
 
             const canonicalMap = new Map<string, string>(); 
             
@@ -546,7 +550,11 @@ export default function KhataLedgerPage() {
                         </TabsList>
                     </Tabs>
                     
-                    {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+                    {isLoading || !loaderAnimation ? (
+                        <div className="flex justify-center items-center p-4">
+                            {loaderAnimation && <Lottie animationData={loaderAnimation} loop={true} style={{ width: 40, height: 40 }} />}
+                        </div>
+                    ) : (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="outline" className="flex items-center gap-2 min-w-[250px]">
@@ -567,9 +575,9 @@ export default function KhataLedgerPage() {
                     )}
                 </div>
 
-                {isLoading ? (
+                {isLoading || !loaderAnimation ? (
                     <div className="flex justify-center items-center h-64 print-hidden">
-                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                        {loaderAnimation && <Lottie animationData={loaderAnimation} loop={true} style={{ width: 100, height: 100 }} />}
                     </div>
                 ) : selectedLedger ? (
                     <Table>
