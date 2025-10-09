@@ -286,7 +286,15 @@ export function BillMakingTab() {
     };
     
     localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
-    fetchBillsAndReceipts(); // Re-fetch to update list
+    
+    const bills = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('invoice-')) {
+            bills.push(JSON.parse(localStorage.getItem(key)!));
+        }
+    }
+    setSavedBills(bills.sort((a, b) => (Number(a.sNo) > Number(b.sNo)) ? -1 : 1));
     
     toast({
       title: isEditing ? 'Invoice Updated!' : 'Invoice Saved!',

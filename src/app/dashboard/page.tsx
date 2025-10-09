@@ -104,26 +104,16 @@ interface CategorizedProducts {
 
 const normalizeName = (name: string): string => {
     if (!name) return '';
-    
-    const suffixes = ["S/P", "B/P", "K/P", "(LAMA)"];
-    let mainName = name;
-    let suffix = '';
-
-    for (const s of suffixes) {
-        if (name.toUpperCase().endsWith(s)) {
-            mainName = name.substring(0, name.length - s.length).trim();
-            suffix = ` ${s}`;
-            break;
-        }
-    }
-    
-    return mainName
-        .toLowerCase()
-        .replace(/\b(mohammad|mohd|md)\b/g, 'mohammad')
-        .replace(/\b(ahmad|ah)\b/g, 'ahmad')
-        .replace(/\./g, '') // Remove dots
-        .replace(/\s+/g, ' ') // Collapse multiple spaces
-        .trim() + suffix.toUpperCase();
+    return name
+        .toUpperCase()
+        .replace(/R\/O.*$/i, '')
+        .replace(/\(.*\)/, '')
+        .replace(/\b(MOHAMMAD|MOHD|MD|GH\.)\b/g, 'MOHAMMAD')
+        .replace(/\b(AHMAD|AH)\b/g, 'AHMAD')
+        .replace(/S\/P|B\/P|K\/P|®/g, '') // Remove specific suffixes
+        .replace(/[\.\,']/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
 };
 
 
@@ -603,28 +593,37 @@ export default function DashboardPage() {
     };
   }, [allChallans, isLoading]);
 
-  const growerProfits = useMemo(() => {
-    if (isLoading) return [];
-    const profitsByGrower: {[normalizedName: string]: { name: string, profit: number }} = {};
-    const currentYear = new Date().getFullYear();
+    const growerProfits = useMemo(() => {
+        if (isLoading) return [];
+        const profitsByGrower: { [canonicalName: string]: { name: string, profit: number } } = {};
+        const canonicalNameMap = new Map<string, string>(); // Maps normalized name to the first-seen canonical name
+        const currentYear = new Date().getFullYear();
 
-    allInvoices.forEach(sale => {
-        const saleYear = new Date(sale.date).getFullYear();
-        if (saleYear === currentYear) {
-            const grower = sale.customerName;
-            if(grower && sale.totals.netSale) {
-                 const normalized = normalizeName(grower);
-                 if (!profitsByGrower[normalized]) {
-                    profitsByGrower[normalized] = { name: grower, profit: 0 };
-                 }
-                 profitsByGrower[normalized].profit += sale.totals.netSale;
+        // Establish canonical names from all parties first to avoid inconsistency
+        allInvoices.forEach(sale => {
+             if (sale.customerName) {
+                const normalized = normalizeName(sale.customerName);
+                if (!canonicalNameMap.has(normalized)) {
+                    canonicalNameMap.set(normalized, sale.customerName);
+                }
             }
-        }
-    });
+        });
 
-    return Object.values(profitsByGrower)
-        .sort((a,b) => b.profit - a.profit);
-  }, [allInvoices, isLoading]);
+        allInvoices.forEach(sale => {
+            const saleYear = new Date(sale.date).getFullYear();
+            if (saleYear === currentYear && sale.customerName && sale.totals.netSale) {
+                const normalized = normalizeName(sale.customerName);
+                const canonicalName = canonicalNameMap.get(normalized)!;
+
+                if (!profitsByGrower[canonicalName]) {
+                    profitsByGrower[canonicalName] = { name: canonicalName, profit: 0 };
+                }
+                profitsByGrower[canonicalName].profit += sale.totals.netSale;
+            }
+        });
+
+        return Object.values(profitsByGrower).sort((a, b) => b.profit - a.profit);
+    }, [allInvoices, isLoading]);
 
   const accessoryStats = useMemo(() => {
     if (isLoading) return null;
