@@ -286,6 +286,7 @@ export function BillMakingTab() {
     };
     
     localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
+    fetchBillsAndReceipts(); // Re-fetch to update list
     
     toast({
       title: isEditing ? 'Invoice Updated!' : 'Invoice Saved!',
@@ -293,7 +294,6 @@ export function BillMakingTab() {
       isSuccess: true,
     });
     
-    fetchBillsAndReceipts(); // Re-fetch to update list
     setIsEditing(true); // Ensure form stays in editing mode for the current bill
     setIsSubmitting(false);
   };
