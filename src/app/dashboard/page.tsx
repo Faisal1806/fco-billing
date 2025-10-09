@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Package, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, Users, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Globe, Truck, BookOpen, ArrowRight } from 'lucide-react';
+import { Package, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, Users, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Globe, Truck, BookOpen, ArrowRight, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -480,16 +480,11 @@ export default function DashboardPage() {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [allChallans, setAllChallans] = useState<Challan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [loaderAnimation, setLoaderAnimation] = useState(null);
 
   useEffect(() => {
     function fetchData() {
         if (typeof window === 'undefined') return;
         setIsLoading(true);
-
-        fetch('/animations/forms/fco_loader.json')
-            .then(res => res.json())
-            .then(data => setLoaderAnimation(data));
 
         const invoices: Invoice[] = [];
         const accessories: AccessoryLedgerEntry[] = [];
@@ -707,10 +702,10 @@ export default function DashboardPage() {
   }, [allInvoices, isLoading]);
 
 
-  if (isLoading || !loaderAnimation) {
+  if (isLoading) {
     return (
         <div className="flex justify-center items-center h-64 p-6">
-            {loaderAnimation && <Lottie animationData={loaderAnimation} loop={true} style={{ width: 100, height: 100 }} />}
+            <Loader2 className="h-8 w-8 animate-spin" />
             <p className="ml-4 text-muted-foreground">Calculating summary...</p>
         </div>
     )
