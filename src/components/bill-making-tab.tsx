@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useRef, useState, useEffect } from 'react';
@@ -287,14 +286,7 @@ export function BillMakingTab() {
     
     localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
     
-    const bills = [];
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('invoice-')) {
-            bills.push(JSON.parse(localStorage.getItem(key)!));
-        }
-    }
-    setSavedBills(bills.sort((a, b) => (Number(a.sNo) > Number(b.sNo)) ? -1 : 1));
+    fetchBillsAndReceipts();
     
     toast({
       title: isEditing ? 'Invoice Updated!' : 'Invoice Saved!',
