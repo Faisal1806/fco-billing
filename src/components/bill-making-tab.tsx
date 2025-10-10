@@ -58,7 +58,6 @@ export function BillMakingTab() {
   const [receiptPopoverOpen, setReceiptPopoverOpen] = useState(false);
   const [usedReceiptsMap, setUsedReceiptsMap] = useState<Map<string, string>>(new Map());
   const [loaderAnimation, setLoaderAnimation] = useState(null);
-  const [lastUpdated, setLastUpdated] = useState(0);
 
 
   // Voice Input State
@@ -144,7 +143,7 @@ export function BillMakingTab() {
         }
     }
 
-  }, [lastUpdated]);
+  }, [toast]);
 
   const selectedReceipt = useMemo(() => {
     return availableReceipts.find(r => r.no === selectedReceiptNo);
@@ -178,7 +177,7 @@ export function BillMakingTab() {
             toast({ title: "Invoice Populated", description: `Loaded details from Receipt #${selectedReceipt.no}. Please enter the rates.` });
         }
     }
-  }, [selectedReceipt, isReceiptUsed]);
+  }, [selectedReceipt, isReceiptUsed, toast]);
 
 
   
@@ -288,8 +287,16 @@ export function BillMakingTab() {
     
     localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
     
-    setLastUpdated(Date.now()); // Trigger re-fetch
-    
+    // This is the crucial part that was missing: re-fetching and setting state.
+    const bills = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('invoice-')) {
+        bills.push(JSON.parse(localStorage.getItem(key)!));
+      }
+    }
+    setSavedBills(bills.sort((a, b) => (Number(a.sNo) > Number(b.sNo)) ? -1 : 1));
+
     toast({
       title: isEditing ? 'Invoice Updated!' : 'Invoice Saved!',
       description: 'The invoice has been successfully saved.',
@@ -331,12 +338,20 @@ export function BillMakingTab() {
         
         localStorage.removeItem(`invoice-${billId}`);
         
+        // Re-fetch and update state
+        const bills = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('invoice-')) {
+            bills.push(JSON.parse(localStorage.getItem(key)!));
+          }
+        }
+        setSavedBills(bills.sort((a, b) => (Number(a.sNo) > Number(b.sNo)) ? -1 : 1));
+
         toast({
             title: "Invoice Deleted",
             description: `Invoice #${billId} has been successfully deleted.`
         });
-        
-        setLastUpdated(Date.now()); // Trigger re-fetch
         
         if (sNo === billId) {
             resetForm();
