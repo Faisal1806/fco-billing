@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useRef, useState, useEffect } from 'react';
@@ -57,47 +58,48 @@ export function BillMakingTab() {
   const [receiptPopoverOpen, setReceiptPopoverOpen] = useState(false);
   const [usedReceiptsMap, setUsedReceiptsMap] = useState<Map<string, string>>(new Map());
   const [loaderAnimation, setLoaderAnimation] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(0);
 
 
   // Voice Input State
   const { apiKey, isApiKeySet } = useApiKey();
 
 
-  const fetchBillsAndReceipts = () => {
-    setIsLoading(true);
-    const bills = [];
-    const receipts = [];
-    const usedNos = new Map<string, string>();
-
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('invoice-')) {
-            try {
-                const bill = JSON.parse(localStorage.getItem(key)!);
-                bills.push(bill);
-                if (bill.linkedReceiptNo) {
-                    usedNos.set(bill.linkedReceiptNo, bill.sNo);
-                }
-            } catch(e) {
-                console.error("Failed to parse bill from local storage", e);
-            }
-        }
-        if (key && key.startsWith('receipt-')) {
-             try {
-                const receipt = JSON.parse(localStorage.getItem(key)!);
-                receipts.push(receipt);
-            } catch(e) {
-                console.error("Failed to parse receipt from local storage", e);
-            }
-        }
-    }
-    setSavedBills(bills.sort((a,b) => (Number(a.sNo) > Number(b.sNo)) ? -1 : 1));
-    setAvailableReceipts(receipts.sort((a,b) => (a.no > b.no) ? 1 : -1));
-    setUsedReceiptsMap(usedNos);
-    setIsLoading(false);
-  };
-
   useEffect(() => {
+    const fetchBillsAndReceipts = () => {
+      setIsLoading(true);
+      const bills = [];
+      const receipts = [];
+      const usedNos = new Map<string, string>();
+
+      for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('invoice-')) {
+              try {
+                  const bill = JSON.parse(localStorage.getItem(key)!);
+                  bills.push(bill);
+                  if (bill.linkedReceiptNo) {
+                      usedNos.set(bill.linkedReceiptNo, bill.sNo);
+                  }
+              } catch(e) {
+                  console.error("Failed to parse bill from local storage", e);
+              }
+          }
+          if (key && key.startsWith('receipt-')) {
+               try {
+                  const receipt = JSON.parse(localStorage.getItem(key)!);
+                  receipts.push(receipt);
+              } catch(e) {
+                  console.error("Failed to parse receipt from local storage", e);
+              }
+          }
+      }
+      setSavedBills(bills.sort((a,b) => (Number(a.sNo) > Number(b.sNo)) ? -1 : 1));
+      setAvailableReceipts(receipts.sort((a,b) => (a.no > b.no) ? 1 : -1));
+      setUsedReceiptsMap(usedNos);
+      setIsLoading(false);
+    };
+
     if (typeof window !== 'undefined') {
       setUserRole(localStorage.getItem('userRole'));
     }
@@ -142,7 +144,7 @@ export function BillMakingTab() {
         }
     }
 
-  }, []);
+  }, [lastUpdated]);
 
   const selectedReceipt = useMemo(() => {
     return availableReceipts.find(r => r.no === selectedReceiptNo);
@@ -286,7 +288,7 @@ export function BillMakingTab() {
     
     localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
     
-    fetchBillsAndReceipts();
+    setLastUpdated(Date.now()); // Trigger re-fetch
     
     toast({
       title: isEditing ? 'Invoice Updated!' : 'Invoice Saved!',
@@ -334,7 +336,7 @@ export function BillMakingTab() {
             description: `Invoice #${billId} has been successfully deleted.`
         });
         
-        fetchBillsAndReceipts();
+        setLastUpdated(Date.now()); // Trigger re-fetch
         
         if (sNo === billId) {
             resetForm();
