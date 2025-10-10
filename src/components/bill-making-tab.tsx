@@ -334,7 +334,8 @@ export function BillMakingTab() {
             description: `Invoice #${billId} has been successfully deleted.`
         });
         
-        fetchBillsAndReceipts(); // Re-fetch to update list
+        fetchBillsAndReceipts();
+        
         if (sNo === billId) {
             resetForm();
         }
