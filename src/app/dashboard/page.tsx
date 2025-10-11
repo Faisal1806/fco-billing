@@ -5,12 +5,15 @@ import * as React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { IndianRupee, TrendingUp, TrendingDown, Calendar, Hash, BarChart3, FileText, BookOpen, PlusCircle, ShoppingBasket } from 'lucide-react';
+import { IndianRupee, TrendingUp, TrendingDown, Calendar, Hash, BarChart3, FileText, BookOpen, PlusCircle, ShoppingBasket, LayoutDashboard } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2 } from 'lucide-react';
 import placeholderImages from '@/app/lib/placeholder-images.json';
+import { motion } from 'framer-motion';
+import { AnimatedShinyButton } from '@/components/ui/animated-button';
+import { sidebarSections } from '@/components/Sidebar';
 
 interface Invoice {
     id: string;
@@ -38,13 +41,37 @@ const normalizeName = (name: string): string => {
         .trim();
 };
 
-const StatCard = ({ title, value, note }: { title: string, value: string, note: string }) => (
-    <div className="bg-gray-800/20 p-4 rounded-lg">
-        <p className="text-sm text-gray-400">{title}</p>
-        <p className="text-2xl font-bold mt-1">{value}</p>
-        <p className="text-xs text-gray-500 mt-1">{note}</p>
-    </div>
+const StatCard = ({ title, value, note, children }: { title: string, value: string, note?: string, children?: React.ReactNode }) => (
+    <Card className="bg-card/50 backdrop-blur-sm border border-white/10 shadow-lg">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+            <div className="text-2xl font-bold">{value}</div>
+            {note && <p className="text-xs text-muted-foreground">{note}</p>}
+             {children}
+        </CardContent>
+    </Card>
 );
+
+const AppSectionCard = ({ item }: { item: { name: string; href: string; icon: React.ElementType } }) => {
+    const router = useRouter();
+    const { name, href, icon: Icon } = item;
+    
+    return (
+        <motion.div
+            whileHover={{ scale: 1.05, zIndex: 10 }}
+            whileTap={{ scale: 0.95 }}
+            className="neon-glow-container cursor-pointer"
+            onClick={() => router.push(href)}
+        >
+            <div className="h-full bg-card/50 backdrop-blur-sm border border-white/10 rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2">
+                <Icon className="h-8 w-8 neon-glow-icon" />
+                <span className="text-sm font-semibold">{name}</span>
+            </div>
+        </motion.div>
+    );
+}
 
 
 export default function DashboardPage() {
@@ -118,19 +145,16 @@ export default function DashboardPage() {
     const canonicalNameMap = new Map<string, string>();
     const currentYear = new Date().getFullYear();
 
-    // First pass: find the most complete name for each normalized name
     allInvoices.forEach(sale => {
          if (sale.customerName) {
             const normalized = normalizeName(sale.customerName);
             const currentCanonical = canonicalNameMap.get(normalized);
-            // Prefer the longer, more detailed name as the canonical one
             if (!currentCanonical || sale.customerName.length > currentCanonical.length) {
                 canonicalNameMap.set(normalized, sale.customerName);
             }
         }
     });
 
-    // Second pass: aggregate profits using the canonical names
     allInvoices.forEach(sale => {
         const saleYear = new Date(sale.date).getFullYear();
         if (saleYear === currentYear && sale.customerName && sale.totals.netSale) {
@@ -159,10 +183,16 @@ export default function DashboardPage() {
 
   const { dashboardHeader } = placeholderImages;
   
+  const appSections = sidebarSections.flatMap(s => s.items).filter(item => item.name !== "Home");
+  
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8 space-y-8">
-        {/* Header */}
-        <div className="relative h-48 rounded-xl overflow-hidden flex flex-col justify-center items-center text-center p-4">
+    <div className="space-y-8">
+        <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="relative h-48 rounded-xl overflow-hidden flex flex-col justify-center items-center text-center p-4"
+        >
             <Image 
                 src={dashboardHeader.src}
                 alt={dashboardHeader.alt}
@@ -170,72 +200,70 @@ export default function DashboardPage() {
                 style={{objectFit: 'cover'}}
                 className="opacity-20"
                 data-ai-hint={dashboardHeader.hint}
+                priority
             />
             <div className="relative z-10">
                 <h1 className="text-4xl md:text-5xl font-bold text-white shadow-lg">Welcome to F.Co</h1>
                 <p className="text-lg text-gray-300/80 shadow-md mt-2">Your complete business management solution.</p>
             </div>
+        </motion.div>
+        
+         <div className="space-y-4">
+             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <StatCard title="Today's Sales (Net)" value={`₹${stats?.totalSaleValue.toLocaleString('en-IN') ?? '0'}`} note="Compare to last month" />
+                <StatCard title="This Month's Sales (Net)" value={`₹${stats?.monthSales.toLocaleString('en-IN') ?? '0'}`} note="Current calendar month" />
+                <StatCard title="This Year's Gross Sales" value={`₹${stats?.yearGrossSales.toLocaleString('en-IN') ?? '0'}`} note="Total sales value this year" />
+                <StatCard title="This Year's Net Sales" value={`₹${stats?.yearNetSales.toLocaleString('en-IN') ?? '0'}`} note="After all expenses" />
+             </div>
+             <StatCard title="This Year's Expenses" value={`₹${stats?.yearTotalExpenses.toLocaleString('en-IN') ?? '0'}`} note="All Watak deductions this year" />
+        </div>
+
+        <div>
+            <h2 className="text-xl font-semibold tracking-wider mb-4">Quick Actions</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                 <AnimatedShinyButton onClick={() => router.push('/sales')} className="bg-red-600/20 border-red-500/50">
+                    <PlusCircle className="mr-2 h-5 w-5" /> Sales Entry
+                 </AnimatedShinyButton>
+                 <AnimatedShinyButton onClick={() => router.push('/watak-register')} className="bg-blue-600/20 border-blue-500/50">
+                    <FileText className="mr-2 h-5 w-5" /> Watak Register
+                 </AnimatedShinyButton>
+                 <AnimatedShinyButton onClick={() => router.push('/purchases')} className="bg-green-600/20 border-green-500/50">
+                    <ShoppingBasket className="mr-2 h-5 w-5" /> Purchases
+                 </AnimatedShinyButton>
+                 <AnimatedShinyButton onClick={() => router.push('/rates')} className="bg-yellow-600/20 border-yellow-500/50">
+                    <BarChart3 className="mr-2 h-5 w-5" /> Reports
+                 </AnimatedShinyButton>
+            </div>
         </div>
         
-        {/* Main Content Area */}
-        <div className="space-y-8">
-            {/* Stats */}
-            <div className="space-y-4">
-                <StatCard title="Today's Sales (Net)" value={`₹${stats?.totalSaleValue.toLocaleString('en-IN') ?? '0'}`} note="Compare to last month" />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <StatCard title="This Month's Sales (Net)" value={`₹${stats?.monthSales.toLocaleString('en-IN') ?? '0'}`} note="Current calendar month" />
-                    <StatCard title="This Year's Gross Sales" value={`₹${stats?.yearGrossSales.toLocaleString('en-IN') ?? '0'}`} note="Total sales value this year" />
-                    <StatCard title="This Year's Expenses" value={`₹${stats?.yearTotalExpenses.toLocaleString('en-IN') ?? '0'}`} note="All Watak deductions this year" />
-                    <StatCard title="This Year's Net Sales" value={`₹${stats?.yearNetSales.toLocaleString('en-IN') ?? '0'}`} note="After all expenses" />
-                </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Button onClick={() => router.push('/sales')} className="h-20 text-lg bg-red-600/80 hover:bg-red-600 border border-red-500/50 flex-col gap-1">
-                    <PlusCircle className="h-6 w-6" /> Sales Entry
-                </Button>
-                <Button onClick={() => router.push('/watak-register')} className="h-20 text-lg bg-blue-600/80 hover:bg-blue-600 border border-blue-500/50 flex-col gap-1">
-                    <FileText className="h-6 w-6" /> Watak Register
-                </Button>
-                 <Button onClick={() => router.push('/purchases')} className="h-20 text-lg bg-green-600/80 hover:bg-green-600 border border-green-500/50 flex-col gap-1">
-                    <ShoppingBasket className="h-6 w-6" /> Purchases
-                </Button>
-                <Button onClick={() => router.push('/rates')} className="h-20 text-lg bg-yellow-600/80 hover:bg-yellow-600 border border-yellow-500/50 flex-col gap-1">
-                    <BarChart3 className="h-6 w-6" /> Reports
-                </Button>
-            </div>
-
-            {/* All Growers */}
-             <div>
-                <h2 className="text-xl font-semibold text-gray-300 tracking-wider mb-4">All Growers</h2>
-                 <Card className="bg-gray-800/50 border-gray-700/60 shadow-lg">
-                    <CardContent className="p-0">
-                        {growerProfits.length > 0 ? (
-                            <Table>
-                                <TableBody>
-                                    {growerProfits.slice(0, 10).map((grower, index) => (
-                                        <TableRow key={grower.name} className="border-gray-700/60">
-                                            <TableCell>
-                                                <div className="flex items-center gap-3">
-                                                    <span className="flex items-center justify-center h-8 w-8 rounded-full bg-orange-500/80 text-white font-bold">{index + 1}</span>
-                                                    <div>
-                                                      <span className="font-medium text-base">{grower.name}</span>
-                                                      <p className="text-xs text-muted-foreground">Net Sales</p>
-                                                    </div>
+        <div>
+            <h2 className="text-xl font-semibold tracking-wider mb-4">All Growers</h2>
+             <Card className="bg-card/50 backdrop-blur-sm border border-white/10">
+                <CardContent className="p-0">
+                    {growerProfits.length > 0 ? (
+                        <Table>
+                            <TableBody>
+                                {growerProfits.slice(0, 10).map((grower, index) => (
+                                    <TableRow key={grower.name} className="border-white/10">
+                                        <TableCell>
+                                            <div className="flex items-center gap-3">
+                                                <span className={`flex items-center justify-center h-8 w-8 rounded-full ${index < 3 ? 'bg-yellow-500/80' : 'bg-gray-500/80'} text-white font-bold`}>{index + 1}</span>
+                                                <div>
+                                                  <span className="font-medium text-base">{grower.name}</span>
+                                                  <p className="text-xs text-muted-foreground">Net Sales</p>
                                                 </div>
-                                            </TableCell>
-                                            <TableCell className="text-right font-mono text-lg text-green-400">₹{grower.profit.toLocaleString('en-IN', {minimumFractionDigits: 2})}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        ) : (
-                             <p className="text-sm text-muted-foreground text-center py-8">No sales data recorded this year.</p>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="text-right font-mono text-lg text-green-400">₹{grower.profit.toLocaleString('en-IN', {minimumFractionDigits: 2})}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    ) : (
+                         <p className="text-sm text-muted-foreground text-center py-8">No sales data recorded this year.</p>
+                    )}
+                </CardContent>
+            </Card>
         </div>
     </div>
   );
