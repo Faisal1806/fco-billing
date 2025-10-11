@@ -4,7 +4,7 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,6 +22,7 @@ import { PartySelector } from './party-selector';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
 import { cn } from '@/lib/utils';
+import { deleteDocument } from '@/lib/actions';
 
 
 type Row = {
@@ -55,14 +56,14 @@ export function BillMakingTab() {
   const [receiptPopoverOpen, setReceiptPopoverOpen] = useState(false);
   const [usedReceiptsMap, setUsedReceiptsMap] = useState<Map<string, string>>(new Map());
   const [loaderAnimation, setLoaderAnimation] = useState(null);
+  const [savedWataks, setSavedWataks] = useState<any[]>([]);
+  const [userRole, setUserRole] = React.useState<string | null>(null);
 
 
   // Voice Input State
   const { apiKey, isApiKeySet } = useApiKey();
-
-
-  useEffect(() => {
-    const fetchBillsAndReceipts = () => {
+  
+  const fetchBillsAndReceipts = () => {
       const bills = [];
       const receipts = [];
       const usedNos = new Map<string, string>();
@@ -89,9 +90,16 @@ export function BillMakingTab() {
               }
           }
       }
+      setSavedWataks(bills.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
       setAvailableReceipts(receipts.sort((a,b) => (a.no > b.no) ? 1 : -1));
       setUsedReceiptsMap(usedNos);
     };
+
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+        setUserRole(localStorage.getItem('userRole'));
+    }
 
     fetch('/animations/forms/fco_loader.json')
         .then(res => res.json())
@@ -276,6 +284,7 @@ export function BillMakingTab() {
       isSuccess: true,
     });
     
+    fetchBillsAndReceipts();
     setIsEditing(true); // Ensure form stays in editing mode for the current bill
     setIsSubmitting(false);
   };
@@ -298,7 +307,37 @@ export function BillMakingTab() {
     window.open(whatsappUrl, '_blank');
   };
   
+    const loadWatakForEdit = (watak: any) => {
+        setSNo(watak.sNo);
+        setMs(watak.customerName);
+        setKhata(watak.khata || '');
+        setWatakNo(watak.watakNo || '');
+        setDate(watak.date);
+        setFreight(watak.freight || 0);
+        setRows(watak.entries.length > 0 ? watak.entries : initialRows);
+        setSelectedReceiptNo(watak.linkedReceiptNo || '');
+        setIsEditing(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleDeleteWatak = async (sNo: string) => {
+        if(userRole !== 'admin') {
+            toast({ variant: "destructive", title: "Permission Denied" });
+            return;
+        }
+        if(!window.confirm(`Are you sure you want to delete Invoice #${sNo}? This cannot be undone.`)) return;
+
+        localStorage.removeItem(`invoice-${sNo}`);
+        toast({ title: "Invoice Deleted", description: `Invoice #${sNo} has been deleted locally.`});
+        
+        fetchBillsAndReceipts();
+        if(sNo === sNo) { // if the deleted invoice is the one being edited
+            resetForm();
+        }
+    };
+  
   return (
+    <>
     <Card>
         <CardHeader>
             <div className="flex justify-between items-center">
@@ -538,5 +577,43 @@ export function BillMakingTab() {
             </div>
         </CardFooter>
     </Card>
+    
+    <Card className="mt-6">
+        <CardHeader>
+            <CardTitle>Recent Invoices (Wataks)</CardTitle>
+            <CardDescription>A list of your most recently created invoices.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <ScrollArea className="h-96">
+                <div className="space-y-2">
+                    {savedWataks.length > 0 ? (
+                        savedWataks.map((watak) => (
+                            <div key={watak.id} className="flex justify-between items-center p-3 border rounded-lg hover:bg-muted">
+                                <div>
+                                    <p className="font-semibold">Invoice #{watak.sNo} {watak.watakNo && `(Watak #${watak.watakNo})`}</p>
+                                    <p className="text-sm text-muted-foreground">{watak.customerName}</p>
+                                    <p className="text-xs text-muted-foreground">{new Date(watak.date).toLocaleDateString()}</p>
+                                    <p className="font-mono mt-1">Net Sale: ₹{watak.totals.netSale.toFixed(2)}</p>
+                                </div>
+                                <div className="flex items-center">
+                                    <Button variant="ghost" size="icon" onClick={() => loadWatakForEdit(watak)}>
+                                        <FilePenLine className="h-4 w-4" />
+                                    </Button>
+                                    {userRole === 'admin' && (
+                                        <Button variant="ghost" size="icon" onClick={() => handleDeleteWatak(watak.sNo)}>
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <p className="text-center text-muted-foreground py-10">No saved invoices found.</p>
+                    )}
+                </div>
+            </ScrollArea>
+        </CardContent>
+    </Card>
+    </>
   );
 }
