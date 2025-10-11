@@ -36,15 +36,65 @@ export const sidebarSections = [
     {
       title: null,
       items: [
+        { name: "Home", href: "/dashboard", icon: LayoutDashboard },
         { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+        { name: "Sales", href: "/sales", icon: ShoppingCart },
+        { name: "Watak Register", href: "/watak-register", icon: FileText },
+        { name: "Purchases", href: "/purchases", icon: ShoppingBasket },
+        { name: "Purchase Register", href: "/purchase-register", icon: FileSpreadsheet },
+        { name: "Outside Sales", href: "/outside-sales", icon: Globe },
+        { name: "Products", href: "/products", icon: Package },
+        { name: "Parties", href: "/parties", icon: Users },
+        { name: "Expenses", href: "/expenses", icon: DollarSign },
+        { name: "Advances", href: "/advances", icon: Banknote },
+        { name: "Cold Storage", href: "/cold-storage", icon: Snowflake },
+        { name: "Khata Ledger", href: "/khata", icon: BookOpen },
+        { name: "Fruit Rates", href: "/rates", icon: TrendingUp },
+        { name: "Fertilizers", href: "/fertilizers", icon: FlaskConical },
+        { name: "Accessories", href: "/accessories", icon: Box },
+        { name: "Activity Log", href: "/activity-log", icon: FileText },
+        { name: "Feedback", href: "/feedback", icon: Smile },
+        { name: "Settings", href: "/settings", icon: Cog },
       ]
     },
-    {
-      title: "ANALYTICS",
-      items: [
-        { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-      ],
-    },
+];
+
+export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const handleLogout = () => {
+      if (typeof window !== 'undefined') {
+          localStorage.removeItem('userRole');
+      }
+      toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
+      router.push('/login');
+  };
+
+  const renderLink = (item: any) => {
+    const { name, href, icon: Icon } = item;
+    const isActive = pathname === href;
+    const linkContent = (
+       <Link
+        href={href}
+        className={cn(
+          "flex items-center gap-3 rounded-lg px-3 py-2 text-primary-foreground/70 transition-all hover:text-primary-foreground hover:bg-white/10",
+          isActive && "bg-white/20 text-primary-foreground"
+        )}
+      >
+        <Icon className="h-4 w-4" />
+        {name}
+      </Link>
+    );
+
+    if (isMobile) {
+      return <SheetClose asChild key={item.href}>{linkContent}</SheetClose>
+    }
+    return linkContent;
+  };
+  
+  const sectionsToRender = [
      {
       title: "SALES & PURCHASES",
       items: [
@@ -84,41 +134,6 @@ export const sidebarSections = [
     }
 ];
 
-export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const { toast } = useToast();
-
-  const handleLogout = () => {
-      if (typeof window !== 'undefined') {
-          localStorage.removeItem('userRole');
-      }
-      toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
-      router.push('/login');
-  };
-
-  const renderLink = (item: any) => {
-    const { name, href, icon: Icon } = item;
-    const isActive = pathname === href;
-    const linkContent = (
-       <Link
-        href={href}
-        className={cn(
-          "flex items-center gap-3 rounded-lg px-3 py-2 text-primary-foreground/70 transition-all hover:text-primary-foreground hover:bg-white/10",
-          isActive && "bg-white/20 text-primary-foreground"
-        )}
-      >
-        <Icon className="h-4 w-4" />
-        {name}
-      </Link>
-    );
-
-    if (isMobile) {
-      return <SheetClose asChild key={item.href}>{linkContent}</SheetClose>
-    }
-    return linkContent;
-  };
-
   return (
     <div className="flex h-full max-h-screen flex-col gap-2 bg-black/30 backdrop-blur-md border-r border-white/10">
       <div className="flex h-16 items-center border-b border-white/10 px-4 shrink-0">
@@ -129,7 +144,8 @@ export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
       </div>
       <div className="flex-1 overflow-y-auto">
         <nav className="grid items-start p-2 text-sm font-medium">
-          {sidebarSections.map((section) => (
+          {renderLink({ name: "Dashboard", href: "/dashboard", icon: LayoutDashboard })}
+          {sectionsToRender.map((section) => (
             <div key={section.title || 'home'} className="py-2">
              {section.title && <h3 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-primary-foreground/50">
                 {section.title}
@@ -185,5 +201,3 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
-
-    
