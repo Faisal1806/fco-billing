@@ -96,6 +96,7 @@ export default function DashboardPage() {
   const [allInvoices, setAllInvoices] = useState<Invoice[]>([]);
   const [allBikris, setAllBikris] = useState<Bikri[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showAllGrowers, setShowAllGrowers] = useState(false);
 
   useEffect(() => {
     function fetchData() {
@@ -242,6 +243,7 @@ export default function DashboardPage() {
   const { dashboardHeader } = placeholderImages;
   
   const appSections = sidebarSections.flatMap(s => s.items);
+  const growersToShow = showAllGrowers ? growerProfits : growerProfits.slice(0, 10);
 
   return (
     <div className="space-y-8">
@@ -306,6 +308,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="p-0">
                 {growerProfits.length > 0 ? (
+                    <>
                     <Table>
                         <TableHeader>
                             <TableRow className="border-white/10">
@@ -314,7 +317,7 @@ export default function DashboardPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {growerProfits.slice(0, 10).map((grower, index) => (
+                            {growersToShow.map((grower, index) => (
                                 <TableRow key={grower.name} className="border-white/10">
                                     <TableCell>
                                         <div className="flex items-center gap-3">
@@ -334,6 +337,18 @@ export default function DashboardPage() {
                             ))}
                         </TableBody>
                     </Table>
+                    {growerProfits.length > 10 && (
+                        <div className="p-4 border-t border-white/10">
+                            <Button
+                                variant="link"
+                                className="text-primary-foreground/80"
+                                onClick={() => setShowAllGrowers(!showAllGrowers)}
+                            >
+                                {showAllGrowers ? 'Show Less' : `Show ${growerProfits.length - 10} More`}
+                            </Button>
+                        </div>
+                    )}
+                    </>
                 ) : (
                      <p className="text-sm text-muted-foreground text-center py-8">No sales data recorded this year.</p>
                 )}
@@ -343,5 +358,7 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
 
     
