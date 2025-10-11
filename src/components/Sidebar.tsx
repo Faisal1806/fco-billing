@@ -36,7 +36,7 @@ export const sidebarSections = [
     {
       title: null,
       items: [
-        { name: "Home", href: "/dashboard", icon: LayoutDashboard },
+        { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       ]
     },
     {
@@ -185,3 +185,5 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
+
+    

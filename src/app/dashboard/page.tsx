@@ -148,8 +148,7 @@ export default function DashboardPage() {
     allInvoices.forEach(sale => {
          if (sale.customerName) {
             const normalized = normalizeName(sale.customerName);
-            const currentCanonical = canonicalNameMap.get(normalized);
-            if (!currentCanonical || sale.customerName.length > currentCanonical.length) {
+            if (!canonicalNameMap.has(normalized)) {
                 canonicalNameMap.set(normalized, sale.customerName);
             }
         }
@@ -268,3 +267,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
