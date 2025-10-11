@@ -50,7 +50,7 @@ type Transaction = {
     notes?: string;
 };
 
-type PartyType = 'customer' | 'supplier' | 'both';
+type PartyType = 'customer' | 'supplier' | 'both' | 'outside';
 
 type Ledger = {
     [canonicalPartyName: string]: {
@@ -136,6 +136,7 @@ export default function KhataLedgerPage() {
             fetch('/animations/forms/fco_loader.json').then(res => res.json()).then(setLoaderAnimation);
 
             const canonicalMap = new Map<string, string>(); 
+            const partyTypes = new Map<string, PartyType>();
             const allTransactions: Transaction[] = [];
 
             // Pass 1: Collect all party names from explicit party list and default growers
@@ -156,67 +157,52 @@ export default function KhataLedgerPage() {
                 }
             }
 
-
-            // Pass 2: Collect all transactions and ensure their parties are in the map
+            // Pass 2: Collect all transactions and determine party types
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (!key) continue;
 
                 try {
+                    let transaction: Transaction | null = null;
+                    let partyName: string | undefined;
+                    let type: TransactionType | undefined;
+
                     if (key.startsWith('invoice-')) {
                         const doc = JSON.parse(localStorage.getItem(key)!);
-                        addPartyToMap(doc.customerName);
-                        allTransactions.push({
-                            id: `sale-${doc.sNo}`,
-                            date: doc.date,
-                            type: 'Sale',
-                            amount: doc.totals.netSale,
-                            grossAmount: doc.totals.grossSale,
-                            expenses: doc.totals.totalExpenses,
-                            party: doc.customerName,
-                            docId: doc.id,
-                        });
+                        partyName = doc.customerName;
+                        type = 'Sale';
+                        transaction = { id: `sale-${doc.sNo}`, date: doc.date, type, amount: doc.totals.netSale, grossAmount: doc.totals.grossSale, expenses: doc.totals.totalExpenses, party: partyName, docId: doc.id };
                     } else if (key.startsWith('purchase-')) {
                         const doc = JSON.parse(localStorage.getItem(key)!);
-                        addPartyToMap(doc.growerName);
-                        allTransactions.push({
-                            id: `purchase-${doc.billNo}`,
-                            date: doc.date,
-                            type: 'Purchase',
-                            amount: doc.totals.grandTotal,
-                            grossAmount: doc.totals.grandTotal,
-                            expenses: 0,
-                            party: doc.growerName,
-                            docId: doc.billNo,
-                        });
+                        partyName = doc.growerName;
+                        type = 'Purchase';
+                        transaction = { id: `purchase-${doc.billNo}`, date: doc.date, type, amount: doc.totals.grandTotal, grossAmount: doc.totals.grandTotal, expenses: 0, party: partyName, docId: doc.billNo };
                     } else if (key.startsWith('advance-')) {
                         const doc = JSON.parse(localStorage.getItem(key)!);
-                        addPartyToMap(doc.partyName);
-                        allTransactions.push({
-                            id: doc.id,
-                            date: doc.date,
-                            type: doc.type === 'Advance Given' ? 'Advance' : 'Repayment',
-                            amount: doc.amount,
-                            grossAmount: doc.amount,
-                            expenses: 0,
-                            party: doc.partyName,
-                            docId: doc.id.replace('advance-',''),
-                            notes: doc.notes,
-                        });
+                        partyName = doc.partyName;
+                        type = doc.type === 'Advance Given' ? 'Advance' : 'Repayment';
+                        transaction = { id: doc.id, date: doc.date, type, amount: doc.amount, grossAmount: doc.amount, expenses: 0, party: partyName, docId: doc.id.replace('advance-',''), notes: doc.notes };
                     } else if (key.startsWith('bikri-')) {
                         const doc = JSON.parse(localStorage.getItem(key)!);
-                        addPartyToMap(doc.market);
-                        allTransactions.push({
-                            id: doc.id,
-                            date: doc.date,
-                            type: 'Bikri',
-                            amount: doc.calculation.netProfitOrLoss,
-                            grossAmount: doc.calculation.grossSale,
-                            expenses: doc.calculation.totalExpenses,
-                            party: doc.market,
-                            docId: doc.id.replace('bikri-',''),
-                            notes: `Bikri #${doc.bikriNo} (Challan #${doc.challanNo})`
-                        });
+                        partyName = doc.market;
+                        type = 'Bikri';
+                        transaction = { id: doc.id, date: doc.date, type, amount: doc.calculation.netProfitOrLoss, grossAmount: doc.calculation.grossSale, expenses: doc.calculation.totalExpenses, party: partyName, docId: doc.id.replace('bikri-',''), notes: `Bikri #${doc.bikriNo}` };
+                    }
+                    
+                    if (transaction && partyName) {
+                        addPartyToMap(partyName);
+                        allTransactions.push(transaction);
+                        
+                        const normalized = normalizeName(partyName);
+                        const currentType = partyTypes.get(normalized);
+
+                        if (type === 'Sale') {
+                            partyTypes.set(normalized, currentType === 'customer' ? 'both' : 'supplier');
+                        } else if (type === 'Purchase' || type === 'Advance') {
+                             partyTypes.set(normalized, currentType === 'supplier' ? 'both' : 'customer');
+                        } else if (type === 'Bikri') {
+                            partyTypes.set(normalized, 'outside');
+                        }
                     }
                 } catch (e) {
                     console.error("Failed to parse ledger data from local storage for key:", key, e);
@@ -225,14 +211,14 @@ export default function KhataLedgerPage() {
 
             allTransactions.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
             
-            // Pass 3: Build the ledgers using the complete canonical map
+            // Pass 3: Build the ledgers
             const calculatedLedgers: Ledger = {};
             
             canonicalMap.forEach((displayName, normalizedName) => {
                  calculatedLedgers[displayName] = { 
                     transactions: [], 
                     balance: 0, 
-                    partyType: 'customer', // Default type, will be adjusted
+                    partyType: partyTypes.get(normalizedName) || 'customer',
                     displayName: displayName
                 };
             });
@@ -243,15 +229,7 @@ export default function KhataLedgerPage() {
                 const canonicalName = canonicalMap.get(normalized);
                 
                 if (canonicalName && calculatedLedgers[canonicalName]) {
-                    const ledger = calculatedLedgers[canonicalName];
-                    ledger.transactions.push(trans);
-                    
-                    if (trans.type === 'Sale') {
-                        ledger.partyType = ledger.partyType === 'supplier' ? 'both' : 'customer';
-                    }
-                    if (trans.type === 'Purchase') {
-                        ledger.partyType = ledger.partyType === 'customer' ? 'both' : 'supplier';
-                    }
+                    calculatedLedgers[canonicalName].transactions.push(trans);
                 }
             }
             
@@ -259,10 +237,19 @@ export default function KhataLedgerPage() {
             Object.keys(calculatedLedgers).forEach(partyKey => {
                 let runningBalance = 0;
                 calculatedLedgers[partyKey].transactions.forEach(trans => {
-                    if (trans.type === 'Sale' || trans.type === 'Repayment' || (trans.type === 'Bikri' && trans.amount >= 0)) {
+                    const partyType = calculatedLedgers[partyKey].partyType;
+                    // Supplier/Grower context: Sales are credit (what you owe them), Purchases/Advances are debit.
+                    // Customer context: Purchases/Advances are credit (what they owe you), Sales/Repayments are debit.
+                    if (trans.type === 'Sale') { // You sold their goods, so you owe them the net sale.
                         runningBalance += trans.amount;
-                    } else { // Purchase, Advance, Bikri Loss
+                    } else if (trans.type === 'Purchase') { // You bought goods, reducing what you owe.
                         runningBalance -= trans.amount;
+                    } else if (trans.type === 'Advance') { // You gave them money, reducing what you owe.
+                        runningBalance -= trans.amount;
+                    } else if (trans.type === 'Repayment') { // They paid you back for an advance, increasing what they owe you (or reducing what you owe them).
+                        runningBalance += trans.amount;
+                    } else if (trans.type === 'Bikri') { // For outside parties
+                        runningBalance += trans.amount; // Profit is receivable, loss is payable
                     }
                 });
                 calculatedLedgers[partyKey].balance = runningBalance;
@@ -281,24 +268,25 @@ export default function KhataLedgerPage() {
         const filterAndSetParties = (tab: 'growers' | 'customers' | 'outside' | 'fco' | 'all') => {
              const fcoName = 'F.Co (Own Stock)';
              if (tab === 'fco') {
-                setFilteredParties([fcoName]);
+                setFilteredParties(allParties.filter(p => p === fcoName));
                 setSelectedParty(fcoName);
                 return;
              }
             
             const parties = allParties.filter(p => {
-                if (tab === 'all') return true;
+                if (tab === 'all') return p !== fcoName;
                 if (!p || p === fcoName) return false;
                 const ledger = ledgers[p];
-                
-                if (tab === 'growers') {
-                    return ledger?.transactions.some(t => t.type === 'Sale');
+                if (!ledger) return false;
+
+                if (tab === 'growers') { // People who sell TO you (you owe them for sales)
+                    return ledger.partyType === 'supplier' || ledger.partyType === 'both';
                 }
-                if (tab === 'customers') {
-                    return ledger?.transactions.some(t => t.type === 'Purchase' || t.type === 'Advance');
+                if (tab === 'customers') { // People who buy FROM you (or you give advances to)
+                    return ledger.partyType === 'customer' || ledger.partyType === 'both';
                 }
                 if (tab === 'outside') {
-                    return ledger?.transactions.some(t => t.type === 'Bikri');
+                    return ledger.partyType === 'outside';
                 }
                 return false;
             });
@@ -313,8 +301,10 @@ export default function KhataLedgerPage() {
             }
         };
         
-        filterAndSetParties(activeTab as any);
-    }, [activeTab, allParties, ledgers, selectedParty]);
+        if (!isLoading) {
+            filterAndSetParties(activeTab as any);
+        }
+    }, [activeTab, allParties, ledgers, isLoading]);
 
     const selectedLedger = selectedParty ? ledgers[selectedParty] : null;
 
@@ -323,7 +313,7 @@ export default function KhataLedgerPage() {
         if (type === 'Sale') path = `/invoice/${docId}`;
         else if (type === 'Purchase') path = `/purchase-bill/${docId}`;
         else if (type === 'Advance' || type === 'Repayment') path = '/advances';
-        else if (type === 'Bikri') path = `/bikri-bill/${docId}`;
+        else if (type === 'Bikri') path = `/bikri-bill/${docId.replace('bikri-','')}`;
         
         if (path) router.push(path);
     };
@@ -332,9 +322,9 @@ export default function KhataLedgerPage() {
         if (!selectedLedger) return [];
         let runningBalance = 0;
         return selectedLedger.transactions.map(tx => {
-             if (tx.type === 'Sale' || tx.type === 'Repayment' || (tx.type === 'Bikri' && tx.amount >= 0)) {
+            if (tx.type === 'Sale' || tx.type === 'Repayment' || (tx.type === 'Bikri' && tx.amount >= 0)) {
                 runningBalance += tx.amount;
-            } else { // Purchase, Advance
+            } else { // Purchase, Advance, Bikri Loss
                 runningBalance -= tx.amount;
             }
             return {...tx, runningBalance};
@@ -359,15 +349,18 @@ export default function KhataLedgerPage() {
 
         autoTable(doc, {
             startY: 35,
-            head: [['Date', 'Doc ID / Particulars', 'Type', 'Debit (Receivable)', 'Credit (Payable)', 'Balance']],
-            body: ledgerForExport.map(tx => [
-                new Date(tx.date).toLocaleDateString('en-GB'),
-                tx.notes || (tx.type === 'Sale' ? `Bill #${tx.docId}` : tx.type === 'Purchase' ? `Purchase #${tx.docId}` : tx.type === 'Bikri' ? `Bikri #${tx.docId}` : tx.type),
-                tx.type,
-                (tx.type === 'Purchase' || tx.type === 'Advance' || (tx.type === 'Bikri' && tx.amount < 0)) ? `₹${Math.abs(tx.amount).toFixed(2)}` : '-',
-                (tx.type === 'Sale' || tx.type === 'Repayment' || (tx.type === 'Bikri' && tx.amount >= 0)) ? `₹${tx.amount.toFixed(2)}` : '-',
-                `₹${tx.runningBalance.toFixed(2)}`
-            ]),
+            head: [['Date', 'Doc ID / Particulars', 'Type', 'Debit (Payable)', 'Credit (Receivable)', 'Balance']],
+            body: ledgerForExport.map(tx => {
+                const isCredit = tx.type === 'Sale' || tx.type === 'Repayment' || (tx.type === 'Bikri' && tx.amount >= 0);
+                return [
+                    new Date(tx.date).toLocaleDateString('en-GB'),
+                    tx.notes || (tx.type === 'Sale' ? `Bill #${tx.docId}` : tx.type === 'Purchase' ? `Purchase #${tx.docId}` : tx.type),
+                    tx.type,
+                    isCredit ? '-' : `₹${Math.abs(tx.amount).toFixed(2)}`,
+                    isCredit ? `₹${tx.amount.toFixed(2)}` : '-',
+                    `₹${tx.runningBalance.toFixed(2)}`
+                ]
+            }),
             foot: [
                 [{ content: 'Final Balance', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, 
                  { content: `₹${selectedLedger.balance.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold' } }]
@@ -389,16 +382,19 @@ export default function KhataLedgerPage() {
     const exportToExcel = () => {
         if (!selectedParty || !selectedLedger) return;
 
-        const worksheetData = ledgerForExport.map(tx => ({
-            Date: new Date(tx.date).toLocaleDateString('en-GB'),
-            'Document ID': tx.docId,
-            'Particulars (Original Name)': tx.party,
-            Type: tx.type,
-            'Debit (Receivable)': (tx.type === 'Purchase' || tx.type === 'Advance' || (tx.type === 'Bikri' && tx.amount < 0)) ? Math.abs(tx.amount) : '',
-            'Credit (Payable)': (tx.type === 'Sale' || tx.type === 'Repayment' || (tx.type === 'Bikri' && tx.amount >= 0)) ? tx.amount : '',
-            'Running Balance': tx.runningBalance,
-            'Notes': tx.notes || '',
-        }));
+        const worksheetData = ledgerForExport.map(tx => {
+            const isCredit = tx.type === 'Sale' || tx.type === 'Repayment' || (tx.type === 'Bikri' && tx.amount >= 0);
+            return {
+                Date: new Date(tx.date).toLocaleDateString('en-GB'),
+                'Document ID': tx.docId,
+                'Particulars (Original Name)': tx.party,
+                Type: tx.type,
+                'Debit (Payable)': isCredit ? '' : Math.abs(tx.amount),
+                'Credit (Receivable)': isCredit ? tx.amount : '',
+                'Running Balance': tx.runningBalance,
+                'Notes': tx.notes || '',
+            }
+        });
         
         const worksheet = XLSX.utils.json_to_sheet(worksheetData);
         const workbook = XLSX.utils.book_new();
@@ -418,15 +414,17 @@ export default function KhataLedgerPage() {
     const PartyIcon = ({ type }: { type: PartyType }) => {
         if (type === 'supplier') return <Leaf className="h-4 w-4 mr-2 text-green-500" />;
         if (type === 'customer') return <ShoppingCart className="h-4 w-4 mr-2 text-blue-500" />;
+        if (type === 'outside') return <Globe className="h-4 w-4 mr-2 text-orange-500" />;
         return <Users className="h-4 w-4 mr-2 text-purple-500" />;
     };
     
     const totals = React.useMemo(() => {
         if (!selectedLedger) return { debit: 0, credit: 0 };
         return selectedLedger.transactions.reduce((acc, tx) => {
-             if (tx.type === 'Sale' || tx.type === 'Repayment' || (tx.type === 'Bikri' && tx.amount >= 0)) {
+             const isCredit = tx.type === 'Sale' || tx.type === 'Repayment' || (tx.type === 'Bikri' && tx.amount >= 0);
+             if (isCredit) {
                 acc.credit += tx.amount;
-            } else { // Purchase, Advance, Bikri Loss
+            } else {
                 acc.debit += Math.abs(tx.amount);
             }
             return acc;
@@ -471,22 +469,14 @@ export default function KhataLedgerPage() {
         let balanceText: string;
         let balanceColor: string;
         
-        if (activeTab === 'outside') {
-            if (selectedLedger.balance >= 0) { // Profit is owed to you
-                balanceText = '(Receivable)';
-                balanceColor = 'text-green-600';
-            } else { // Loss is owed by you
-                balanceText = '(Payable)';
-                balanceColor = 'text-red-500';
-            }
-        } else { // For Growers and Customers
-             if (selectedLedger.balance >= 0) { // You owe the grower
-                balanceText = '(Payable)';
-                balanceColor = 'text-red-500';
-            } else { // Customer owes you
-                balanceText = '(Receivable)';
-                balanceColor = 'text-green-600';
-            }
+        // Positive balance means you OWE money (e.g. from a sale)
+        // Negative balance means you ARE OWED money (e.g. from an advance)
+        if (selectedLedger.balance >= 0) {
+            balanceText = '(You Owe / Payable)';
+            balanceColor = 'text-red-500';
+        } else {
+            balanceText = '(You are Owed / Receivable)';
+            balanceColor = 'text-green-600';
         }
         
         return (
@@ -584,34 +574,36 @@ export default function KhataLedgerPage() {
                                 <TableHead>Date</TableHead>
                                 <TableHead>Particulars</TableHead>
                                 <TableHead>Type</TableHead>
-                                <TableHead className="text-right">Debit (Receivable)</TableHead>
-                                <TableHead className="text-right">Credit (Payable)</TableHead>
+                                <TableHead className="text-right">Debit (Payable)</TableHead>
+                                <TableHead className="text-right">Credit (Receivable)</TableHead>
                                 <TableHead className="text-right">Balance</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {getLedgerWithRunningBalance().map((tx) => (
-                            <TableRow key={tx.id}>
-                                <TableCell>{new Date(tx.date).toLocaleDateString('en-GB')}</TableCell>
-                                <TableCell>
-                                    <Button variant="link" className="p-0 h-auto print-hidden" onClick={() => navigateToDoc(tx.type, tx.docId)}>
-                                        {tx.notes || (tx.type === 'Sale' ? `Bill #${tx.docId}` : tx.type === 'Purchase' ? `Purchase #${tx.docId}` : tx.type === 'Bikri' ? `Bikri #${tx.docId}`: tx.type)}
-                                    </Button>
-                                    <span className="hidden print:inline">{tx.notes || (tx.type === 'Sale' ? `Bill #${tx.docId}` : tx.type === 'Purchase' ? `Purchase #${tx.docId}` : tx.type === 'Bikri' ? `Bikri #${tx.docId}` : tx.type)}</span>
-                                     <p className="text-xs text-muted-foreground hidden print:block">({tx.party})</p>
-                                </TableCell>
-                                <TableCell>
-                                   <Badge variant={getBadgeVariant(tx.type)}>{tx.type}</Badge>
-                                </TableCell>
-                                <TableCell className="text-right font-mono text-red-500">
-                                    {(tx.type === 'Purchase' || tx.type === 'Advance' || (tx.type === 'Bikri' && tx.amount < 0)) ? `₹${Math.abs(tx.amount).toFixed(2)}` : '-'}
-                                </TableCell>
-                                <TableCell className="text-right font-mono text-green-600">
-                                    {(tx.type === 'Sale' || tx.type === 'Repayment' || (tx.type === 'Bikri' && tx.amount >= 0)) ? `₹${tx.amount.toFixed(2)}` : '-'}
-                                </TableCell>
-                                <TableCell className="text-right font-mono">₹{tx.runningBalance.toFixed(2)}</TableCell>
-                            </TableRow>
-                            ))}
+                            {getLedgerWithRunningBalance().map((tx) => {
+                                const isCredit = tx.type === 'Sale' || tx.type === 'Repayment' || (tx.type === 'Bikri' && tx.amount >= 0);
+                                return (
+                                <TableRow key={tx.id}>
+                                    <TableCell>{new Date(tx.date).toLocaleDateString('en-GB')}</TableCell>
+                                    <TableCell>
+                                        <Button variant="link" className="p-0 h-auto print-hidden" onClick={() => navigateToDoc(tx.type, tx.docId)}>
+                                            {tx.notes || (tx.type === 'Sale' ? `Bill #${tx.docId}` : tx.type === 'Purchase' ? `Purchase #${tx.docId}` : tx.type)}
+                                        </Button>
+                                        <span className="hidden print:inline">{tx.notes || (tx.type === 'Sale' ? `Bill #${tx.docId}` : tx.type === 'Purchase' ? `Purchase #${tx.docId}` : tx.type)}</span>
+                                        <p className="text-xs text-muted-foreground hidden print:block">({tx.party})</p>
+                                    </TableCell>
+                                    <TableCell>
+                                    <Badge variant={getBadgeVariant(tx.type)}>{tx.type}</Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right font-mono text-red-500">
+                                        {!isCredit ? `₹${Math.abs(tx.amount).toFixed(2)}` : '-'}
+                                    </TableCell>
+                                    <TableCell className="text-right font-mono text-green-600">
+                                        {isCredit ? `₹${tx.amount.toFixed(2)}` : '-'}
+                                    </TableCell>
+                                    <TableCell className="text-right font-mono">₹{tx.runningBalance.toFixed(2)}</TableCell>
+                                </TableRow>
+                            )})}
                         </TableBody>
                         <TableFooter>
                             <TableRow className="font-bold">
@@ -625,7 +617,7 @@ export default function KhataLedgerPage() {
                     </Table>
                 ) : (
                     <div className="text-center text-muted-foreground py-12 print-hidden">
-                        <p>No transactions found for the selected category.</p>
+                        <p>No transactions found for the selected category or party.</p>
                         <p className="text-sm">Start by creating sales or purchases, or select a different category.</p>
                     </div>
                 )}
