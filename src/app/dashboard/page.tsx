@@ -1,3 +1,4 @@
+
 'use client'
 
 import * as React from 'react';
@@ -13,6 +14,7 @@ import placeholderImages from '@/app/lib/placeholder-images.json';
 import { motion } from 'framer-motion';
 import { sidebarSections } from '@/components/Sidebar';
 import { cn } from '@/lib/utils';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 
 interface Invoice {
@@ -52,21 +54,17 @@ const normalizeName = (name: string): string => {
         .trim();
 };
 
-const StatCard = ({ title, value, note, children, icon: Icon }: { title: string, value: string, note?: string, children?: React.ReactNode, icon: React.ElementType }) => (
-    <Card className="bg-card/80 backdrop-blur-sm border border-white/10 shadow-lg">
-        <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+const StatCard = ({ title, value, icon: Icon }: { title: string, value: string, icon: React.ElementType }) => (
+    <Card className="bg-card/80 backdrop-blur-sm border border-white/10 shadow-lg p-4">
+         <div className="flex items-start justify-between">
             <div className="space-y-1">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-                <div className="text-2xl font-bold">{value}</div>
+                <p className="text-sm font-medium text-muted-foreground">{title}</p>
+                <p className="text-2xl font-bold">{value}</p>
             </div>
-             <div className="p-2 bg-yellow-500/20 rounded-full">
-                <Icon className="h-5 w-5 text-yellow-500" />
+            <div className="p-2 bg-yellow-500/10 rounded-full">
+                <Icon className="h-5 w-5 text-yellow-400" />
             </div>
-        </CardHeader>
-        <CardContent>
-            {note && <p className="text-xs text-muted-foreground">{note}</p>}
-             {children}
-        </CardContent>
+        </div>
     </Card>
 );
 
@@ -76,15 +74,15 @@ const AppSectionCard = ({ item }: { item: { name: string; href: string; icon: Re
     
     return (
         <motion.div
-            whileHover={{ scale: 1.05, zIndex: 10, y: -5 }}
+            whileHover={{ scale: 1.05, y: -5 }}
             whileTap={{ scale: 0.95 }}
-            className="cursor-pointer text-center group"
+            className="cursor-pointer group bg-card/50 backdrop-blur-sm border border-white/10 rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-white/10 transition-colors"
             onClick={() => router.push(href)}
         >
-            <div className="p-1 rounded-lg">
-                <Icon className="h-6 w-6 text-muted-foreground group-hover:text-primary-foreground transition-colors" />
+            <div className="neon-glow-container">
+                <Icon className="h-7 w-7 text-green-400 neon-glow-icon" />
             </div>
-            <span className="text-xs font-medium text-muted-foreground group-hover:text-primary-foreground transition-colors mt-1">{name}</span>
+            <span className="text-xs font-medium text-center text-muted-foreground group-hover:text-primary-foreground transition-colors">{name}</span>
         </motion.div>
     );
 }
@@ -127,15 +125,10 @@ export default function DashboardPage() {
     const currentYear = today.getFullYear();
     
     let totalSaleValueToday = 0;
-    let todayPatti = 0;
-    let todayDabba = 0;
     let monthlyTotalSales = 0;
-    let monthlyTotalExpenses = 0;
     let yearGrossSales = 0;
     let yearTotalExpenses = 0;
     let yearNetSales = 0;
-    let yearPattiSold = 0;
-    let yearDabbaSold = 0;
 
     allInvoices.forEach(sale => {
         const saleDate = new Date(sale.date);
@@ -144,54 +137,27 @@ export default function DashboardPage() {
 
         if (sale.date === todayStr) {
             totalSaleValueToday += sale.totals.netSale || 0;
-            todayPatti += sale.totals.pattiQty || 0;
-            todayDabba += sale.totals.dabbaQty || 0;
         }
 
         if (saleYear === currentYear) {
             yearGrossSales += sale.totals.grossSale || 0;
             yearTotalExpenses += sale.totals.totalExpenses || 0;
             yearNetSales += sale.totals.netSale || 0;
-            yearPattiSold += sale.totals.pattiQty || 0;
-            yearDabbaSold += sale.totals.dabbaQty || 0;
 
              if (saleMonth === currentMonth) {
                 monthlyTotalSales += sale.totals.netSale || 0;
-                monthlyTotalExpenses += sale.totals.totalExpenses || 0;
             }
         }
     });
-
-    const yearNugsSold = yearPattiSold + yearDabbaSold;
-
-    const { pattiOutside, dabbaOutside, nugsOutside } = allBikris.reduce((acc, bikri) => {
-        if(new Date(bikri.date).getFullYear() === currentYear) {
-            bikri.purchaseEntries?.forEach(entry => {
-                if (entry.type === 'Patti') acc.pattiOutside += entry.qty;
-                if (entry.type === 'Dabba') acc.dabbaOutside += entry.qty;
-            });
-        }
-        return acc;
-    }, { pattiOutside: 0, dabbaOutside: 0, nugsOutside: 0});
-
     
     return {
         totalSaleValueToday,
-        todayPatti,
-        todayDabba,
         monthSales: monthlyTotalSales,
-        monthExpenses: monthlyTotalExpenses,
         yearGrossSales,
         yearTotalExpenses,
         yearNetSales,
-        yearPattiSold,
-        yearDabbaSold,
-        yearNugsSold,
-        yearPattiSentOutside: pattiOutside,
-        yearDabbaSentOutside: dabbaOutside,
-        yearNugsSentOutside: pattiOutside + dabbaOutside
     };
-  }, [allInvoices, allBikris, isLoading]);
+  }, [allInvoices, isLoading]);
   
   const growerProfits = useMemo(() => {
     if (isLoading) return [];
@@ -244,7 +210,7 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="relative h-48 rounded-xl overflow-hidden flex flex-col justify-center items-center text-center p-4"
+            className="relative h-48 rounded-xl overflow-hidden flex flex-col justify-center items-center text-center p-4 border border-white/10"
         >
             <Image 
                 src={dashboardHeader.src}
@@ -259,59 +225,31 @@ export default function DashboardPage() {
                 <h1 className="text-4xl md:text-5xl font-bold text-white shadow-lg">Welcome to F.Co</h1>
                 <p className="text-lg text-gray-300/80 shadow-md mt-2">Your complete business management solution.</p>
             </div>
-            <div className="absolute bottom-4 w-full flex justify-center">
-                 <div className="bg-black/30 backdrop-blur-md p-2 rounded-full flex gap-4">
-                    <Button variant="secondary" size="sm" className="rounded-full gap-2"><Briefcase className="h-4 w-4"/> Fruit Business</Button>
-                    <Button variant="ghost" size="sm" className="rounded-full gap-2"><Box className="h-4 w-4"/> Accessories</Button>
-                    <Button variant="ghost" size="sm" className="rounded-full gap-2"><Archive className="h-4 w-4"/> Inventory</Button>
-                </div>
-            </div>
         </motion.div>
         
+         <Accordion type="single" collapsible defaultValue="item-1" className="w-full">
+            <AccordionItem value="item-1">
+                <AccordionTrigger>
+                    <h2 className="text-xl font-semibold tracking-wider text-muted-foreground">APP SECTIONS</h2>
+                </AccordionTrigger>
+                <AccordionContent>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-4 pt-4">
+                        {appSections.map((item) => (
+                            <AppSectionCard key={item.name} item={item} />
+                        ))}
+                    </div>
+                </AccordionContent>
+            </AccordionItem>
+        </Accordion>
+
         <div className="space-y-4">
-             <h2 className="text-xl font-semibold tracking-wider text-muted-foreground">APP SECTIONS</h2>
-             <Card className="p-4 bg-card/80 backdrop-blur-sm border-white/10">
-                 <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-x-4 gap-y-6">
-                    {appSections.map((item) => (
-                        <AppSectionCard key={item.name} item={item} />
-                    ))}
-                 </div>
-            </Card>
-        </div>
-
-         <div className="space-y-4">
-             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
-                <StatCard title="Today's Sales (Net)" value={`₹${stats?.totalSaleValueToday.toLocaleString('en-IN') ?? '0'}`} note={`From ${stats?.todayPatti} Patti / ${stats?.todayDabba} Dabba`} icon={TrendingUp} />
-                <StatCard title="This Month's Sales (Net)" value={`₹${stats?.monthSales.toLocaleString('en-IN') ?? '0'}`} note="Current calendar month" icon={Calendar} />
-                <StatCard title="This Month's Expenses" value={`₹${stats?.monthExpenses.toLocaleString('en-IN') ?? '0'}`} note="From Watak deductions" icon={TrendingDown} />
-                <StatCard title="This Year's Gross Sales" value={`₹${stats?.yearGrossSales.toLocaleString('en-IN') ?? '0'}`} note="Total sale value this year" icon={IndianRupee} />
-                <StatCard title="This Year's Net Sales" value={`₹${stats?.yearNetSales.toLocaleString('en-IN') ?? '0'}`} note="After all expenses" icon={IndianRupee} />
-                <StatCard title="This Year's Expenses" value={`₹${stats?.yearTotalExpenses.toLocaleString('en-IN') ?? '0'}`} note="All Watak deductions this year" icon={TrendingDown} />
-                <StatCard title="Total Patti Sold (This Year)" value={`${stats?.yearPattiSold.toLocaleString('en-IN') ?? '0'}`} note="Local sales volume" icon={Box}/>
-                <StatCard title="Total Dabba Sold (This Year)" value={`${stats?.yearDabbaSold.toLocaleString('en-IN') ?? '0'}`} note="Local sales volume" icon={Box}/>
-                <StatCard title="Total Nugs Sold (This Year)" value={`${stats?.yearNugsSold.toLocaleString('en-IN') ?? '0'}`} note="Patti + Dabba (Local)" icon={Archive}/>
-                <StatCard title="Total Patti Sent Outside (Year)" value={`${stats?.yearPattiSentOutside.toLocaleString('en-IN') ?? '0'}`} note="Forwarding volume" icon={Globe}/>
-                <StatCard title="Total Dabba Sent Outside (Year)" value={`${stats?.yearDabbaSentOutside.toLocaleString('en-IN') ?? '0'}`} note="Forwarding volume" icon={Globe}/>
-                <StatCard title="Total Nugs Sent Outside (Year)" value={`${stats?.yearNugsSentOutside.toLocaleString('en-IN') ?? '0'}`} note="Total Forwarding" icon={Globe}/>
+             <h2 className="text-xl font-semibold tracking-wider text-muted-foreground">THIS YEAR'S SUMMARY</h2>
+             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <StatCard title="Today's Sales (Net)" value={`₹${stats?.totalSaleValueToday.toLocaleString('en-IN') ?? '0'}`} icon={TrendingUp} />
+                <StatCard title="This Month's Sales (Net)" value={`₹${stats?.monthSales.toLocaleString('en-IN') ?? '0'}`} icon={Calendar} />
+                <StatCard title="This Year's Gross Sales" value={`₹${stats?.yearGrossSales.toLocaleString('en-IN') ?? '0'}`} icon={IndianRupee} />
+                <StatCard title="This Year's Net Sales" value={`₹${stats?.yearNetSales.toLocaleString('en-IN') ?? '0'}`} icon={IndianRupee} />
              </div>
-        </div>
-
-        <div>
-            <h2 className="text-xl font-semibold tracking-wider text-muted-foreground mb-4">Quick Actions</h2>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Button onClick={() => router.push('/sales')} className="h-16 text-lg bg-red-600/20 hover:bg-red-600/30 border border-red-500/50 text-red-300 hover:text-red-200">
-                    <PlusCircle className="mr-2 h-5 w-5" /> Sales Entry
-                </Button>
-                <Button onClick={() => router.push('/watak-register')} className="h-16 text-lg bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/50 text-blue-300 hover:text-blue-200">
-                    <FileText className="mr-2 h-5 w-5" /> Watak Register
-                </Button>
-                <Button onClick={() => router.push('/purchases')} className="h-16 text-lg bg-green-600/20 hover:bg-green-600/30 border border-green-500/50 text-green-300 hover:text-green-200">
-                    <ShoppingBasket className="mr-2 h-5 w-5" /> Purchases
-                </Button>
-                 <Button onClick={() => router.push('/khata')} className="h-16 text-lg bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/50 text-yellow-300 hover:text-yellow-200">
-                    <BookOpen className="mr-2 h-5 w-5" /> Reports
-                </Button>
-            </div>
         </div>
         
         <Card className="bg-card/80 backdrop-blur-sm border border-white/10">

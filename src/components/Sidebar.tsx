@@ -36,7 +36,6 @@ export const sidebarSections = [
     {
       title: null,
       items: [
-        { name: "Home", href: "/dashboard", icon: LayoutDashboard },
         { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
         { name: "Sales", href: "/sales", icon: ShoppingCart },
         { name: "Watak Register", href: "/watak-register", icon: FileText },
