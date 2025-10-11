@@ -136,10 +136,9 @@ export default function KhataLedgerPage() {
             fetch('/animations/forms/fco_loader.json').then(res => res.json()).then(setLoaderAnimation);
 
             const canonicalMap = new Map<string, string>(); 
-            const transactionsByType: { [key: string]: Transaction[] } = { sales: [], purchases: [], advances: [], bikris: []};
             const allTransactions: Transaction[] = [];
 
-            // Pass 1: Collect all transactions and build a complete map of all parties
+            // Pass 1: Collect all party names from explicit party list and default growers
             const addPartyToMap = (partyName: string) => {
                 if (!partyName) return;
                 const normalized = normalizeName(partyName);
@@ -147,18 +146,24 @@ export default function KhataLedgerPage() {
                     canonicalMap.set(normalized, partyName);
                 }
             };
-
+            
             defaultGrowers.forEach(g => addPartyToMap(g.name));
+            for (let i = 0; i < localStorage.length; i++) {
+                 const key = localStorage.key(i);
+                 if (key?.startsWith('party-')) {
+                    const doc = JSON.parse(localStorage.getItem(key)!);
+                    addPartyToMap(doc.name);
+                }
+            }
 
+
+            // Pass 2: Collect all transactions and ensure their parties are in the map
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (!key) continue;
 
                 try {
-                    if (key.startsWith('party-')) {
-                        const doc = JSON.parse(localStorage.getItem(key)!);
-                        addPartyToMap(doc.name);
-                    } else if (key.startsWith('invoice-')) {
+                    if (key.startsWith('invoice-')) {
                         const doc = JSON.parse(localStorage.getItem(key)!);
                         addPartyToMap(doc.customerName);
                         allTransactions.push({
@@ -220,7 +225,7 @@ export default function KhataLedgerPage() {
 
             allTransactions.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
             
-            // Pass 2: Build the ledgers using the complete canonical map
+            // Pass 3: Build the ledgers using the complete canonical map
             const calculatedLedgers: Ledger = {};
             
             canonicalMap.forEach((displayName, normalizedName) => {
@@ -250,7 +255,7 @@ export default function KhataLedgerPage() {
                 }
             }
             
-            // Pass 3: Calculate final balances
+            // Pass 4: Calculate final balances
             Object.keys(calculatedLedgers).forEach(partyKey => {
                 let runningBalance = 0;
                 calculatedLedgers[partyKey].transactions.forEach(trans => {

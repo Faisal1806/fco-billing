@@ -9,6 +9,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter
 } from '@/components/ui/card';
 import {
   Table,
@@ -323,146 +324,189 @@ export default function SalesRegisterPage() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-start gap-4 flex-wrap">
-            <div className="flex items-center gap-4">
-                <CardTitle className="flex items-center gap-2">
-                    Sales Register
-                    {!isLoading && <Badge variant="outline">{yearlyCount} This Year</Badge>}
-                </CardTitle>
-                <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        type="search"
-                        placeholder="Search by Invoice No, Watak No, Name..."
-                        className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
-                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="flex items-center gap-2 min-w-[200px]">
-                           <span className="flex-1 text-left">{selectedGrower}</span>
-                           <ChevronDown className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start">
-                        {growers.map(grower => (
-                             <DropdownMenuItem key={grower} onSelect={() => setSelectedGrower(grower)}>
-                                {grower}
-                             </DropdownMenuItem>
-                        ))}
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </div>
-            <div className="flex items-center gap-2">
-                 <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setViewMode(viewMode === 'table' ? 'grid' : 'table')}
-                    title={viewMode === 'table' ? 'Grid View' : 'Table View'}
-                    >
-                    {viewMode === 'table' ? <LayoutGrid className="h-4 w-4" /> : <List className="h-4 w-4" />}
-                </Button>
-                <Button size="sm" onClick={handleShare} variant="outline" className="gap-1">
-                    <FaWhatsapp className="h-4 w-4 text-green-500" />
-                     Share Portal
-                </Button>
-                 <Button size="sm" variant="outline" className="gap-1" onClick={exportToPDF}>
-                    <FileDown className="h-3.5 w-3.5" />
-                    PDF
-                </Button>
-                <Button size="sm" variant="outline" className="gap-1" onClick={exportToExcel}>
-                    <FileDown className="h-3.5 w-3.5" />
-                    Excel
-                </Button>
-                <Button size="sm" className="gap-1" onClick={() => router.push('/sales')}>
-                    <PlusCircle className="h-3.5 w-3.5" />
-                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                        Add Invoice
-                    </span>
-                </Button>
-            </div>
-        </div>
-        <CardDescription>Track and manage customer credit and sales invoices.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-            <div className="flex justify-center items-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-        ) : viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {filteredWataks.map((watak) => {
-                    const canonicalName = partyNameMap.get(normalizeName(watak.customerName)) || watak.customerName;
-                    return (
-                     <div key={watak.id} onClick={() => navigateToBill(watak.sNo)} className="cursor-pointer">
-                        <DocumentCard type="watak" title={`Invoice #${watak.watakNo || watak.sNo}`}>
-                            <p className="text-lg font-semibold">{canonicalName}</p>
-                            {watak.customerUrdu && <p className="font-urdu text-xl mt-1">{watak.customerUrdu}</p>}
-                            <p className="text-sm mt-2">Date: {new Date(watak.date).toLocaleDateString()}</p>
-                            <p className="text-2xl font-bold mt-4">₹{watak.totals.netSale.toFixed(2)}</p>
-                        </DocumentCard>
-                    </div>
-                )})}
-            </div>
-        ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Invoice No.</TableHead>
-              <TableHead>Watak No.</TableHead>
-              <TableHead>Khata (Grower)</TableHead>
-              <TableHead>Peti</TableHead>
-              <TableHead>Dabba</TableHead>
-              <TableHead className="text-right">Gross Sale</TableHead>
-              <TableHead className="text-right">Total Exp.</TableHead>
-              <TableHead className="text-right">Net Sale</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredWataks.map((watak: WatakEntry) => {
-              const canonicalName = partyNameMap.get(normalizeName(watak.customerName)) || watak.customerName;
-              return (
-              <TableRow key={watak.id}>
-                <TableCell>{new Date(watak.date).toLocaleDateString('en-GB')}</TableCell>
-                <TableCell>{watak.sNo}</TableCell>
-                <TableCell>{watak.watakNo}</TableCell>
-                <TableCell className="font-medium">{canonicalName}</TableCell>
-                <TableCell>{watak.totals.pattiQty || 0}</TableCell>
-                <TableCell>{watak.totals.dabbaQty || 0}</TableCell>
-                <TableCell className="text-right">₹{watak.totals.grossSale.toFixed(2)}</TableCell>
-                <TableCell className="text-right">₹{watak.totals.totalExpenses.toFixed(2)}</TableCell>
-                <TableCell className="text-right">₹{watak.totals.netSale.toFixed(2)}</TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" onClick={() => navigateToBill(watak.sNo)}>
-                    <FilePenLine className="h-4 w-4" />
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-start gap-4 flex-wrap">
+              <div className="flex items-center gap-4">
+                  <CardTitle className="flex items-center gap-2">
+                      Sales Register
+                      {!isLoading && <Badge variant="outline">{yearlyCount} This Year</Badge>}
+                  </CardTitle>
+                  <div className="relative">
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                          type="search"
+                          placeholder="Search by Invoice No, Watak No, Name..."
+                          className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                  </div>
+                  <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                          <Button variant="outline" className="flex items-center gap-2 min-w-[200px]">
+                            <span className="flex-1 text-left">{selectedGrower}</span>
+                            <ChevronDown className="h-4 w-4" />
+                          </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                          {growers.map(grower => (
+                              <DropdownMenuItem key={grower} onSelect={() => setSelectedGrower(grower)}>
+                                  {grower}
+                              </DropdownMenuItem>
+                          ))}
+                      </DropdownMenuContent>
+                  </DropdownMenu>
+              </div>
+              <div className="flex items-center gap-2">
+                  <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setViewMode(viewMode === 'table' ? 'grid' : 'table')}
+                      title={viewMode === 'table' ? 'Grid View' : 'Table View'}
+                      >
+                      {viewMode === 'table' ? <LayoutGrid className="h-4 w-4" /> : <List className="h-4 w-4" />}
                   </Button>
-                  {userRole === 'admin' && (
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(watak.sNo)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  )}
-                </TableCell>
+                  <Button size="sm" onClick={handleShare} variant="outline" className="gap-1">
+                      <FaWhatsapp className="h-4 w-4 text-green-500" />
+                      Share Portal
+                  </Button>
+                  <Button size="sm" variant="outline" className="gap-1" onClick={exportToPDF}>
+                      <FileDown className="h-3.5 w-3.5" />
+                      PDF
+                  </Button>
+                  <Button size="sm" variant="outline" className="gap-1" onClick={exportToExcel}>
+                      <FileDown className="h-3.5 w-3.5" />
+                      Excel
+                  </Button>
+                  <Button size="sm" className="gap-1" onClick={() => router.push('/sales')}>
+                      <PlusCircle className="h-3.5 w-3.5" />
+                      <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                          Add Invoice
+                      </span>
+                  </Button>
+              </div>
+          </div>
+          <CardDescription>Track and manage customer credit and sales invoices.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+              <div className="flex justify-center items-center h-64">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+          ) : viewMode === 'grid' ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {filteredWataks.map((watak) => {
+                      const canonicalName = partyNameMap.get(normalizeName(watak.customerName)) || watak.customerName;
+                      return (
+                      <div key={watak.id} onClick={() => navigateToBill(watak.sNo)} className="cursor-pointer">
+                          <DocumentCard type="watak" title={`Invoice #${watak.watakNo || watak.sNo}`}>
+                              <p className="text-lg font-semibold">{canonicalName}</p>
+                              {watak.customerUrdu && <p className="font-urdu text-xl mt-1">{watak.customerUrdu}</p>}
+                              <p className="text-sm mt-2">Date: {new Date(watak.date).toLocaleDateString()}</p>
+                              <p className="text-2xl font-bold mt-4">₹{watak.totals.netSale.toFixed(2)}</p>
+                          </DocumentCard>
+                      </div>
+                  )})}
+              </div>
+          ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Invoice No.</TableHead>
+                <TableHead>Watak No.</TableHead>
+                <TableHead>Khata (Grower)</TableHead>
+                <TableHead>Peti</TableHead>
+                <TableHead>Dabba</TableHead>
+                <TableHead className="text-right">Gross Sale</TableHead>
+                <TableHead className="text-right">Total Exp.</TableHead>
+                <TableHead className="text-right">Net Sale</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            )})}
-             <TableRow className="font-bold bg-muted">
-                <TableCell colSpan={4} className="text-right">Total</TableCell>
-                <TableCell>{footerTotals.pattiQty}</TableCell>
-                <TableCell>{footerTotals.dabbaQty}</TableCell>
-                <TableCell className="text-right">₹{footerTotals.grossSale.toFixed(2)}</TableCell>
-                <TableCell className="text-right">₹{footerTotals.totalExpenses.toFixed(2)}</TableCell>
-                <TableCell className="text-right">₹{footerTotals.netSale.toFixed(2)}</TableCell>
-                <TableCell></TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-        )}
-      </CardContent>
-    </Card>
+            </TableHeader>
+            <TableBody>
+              {filteredWataks.map((watak: WatakEntry) => {
+                const canonicalName = partyNameMap.get(normalizeName(watak.customerName)) || watak.customerName;
+                return (
+                <TableRow key={watak.id}>
+                  <TableCell>{new Date(watak.date).toLocaleDateString('en-GB')}</TableCell>
+                  <TableCell>{watak.sNo}</TableCell>
+                  <TableCell>{watak.watakNo}</TableCell>
+                  <TableCell className="font-medium">{canonicalName}</TableCell>
+                  <TableCell>{watak.totals.pattiQty || 0}</TableCell>
+                  <TableCell>{watak.totals.dabbaQty || 0}</TableCell>
+                  <TableCell className="text-right">₹{watak.totals.grossSale.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">₹{watak.totals.totalExpenses.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">₹{watak.totals.netSale.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="icon" onClick={() => navigateToBill(watak.sNo)}>
+                      <FilePenLine className="h-4 w-4" />
+                    </Button>
+                    {userRole === 'admin' && (
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(watak.sNo)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              )})}
+              <TableRow className="font-bold bg-muted">
+                  <TableCell colSpan={4} className="text-right">Total</TableCell>
+                  <TableCell>{footerTotals.pattiQty}</TableCell>
+                  <TableCell>{footerTotals.dabbaQty}</TableCell>
+                  <TableCell className="text-right">₹{footerTotals.grossSale.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">₹{footerTotals.totalExpenses.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">₹{footerTotals.netSale.toFixed(2)}</TableCell>
+                  <TableCell></TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+            <CardTitle>Recent Wataks</CardTitle>
+            <CardDescription>A list of your 5 most recent sales invoices (wataks).</CardDescription>
+        </CardHeader>
+        <CardContent>
+            {isLoading ? (
+                <div className="flex justify-center items-center h-48">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+            ) : wataks.length > 0 ? (
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Invoice No.</TableHead>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead className="text-right">Net Sale</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {wataks.slice(0, 5).map(watak => (
+                            <TableRow key={watak.id}>
+                                <TableCell className="font-medium">{watak.sNo}</TableCell>
+                                <TableCell>{watak.customerName}</TableCell>
+                                <TableCell>{new Date(watak.date).toLocaleDateString('en-GB')}</TableCell>
+                                <TableCell className="text-right font-mono">₹{watak.totals.netSale.toFixed(2)}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            ) : (
+                <div className="text-center text-muted-foreground mt-6 py-12 border-2 border-dashed rounded-lg">
+                    <p>No sales have been recorded yet.</p>
+                    <p className="text-sm">Your recent wataks will appear here once you create them.</p>
+                </div>
+            )}
+        </CardContent>
+      </Card>
+
+    </div>
   );
 }
