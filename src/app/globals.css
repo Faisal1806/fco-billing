@@ -148,39 +148,4 @@
     }
 }
 
-.shiny-button::before {
-  position: absolute;
-  inset: 0;
-  content: "";
-  pointer-events: none;
-  border-radius: inherit;
-  box-shadow: 0 0 3px -1px var(--primary), 0 0 6px -2px var(--primary), 0 0 11px -4px var(--primary);
-  opacity: 0;
-  transition: opacity 0.2s ease-in-out;
-  background: radial-gradient(
-    150px circle at var(--mouseX) var(--mouseY),
-    hsl(var(--primary) / 0.5),
-    transparent 80%
-  );
-}
-
-.shiny-button:hover::before {
-  opacity: 1;
-}
-
-.shiny-button-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: row;
-  gap: 0.5rem;
-  align-items: center;
-  justify-content: center;
-  z-index: 1;
-  color: hsl(var(--primary-foreground));
-  background: hsl(var(--card));
-  border-radius: inherit;
-}
-
     

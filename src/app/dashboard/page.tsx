@@ -12,7 +12,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2 } from 'lucide-react';
 import placeholderImages from '@/app/lib/placeholder-images.json';
 import { motion } from 'framer-motion';
-import { AnimatedShinyButton } from '@/components/ui/animated-button';
 import { sidebarSections } from '@/components/Sidebar';
 
 interface Invoice {
@@ -62,10 +61,10 @@ const AppSectionCard = ({ item }: { item: { name: string; href: string; icon: Re
         <motion.div
             whileHover={{ scale: 1.05, zIndex: 10 }}
             whileTap={{ scale: 0.95 }}
-            className="neon-glow-container cursor-pointer"
+            className="cursor-pointer"
             onClick={() => router.push(href)}
         >
-            <div className="h-full bg-card/50 backdrop-blur-sm border border-white/10 rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2">
+            <div className="h-full bg-card/50 backdrop-blur-sm border border-white/10 rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2 neon-glow-container">
                 <Icon className="h-8 w-8 neon-glow-icon" />
                 <span className="text-sm font-semibold">{name}</span>
             </div>
@@ -207,31 +206,38 @@ export default function DashboardPage() {
             </div>
         </motion.div>
         
+        <div className="space-y-4">
+             <h2 className="text-xl font-semibold tracking-wider">App Sections</h2>
+             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                {appSections.map((item) => (
+                    <AppSectionCard key={item.name} item={item} />
+                ))}
+             </div>
+        </div>
+
          <div className="space-y-4">
+            <h2 className="text-xl font-semibold tracking-wider">This Year's Summary</h2>
              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <StatCard title="Today's Sales (Net)" value={`₹${stats?.totalSaleValue.toLocaleString('en-IN') ?? '0'}`} note="Compare to last month" />
-                <StatCard title="This Month's Sales (Net)" value={`₹${stats?.monthSales.toLocaleString('en-IN') ?? '0'}`} note="Current calendar month" />
-                <StatCard title="This Year's Gross Sales" value={`₹${stats?.yearGrossSales.toLocaleString('en-IN') ?? '0'}`} note="Total sales value this year" />
-                <StatCard title="This Year's Net Sales" value={`₹${stats?.yearNetSales.toLocaleString('en-IN') ?? '0'}`} note="After all expenses" />
+                <StatCard title="Today's Sales (Net)" value={`₹${stats?.totalSaleValue.toLocaleString('en-IN') ?? '0'}`} />
+                <StatCard title="This Month's Sales (Net)" value={`₹${stats?.monthSales.toLocaleString('en-IN') ?? '0'}`} />
+                <StatCard title="This Year's Gross Sales" value={`₹${stats?.yearGrossSales.toLocaleString('en-IN') ?? '0'}`} />
+                <StatCard title="This Year's Net Sales" value={`₹${stats?.yearNetSales.toLocaleString('en-IN') ?? '0'}`} />
              </div>
              <StatCard title="This Year's Expenses" value={`₹${stats?.yearTotalExpenses.toLocaleString('en-IN') ?? '0'}`} note="All Watak deductions this year" />
         </div>
 
         <div>
             <h2 className="text-xl font-semibold tracking-wider mb-4">Quick Actions</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                 <AnimatedShinyButton onClick={() => router.push('/sales')} className="bg-red-600/20 border-red-500/50">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Button onClick={() => router.push('/sales')} className="h-16 text-lg bg-red-600/80 hover:bg-red-600 border border-red-500/50">
                     <PlusCircle className="mr-2 h-5 w-5" /> Sales Entry
-                 </AnimatedShinyButton>
-                 <AnimatedShinyButton onClick={() => router.push('/watak-register')} className="bg-blue-600/20 border-blue-500/50">
+                </Button>
+                <Button onClick={() => router.push('/watak-register')} className="h-16 text-lg bg-blue-600/80 hover:bg-blue-600 border border-blue-500/50">
                     <FileText className="mr-2 h-5 w-5" /> Watak Register
-                 </AnimatedShinyButton>
-                 <AnimatedShinyButton onClick={() => router.push('/purchases')} className="bg-green-600/20 border-green-500/50">
+                </Button>
+                <Button onClick={() => router.push('/purchases')} className="h-16 text-lg bg-green-600/80 hover:bg-green-600 border border-green-500/50">
                     <ShoppingBasket className="mr-2 h-5 w-5" /> Purchases
-                 </AnimatedShinyButton>
-                 <AnimatedShinyButton onClick={() => router.push('/rates')} className="bg-yellow-600/20 border-yellow-500/50">
-                    <BarChart3 className="mr-2 h-5 w-5" /> Reports
-                 </AnimatedShinyButton>
+                </Button>
             </div>
         </div>
         
