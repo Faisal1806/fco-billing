@@ -5,73 +5,28 @@ import * as React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Package, CreditCard, TrendingUp, TrendingDown, IndianRupee, HandCoins, Trophy, Users, PlusCircle, FileText, Apple, Box, Calendar, Star, AlertCircle, FlaskConical, Globe, Truck, BookOpen, ArrowRight, Loader2 } from 'lucide-react';
+import { IndianRupee, TrendingUp, TrendingDown, Calendar, Hash, BarChart3, FileText, BookOpen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import placeholderImages from '@/app/lib/placeholder-images.json';
-import { motion } from 'framer-motion';
-import Lottie from 'lottie-react';
-import { cn } from '@/lib/utils';
-import { AnimatedShinyButton } from '@/components/ui/animated-button';
+import { Loader2 } from 'lucide-react';
 import { sidebarSections } from '@/components/Sidebar';
 import Link from 'next/link';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-
 
 interface DailyStats {
   totalSaleValue: number;
-  pattiSold: number;
-  dabbaSold: number;
-  wataksToday: number;
 }
 
 interface YearlyStats {
     monthSales: number;
-    totalExpenses: number;
     yearGrossSales: number;
-    yearNetSales: number;
     yearTotalExpenses: number;
-    yearTotalPatti: number;
-    yearTotalDabba: number;
-    yearTotalNugs: number;
 }
-
-interface OutsideSalesStats {
-    yearTotalPattiSent: number;
-    yearTotalDabbaSent: number;
-    yearTotalNugsSent: number;
-}
-
 
 type GrowerProfit = {
     name: string;
     profit: number;
-}
-
-type AccessoryStats = {
-    todaySales: number;
-    monthSales: number;
-    topItem: string;
-    outstandingCredit: number;
-}
-
-interface Product {
-  id: string;
-  name: string;
-  category: string;
-  stock: number;
-  reorderLevel?: number;
-}
-
-interface AccessoryLedgerEntry {
-    item: string;
-    qty: number;
-    date: string;
-    paymentMode: 'Cash' | 'Credit' | 'Khata';
-    rate: number;
 }
 
 interface Invoice {
@@ -82,24 +37,8 @@ interface Invoice {
         netSale: number;
         grossSale: number;
         totalExpenses: number;
-        pattiQty: number;
-        dabbaQty: number;
     };
-    entries: any[];
     customerName: string;
-}
-
-interface Challan {
-    date: string;
-    totalPetti: number;
-    totalDabba: number;
-    totalNugs: number;
-}
-
-interface CategorizedProducts {
-    fruits: Product[];
-    accessories: Product[];
-    fertilizers: Product[];
 }
 
 const normalizeName = (name: string): string => {
@@ -110,365 +49,40 @@ const normalizeName = (name: string): string => {
         .replace(/\(.*\)/, '')
         .replace(/\b(MOHAMMAD|MOHD|MD|GH\.)\b/g, 'MOHAMMAD')
         .replace(/\b(AHMAD|AH)\b/g, 'AHMAD')
-        .replace(/S\/P|B\/P|K\/P|®/g, '') // Remove specific suffixes
-        .replace(/[\.\,']/g, '')
+        .replace(/S\/P|B\/P|K\/P|®/g, '')
+        .replace(/[\.\,']/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
 };
 
-
-const StatCard = ({ title, value, icon: Icon, note, iconBgColor }: { title: string, value: string, icon: React.ElementType, note?: string, iconBgColor?: string }) => (
-    <motion.div
-        initial={{ opacity: 0, y: 50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, type: 'spring', stiffness: 100, delay: 0.2 }}
-        whileHover={{ scale: 1.05, boxShadow: "0px 10px 30px -5px rgba(0, 0, 0, 0.3)" }}
-    >
-        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 relative overflow-hidden bg-card/80 backdrop-blur-sm border-white/10 rounded-2xl h-full">
-            <CardContent className="p-4 z-10 relative">
-                <p className="text-sm text-muted-foreground">{title}</p>
+const StatCard = ({ title, value, note, icon: Icon, iconBg }: { title: string, value: string, note: string, icon: React.ElementType, iconBg: string }) => (
+    <Card className="bg-gray-800/50 border-gray-700/60 shadow-lg">
+        <CardContent className="p-4 flex items-center justify-between">
+            <div>
+                <p className="text-sm text-gray-400">{title}</p>
                 <p className="text-2xl font-bold mt-1">{value}</p>
-                <p className="text-xs text-muted-foreground mt-1">{note}</p>
-            </CardContent>
-            <div className={`absolute -right-4 -bottom-4 h-20 w-20 rounded-full ${iconBgColor || 'bg-amber-500'} opacity-30 blur-lg`}></div>
-            <div className={`absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg`}>
+                <p className="text-xs text-gray-500 mt-1">{note}</p>
+            </div>
+            <div className={`p-3 rounded-full ${iconBg}`}>
                 <Icon className="h-6 w-6 text-white" />
             </div>
-        </Card>
-    </motion.div>
+        </CardContent>
+    </Card>
 );
 
-
-const QuickActions = () => {
-    const router = useRouter();
-    return (
-        <motion.div 
-            className="my-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-        >
-            <h3 className="text-xl font-semibold mb-4">Quick Actions</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                 <AnimatedShinyButton
-                    className="bg-green-500/80 hover:bg-green-600/80"
-                    onClick={() => router.push('/sales')}
-                >
-                     <FileText className="h-6 w-6 mr-2" />
-                    New Invoice
-                </AnimatedShinyButton>
-                <AnimatedShinyButton
-                    className="bg-blue-500/80 hover:bg-blue-600/80"
-                    onClick={() => router.push('/khata')}
-                >
-                    <BookOpen className="h-6 w-6 mr-2" />
-                    Party Ledgers
-                </AnimatedShinyButton>
-                <AnimatedShinyButton
-                    className="bg-purple-500/80 hover:bg-purple-600/80"
-                    onClick={() => router.push('/products')}
-                >
-                    <PlusCircle className="h-6 w-6 mr-2" />
-                    Add Product
-                </AnimatedShinyButton>
-                <AnimatedShinyButton
-                    className="bg-orange-500/80 hover:bg-orange-600/80"
-                    onClick={() => router.push('/expenses')}
-                >
-                    <IndianRupee className="h-6 w-6 mr-2" />
-                    Record Expense
-                </AnimatedShinyButton>
-            </div>
-        </motion.div>
-    )
-}
-
-const FruitDashboard = ({ stats, yearlyStats, outsideSalesStats, accessoryStats, growerProfits, router, recentWataks }: { stats: DailyStats | null, yearlyStats: YearlyStats | null, outsideSalesStats: OutsideSalesStats | null, accessoryStats: AccessoryStats | null, growerProfits: GrowerProfit[], router: any, recentWataks: Invoice[] }) => {
-    const [showAllGrowers, setShowAllGrowers] = useState(false);
-    const displayedGrowers = useMemo(() => {
-        if (showAllGrowers) {
-            return growerProfits;
-        }
-        return growerProfits.slice(0, 10);
-    }, [growerProfits, showAllGrowers]);
-
-    return (
-    <div className="space-y-6">
-        <Accordion type="single" collapsible className="w-full">
-           <AccordionItem value="sections">
-                <AccordionTrigger className="text-base font-semibold uppercase text-muted-foreground tracking-wider hover:text-foreground">
-                    App Sections
-                </AccordionTrigger>
-                <AccordionContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 pt-2">
-                        {sidebarSections.flatMap(section => section.items).map(item => (
-                            <Link href={item.href} key={item.name} passHref>
-                               <Button variant="ghost" className="w-full justify-start gap-3 text-base h-12">
-                                    <item.icon className="h-5 w-5" />
-                                    {item.name}
-                               </Button>
-                            </Link>
-                        ))}
-                    </div>
-                </AccordionContent>
-            </AccordionItem>
-        </Accordion>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                     <StatCard 
-                        title="Today's Sales (Net)"
-                        value={`₹${stats?.totalSaleValue.toLocaleString('en-IN') ?? '0'}`}
-                        icon={TrendingUp}
-                        note={`From ${stats?.pattiSold ?? 0} Patti / ${stats?.dabbaSold ?? 0} Dabba`}
-                     />
-                    <StatCard 
-                        title="This Month's Sales (Net)"
-                        value={`₹${yearlyStats?.monthSales.toLocaleString('en-IN') ?? '0'}`}
-                        icon={Calendar}
-                        note="Current calendar month"
-                     />
-                    <StatCard
-                        title="This Month's Expenses"
-                        value={`₹${yearlyStats?.totalExpenses.toLocaleString('en-IN') ?? '0'}`}
-                        icon={TrendingDown}
-                        note="From Watak deductions"
-                    />
-                     <StatCard 
-                        title="This Year's Gross Sales"
-                        value={`₹${yearlyStats?.yearGrossSales.toLocaleString('en-IN') ?? '0'}`}
-                        icon={IndianRupee}
-                        note="Total sale value this year"
-                     />
-                     <StatCard 
-                        title="This Year's Net Sales"
-                        value={`₹${yearlyStats?.yearNetSales.toLocaleString('en-IN') ?? '0'}`}
-                        icon={HandCoins}
-                        note="After all expenses"
-                     />
-                      <StatCard 
-                        title="This Year's Expenses"
-                        value={`₹${yearlyStats?.yearTotalExpenses.toLocaleString('en-IN') ?? '0'}`}
-                        icon={TrendingDown}
-                        note="All Watak deductions this year"
-                     />
-                     <StatCard 
-                        title="Total Patti Sold (This Year)"
-                        value={yearlyStats?.yearTotalPatti.toLocaleString('en-IN') ?? '0'}
-                        icon={Box}
-                        note="Local sales volume"
-                     />
-                     <StatCard 
-                        title="Total Dabba Sold (This Year)"
-                        value={yearlyStats?.yearTotalDabba.toLocaleString('en-IN') ?? '0'}
-                        icon={Package}
-                        note="Local sales volume"
-                     />
-                     <StatCard 
-                        title="Total Nugs Sold (This Year)"
-                        value={yearlyStats?.yearTotalNugs.toLocaleString('en-IN') ?? '0'}
-                        icon={FileText}
-                        note="Patti + Dabba (Local)"
-                     />
-                      <StatCard 
-                        title="Total Patti Sent Outside (Year)"
-                        value={outsideSalesStats?.yearTotalPattiSent.toLocaleString('en-IN') ?? '0'}
-                        icon={Truck}
-                        note="Forwarding volume"
-                     />
-                     <StatCard 
-                        title="Total Dabba Sent Outside (Year)"
-                        value={outsideSalesStats?.yearTotalDabbaSent.toLocaleString('en-IN') ?? '0'}
-                        icon={Truck}
-                        note="Forwarding volume"
-                     />
-                     <StatCard 
-                        title="Total Nugs Sent Outside (Year)"
-                        value={outsideSalesStats?.yearTotalNugsSent.toLocaleString('en-IN') ?? '0'}
-                        icon={Globe}
-                        note="Total Forwarding"
-                     />
-                </div>
-                 <QuickActions />
-            </div>
-             <div className="lg:col-span-1 space-y-6">
-                <Card className="shadow-lg bg-card/80 backdrop-blur-sm border-white/10 rounded-2xl">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Trophy className="h-6 w-6 text-amber-400" /> All Growers</CardTitle>
-                        <CardDescription>This session's growers by net sales.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {growerProfits.length > 0 ? (
-                            <>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Grower</TableHead>
-                                            <TableHead className="text-right">Net Sales</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {displayedGrowers.map((grower, index) => (
-                                            <TableRow key={grower.name}>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className={`text-lg font-bold ${index < 3 ? 'text-amber-400' : 'text-muted-foreground'}`}>{index + 1}</span>
-                                                        <span className="font-medium">{grower.name}</span>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="text-right font-mono">₹{grower.profit.toLocaleString('en-IN')}</TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                                {growerProfits.length > 10 && (
-                                    <div className="text-center mt-4">
-                                        <Button
-                                            variant="ghost"
-                                            onClick={() => setShowAllGrowers(!showAllGrowers)}
-                                        >
-                                            {showAllGrowers ? 'Show Less' : 'Show More'}
-                                        </Button>
-                                    </div>
-                                )}
-                            </>
-                        ) : (
-                             <p className="text-sm text-muted-foreground text-center py-4">No sales data recorded this year to calculate grower profits.</p>
-                        )}
-                    </CardContent>
-                </Card>
-                 <Card className="bg-card/80 backdrop-blur-sm border-white/10 rounded-2xl">
-                    <CardHeader>
-                        <CardTitle>Recent Wataks</CardTitle>
-                        <CardDescription>A list of your 5 most recent sales invoices.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {recentWataks.length > 0 ? (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Invoice No.</TableHead>
-                                    <TableHead>Customer</TableHead>
-                                    <TableHead className="text-right">Net Sale</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {recentWataks.map(watak => (
-                                    <TableRow key={watak.id}>
-                                        <TableCell className="font-medium">{watak.sNo}</TableCell>
-                                        <TableCell>{watak.customerName}</TableCell>
-                                        <TableCell className="text-right font-mono">₹{watak.totals.netSale.toLocaleString('en-IN')}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                        ) : (
-                             <p className="text-sm text-muted-foreground text-center py-4">No wataks found.</p>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
-        </div>
+const NavLink = ({ href, icon: Icon, name }: { href: string, icon: React.ElementType, name: string }) => (
+  <Link href={href} passHref>
+    <div className="flex flex-col items-center justify-center gap-2 p-3 bg-gray-800/40 rounded-lg hover:bg-gray-700/60 transition-colors duration-200 neon-glow-container">
+      <Icon className="h-8 w-8 neon-glow-icon" />
+      <span className="text-xs text-center text-gray-300">{name}</span>
     </div>
-    )
-};
-
-const AccessoriesDashboard = ({ stats, router }: { stats: AccessoryStats | null, router: any }) => (
-     <div className="space-y-8 p-6">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-             <StatCard 
-                title="Today's Supplies Sale"
-                value={`₹${stats?.todaySales.toLocaleString('en-IN') ?? '0'}`}
-                icon={Package}
-             />
-             <StatCard 
-                title="This Month's Supplies Sale"
-                value={`₹${stats?.monthSales.toLocaleString('en-IN') ?? '0'}`}
-                icon={Calendar}
-             />
-             <StatCard 
-                title="Outstanding Credit (Khata)"
-                value={`₹${stats?.outstandingCredit.toLocaleString('en-IN') ?? '0'}`}
-                icon={CreditCard}
-             />
-             <StatCard 
-                title="Top Selling Item"
-                value={stats?.topItem ?? 'N/A'}
-                icon={Star}
-             />
-        </div>
-         <div className="mt-8 text-center">
-             <Button onClick={() => router.push('/accessories')} variant="secondary">
-                Go to Full Supplies Ledger
-            </Button>
-         </div>
-    </div>
+  </Link>
 );
-
-const InventoryDashboard = ({ inventory, router }: { inventory: CategorizedProducts | null, router: any }) => {
-
-    const InventoryTable = ({ title, products, icon: Icon, iconColor }: { title: string, products: Product[], icon: React.ElementType, iconColor: string }) => (
-        <Card className="bg-card/80 backdrop-blur-sm border-white/10 rounded-2xl shadow-xl">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <Icon className={`h-6 w-6 ${iconColor}`} />
-                    {title} ({products.length})
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                 {products.length > 0 ? (
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Product Name</TableHead>
-                                <TableHead>Category</TableHead>
-                                <TableHead className="text-right">Current Stock</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {products.map(p => (
-                                <TableRow key={p.id}>
-                                    <TableCell className="font-medium">{p.name}</TableCell>
-                                    <TableCell>{p.category}</TableCell>
-                                    <TableCell className="text-right font-bold">
-                                        <div className="flex items-center justify-end gap-2">
-                                        {p.reorderLevel && p.stock <= p.reorderLevel && <AlertCircle className="h-4 w-4 text-destructive" title={`Low stock! Reorder level is ${p.reorderLevel}`} />}
-                                        <span>{p.stock}</span>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                 ) : (
-                    <p className="text-sm text-muted-foreground text-center py-4">No products found in this category.</p>
-                 )}
-            </CardContent>
-        </Card>
-    );
-
-    return (
-        <div className="space-y-6 p-6">
-            <div className="text-center">
-                 <Button onClick={() => router.push('/products')} variant="secondary">Manage Full Inventory</Button>
-            </div>
-            <div className="space-y-6">
-                <InventoryTable title="Fruit Products" products={inventory?.fruits ?? []} icon={Apple} iconColor="text-red-500" />
-                <InventoryTable title="Business Supplies" products={inventory?.accessories ?? []} icon={Box} iconColor="text-blue-500" />
-                <InventoryTable title="Fertilizers & Pesticides" products={inventory?.fertilizers ?? []} icon={FlaskConical} iconColor="text-green-500" />
-            </div>
-        </div>
-    );
-};
 
 
 export default function DashboardPage() {
   const router = useRouter();
   const [allInvoices, setAllInvoices] = useState<Invoice[]>([]);
-  const [allAccessories, setAllAccessories] = useState<AccessoryLedgerEntry[]>([]);
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [allChallans, setAllChallans] = useState<Challan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -477,26 +91,13 @@ export default function DashboardPage() {
         setIsLoading(true);
 
         const invoices: Invoice[] = [];
-        const accessories: AccessoryLedgerEntry[] = [];
-        const products: Product[] = [];
-        const challans: Challan[] = [];
-
         for(let i=0; i<localStorage.length; i++) {
             const key = localStorage.key(i);
             if (key?.startsWith('invoice-')) {
                 invoices.push(JSON.parse(localStorage.getItem(key)!));
-            } else if (key?.startsWith('accessory-ledger-')) {
-                accessories.push(JSON.parse(localStorage.getItem(key)!));
-            } else if (key?.startsWith('product-')) {
-                products.push(JSON.parse(localStorage.getItem(key)!));
-            } else if (key?.startsWith('challan-')) {
-                challans.push(JSON.parse(localStorage.getItem(key)!));
             }
         }
         setAllInvoices(invoices);
-        setAllAccessories(accessories);
-        setAllProducts(products);
-        setAllChallans(challans);
         setIsLoading(false);
     }
     fetchData();
@@ -505,26 +106,15 @@ export default function DashboardPage() {
   const stats = useMemo(() => {
     if (isLoading) return null;
     const todayStr = new Date().toISOString().split('T')[0];
-    let pattiSoldToday = 0;
-    let dabbaSoldToday = 0;
     let totalSaleValueToday = 0;
-    let wataksToday = 0;
 
     allInvoices.forEach(sale => {
         if (sale.date === todayStr) {
-            pattiSoldToday += sale.totals.pattiQty || 0;
-            dabbaSoldToday += sale.totals.dabbaQty || 0;
             totalSaleValueToday += sale.totals.netSale || 0;
-            wataksToday += 1;
         }
     });
 
-    return {
-        pattiSold: pattiSoldToday,
-        dabbaSold: dabbaSoldToday,
-        totalSaleValue: totalSaleValueToday,
-        wataksToday: wataksToday,
-    };
+    return { totalSaleValue: totalSaleValueToday };
   }, [allInvoices, isLoading]);
 
   const yearlyStats = useMemo(() => {
@@ -534,12 +124,8 @@ export default function DashboardPage() {
     const currentYear = today.getFullYear();
     
     let monthlyTotalSales = 0;
-    let monthlyTotalExpenses = 0;
     let yearGrossSales = 0;
-    let yearNetSales = 0;
     let yearTotalExpenses = 0;
-    let yearTotalPatti = 0;
-    let yearTotalDabba = 0;
 
     allInvoices.forEach(sale => {
         const saleDate = new Date(sale.date);
@@ -548,204 +134,154 @@ export default function DashboardPage() {
 
         if (saleYear === currentYear) {
             yearGrossSales += sale.totals.grossSale || 0;
-            yearNetSales += sale.totals.netSale || 0;
             yearTotalExpenses += sale.totals.totalExpenses || 0;
-            yearTotalPatti += sale.totals.pattiQty || 0;
-            yearTotalDabba += sale.totals.dabbaQty || 0;
 
              if (saleMonth === currentMonth) {
                 monthlyTotalSales += sale.totals.netSale || 0;
-                monthlyTotalExpenses += sale.totals.totalExpenses || 0;
             }
         }
     });
     
     return {
         monthSales: monthlyTotalSales,
-        totalExpenses: monthlyTotalExpenses,
         yearGrossSales: yearGrossSales,
-        yearNetSales: yearNetSales,
         yearTotalExpenses: yearTotalExpenses,
-        yearTotalPatti,
-        yearTotalDabba,
-        yearTotalNugs: yearTotalPatti + yearTotalDabba,
     };
   }, [allInvoices, isLoading]);
-
-  const outsideSalesStats = useMemo(() => {
-    if (isLoading) return null;
-    const currentYear = new Date().getFullYear();
-    let yearTotalPattiSent = 0;
-    let yearTotalDabbaSent = 0;
-
-    allChallans.forEach(challan => {
-        const challanDate = new Date(challan.date);
-        if (challanDate.getFullYear() === currentYear) {
-            yearTotalPattiSent += challan.totalPetti || 0;
-            yearTotalDabbaSent += challan.totalDabba || 0;
-        }
-    });
-
-    return {
-        yearTotalPattiSent,
-        yearTotalDabbaSent,
-        yearTotalNugsSent: yearTotalPattiSent + yearTotalDabbaSent,
-    };
-  }, [allChallans, isLoading]);
-
-    const growerProfits = useMemo(() => {
-        if (isLoading) return [];
-        const profitsByGrower: { [canonicalName: string]: { name: string, profit: number } } = {};
-        const canonicalNameMap = new Map<string, string>(); // Maps normalized name to the first-seen canonical name
-        const currentYear = new Date().getFullYear();
-
-        // Establish canonical names from all parties first to avoid inconsistency
-        allInvoices.forEach(sale => {
-             if (sale.customerName) {
-                const normalized = normalizeName(sale.customerName);
-                if (!canonicalNameMap.has(normalized)) {
-                    canonicalNameMap.set(normalized, sale.customerName);
-                }
-            }
-        });
-
-        allInvoices.forEach(sale => {
-            const saleYear = new Date(sale.date).getFullYear();
-            if (saleYear === currentYear && sale.customerName && sale.totals.netSale) {
-                const normalized = normalizeName(sale.customerName);
-                const canonicalName = canonicalNameMap.get(normalized)!;
-
-                if (!profitsByGrower[canonicalName]) {
-                    profitsByGrower[canonicalName] = { name: canonicalName, profit: 0 };
-                }
-                profitsByGrower[canonicalName].profit += sale.totals.netSale;
-            }
-        });
-
-        return Object.values(profitsByGrower).sort((a, b) => b.profit - a.profit);
-    }, [allInvoices, isLoading]);
-
-  const accessoryStats = useMemo(() => {
-    if (isLoading) return null;
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-    const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
-    
-    let accessorySalesToday = 0;
-    let accessorySalesMonth = 0;
-    let accessoryCredit = 0;
-    const itemQuantities: {[name: string]: number} = {};
-
-    allAccessories.forEach((entry) => {
-        const entryDate = new Date(entry.date);
-        const amount = (entry.qty || 0) * (entry.rate || 0);
-
-        if (entry.date === todayStr) {
-            accessorySalesToday += amount;
-        }
-        if(entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear) {
-            accessorySalesMonth += amount;
-        }
-        if(entry.paymentMode === 'Khata' || entry.paymentMode === 'Credit') {
-            accessoryCredit += amount;
-        }
-        if(entry.item){
-            itemQuantities[entry.item] = (itemQuantities[entry.item] || 0) + (entry.qty || 0);
-        }
-    });
-    
-    const topItem = Object.entries(itemQuantities).sort(([, a], [, b]) => b - a)[0]?.[0] || 'N/A';
-
-    return {
-        todaySales: accessorySalesToday,
-        monthSales: accessorySalesMonth,
-        topItem: topItem,
-        outstandingCredit: accessoryCredit,
-    };
-  }, [allAccessories, isLoading]);
   
-  const inventory = useMemo(() => {
-    if (isLoading) return null;
-    const stockOut: { [productName: string]: number } = {};
-    allAccessories.forEach(sale => {
-        stockOut[sale.item] = (stockOut[sale.item] || 0) + sale.qty;
-    });
-    
-    const updatedProducts = allProducts.map(p => ({
-        ...p,
-        stock: (p.stock || 0) - (stockOut[p.name] || 0),
-    }));
+  const growerProfits = useMemo(() => {
+    if (isLoading) return [];
+    const profitsByGrower: { [canonicalName: string]: { name: string, profit: number } } = {};
+    const canonicalNameMap = new Map<string, string>();
+    const currentYear = new Date().getFullYear();
 
-    const categorized: CategorizedProducts = { fruits: [], accessories: [], fertilizers: [] };
-    updatedProducts.forEach(p => {
-        const cat = p.category.toLowerCase();
-        if (['fruit', 'apple', 'pear', 'nakh', 'gosha', 'red delicious', 'american', 'gala mast', 'shimla'].some(fruitCat => cat.includes(fruitCat))) {
-            categorized.fruits.push(p);
-        } else if (['dabba', 'patti', 'layer', 'tray', 'tape', 'packing', 'crate'].some(accCat => cat.includes(accCat))) {
-            categorized.accessories.push(p);
-        } else if (['fertilizer', 'pesticide', 'urea', 'dap', 'fungicide', 'insecticide'].some(fertCat => cat.includes(fertCat))) {
-            categorized.fertilizers.push(p);
-        } else {
-             categorized.accessories.push(p);
+    allInvoices.forEach(sale => {
+         if (sale.customerName) {
+            const normalized = normalizeName(sale.customerName);
+            if (!canonicalNameMap.has(normalized)) {
+                canonicalNameMap.set(normalized, sale.customerName);
+            }
         }
     });
-    return categorized;
-  }, [allProducts, allAccessories, isLoading]);
 
-  const recentWataks = useMemo(() => {
-    if (isLoading) return [];
-    return allInvoices
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 5);
+    allInvoices.forEach(sale => {
+        const saleYear = new Date(sale.date).getFullYear();
+        if (saleYear === currentYear && sale.customerName && sale.totals.netSale) {
+            const normalized = normalizeName(sale.customerName);
+            const canonicalName = canonicalNameMap.get(normalized)!;
+
+            if (!profitsByGrower[canonicalName]) {
+                profitsByGrower[canonicalName] = { name: canonicalName, profit: 0 };
+            }
+            profitsByGrower[canonicalName].profit += sale.totals.netSale;
+        }
+    });
+
+    return Object.values(profitsByGrower).sort((a, b) => b.profit - a.profit);
   }, [allInvoices, isLoading]);
 
 
   if (isLoading) {
     return (
-        <div className="flex justify-center items-center h-64 p-6">
+        <div className="flex justify-center items-center h-screen bg-background text-foreground">
             <Loader2 className="h-8 w-8 animate-spin" />
-            <p className="ml-4 text-muted-foreground">Calculating summary...</p>
+            <p className="ml-4">Calculating summary...</p>
         </div>
     )
   }
+
+  const allNavLinks = sidebarSections.flatMap(section => section.items).filter(item => item.name !== "Dashboard");
   
   return (
-    <>
-      <CardHeader>
-        <div className="relative h-48 md:h-64 rounded-xl overflow-hidden">
+    <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8 space-y-8">
+        {/* Header */}
+        <div className="relative h-48 rounded-xl overflow-hidden flex flex-col justify-center items-center text-center p-4">
             <Image 
-                src={placeholderImages.dashboardHeader.src}
-                alt={placeholderImages.dashboardHeader.alt}
+                src="https://picsum.photos/seed/apple-orb/1200/400"
+                alt="Abstract green background"
                 fill
                 style={{objectFit: 'cover'}}
-                priority
-                data-ai-hint={placeholderImages.dashboardHeader.hint}
+                className="opacity-20"
+                data-ai-hint="green apple"
             />
-            <div className="absolute inset-0 bg-black/50 flex flex-col justify-end p-6">
-                <h1 className="text-3xl md:text-4xl font-bold text-white shadow-lg">Welcome to F.Co</h1>
-                <p className="text-lg text-white/80 shadow-md">Your complete business management solution.</p>
+            <div className="relative z-10">
+                <h1 className="text-4xl md:text-5xl font-bold text-white shadow-lg">Welcome to F.Co</h1>
+                <p className="text-lg text-gray-300/80 shadow-md mt-2">Your complete business management solution.</p>
             </div>
         </div>
-      </CardHeader>
-      <CardContent>
+
+        {/* Tabs */}
         <Tabs defaultValue="fruit" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-card/80 backdrop-blur-sm border-white/10 rounded-xl">
-              <TabsTrigger value="fruit"><Apple className="w-4 h-4 mr-2" />Fruit Business</TabsTrigger>
-              <TabsTrigger value="accessories"><Box className="w-4 h-4 mr-2" />Accessories</TabsTrigger>
-              <TabsTrigger value="inventory"><Package className="w-4 h-4 mr-2" />Inventory</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 bg-gray-800/50 border-gray-700/60 rounded-xl">
+              <TabsTrigger value="fruit" className="data-[state=active]:bg-green-600/80 data-[state=active]:text-white">Fruit Business</TabsTrigger>
+              <TabsTrigger value="accessories">Accessories</TabsTrigger>
+              <TabsTrigger value="inventory">Inventory</TabsTrigger>
           </TabsList>
-          <TabsContent value="fruit" className="mt-4">
-              <FruitDashboard stats={stats} yearlyStats={yearlyStats} outsideSalesStats={outsideSalesStats} accessoryStats={accessoryStats} growerProfits={growerProfits} router={router} recentWataks={recentWataks}/>
-          </TabsContent>
-          <TabsContent value="accessories" className="mt-4">
-              <AccessoriesDashboard stats={accessoryStats} router={router} />
-          </TabsContent>
-          <TabsContent value="inventory" className="mt-4">
-              <InventoryDashboard inventory={inventory} router={router} />
+          
+          <TabsContent value="fruit" className="mt-6 space-y-8">
+            {/* App Sections */}
+            <div>
+                <h2 className="text-sm font-semibold uppercase text-gray-500 tracking-wider mb-4">App Sections</h2>
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
+                    {allNavLinks.slice(0, 12).map(item => <NavLink key={item.name} {...item} />)}
+                </div>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <StatCard title="Today's Sales (Net)" value={`₹${stats?.totalSaleValue.toLocaleString('en-IN') ?? '0'}`} note="Compare to last month" icon={Hash} iconBg="bg-orange-500/80" />
+                <StatCard title="This Month's Sales (Net)" value={`₹${yearlyStats?.monthSales.toLocaleString('en-IN') ?? '0'}`} note="Current calendar month" icon={IndianRupee} iconBg="bg-yellow-500/80" />
+                <StatCard title="This Year's Gross Sales" value={`₹${yearlyStats?.yearGrossSales.toLocaleString('en-IN') ?? '0'}`} note="Total sales value this year" icon={BarChart3} iconBg="bg-green-500/80" />
+                <StatCard title="This Year's Expenses" value={`₹${yearlyStats?.yearTotalExpenses.toLocaleString('en-IN') ?? '0'}`} note="All Watak deductions this year" icon={TrendingDown} iconBg="bg-red-500/80" />
+            </div>
+
+            {/* Quick Actions */}
+            <div>
+                <h2 className="text-sm font-semibold uppercase text-gray-500 tracking-wider mb-4">Quick Actions</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Button onClick={() => router.push('/sales')} className="h-16 text-lg bg-red-600/80 hover:bg-red-600 border border-red-500/50">
+                        <PlusCircle className="mr-2 h-5 w-5" /> Sales Entry
+                    </Button>
+                    <Button onClick={() => router.push('/watak-register')} className="h-16 text-lg bg-blue-600/80 hover:bg-blue-600 border border-blue-500/50">
+                        <FileText className="mr-2 h-5 w-5" /> Watak Register
+                    </Button>
+                    <Button onClick={() => router.push('/rates')} className="h-16 text-lg bg-yellow-600/80 hover:bg-yellow-600 border border-yellow-500/50">
+                        <TrendingUp className="mr-2 h-5 w-5" /> Reports
+                    </Button>
+                </div>
+            </div>
+
+            {/* All Growers */}
+             <div>
+                <h2 className="text-sm font-semibold uppercase text-gray-500 tracking-wider mb-4">All Growers</h2>
+                 <Card className="bg-gray-800/50 border-gray-700/60 shadow-lg">
+                    <CardContent className="p-0">
+                        {growerProfits.length > 0 ? (
+                            <Table>
+                                <TableBody>
+                                    {growerProfits.slice(0, 5).map((grower, index) => (
+                                        <TableRow key={grower.name} className="border-gray-700/60">
+                                            <TableCell>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="flex items-center justify-center h-8 w-8 rounded-full bg-orange-500/80 text-white font-bold">{index + 1}</span>
+                                                    <span className="font-medium text-base">{grower.name}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-right font-mono text-lg text-green-400">₹{grower.profit.toLocaleString('en-IN', {minimumFractionDigits: 2})}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        ) : (
+                             <p className="text-sm text-muted-foreground text-center py-8">No sales data recorded this year.</p>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
           </TabsContent>
         </Tabs>
-      </CardContent>
-    </>
+    </div>
   );
 }
+
+    

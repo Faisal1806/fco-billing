@@ -67,6 +67,23 @@
   }
 }
 
+@layer components {
+    .neon-glow-container:hover .neon-glow-icon {
+        color: #fff;
+        text-shadow:
+            0 0 7px #29d99c,
+            0 0 10px #29d99c,
+            0 0 21px #29d99c,
+            0 0 42px #0fa,
+            0 0 82px #0fa,
+            0 0 92px #0fa;
+    }
+    .neon-glow-icon {
+        color: #29d99c;
+        transition: all 0.3s ease-in-out;
+    }
+}
+
 @media print {
   .print-area-a4, .print-area-thermal {
     display: none;
@@ -165,3 +182,5 @@
   background: hsl(var(--card));
   border-radius: inherit;
 }
+
+    

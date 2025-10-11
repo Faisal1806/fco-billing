@@ -23,7 +23,6 @@ import {
   Smile,
   LogOut,
   Menu,
-  Home,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -37,7 +36,7 @@ export const sidebarSections = [
     {
       title: null,
       items: [
-        { name: "Home", href: "/dashboard", icon: Home },
+        { name: "Home", href: "/dashboard", icon: LayoutDashboard },
       ]
     },
     {
@@ -186,3 +185,5 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
+
+    
