@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -30,7 +31,7 @@ const initialRows: PurchaseRow[] = Array.from({ length: 3 }, () => ({ ...emptyRo
 
 export default function PurchasesPage() {
   const [billNo, setBillNo] = useState('');
-  const [companyName, setCompanyName] = useState('');
+  const [growerName, setGrowerName] = useState('');
   const [date, setDate] = useState('');
   const [rows, setRows] = useState<PurchaseRow[]>(initialRows);
   const [purchaseFor, setPurchaseFor] = useState<'Customer' | 'Own Stock (F.Co)'>('Customer');
@@ -102,7 +103,7 @@ export default function PurchasesPage() {
 
     const resetForm = () => {
         setBillNo('');
-        setCompanyName('');
+        setGrowerName('');
         setDate('');
         setPurchaseFor('Customer');
         setRows(initialRows);
@@ -111,7 +112,7 @@ export default function PurchasesPage() {
 
 
   const savePurchase = async () => {
-     if (!billNo || !date || (purchaseFor === 'Customer' && !companyName)) {
+     if (!billNo || !date || (purchaseFor === 'Customer' && !growerName)) {
         toast({
             variant: 'destructive',
             title: 'Missing Details',
@@ -122,11 +123,11 @@ export default function PurchasesPage() {
 
     setIsSubmitting(true);
     const purchaseId = billNo;
-    const finalCompanyName = purchaseFor === 'Own Stock (F.Co)' ? 'F.Co (Own Stock)' : companyName;
+    const finalGrowerName = purchaseFor === 'Own Stock (F.Co)' ? 'F.Co (Own Stock)' : growerName;
     const purchaseData = {
       billNo,
       date,
-      growerName: finalCompanyName,
+      growerName: finalGrowerName,
       purchaseFor,
       entries: rows.filter(r => r.qty > 0 && r.rate > 0).map(r => ({...r, qty: Number(r.qty), rate: Number(r.rate), total: Number(r.qty) * Number(r.rate)})),
       totals: {
@@ -171,7 +172,7 @@ export default function PurchasesPage() {
 
   const loadPurchaseForEdit = (purchase: any) => {
     setBillNo(purchase.billNo);
-    setCompanyName(purchase.growerName === 'F.Co (Own Stock)' ? '' : purchase.growerName);
+    setGrowerName(purchase.growerName === 'F.Co (Own Stock)' ? '' : purchase.growerName);
     setDate(purchase.date);
     setPurchaseFor(purchase.purchaseFor || (purchase.growerName === 'F.Co (Own Stock)' ? 'Own Stock (F.Co)' : 'Customer'));
     setRows(purchase.entries.length > 0 ? purchase.entries : initialRows);
@@ -251,14 +252,14 @@ export default function PurchasesPage() {
                         </Select>
                     </div>
                     <div>
-                        <Label htmlFor="companyName">
+                        <Label htmlFor="growerName">
                             {purchaseFor === 'Customer' ? 'Customer Name' : 'Company Name'}
                         </Label>
                          {purchaseFor === 'Customer' ? (
-                            <PartySelector value={companyName} onChange={setCompanyName} filter="customer" />
+                            <PartySelector value={growerName} onChange={setGrowerName} filter="customer" />
                         ) : (
                             <Input 
-                                id="companyName" 
+                                id="growerName" 
                                 value="F.Co (Own Stock)"
                                 disabled
                             />
