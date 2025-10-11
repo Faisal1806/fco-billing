@@ -65,20 +65,9 @@ export interface WatakEntry {
     freight: number;
 }
 
-const normalizeName = (name: string): string => {
+const getCanonicalName = (name: string): string => {
     if (!name) return '';
-    // This version is more aggressive for matching but preserves the original look less.
-    // Good for finding the canonical name.
-    return name
-        .toUpperCase()
-        .replace(/R\/O.*$/i, '')
-        .replace(/\(.*\)/, '')
-        .replace(/\b(MOHAMMAD|MOHD|MD|GH\.)\b/g, 'MOHAMMAD')
-        .replace(/\b(AHMAD|AH)\b/g, 'AHMAD')
-        .replace(/S\/P|B\/P|K\/P|®/g, '') // Remove specific suffixes
-        .replace(/[\.\,']/g, '')
-        .replace(/\s+/g, ' ')
-        .trim();
+    return name.trim();
 };
 
 
@@ -146,12 +135,12 @@ export default function SalesRegisterPage() {
     setIsLoading(true);
     if(typeof window !== 'undefined') {
         const items = [];
-        const growerMap = new Map<string, string>(); // Map from normalized name -> canonical name
+        const growerMap = new Map<string, string>(); // Map from canonical name -> canonical name
         
         const addPartyToMap = (name: string) => {
-             const normalized = normalizeName(name);
-             if (!growerMap.has(normalized)) {
-                growerMap.set(normalized, name);
+             const canonical = getCanonicalName(name);
+             if (!growerMap.has(canonical)) {
+                growerMap.set(canonical, name);
             }
         };
 
@@ -202,13 +191,13 @@ export default function SalesRegisterPage() {
   const filteredWataks = wataks
     .filter(w => {
         if (selectedGrower === 'All Growers') return true;
-        const canonicalName = partyNameMap.get(normalizeName(w.customerName));
+        const canonicalName = partyNameMap.get(getCanonicalName(w.customerName));
         return canonicalName === selectedGrower;
     })
     .filter(w => {
       if (!searchTerm) return true;
       const lowerCaseSearch = searchTerm.toLowerCase();
-      const canonicalName = partyNameMap.get(normalizeName(w.customerName)) || w.customerName;
+      const canonicalName = partyNameMap.get(getCanonicalName(w.customerName)) || w.customerName;
       return (
         canonicalName.toLowerCase().includes(lowerCaseSearch) ||
         w.sNo.toLowerCase().includes(lowerCaseSearch) ||
@@ -231,7 +220,7 @@ export default function SalesRegisterPage() {
     doc.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, 14, 22);
 
     const tableData = filteredWataks.map(w => {
-        const canonicalName = partyNameMap.get(normalizeName(w.customerName)) || w.customerName;
+        const canonicalName = partyNameMap.get(getCanonicalName(w.customerName)) || w.customerName;
         return [
             new Date(w.date).toLocaleDateString('en-GB'),
             w.sNo,
@@ -261,7 +250,7 @@ export default function SalesRegisterPage() {
 
   const exportToExcel = () => {
       const worksheetData = filteredWataks.map(w => {
-        const canonicalName = partyNameMap.get(normalizeName(w.customerName)) || w.customerName;
+        const canonicalName = partyNameMap.get(getCanonicalName(w.customerName)) || w.customerName;
         return {
             'Date': new Date(w.date).toLocaleDateString('en-GB'),
             'Invoice No.': w.sNo,
@@ -398,7 +387,7 @@ export default function SalesRegisterPage() {
           ) : viewMode === 'grid' ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {filteredWataks.map((watak) => {
-                      const canonicalName = partyNameMap.get(normalizeName(watak.customerName)) || watak.customerName;
+                      const canonicalName = partyNameMap.get(getCanonicalName(watak.customerName)) || watak.customerName;
                       return (
                       <div key={watak.id} onClick={() => navigateToBill(watak.sNo)} className="cursor-pointer">
                           <DocumentCard type="watak" title={`Invoice #${watak.watakNo || watak.sNo}`}>
@@ -428,7 +417,7 @@ export default function SalesRegisterPage() {
             </TableHeader>
             <TableBody>
               {filteredWataks.map((watak: WatakEntry) => {
-                const canonicalName = partyNameMap.get(normalizeName(watak.customerName)) || watak.customerName;
+                const canonicalName = partyNameMap.get(getCanonicalName(watak.customerName)) || watak.customerName;
                 return (
                 <TableRow key={watak.id}>
                   <TableCell>{new Date(watak.date).toLocaleDateString('en-GB')}</TableCell>

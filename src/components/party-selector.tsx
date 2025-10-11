@@ -89,18 +89,9 @@ const defaultGrowers: { name: string, address: string }[] = [
 ];
 
 
-const normalizeName = (name: string): string => {
+const getCanonicalName = (name: string): string => {
     if (!name) return '';
-    return name
-        .toUpperCase()
-        .replace(/R\/O.*$/i, '')
-        .replace(/\(.*\)/, '')
-        .replace(/\b(MOHAMMAD|MOHD|MD|GH\.)\b/g, 'MOHAMMAD')
-        .replace(/\b(AHMAD|AH)\b/g, 'AHMAD')
-        .replace(/S\/P|B\/P|K\/P|®|\(R\)/g, '')
-        .replace(/[\.\,']/g, '')
-        .replace(/\s+/g, ' ')
-        .trim();
+    return name.trim();
 };
 
 const PartyIcon = ({ type }: { type: Party['type'] }) => {
@@ -131,7 +122,7 @@ const AddPartyDialog = ({ open, setOpen, onPartyAdded }: { open: boolean, setOpe
             return;
         }
 
-        const id = `${PARTY_STORAGE_PREFIX}${normalizeName(formState.name)}`;
+        const id = `${PARTY_STORAGE_PREFIX}${getCanonicalName(formState.name)}`;
         const newParty: Party = { id, ...formState };
 
         localStorage.setItem(id, JSON.stringify(newParty));
@@ -208,9 +199,9 @@ export function PartySelector({ value, onChange, filter = 'all', disabled = fals
     const loadedParties: {[key: string]: Party} = {};
 
     defaultGrowers.forEach(g => {
-        const normalized = normalizeName(g.name);
-        if (!loadedParties[normalized]) {
-            loadedParties[normalized] = { ...g, id: `${PARTY_STORAGE_PREFIX}${normalized}`, type: 'Grower' };
+        const canonical = getCanonicalName(g.name);
+        if (!loadedParties[canonical]) {
+            loadedParties[canonical] = { ...g, id: `${PARTY_STORAGE_PREFIX}${canonical}`, type: 'Grower' };
         }
     });
     
@@ -218,9 +209,9 @@ export function PartySelector({ value, onChange, filter = 'all', disabled = fals
       const key = localStorage.key(i);
       if (key?.startsWith(PARTY_STORAGE_PREFIX)) {
         const party = JSON.parse(localStorage.getItem(key)!);
-        const normalized = normalizeName(party.name);
+        const canonical = getCanonicalName(party.name);
         // Saved parties should overwrite defaults
-        loadedParties[normalized] = party;
+        loadedParties[canonical] = party;
       }
     }
     
@@ -260,7 +251,7 @@ export function PartySelector({ value, onChange, filter = 'all', disabled = fals
           disabled={disabled}
         >
           {value
-            ? parties.find((party) => party.name.toLowerCase() === value.toLowerCase())?.name
+            ? parties.find((party) => party.name === value)?.name
             : "Select party..."}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -287,7 +278,7 @@ export function PartySelector({ value, onChange, filter = 'all', disabled = fals
                   <Check
                     className={cn(
                       "mr-2 h-4 w-4",
-                      value.toLowerCase() === party.name.toLowerCase() ? "opacity-100" : "opacity-0"
+                      value === party.name ? "opacity-100" : "opacity-0"
                     )}
                   />
                   <PartyIcon type={party.type} />

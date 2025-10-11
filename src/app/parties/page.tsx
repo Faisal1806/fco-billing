@@ -99,18 +99,9 @@ const defaultGrowers: { name: string, address: string }[] = [
     { name: 'GH. Nabi Wani', address: 'R/o Nadihal Bla.' }
 ];
 
-const normalizeName = (name: string): string => {
+const getCanonicalName = (name: string): string => {
     if (!name) return '';
-    return name
-        .toUpperCase()
-        .replace(/R\/O.*$/i, '')
-        .replace(/\(.*\)/, '')
-        .replace(/\b(MOHAMMAD|MOHD|MD|GH\.)\b/g, 'MOHAMMAD')
-        .replace(/\b(AHMAD|AH)\b/g, 'AHMAD')
-        .replace(/S\/P|B\/P|K\/P|®|\(R\)|S\/O/g, '')
-        .replace(/[\.\,']/g, '')
-        .replace(/\s+/g, ' ')
-        .trim();
+    return name.trim();
 };
 
 
@@ -137,10 +128,10 @@ export default function PartiesPage() {
 
     const addOrUpdateParty = (name: string, details: Partial<Party> = {}) => {
         if (!name) return;
-        const normalized = normalizeName(name);
-        if (!partiesMap.has(normalized)) {
-            partiesMap.set(normalized, {
-                id: `${PARTY_STORAGE_PREFIX}${normalized}`,
+        const canonical = getCanonicalName(name);
+        if (!partiesMap.has(canonical)) {
+            partiesMap.set(canonical, {
+                id: `${PARTY_STORAGE_PREFIX}${canonical}`,
                 name: name, // Use first-seen name as display name
                 type: 'Grower', // Default type
                 ...details,
@@ -157,9 +148,9 @@ export default function PartiesPage() {
         if (key?.startsWith(PARTY_STORAGE_PREFIX)) {
             try {
                 const party: Party = JSON.parse(localStorage.getItem(key)!);
-                const normalized = normalizeName(party.name);
+                const canonical = getCanonicalName(party.name);
                 // Overwrite any existing entry with the saved one
-                partiesMap.set(normalized, party);
+                partiesMap.set(canonical, party);
             } catch (e) {
                 console.error("Error parsing party:", e);
             }
@@ -195,24 +186,24 @@ export default function PartiesPage() {
         }
 
         if (partyName) {
-            const normalized = normalizeName(partyName);
+            const canonical = getCanonicalName(partyName);
             addOrUpdateParty(partyName); // Ensure party exists from transaction
 
             // Update transaction counts
-            const counts = transactionCounts.get(normalized) || { sales: 0, purchases: 0 };
+            const counts = transactionCounts.get(canonical) || { sales: 0, purchases: 0 };
             if (isSale) counts.sales++;
             else counts.purchases++;
-            transactionCounts.set(normalized, counts);
+            transactionCounts.set(canonical, counts);
 
             // Update balances
-            const currentBalance = localBalances.get(normalized) || 0;
-            localBalances.set(normalized, currentBalance + amount);
+            const currentBalance = localBalances.get(canonical) || 0;
+            localBalances.set(canonical, currentBalance + amount);
         }
     }
 
     // 4. Determine party type based on transactions
-    partiesMap.forEach((party, normalized) => {
-        const counts = transactionCounts.get(normalized);
+    partiesMap.forEach((party, canonical) => {
+        const counts = transactionCounts.get(canonical);
         if (counts) {
             const hasSales = counts.sales > 0;
             const hasPurchases = counts.purchases > 0;
@@ -276,7 +267,7 @@ export default function PartiesPage() {
       return;
     }
 
-    const id = 'id' in formState ? formState.id : `${PARTY_STORAGE_PREFIX}${normalizeName(formState.name)}`;
+    const id = 'id' in formState ? formState.id : `${PARTY_STORAGE_PREFIX}${getCanonicalName(formState.name)}`;
     const newParty: Party = { id, ...(formState as Omit<Party, 'id'>) };
 
     localStorage.setItem(id, JSON.stringify(newParty));
@@ -314,7 +305,7 @@ export default function PartiesPage() {
             p.type,
             p.phone || '',
             p.address || '',
-            (balances[normalizeName(p.name)] || 0).toFixed(2)
+            (balances[getCanonicalName(p.name)] || 0).toFixed(2)
         ]),
     });
     doc.save("parties-directory.pdf");
@@ -329,7 +320,7 @@ export default function PartiesPage() {
           'Address': p.address,
           'Email': p.email,
           'Notes': p.notes,
-          'Balance': balances[normalizeName(p.name)] || 0,
+          'Balance': balances[getCanonicalName(p.name)] || 0,
       })));
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Parties");
@@ -466,7 +457,7 @@ export default function PartiesPage() {
             </TableHeader>
             <TableBody>
               {filteredParties.map((party, index) => {
-                const balance = balances[normalizeName(party.name)] || 0;
+                const balance = balances[getCanonicalName(party.name)] || 0;
                 return (
                 <TableRow key={party.id}>
                   <TableCell>{index + 1}</TableCell>

@@ -63,20 +63,9 @@ type Ledger = {
 
 type LedgerEntryWithRunningBalance = Transaction & { runningBalance: number };
 
-const normalizeName = (name: string): string => {
+const getCanonicalName = (name: string): string => {
     if (!name) return '';
-    // This version is more aggressive for matching but preserves the original look less.
-    // Good for finding the canonical name.
-    return name
-        .toUpperCase()
-        .replace(/R\/O.*$/i, '')
-        .replace(/\(.*\)/, '')
-        .replace(/\b(MOHAMMAD|MOHD|MD|GH\.)\b/g, 'MOHAMMAD')
-        .replace(/\b(AHMAD|AH)\b/g, 'AHMAD')
-        .replace(/S\/P|B\/P|K\/P|®/g, '') // Remove specific suffixes
-        .replace(/[\.\,']/g, '')
-        .replace(/\s+/g, ' ')
-        .trim();
+    return name.trim();
 };
 
 const defaultGrowers: { name: string, address: string }[] = [
@@ -142,9 +131,9 @@ export default function KhataLedgerPage() {
             // Pass 1: Collect all party names from explicit party list and default growers
             const addPartyToMap = (partyName: string) => {
                 if (!partyName) return;
-                const normalized = normalizeName(partyName);
-                if (!canonicalMap.has(normalized)) {
-                    canonicalMap.set(normalized, partyName);
+                const canonical = getCanonicalName(partyName);
+                if (!canonicalMap.has(canonical)) {
+                    canonicalMap.set(canonical, partyName);
                 }
             };
             
@@ -193,15 +182,15 @@ export default function KhataLedgerPage() {
                         addPartyToMap(partyName);
                         allTransactions.push(transaction);
                         
-                        const normalized = normalizeName(partyName);
-                        const currentType = partyTypes.get(normalized);
+                        const canonical = getCanonicalName(partyName);
+                        const currentType = partyTypes.get(canonical);
 
                         if (type === 'Sale') {
-                            partyTypes.set(normalized, currentType === 'customer' ? 'both' : 'supplier');
+                             partyTypes.set(canonical, currentType === 'customer' ? 'both' : 'supplier');
                         } else if (type === 'Purchase' || type === 'Advance') {
-                             partyTypes.set(normalized, currentType === 'supplier' ? 'both' : 'customer');
+                             partyTypes.set(canonical, currentType === 'supplier' ? 'both' : 'customer');
                         } else if (type === 'Bikri') {
-                            partyTypes.set(normalized, 'outside');
+                            partyTypes.set(canonical, 'outside');
                         }
                     }
                 } catch (e) {
@@ -214,19 +203,19 @@ export default function KhataLedgerPage() {
             // Pass 3: Build the ledgers
             const calculatedLedgers: Ledger = {};
             
-            canonicalMap.forEach((displayName, normalizedName) => {
+            canonicalMap.forEach((displayName, canonicalName) => {
                  calculatedLedgers[displayName] = { 
                     transactions: [], 
                     balance: 0, 
-                    partyType: partyTypes.get(normalizedName) || 'customer',
+                    partyType: partyTypes.get(canonicalName) || 'customer',
                     displayName: displayName
                 };
             });
 
             for (const trans of allTransactions) {
                 if (!trans.party) continue;
-                const normalized = normalizeName(trans.party);
-                const canonicalName = canonicalMap.get(normalized);
+                const canonical = getCanonicalName(trans.party);
+                const canonicalName = canonicalMap.get(canonical);
                 
                 if (canonicalName && calculatedLedgers[canonicalName]) {
                     calculatedLedgers[canonicalName].transactions.push(trans);
@@ -476,7 +465,7 @@ export default function KhataLedgerPage() {
             balanceColor = 'text-red-500';
         } else {
             balanceText = '(You are Owed / Receivable)';
-            balanceColor = 'text-green-600';
+            balanceColor = 'text-green-500';
         }
         
         return (
