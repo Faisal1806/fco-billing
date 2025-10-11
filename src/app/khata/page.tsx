@@ -136,35 +136,32 @@ export default function KhataLedgerPage() {
             fetch('/animations/forms/fco_loader.json').then(res => res.json()).then(setLoaderAnimation);
 
             const canonicalMap = new Map<string, string>(); 
-            
-            const addPartyToMap = (party: {name: string}) => {
-                if (!party || !party.name) return;
-                const normalized = normalizeName(party.name);
+            const transactionsByType: { [key: string]: Transaction[] } = { sales: [], purchases: [], advances: [], bikris: []};
+            const allTransactions: Transaction[] = [];
+
+            // Pass 1: Collect all transactions and build a complete map of all parties
+            const addPartyToMap = (partyName: string) => {
+                if (!partyName) return;
+                const normalized = normalizeName(partyName);
                 if (!canonicalMap.has(normalized)) {
-                    canonicalMap.set(normalized, party.name);
+                    canonicalMap.set(normalized, partyName);
                 }
             };
-            
-            defaultGrowers.forEach(addPartyToMap);
 
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key?.startsWith('party-')) {
-                    try {
-                        addPartyToMap(JSON.parse(localStorage.getItem(key)!));
-                    } catch(e) { console.error("Error parsing party:", e); }
-                }
-            }
-            
-            const allTransactions: Transaction[] = [];
+            defaultGrowers.forEach(g => addPartyToMap(g.name));
+
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (!key) continue;
 
                 try {
-                    if (key.startsWith('invoice-')) {
+                    if (key.startsWith('party-')) {
                         const doc = JSON.parse(localStorage.getItem(key)!);
-                         allTransactions.push({
+                        addPartyToMap(doc.name);
+                    } else if (key.startsWith('invoice-')) {
+                        const doc = JSON.parse(localStorage.getItem(key)!);
+                        addPartyToMap(doc.customerName);
+                        allTransactions.push({
                             id: `sale-${doc.sNo}`,
                             date: doc.date,
                             type: 'Sale',
@@ -176,6 +173,7 @@ export default function KhataLedgerPage() {
                         });
                     } else if (key.startsWith('purchase-')) {
                         const doc = JSON.parse(localStorage.getItem(key)!);
+                        addPartyToMap(doc.growerName);
                         allTransactions.push({
                             id: `purchase-${doc.billNo}`,
                             date: doc.date,
@@ -188,6 +186,7 @@ export default function KhataLedgerPage() {
                         });
                     } else if (key.startsWith('advance-')) {
                         const doc = JSON.parse(localStorage.getItem(key)!);
+                        addPartyToMap(doc.partyName);
                         allTransactions.push({
                             id: doc.id,
                             date: doc.date,
@@ -201,6 +200,7 @@ export default function KhataLedgerPage() {
                         });
                     } else if (key.startsWith('bikri-')) {
                         const doc = JSON.parse(localStorage.getItem(key)!);
+                        addPartyToMap(doc.market);
                         allTransactions.push({
                             id: doc.id,
                             date: doc.date,
@@ -220,50 +220,43 @@ export default function KhataLedgerPage() {
 
             allTransactions.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
             
+            // Pass 2: Build the ledgers using the complete canonical map
             const calculatedLedgers: Ledger = {};
             
             canonicalMap.forEach((displayName, normalizedName) => {
                  calculatedLedgers[displayName] = { 
                     transactions: [], 
                     balance: 0, 
-                    partyType: 'customer',
+                    partyType: 'customer', // Default type, will be adjusted
                     displayName: displayName
                 };
             });
 
-
             for (const trans of allTransactions) {
                 if (!trans.party) continue;
                 const normalized = normalizeName(trans.party);
-                const canonicalName = canonicalMap.get(normalized) || trans.party;
+                const canonicalName = canonicalMap.get(normalized);
                 
-                if (!calculatedLedgers[canonicalName]) {
-                    calculatedLedgers[canonicalName] = { 
-                        transactions: [], 
-                        balance: 0, 
-                        partyType: 'customer',
-                        displayName: canonicalName 
-                    };
-                }
-                
-                const ledger = calculatedLedgers[canonicalName];
-                ledger.transactions.push(trans);
-                
-                 if (trans.type === 'Sale') {
-                    ledger.partyType = ledger.partyType === 'supplier' ? 'both' : 'customer';
-                }
-                 if (trans.type === 'Purchase') {
-                    ledger.partyType = ledger.partyType === 'customer' ? 'both' : 'supplier';
+                if (canonicalName && calculatedLedgers[canonicalName]) {
+                    const ledger = calculatedLedgers[canonicalName];
+                    ledger.transactions.push(trans);
+                    
+                    if (trans.type === 'Sale') {
+                        ledger.partyType = ledger.partyType === 'supplier' ? 'both' : 'customer';
+                    }
+                    if (trans.type === 'Purchase') {
+                        ledger.partyType = ledger.partyType === 'customer' ? 'both' : 'supplier';
+                    }
                 }
             }
             
+            // Pass 3: Calculate final balances
             Object.keys(calculatedLedgers).forEach(partyKey => {
                 let runningBalance = 0;
                 calculatedLedgers[partyKey].transactions.forEach(trans => {
-                    if (trans.type === 'Sale' || trans.type === 'Bikri' || trans.type === 'Repayment') {
+                    if (trans.type === 'Sale' || trans.type === 'Repayment' || (trans.type === 'Bikri' && trans.amount >= 0)) {
                         runningBalance += trans.amount;
-                    } 
-                    else { // Purchase, Advance
+                    } else { // Purchase, Advance, Bikri Loss
                         runningBalance -= trans.amount;
                     }
                 });
@@ -334,7 +327,7 @@ export default function KhataLedgerPage() {
         if (!selectedLedger) return [];
         let runningBalance = 0;
         return selectedLedger.transactions.map(tx => {
-             if (tx.type === 'Sale' || tx.type === 'Bikri' || tx.type === 'Repayment') {
+             if (tx.type === 'Sale' || tx.type === 'Repayment' || (tx.type === 'Bikri' && tx.amount >= 0)) {
                 runningBalance += tx.amount;
             } else { // Purchase, Advance
                 runningBalance -= tx.amount;
