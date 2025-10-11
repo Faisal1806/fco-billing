@@ -5,29 +5,12 @@ import * as React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { IndianRupee, TrendingUp, TrendingDown, Calendar, Hash, BarChart3, FileText, BookOpen, PlusCircle } from 'lucide-react';
+import { IndianRupee, TrendingUp, TrendingDown, Calendar, Hash, BarChart3, FileText, BookOpen, PlusCircle, ShoppingBasket } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2 } from 'lucide-react';
-import { sidebarSections } from '@/components/Sidebar';
-import Link from 'next/link';
-
-interface DailyStats {
-  totalSaleValue: number;
-}
-
-interface YearlyStats {
-    monthSales: number;
-    yearGrossSales: number;
-    yearTotalExpenses: number;
-}
-
-type GrowerProfit = {
-    name: string;
-    profit: number;
-}
+import placeholderImages from '@/app/lib/placeholder-images.json';
 
 interface Invoice {
     id: string;
@@ -55,28 +38,12 @@ const normalizeName = (name: string): string => {
         .trim();
 };
 
-const StatCard = ({ title, value, note, icon: Icon, iconBg }: { title: string, value: string, note: string, icon: React.ElementType, iconBg: string }) => (
-    <Card className="bg-gray-800/50 border-gray-700/60 shadow-lg">
-        <CardContent className="p-4 flex items-center justify-between">
-            <div>
-                <p className="text-sm text-gray-400">{title}</p>
-                <p className="text-2xl font-bold mt-1">{value}</p>
-                <p className="text-xs text-gray-500 mt-1">{note}</p>
-            </div>
-            <div className={`p-3 rounded-full ${iconBg}`}>
-                <Icon className="h-6 w-6 text-white" />
-            </div>
-        </CardContent>
-    </Card>
-);
-
-const NavLink = ({ href, icon: Icon, name }: { href: string, icon: React.ElementType, name: string }) => (
-  <Link href={href} passHref>
-    <div className="flex flex-col items-center justify-center gap-2 p-3 bg-gray-800/40 rounded-lg hover:bg-gray-700/60 transition-colors duration-200 neon-glow-container">
-      <Icon className="h-8 w-8 neon-glow-icon" />
-      <span className="text-xs text-center text-gray-300">{name}</span>
+const StatCard = ({ title, value, note }: { title: string, value: string, note: string }) => (
+    <div className="bg-gray-800/20 p-4 rounded-lg">
+        <p className="text-sm text-gray-400">{title}</p>
+        <p className="text-2xl font-bold mt-1">{value}</p>
+        <p className="text-xs text-gray-500 mt-1">{note}</p>
     </div>
-  </Link>
 );
 
 
@@ -105,36 +72,30 @@ export default function DashboardPage() {
 
   const stats = useMemo(() => {
     if (isLoading) return null;
-    const todayStr = new Date().toISOString().split('T')[0];
-    let totalSaleValueToday = 0;
-
-    allInvoices.forEach(sale => {
-        if (sale.date === todayStr) {
-            totalSaleValueToday += sale.totals.netSale || 0;
-        }
-    });
-
-    return { totalSaleValue: totalSaleValueToday };
-  }, [allInvoices, isLoading]);
-
-  const yearlyStats = useMemo(() => {
-    if (isLoading) return null;
     const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
     const currentMonth = today.getMonth();
     const currentYear = today.getFullYear();
     
+    let totalSaleValueToday = 0;
     let monthlyTotalSales = 0;
     let yearGrossSales = 0;
     let yearTotalExpenses = 0;
+    let yearNetSales = 0;
 
     allInvoices.forEach(sale => {
         const saleDate = new Date(sale.date);
         const saleYear = saleDate.getFullYear();
         const saleMonth = saleDate.getMonth();
 
+        if (sale.date === todayStr) {
+            totalSaleValueToday += sale.totals.netSale || 0;
+        }
+
         if (saleYear === currentYear) {
             yearGrossSales += sale.totals.grossSale || 0;
             yearTotalExpenses += sale.totals.totalExpenses || 0;
+            yearNetSales += sale.totals.netSale || 0;
 
              if (saleMonth === currentMonth) {
                 monthlyTotalSales += sale.totals.netSale || 0;
@@ -143,9 +104,11 @@ export default function DashboardPage() {
     });
     
     return {
+        totalSaleValue: totalSaleValueToday,
         monthSales: monthlyTotalSales,
         yearGrossSales: yearGrossSales,
         yearTotalExpenses: yearTotalExpenses,
+        yearNetSales: yearNetSales,
     };
   }, [allInvoices, isLoading]);
   
@@ -155,15 +118,19 @@ export default function DashboardPage() {
     const canonicalNameMap = new Map<string, string>();
     const currentYear = new Date().getFullYear();
 
+    // First pass: find the most complete name for each normalized name
     allInvoices.forEach(sale => {
          if (sale.customerName) {
             const normalized = normalizeName(sale.customerName);
-            if (!canonicalNameMap.has(normalized)) {
+            const currentCanonical = canonicalNameMap.get(normalized);
+            // Prefer the longer, more detailed name as the canonical one
+            if (!currentCanonical || sale.customerName.length > currentCanonical.length) {
                 canonicalNameMap.set(normalized, sale.customerName);
             }
         }
     });
 
+    // Second pass: aggregate profits using the canonical names
     allInvoices.forEach(sale => {
         const saleYear = new Date(sale.date).getFullYear();
         if (saleYear === currentYear && sale.customerName && sale.totals.netSale) {
@@ -190,81 +157,72 @@ export default function DashboardPage() {
     )
   }
 
-  const allNavLinks = sidebarSections.flatMap(section => section.items).filter(item => item.name !== "Dashboard");
+  const { dashboardHeader } = placeholderImages;
   
   return (
     <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8 space-y-8">
         {/* Header */}
         <div className="relative h-48 rounded-xl overflow-hidden flex flex-col justify-center items-center text-center p-4">
             <Image 
-                src="https://picsum.photos/seed/apple-orb/1200/400"
-                alt="Abstract green background"
+                src={dashboardHeader.src}
+                alt={dashboardHeader.alt}
                 fill
                 style={{objectFit: 'cover'}}
                 className="opacity-20"
-                data-ai-hint="green apple"
+                data-ai-hint={dashboardHeader.hint}
             />
             <div className="relative z-10">
                 <h1 className="text-4xl md:text-5xl font-bold text-white shadow-lg">Welcome to F.Co</h1>
                 <p className="text-lg text-gray-300/80 shadow-md mt-2">Your complete business management solution.</p>
             </div>
         </div>
-
-        {/* Tabs */}
-        <Tabs defaultValue="fruit" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-gray-800/50 border-gray-700/60 rounded-xl">
-              <TabsTrigger value="fruit" className="data-[state=active]:bg-green-600/80 data-[state=active]:text-white">Fruit Business</TabsTrigger>
-              <TabsTrigger value="accessories">Accessories</TabsTrigger>
-              <TabsTrigger value="inventory">Inventory</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="fruit" className="mt-6 space-y-8">
-            {/* App Sections */}
-            <div>
-                <h2 className="text-sm font-semibold uppercase text-gray-500 tracking-wider mb-4">App Sections</h2>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
-                    {allNavLinks.slice(0, 12).map(item => <NavLink key={item.name} {...item} />)}
-                </div>
-            </div>
-
+        
+        {/* Main Content Area */}
+        <div className="space-y-8">
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <StatCard title="Today's Sales (Net)" value={`₹${stats?.totalSaleValue.toLocaleString('en-IN') ?? '0'}`} note="Compare to last month" icon={Hash} iconBg="bg-orange-500/80" />
-                <StatCard title="This Month's Sales (Net)" value={`₹${yearlyStats?.monthSales.toLocaleString('en-IN') ?? '0'}`} note="Current calendar month" icon={IndianRupee} iconBg="bg-yellow-500/80" />
-                <StatCard title="This Year's Gross Sales" value={`₹${yearlyStats?.yearGrossSales.toLocaleString('en-IN') ?? '0'}`} note="Total sales value this year" icon={BarChart3} iconBg="bg-green-500/80" />
-                <StatCard title="This Year's Expenses" value={`₹${yearlyStats?.yearTotalExpenses.toLocaleString('en-IN') ?? '0'}`} note="All Watak deductions this year" icon={TrendingDown} iconBg="bg-red-500/80" />
+            <div className="space-y-4">
+                <StatCard title="Today's Sales (Net)" value={`₹${stats?.totalSaleValue.toLocaleString('en-IN') ?? '0'}`} note="Compare to last month" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <StatCard title="This Month's Sales (Net)" value={`₹${stats?.monthSales.toLocaleString('en-IN') ?? '0'}`} note="Current calendar month" />
+                    <StatCard title="This Year's Gross Sales" value={`₹${stats?.yearGrossSales.toLocaleString('en-IN') ?? '0'}`} note="Total sales value this year" />
+                    <StatCard title="This Year's Expenses" value={`₹${stats?.yearTotalExpenses.toLocaleString('en-IN') ?? '0'}`} note="All Watak deductions this year" />
+                    <StatCard title="This Year's Net Sales" value={`₹${stats?.yearNetSales.toLocaleString('en-IN') ?? '0'}`} note="After all expenses" />
+                </div>
             </div>
 
             {/* Quick Actions */}
-            <div>
-                <h2 className="text-sm font-semibold uppercase text-gray-500 tracking-wider mb-4">Quick Actions</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Button onClick={() => router.push('/sales')} className="h-16 text-lg bg-red-600/80 hover:bg-red-600 border border-red-500/50">
-                        <PlusCircle className="mr-2 h-5 w-5" /> Sales Entry
-                    </Button>
-                    <Button onClick={() => router.push('/watak-register')} className="h-16 text-lg bg-blue-600/80 hover:bg-blue-600 border border-blue-500/50">
-                        <FileText className="mr-2 h-5 w-5" /> Watak Register
-                    </Button>
-                    <Button onClick={() => router.push('/rates')} className="h-16 text-lg bg-yellow-600/80 hover:bg-yellow-600 border border-yellow-500/50">
-                        <TrendingUp className="mr-2 h-5 w-5" /> Reports
-                    </Button>
-                </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Button onClick={() => router.push('/sales')} className="h-20 text-lg bg-red-600/80 hover:bg-red-600 border border-red-500/50 flex-col gap-1">
+                    <PlusCircle className="h-6 w-6" /> Sales Entry
+                </Button>
+                <Button onClick={() => router.push('/watak-register')} className="h-20 text-lg bg-blue-600/80 hover:bg-blue-600 border border-blue-500/50 flex-col gap-1">
+                    <FileText className="h-6 w-6" /> Watak Register
+                </Button>
+                 <Button onClick={() => router.push('/purchases')} className="h-20 text-lg bg-green-600/80 hover:bg-green-600 border border-green-500/50 flex-col gap-1">
+                    <ShoppingBasket className="h-6 w-6" /> Purchases
+                </Button>
+                <Button onClick={() => router.push('/rates')} className="h-20 text-lg bg-yellow-600/80 hover:bg-yellow-600 border border-yellow-500/50 flex-col gap-1">
+                    <BarChart3 className="h-6 w-6" /> Reports
+                </Button>
             </div>
 
             {/* All Growers */}
              <div>
-                <h2 className="text-sm font-semibold uppercase text-gray-500 tracking-wider mb-4">All Growers</h2>
+                <h2 className="text-xl font-semibold text-gray-300 tracking-wider mb-4">All Growers</h2>
                  <Card className="bg-gray-800/50 border-gray-700/60 shadow-lg">
                     <CardContent className="p-0">
                         {growerProfits.length > 0 ? (
                             <Table>
                                 <TableBody>
-                                    {growerProfits.slice(0, 5).map((grower, index) => (
+                                    {growerProfits.slice(0, 10).map((grower, index) => (
                                         <TableRow key={grower.name} className="border-gray-700/60">
                                             <TableCell>
                                                 <div className="flex items-center gap-3">
                                                     <span className="flex items-center justify-center h-8 w-8 rounded-full bg-orange-500/80 text-white font-bold">{index + 1}</span>
-                                                    <span className="font-medium text-base">{grower.name}</span>
+                                                    <div>
+                                                      <span className="font-medium text-base">{grower.name}</span>
+                                                      <p className="text-xs text-muted-foreground">Net Sales</p>
+                                                    </div>
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-right font-mono text-lg text-green-400">₹{grower.profit.toLocaleString('en-IN', {minimumFractionDigits: 2})}</TableCell>
@@ -278,8 +236,8 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
             </div>
-          </TabsContent>
-        </Tabs>
+        </div>
     </div>
   );
 }
+
