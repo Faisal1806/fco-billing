@@ -285,19 +285,11 @@ export default function DashboardPage() {
 
         <div className="space-y-4">
              <h2 className="text-xl font-semibold tracking-wider text-muted-foreground">THIS YEAR'S SUMMARY</h2>
-             <div className="grid gap-4 md:grid-cols-2">
+             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <StatCard title="Today's Sales (Net)" value={`₹${stats?.totalSaleValueToday.toLocaleString('en-IN') ?? '0'}`} subtitle={`From ${stats?.pattiToday} Patti / ${stats?.dabbaToday} Dabba`} icon={TrendingUp} />
                 <StatCard title="This Month's Sales (Net)" value={`₹${stats?.monthlyTotalSales.toLocaleString('en-IN') ?? '0'}`} subtitle="Current calendar month" icon={Calendar} />
-                <StatCard title="This Month's Expenses" value={`₹${stats?.monthlyTotalExpenses.toLocaleString('en-IN') ?? '0'}`} subtitle="From Watak deductions" icon={IndianRupee} />
                 <StatCard title="This Year's Gross Sales" value={`₹${stats?.yearGrossSales.toLocaleString('en-IN') ?? '0'}`} subtitle="Total sale value this year" icon={IndianRupee} />
                 <StatCard title="This Year's Net Sales" value={`₹${stats?.yearNetSales.toLocaleString('en-IN') ?? '0'}`} subtitle="After all expenses" icon={IndianRupee} />
-                <StatCard title="This Year's Expenses" value={`₹${stats?.yearTotalExpenses.toLocaleString('en-IN') ?? '0'}`} subtitle="All Watak deductions this year" icon={IndianRupee} />
-                <StatCard title="Total Patti Sold (This Year)" value={stats?.yearPattiSold.toLocaleString('en-IN') ?? '0'} subtitle="Local sales volume" icon={Package} />
-                <StatCard title="Total Dabba Sold (This Year)" value={stats?.yearDabbaSold.toLocaleString('en-IN') ?? '0'} subtitle="Local sales volume" icon={Box} />
-                <StatCard title="Total Nugs Sold (This Year)" value={stats?.yearNugsSold.toLocaleString('en-IN') ?? '0'} subtitle="Patti + Dabba (Local)" icon={ClipboardList} />
-                <StatCard title="Total Patti Sent Outside (Year)" value={stats?.yearPattiSentOutside.toLocaleString('en-IN') ?? '0'} subtitle="Forwarding volume" icon={Globe} />
-                <StatCard title="Total Dabba Sent Outside (Year)" value={stats?.yearDabbaSentOutside.toLocaleString('en-IN') ?? '0'} subtitle="Forwarding volume" icon={Globe} />
-                <StatCard title="Total Nugs Sent Outside (Year)" value={stats?.yearNugsSentOutside.toLocaleString('en-IN') ?? '0'} subtitle="Total Forwarding" icon={Globe} />
              </div>
         </div>
         
@@ -358,7 +350,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
-
-    
