@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { IndianRupee, TrendingUp, Calendar, FileText, ShoppingBasket, BookOpen, Loader2, Package, Box, ClipboardList, Globe } from 'lucide-react';
+import { IndianRupee, TrendingUp, Calendar, FileText, ShoppingBasket, BookOpen, Loader2, Package, Box, ClipboardList, Globe, PlusCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -290,7 +290,33 @@ export default function DashboardPage() {
                 <StatCard title="This Month's Sales (Net)" value={`₹${stats?.monthlyTotalSales.toLocaleString('en-IN') ?? '0'}`} subtitle="Current calendar month" icon={Calendar} />
                 <StatCard title="This Year's Gross Sales" value={`₹${stats?.yearGrossSales.toLocaleString('en-IN') ?? '0'}`} subtitle="Total sale value this year" icon={IndianRupee} />
                 <StatCard title="This Year's Net Sales" value={`₹${stats?.yearNetSales.toLocaleString('en-IN') ?? '0'}`} subtitle="After all expenses" icon={IndianRupee} />
+                <StatCard title="Total Patti Sold (Local)" value={stats?.yearPattiSold.toLocaleString('en-IN') ?? '0'} subtitle="This year in Sopore Mandi" icon={Package} />
+                <StatCard title="Total Dabba Sold (Local)" value={stats?.yearDabbaSold.toLocaleString('en-IN') ?? '0'} subtitle="This year in Sopore Mandi" icon={Box} />
+                <StatCard title="Total Nugs Sold (Local)" value={stats?.yearNugsSold.toLocaleString('en-IN') ?? '0'} subtitle="Patti + Dabba this year" icon={ClipboardList} />
+                <StatCard title="Total Patti Sent Outside" value={stats?.yearPattiSentOutside.toLocaleString('en-IN') ?? '0'} subtitle="This year via Challan" icon={Package} />
+                <StatCard title="Total Dabba Sent Outside" value={stats?.yearDabbaSentOutside.toLocaleString('en-IN') ?? '0'} subtitle="This year via Challan" icon={Box} />
+                <StatCard title="Total Nugs Sent Outside" value={stats?.yearNugsSentOutside.toLocaleString('en-IN') ?? '0'} subtitle="Patti + Dabba this year" icon={Globe} />
+                <StatCard title="Total Expenses" value={`₹${stats?.yearTotalExpenses.toLocaleString('en-IN') ?? '0'}`} subtitle="From local sales" icon={IndianRupee} />
+                <StatCard title="Gross Profit Margin" value={`${stats?.yearGrossSales ? ((stats.yearNetSales / stats.yearGrossSales) * 100).toFixed(2) : '0'}%`} subtitle="Net / Gross Sales" icon={TrendingUp} />
              </div>
+        </div>
+
+        <div className="space-y-4">
+             <h2 className="text-xl font-semibold tracking-wider text-muted-foreground">QUICK ACTIONS</h2>
+             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                 <Button onClick={() => router.push('/sales')} className="h-20 text-lg bg-red-600/80 hover:bg-red-600 border border-red-500/50">
+                     <PlusCircle className="mr-2 h-6 w-6" /> Sales Entry
+                 </Button>
+                 <Button onClick={() => router.push('/watak-register')} className="h-20 text-lg bg-blue-600/80 hover:bg-blue-600 border border-blue-500/50">
+                     <FileText className="mr-2 h-6 w-6" /> Watak Register
+                 </Button>
+                 <Button onClick={() => router.push('/purchases')} className="h-20 text-lg bg-green-600/80 hover:bg-green-600 border border-green-500/50">
+                    <ShoppingBasket className="mr-2 h-6 w-6" /> Purchases
+                 </Button>
+                 <Button onClick={() => router.push('/khata')} className="h-20 text-lg bg-yellow-500/80 hover:bg-yellow-500 border border-yellow-400/50">
+                    <BookOpen className="mr-2 h-6 w-6" /> Khata Ledger
+                 </Button>
+            </div>
         </div>
         
         <Card className="bg-card/80 backdrop-blur-sm border border-white/10">
@@ -350,3 +376,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
