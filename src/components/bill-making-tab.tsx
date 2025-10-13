@@ -95,6 +95,12 @@ export function BillMakingTab() {
       setUsedReceiptsMap(usedNos);
     };
 
+  const yearlyCount = useMemo(() => {
+    if(!savedWataks) return 0;
+    const currentYear = new Date().getFullYear();
+    return savedWataks.filter(w => new Date(w.date).getFullYear() === currentYear).length;
+  }, [savedWataks]);
+
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -580,7 +586,10 @@ export function BillMakingTab() {
     
     <Card className="mt-6">
         <CardHeader>
-            <CardTitle>Recent Invoices (Wataks)</CardTitle>
+            <div className="flex items-center gap-4">
+               <CardTitle>Recent Invoices (Wataks)</CardTitle>
+               <Badge variant="secondary">{yearlyCount} This Year</Badge>
+            </div>
             <CardDescription>A list of your most recently created invoices.</CardDescription>
         </CardHeader>
         <CardContent>
