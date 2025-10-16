@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { IndianRupee, TrendingUp, Calendar, FileText, ShoppingBasket, BookOpen, Loader2, Package, Box, ClipboardList, Globe, PlusCircle } from 'lucide-react';
+import { IndianRupee, TrendingUp, Calendar, FileText, ShoppingBasket, BookOpen, Loader2, Package, Box, ClipboardList, Globe, PlusCircle, User, Truck, Receipt } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -28,6 +28,15 @@ interface Invoice {
         dabbaQty: number;
     };
     customerName: string;
+}
+
+interface Receipt {
+    id: string;
+    date: string;
+    entries: {
+        peti: number;
+        daba: number;
+    }[];
 }
 
 interface Bikri {
@@ -95,6 +104,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [allInvoices, setAllInvoices] = useState<Invoice[]>([]);
   const [allBikris, setAllBikris] = useState<Bikri[]>([]);
+  const [allReceipts, setAllReceipts] = useState<Receipt[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAllGrowers, setShowAllGrowers] = useState(false);
 
@@ -105,6 +115,7 @@ export default function DashboardPage() {
 
         const invoices: Invoice[] = [];
         const bikris: Bikri[] = [];
+        const receipts: Receipt[] = [];
 
         for(let i=0; i<localStorage.length; i++) {
             const key = localStorage.key(i);
@@ -114,9 +125,13 @@ export default function DashboardPage() {
              if (key?.startsWith('bikri-')) {
                 bikris.push(JSON.parse(localStorage.getItem(key)!));
             }
+             if (key?.startsWith('receipt-')) {
+                receipts.push(JSON.parse(localStorage.getItem(key)!));
+            }
         }
         setAllInvoices(invoices);
         setAllBikris(bikris);
+        setAllReceipts(receipts);
         setIsLoading(false);
     }
     fetchData();
@@ -141,6 +156,9 @@ export default function DashboardPage() {
     let yearDabbaSold = 0;
     let yearPattiSentOutside = 0;
     let yearDabbaSentOutside = 0;
+    let yearPattiReceived = 0;
+    let yearDabbaReceived = 0;
+
 
     allInvoices.forEach(sale => {
         const saleDate = new Date(sale.date);
@@ -180,6 +198,16 @@ export default function DashboardPage() {
             });
         }
     });
+
+    allReceipts.forEach(receipt => {
+        const receiptDate = new Date(receipt.date);
+        if(receiptDate.getFullYear() === currentYear) {
+            receipt.entries.forEach(entry => {
+                yearPattiReceived += Number(entry.peti) || 0;
+                yearDabbaReceived += Number(entry.daba) || 0;
+            })
+        }
+    });
     
     return {
         totalSaleValueToday,
@@ -196,8 +224,11 @@ export default function DashboardPage() {
         yearPattiSentOutside,
         yearDabbaSentOutside,
         yearNugsSentOutside: yearPattiSentOutside + yearDabbaSentOutside,
+        yearPattiReceived,
+        yearDabbaReceived,
+        yearNugsReceived: yearPattiReceived + yearDabbaReceived,
     };
-  }, [allInvoices, allBikris, isLoading]);
+  }, [allInvoices, allBikris, allReceipts, isLoading]);
   
   const growerProfits = useMemo(() => {
     if (isLoading) return [];
@@ -285,19 +316,24 @@ export default function DashboardPage() {
 
         <div className="space-y-4">
              <h2 className="text-xl font-semibold tracking-wider text-muted-foreground">THIS YEAR'S SUMMARY</h2>
-             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
                 <StatCard title="Today's Sales (Net)" value={`₹${stats?.totalSaleValueToday.toLocaleString('en-IN') ?? '0'}`} subtitle={`From ${stats?.pattiToday} Patti / ${stats?.dabbaToday} Dabba`} icon={TrendingUp} />
                 <StatCard title="This Month's Sales (Net)" value={`₹${stats?.monthlyTotalSales.toLocaleString('en-IN') ?? '0'}`} subtitle="Current calendar month" icon={Calendar} />
                 <StatCard title="This Year's Gross Sales" value={`₹${stats?.yearGrossSales.toLocaleString('en-IN') ?? '0'}`} subtitle="Total sale value this year" icon={IndianRupee} />
                 <StatCard title="This Year's Net Sales" value={`₹${stats?.yearNetSales.toLocaleString('en-IN') ?? '0'}`} subtitle="After all expenses" icon={IndianRupee} />
+                <StatCard title="Total Expenses" value={`₹${stats?.yearTotalExpenses.toLocaleString('en-IN') ?? '0'}`} subtitle="From local sales" icon={IndianRupee} />
+                <StatCard title="Gross Profit Margin" value={`${stats?.yearGrossSales ? ((stats.yearNetSales / stats.yearGrossSales) * 100).toFixed(2) : '0'}%`} subtitle="Net / Gross Sales" icon={TrendingUp} />
+
+                <StatCard title="Total Patti Received" value={stats?.yearPattiReceived.toLocaleString('en-IN') ?? '0'} subtitle="This year via Goods Receipt" icon={Receipt} />
+                <StatCard title="Total Dabba Received" value={stats?.yearDabbaReceived.toLocaleString('en-IN') ?? '0'} subtitle="This year via Goods Receipt" icon={Receipt} />
+                <StatCard title="Total Nugs Received" value={stats?.yearNugsReceived.toLocaleString('en-IN') ?? '0'} subtitle="Patti + Dabba this year" icon={Receipt} />
+
                 <StatCard title="Total Patti Sold (Local)" value={stats?.yearPattiSold.toLocaleString('en-IN') ?? '0'} subtitle="This year in Sopore Mandi" icon={Package} />
                 <StatCard title="Total Dabba Sold (Local)" value={stats?.yearDabbaSold.toLocaleString('en-IN') ?? '0'} subtitle="This year in Sopore Mandi" icon={Box} />
                 <StatCard title="Total Nugs Sold (Local)" value={stats?.yearNugsSold.toLocaleString('en-IN') ?? '0'} subtitle="Patti + Dabba this year" icon={ClipboardList} />
-                <StatCard title="Total Patti Sent Outside" value={stats?.yearPattiSentOutside.toLocaleString('en-IN') ?? '0'} subtitle="This year via Challan" icon={Package} />
-                <StatCard title="Total Dabba Sent Outside" value={stats?.yearDabbaSentOutside.toLocaleString('en-IN') ?? '0'} subtitle="This year via Challan" icon={Box} />
+                <StatCard title="Total Patti Sent Outside" value={stats?.yearPattiSentOutside.toLocaleString('en-IN') ?? '0'} subtitle="This year via Challan" icon={Truck} />
+                <StatCard title="Total Dabba Sent Outside" value={stats?.yearDabbaSentOutside.toLocaleString('en-IN') ?? '0'} subtitle="This year via Challan" icon={Truck} />
                 <StatCard title="Total Nugs Sent Outside" value={stats?.yearNugsSentOutside.toLocaleString('en-IN') ?? '0'} subtitle="Patti + Dabba this year" icon={Globe} />
-                <StatCard title="Total Expenses" value={`₹${stats?.yearTotalExpenses.toLocaleString('en-IN') ?? '0'}`} subtitle="From local sales" icon={IndianRupee} />
-                <StatCard title="Gross Profit Margin" value={`${stats?.yearGrossSales ? ((stats.yearNetSales / stats.yearGrossSales) * 100).toFixed(2) : '0'}%`} subtitle="Net / Gross Sales" icon={TrendingUp} />
              </div>
         </div>
 
@@ -378,3 +414,5 @@ export default function DashboardPage() {
 }
 
     
+
+      
