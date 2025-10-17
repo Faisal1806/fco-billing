@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { useEffect, useState, useRef } from "react";
@@ -58,14 +59,15 @@ export default function BikriBillPage({ params }: { params: { id: string } }) {
             setPageUrl(window.location.href);
         }
         const fetchBill = () => {
-             if (!params.id) {
+             const decodedId = decodeURIComponent(params.id);
+             if (!decodedId) {
                 setLoading(false);
                 return;
             };
             setLoading(true);
 
             let data: BikriData | null = null;
-            const storedBill = localStorage.getItem(`bikri-${params.id}`);
+            const storedBill = localStorage.getItem(decodedId);
             if (storedBill) {
                 data = JSON.parse(storedBill);
             }

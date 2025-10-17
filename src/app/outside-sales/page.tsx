@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -24,6 +25,7 @@ export default function OutsideSalesPage() {
     const router = useRouter();
 
     // Form State
+    const [id, setId] = useState<string | null>(null); // To store the unique ID of the record being edited
     const [selectedChallanNo, setSelectedChallanNo] = useState('');
     const [bikriNo, setBikriNo] = useState('');
     const [date, setDate] = useState('');
@@ -138,6 +140,7 @@ export default function OutsideSalesPage() {
 
 
     const resetForm = () => {
+        setId(null);
         setSelectedChallanNo('');
         setBikriNo('');
         setDate('');
@@ -158,11 +161,17 @@ export default function OutsideSalesPage() {
             return;
         }
         setIsSubmitting(true);
-        const id = `${selectedChallanNo}-${bikriNo}`;
+        
+        // Use existing ID if editing, otherwise generate a new one.
+        const recordId = id || `bikri-${selectedChallanNo}-${bikriNo}-${Date.now()}`;
+        if (!id) {
+            setId(recordId);
+        }
+
         const partyName = bikriType === 'fcoStock' ? market : growerName;
 
         const data = {
-            id,
+            id: recordId,
             challanNo: selectedChallanNo,
             bikriNo,
             date,
@@ -176,9 +185,9 @@ export default function OutsideSalesPage() {
             freightPerPatti: Number(freightPerPatti),
             calculation
         };
-        localStorage.setItem(`bikri-${id}`, JSON.stringify(data));
+        localStorage.setItem(recordId, JSON.stringify(data));
         try {
-            await saveDocument('bikris', id, data);
+            await saveDocument('bikris', recordId, data);
             toast({ title: isEditing ? 'Bikri Updated' : 'Bikri Saved', description: 'The outside sale has been recorded.' });
         } catch (error) {
             toast({ variant: 'destructive', title: 'Sync Failed', description: 'Saved locally, but failed to sync to cloud.' });
@@ -199,6 +208,7 @@ export default function OutsideSalesPage() {
     
      const loadBikriForEdit = (bikri: any) => {
         resetForm();
+        setId(bikri.id);
         setBikriType(bikri.bikriType || 'fcoStock');
         setSelectedChallanNo(bikri.challanNo);
         setBikriNo(bikri.bikriNo);
@@ -218,7 +228,7 @@ export default function OutsideSalesPage() {
     };
 
     const viewBikri = () => {
-        if (!isEditing || !bikriNo) {
+        if (!isEditing || !id) {
             toast({
                 variant: 'destructive',
                 title: 'Cannot View Bikri',
@@ -226,26 +236,25 @@ export default function OutsideSalesPage() {
             });
             return;
         }
-        const id = `${selectedChallanNo}-${bikriNo}`;
-        router.push(`/bikri-bill/${id}`);
+        router.push(`/bikri-bill/${encodeURIComponent(id)}`);
     };
     
-    const handleDelete = async (id: string) => {
+    const handleDelete = async (idToDelete: string) => {
         if(userRole !== 'admin') {
             toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot delete this record.' });
             return;
         }
         if(!window.confirm('Are you sure you want to delete this Bikri record?')) return;
         
-        localStorage.removeItem(`bikri-${id}`);
+        localStorage.removeItem(idToDelete);
         try {
-            await deleteDocument('bikris', id);
+            await deleteDocument('bikris', idToDelete);
             toast({title: 'Record Deleted', description: 'The Bikri record has been removed.'});
         } catch (error) {
             toast({variant: 'destructive', title: 'Cloud Delete Failed', description: 'Record removed locally.'});
         }
-        setSavedBikris(prev => prev.filter(b => b.id !== id));
-         if (`${selectedChallanNo}-${bikriNo}` === id) {
+        setSavedBikris(prev => prev.filter(b => b.id !== idToDelete));
+         if (id === idToDelete) {
             resetForm();
         }
     };
@@ -304,7 +313,7 @@ export default function OutsideSalesPage() {
                         </div>
                          <div>
                             <Label htmlFor="bikriNo">Bikri No.</Label>
-                            <Input id="bikriNo" value={bikriNo} onChange={e => setBikriNo(e.target.value)} disabled={isEditing}/>
+                            <Input id="bikriNo" value={bikriNo} onChange={e => setBikriNo(e.target.value)} />
                         </div>
                         <div>
                             <Label htmlFor="bikriDate">Bikri Date</Label>
@@ -312,12 +321,12 @@ export default function OutsideSalesPage() {
                         </div>
 
                          {bikriType === 'fcoStock' ? (
-                            <div>
+                            <div className="md:col-span-2">
                                 <Label htmlFor="market">Market / Outside Party</Label>
                                 <PartySelector value={market} onChange={setMarket} filter="outside" />
                             </div>
                         ) : (
-                            <div>
+                            <div className="md:col-span-2">
                                 <Label htmlFor="growerName">Grower Name</Label>
                                 <PartySelector value={growerName} onChange={setGrowerName} filter="grower" />
                             </div>
