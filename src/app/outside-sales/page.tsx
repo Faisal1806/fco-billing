@@ -393,10 +393,8 @@ export default function OutsideSalesPage() {
                                 <div className="space-y-2 text-sm">
                                     <div className="flex justify-between"><span>Gross Sale from Bikri:</span> <span className="font-medium">₹{calculation.grossSale.toFixed(2)}</span></div>
                                     <div className="flex justify-between text-destructive"><span>(-) Total Purchase Cost:</span> <span className="font-medium">₹{calculation.totalPurchaseCost.toFixed(2)}</span></div>
-                                    <div className="flex justify-between text-destructive"><span>(-) Calculated Freight:</span> <span className="font-medium">₹{calculation.calculatedFreight.toFixed(2)}</span></div>
-                                    <div className="flex justify-between text-destructive"><span>(-) Commission:</span> <span className="font-medium">₹{calculation.commissionAmount.toFixed(2)}</span></div>
-                                    <div className="flex justify-between text-destructive"><span>(-) Other Expenses:</span> <span className="font-medium">₹{(Number(expenses) || 0).toFixed(2)}</span></div>
-                                    <Separator />
+                                    <div className="flex justify-between text-destructive"><span>(-) Total Expenses:</span> <span className="font-medium">₹{calculation.totalExpenses.toFixed(2)}</span></div>
+                                    <Separator className="my-1"/>
                                     <div className={`flex justify-between font-bold text-lg ${calculation.netProfitOrLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                         <span>Net Profit / Loss:</span>
                                         <span>₹{calculation.netProfitOrLoss.toFixed(2)}</span>
@@ -405,10 +403,8 @@ export default function OutsideSalesPage() {
                             ) : (
                                 <div className="space-y-2 text-sm">
                                     <div className="flex justify-between"><span>Gross Sale from Bikri:</span> <span className="font-medium">₹{calculation.grossSale.toFixed(2)}</span></div>
-                                    <div className="flex justify-between text-destructive"><span>(-) Calculated Freight:</span> <span className="font-medium">₹{calculation.calculatedFreight.toFixed(2)}</span></div>
-                                    <div className="flex justify-between text-destructive"><span>(-) Commission:</span> <span className="font-medium">₹{calculation.commissionAmount.toFixed(2)}</span></div>
-                                    <div className="flex justify-between text-destructive"><span>(-) Other Expenses:</span> <span className="font-medium">₹{(Number(expenses) || 0).toFixed(2)}</span></div>
-                                    <Separator />
+                                    <div className="flex justify-between text-destructive"><span>(-) Total Expenses:</span> <span className="font-medium">₹{calculation.totalExpenses.toFixed(2)}</span></div>
+                                    <Separator className="my-1"/>
                                     <div className="flex justify-between font-bold text-lg text-green-600">
                                         <span>Net Sale Payable to Grower:</span>
                                         <span>₹{calculation.netSalePayableToGrower.toFixed(2)}</span>
