@@ -26,6 +26,8 @@ interface BikriData {
     bikriNo: string;
     date: string;
     market: string;
+    growerName?: string;
+    bikriType?: 'fcoStock' | 'growerForwarding';
     purchaseEntries: Entry[];
     saleEntries: Entry[];
     expenses: number;
@@ -37,8 +39,9 @@ interface BikriData {
         commissionAmount: number;
         calculatedFreight: number;
         totalExpenses: number;
-        netSale: number;
-        netProfitOrLoss: number;
+        netSale?: number;
+        netProfitOrLoss?: number;
+        netSalePayableToGrower?: number;
     }
 }
 
@@ -158,6 +161,8 @@ export default function BikriBillPage({ params }: { params: { id: string } }) {
         );
     }
     
+    const isForwarding = billData.bikriType === 'growerForwarding';
+
     const EntryTable = ({ title, entries } : { title: string, entries: Entry[]}) => (
         <div>
             <h3 className="text-lg font-bold mb-2">{title}</h3>
@@ -203,11 +208,17 @@ export default function BikriBillPage({ params }: { params: { id: string } }) {
                     <p><strong>Challan No:</strong> {billData.challanNo}</p>
                     <p><strong>Bikri No:</strong> {billData.bikriNo}</p>
                     <p><strong>Date:</strong> {new Date(billData.date).toLocaleDateString('en-GB')}</p>
-                    <p><strong>Market:</strong> {billData.market}</p>
+                    {isForwarding ? (
+                         <p><strong>Grower:</strong> {billData.growerName}</p>
+                    ) : (
+                        <p><strong>Market:</strong> {billData.market}</p>
+                    )}
                 </div>
 
                 <div className="space-y-8">
-                    <EntryTable title="Original Purchase Cost (Sopore)" entries={billData.purchaseEntries} />
+                    {!isForwarding && billData.purchaseEntries.length > 0 && (
+                        <EntryTable title="Original Purchase Cost (Sopore)" entries={billData.purchaseEntries} />
+                    )}
                     <EntryTable title="Sale Details (from Bikri)" entries={billData.saleEntries} />
                 </div>
                 
@@ -226,16 +237,28 @@ export default function BikriBillPage({ params }: { params: { id: string } }) {
                     </div>
                      <div className="bg-muted p-4 rounded-lg">
                         <h3 className="text-lg font-bold mb-2">Final Calculation</h3>
-                         <div className="space-y-2 text-sm">
-                            <div className="flex justify-between"><span>Gross Sale:</span> <span className="font-mono font-medium">₹{billData.calculation.grossSale.toFixed(2)}</span></div>
-                            <div className="flex justify-between text-destructive"><span>(-) Total Purchase Cost:</span> <span className="font-mono font-medium">₹{billData.calculation.totalPurchaseCost.toFixed(2)}</span></div>
-                            <div className="flex justify-between text-destructive"><span>(-) Total Expenses:</span> <span className="font-mono font-medium">₹{billData.calculation.totalExpenses.toFixed(2)}</span></div>
-                            <Separator className="my-2" />
-                            <div className={`flex justify-between font-bold text-xl ${billData.calculation.netProfitOrLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                <span>Net Profit / Loss:</span>
-                                <span>₹{billData.calculation.netProfitOrLoss.toFixed(2)}</span>
+                        {isForwarding ? (
+                            <div className="space-y-2 text-sm">
+                                <div className="flex justify-between"><span>Gross Sale:</span> <span className="font-mono font-medium">₹{billData.calculation.grossSale.toFixed(2)}</span></div>
+                                <div className="flex justify-between text-destructive"><span>(-) Total Expenses:</span> <span className="font-mono font-medium">₹{billData.calculation.totalExpenses.toFixed(2)}</span></div>
+                                <Separator className="my-2" />
+                                <div className="flex justify-between font-bold text-xl text-green-600">
+                                    <span>Net Sale Payable:</span>
+                                    <span>₹{billData.calculation.netSalePayableToGrower?.toFixed(2) || '0.00'}</span>
+                                </div>
                             </div>
-                        </div>
+                        ) : (
+                             <div className="space-y-2 text-sm">
+                                <div className="flex justify-between"><span>Gross Sale:</span> <span className="font-mono font-medium">₹{billData.calculation.grossSale.toFixed(2)}</span></div>
+                                <div className="flex justify-between text-destructive"><span>(-) Total Purchase Cost:</span> <span className="font-mono font-medium">₹{billData.calculation.totalPurchaseCost.toFixed(2)}</span></div>
+                                <div className="flex justify-between text-destructive"><span>(-) Total Expenses:</span> <span className="font-mono font-medium">₹{billData.calculation.totalExpenses.toFixed(2)}</span></div>
+                                <Separator className="my-2" />
+                                <div className={`flex justify-between font-bold text-xl ${billData.calculation.netProfitOrLoss && billData.calculation.netProfitOrLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                    <span>Net Profit / Loss:</span>
+                                    <span>₹{billData.calculation.netProfitOrLoss?.toFixed(2) || '0.00'}</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -247,5 +270,3 @@ export default function BikriBillPage({ params }: { params: { id: string } }) {
         </div>
     );
 }
-
-    

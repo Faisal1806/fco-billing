@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, FilePenLine, FilePlus, Globe, Percent, Minus, Package, ShoppingCart, Truck, FileText, Trash2 } from 'lucide-react';
+import { Loader2, FilePenLine, FilePlus, Globe, Percent, Minus, Package, ShoppingCart, Truck, FileText, Trash2, User, Repeat } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { saveDocument, deleteDocument } from '@/lib/actions';
@@ -17,6 +17,7 @@ import { PartySelector } from '@/components/party-selector';
 import { EntryTable, emptyRow, type EntryRow } from '@/components/outside-sales-entry-table';
 import { Badge } from '@/components/ui/badge';
 
+type BikriType = 'fcoStock' | 'growerForwarding';
 
 export default function OutsideSalesPage() {
     const { toast } = useToast();
@@ -27,6 +28,8 @@ export default function OutsideSalesPage() {
     const [bikriNo, setBikriNo] = useState('');
     const [date, setDate] = useState('');
     const [market, setMarket] = useState('');
+    const [growerName, setGrowerName] = useState('');
+    const [bikriType, setBikriType] = useState<BikriType>('fcoStock');
     
     // Entries
     const [purchaseRows, setPurchaseRows] = useState<EntryRow[]>([emptyRow]);
@@ -99,16 +102,18 @@ export default function OutsideSalesPage() {
 
             if(newRows.length > 0) {
                 setSaleRows(newRows);
-                setPurchaseRows(newRows); // Populate both sections
+                if (bikriType === 'fcoStock') {
+                    setPurchaseRows(newRows); // Populate purchase for F.Co stock type
+                }
             } else {
                 setSaleRows([emptyRow]);
                 setPurchaseRows([emptyRow]);
             }
         }
-    }, [selectedChallan, isEditing]);
+    }, [selectedChallan, isEditing, bikriType]);
 
     const calculation = useMemo(() => {
-        const totalPurchaseCost = purchaseRows.reduce((acc, row) => acc + (Number(row.qty) || 0) * (Number(row.rate) || 0), 0);
+        const totalPurchaseCost = bikriType === 'fcoStock' ? purchaseRows.reduce((acc, row) => acc + (Number(row.qty) || 0) * (Number(row.rate) || 0), 0) : 0;
         const grossSale = saleRows.reduce((acc, row) => acc + (Number(row.qty) || 0) * (Number(row.rate) || 0), 0);
         const commissionAmount = grossSale * ((Number(commissionRate) || 0) / 100);
 
@@ -117,11 +122,19 @@ export default function OutsideSalesPage() {
         const calculatedFreight = (pattiQty * (Number(freightPerPatti) || 0)) + (dabbaQty * ((Number(freightPerPatti) || 0) / 2));
         
         const totalExpenses = calculatedFreight + (Number(expenses) || 0) + commissionAmount;
-        const netSale = grossSale - totalExpenses;
-        const netProfitOrLoss = netSale - totalPurchaseCost;
+        
+        let netProfitOrLoss = 0;
+        let netSalePayableToGrower = 0;
 
-        return { totalPurchaseCost, grossSale, commissionAmount, calculatedFreight, totalExpenses, netSale, netProfitOrLoss };
-    }, [purchaseRows, saleRows, expenses, commissionRate, freightPerPatti]);
+        if (bikriType === 'fcoStock') {
+            const netSale = grossSale - totalExpenses;
+            netProfitOrLoss = netSale - totalPurchaseCost;
+        } else { // growerForwarding
+            netSalePayableToGrower = grossSale - totalExpenses;
+        }
+
+        return { totalPurchaseCost, grossSale, commissionAmount, calculatedFreight, totalExpenses, netProfitOrLoss, netSalePayableToGrower };
+    }, [purchaseRows, saleRows, expenses, commissionRate, freightPerPatti, bikriType]);
 
 
     const resetForm = () => {
@@ -129,6 +142,8 @@ export default function OutsideSalesPage() {
         setBikriNo('');
         setDate('');
         setMarket('');
+        setGrowerName('');
+        setBikriType('fcoStock');
         setPurchaseRows([emptyRow]);
         setSaleRows([emptyRow]);
         setExpenses(0);
@@ -138,18 +153,22 @@ export default function OutsideSalesPage() {
     };
 
     const handleSave = async () => {
-        if (!selectedChallanNo || !bikriNo || !date || !market) {
+        if (!selectedChallanNo || !bikriNo || !date || (!market && bikriType === 'fcoStock') || (!growerName && bikriType === 'growerForwarding')) {
             toast({ variant: 'destructive', title: 'Missing Details', description: 'Please fill out all required header fields before saving.' });
             return;
         }
         setIsSubmitting(true);
         const id = `${selectedChallanNo}-${bikriNo}`;
+        const partyName = bikriType === 'fcoStock' ? market : growerName;
+
         const data = {
             id,
             challanNo: selectedChallanNo,
             bikriNo,
             date,
-            market,
+            market: partyName, // Unified field for the party name
+            growerName, // Specific for grower forwarding
+            bikriType,
             purchaseEntries: purchaseRows.filter(r => r.qty > 0 && r.rate > 0).map(r => ({...r, total: r.qty * r.rate})),
             saleEntries: saleRows.filter(r => r.qty > 0 && r.rate > 0).map(r => ({...r, total: r.qty * r.rate})),
             expenses: Number(expenses),
@@ -179,10 +198,16 @@ export default function OutsideSalesPage() {
     };
     
      const loadBikriForEdit = (bikri: any) => {
+        resetForm();
+        setBikriType(bikri.bikriType || 'fcoStock');
         setSelectedChallanNo(bikri.challanNo);
         setBikriNo(bikri.bikriNo);
         setDate(bikri.date);
-        setMarket(bikri.market);
+        if (bikri.bikriType === 'growerForwarding') {
+            setGrowerName(bikri.growerName || bikri.market);
+        } else {
+            setMarket(bikri.market);
+        }
         setPurchaseRows(bikri.purchaseEntries?.length > 0 ? bikri.purchaseEntries : [emptyRow]);
         setSaleRows(bikri.saleEntries?.length > 0 ? bikri.saleEntries : [emptyRow]);
         setExpenses(bikri.expenses);
@@ -253,11 +278,21 @@ export default function OutsideSalesPage() {
                         <CardTitle className="flex items-center gap-2"><Globe className="h-6 w-6" /> Outside Sales Register (Bikri)</CardTitle>
                         {isEditing && <Button variant="outline" size="sm" onClick={resetForm}><FilePlus className="h-4 w-4 mr-2" />Enter New Bikri</Button>}
                     </div>
-                    <CardDescription>Enter the purchase cost and sales invoice (Bikri) received from outside markets to calculate your profit/loss.</CardDescription>
+                    <CardDescription>Enter sales from outside markets. Choose a type: calculate profit/loss on your own stock or calculate net sale for a grower.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     {/* Header */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
+                        <div>
+                            <Label htmlFor="bikriType">Bikri Type</Label>
+                            <Select value={bikriType} onValueChange={(v: BikriType) => setBikriType(v)} disabled={isEditing}>
+                                <SelectTrigger id="bikriType"><SelectValue/></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="fcoStock">F.Co Stock (Profit/Loss)</SelectItem>
+                                    <SelectItem value="growerForwarding">Grower Forwarding (Net Sale)</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                         <div>
                             <Label htmlFor="challanNo">Original Challan No.</Label>
                             <Select value={selectedChallanNo} onValueChange={setSelectedChallanNo} disabled={isEditing}>
@@ -275,10 +310,18 @@ export default function OutsideSalesPage() {
                             <Label htmlFor="bikriDate">Bikri Date</Label>
                             <Input id="bikriDate" type="date" value={date} onChange={e => setDate(e.target.value)} />
                         </div>
-                        <div>
-                            <Label htmlFor="market">Market / Outside Party</Label>
-                            <PartySelector value={market} onChange={setMarket} filter="outside" />
-                        </div>
+
+                         {bikriType === 'fcoStock' ? (
+                            <div>
+                                <Label htmlFor="market">Market / Outside Party</Label>
+                                <PartySelector value={market} onChange={setMarket} filter="outside" />
+                            </div>
+                        ) : (
+                            <div>
+                                <Label htmlFor="growerName">Grower Name</Label>
+                                <PartySelector value={growerName} onChange={setGrowerName} filter="grower" />
+                            </div>
+                        )}
                     </div>
                     
                     {selectedChallan && (
@@ -296,14 +339,16 @@ export default function OutsideSalesPage() {
                     <Separator />
                     
                     <div className="space-y-6">
-                         <EntryTable 
-                            title="Original Purchase Cost (in Sopore)" 
-                            rows={purchaseRows} 
-                            icon={<ShoppingCart className="h-5 w-5 text-blue-500" />}
-                            onUpdate={updatePurchaseRow}
-                            onAdd={addPurchaseRow}
-                            onRemove={removePurchaseRow}
-                        />
+                        {bikriType === 'fcoStock' && (
+                            <EntryTable 
+                                title="Original Purchase Cost (in Sopore)" 
+                                rows={purchaseRows} 
+                                icon={<ShoppingCart className="h-5 w-5 text-blue-500" />}
+                                onUpdate={updatePurchaseRow}
+                                onAdd={addPurchaseRow}
+                                onRemove={removePurchaseRow}
+                            />
+                        )}
                          <EntryTable
                             title="Bikri Sale Entries" 
                             rows={saleRows} 
@@ -343,19 +388,33 @@ export default function OutsideSalesPage() {
                             </div>
                         </div>
                         <Card className="p-4 bg-muted">
-                            <h3 className="font-bold text-lg mb-2">Profit / Loss Calculation</h3>
-                            <div className="space-y-2 text-sm">
-                                <div className="flex justify-between"><span>Gross Sale from Bikri:</span> <span className="font-medium">₹{calculation.grossSale.toFixed(2)}</span></div>
-                                <div className="flex justify-between text-destructive"><span>(-) Total Purchase Cost:</span> <span className="font-medium">₹{calculation.totalPurchaseCost.toFixed(2)}</span></div>
-                                <div className="flex justify-between text-destructive"><span>(-) Calculated Freight:</span> <span className="font-medium">₹{calculation.calculatedFreight.toFixed(2)}</span></div>
-                                <div className="flex justify-between text-destructive"><span>(-) Commission:</span> <span className="font-medium">₹{calculation.commissionAmount.toFixed(2)}</span></div>
-                                <div className="flex justify-between text-destructive"><span>(-) Other Expenses:</span> <span className="font-medium">₹{(Number(expenses) || 0).toFixed(2)}</span></div>
-                                <Separator />
-                                <div className={`flex justify-between font-bold text-lg ${calculation.netProfitOrLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                    <span>Net Profit / Loss:</span>
-                                    <span>₹{calculation.netProfitOrLoss.toFixed(2)}</span>
+                            <h3 className="font-bold text-lg mb-2">{bikriType === 'fcoStock' ? 'Profit / Loss Calculation' : 'Net Sale Calculation'}</h3>
+                             {bikriType === 'fcoStock' ? (
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex justify-between"><span>Gross Sale from Bikri:</span> <span className="font-medium">₹{calculation.grossSale.toFixed(2)}</span></div>
+                                    <div className="flex justify-between text-destructive"><span>(-) Total Purchase Cost:</span> <span className="font-medium">₹{calculation.totalPurchaseCost.toFixed(2)}</span></div>
+                                    <div className="flex justify-between text-destructive"><span>(-) Calculated Freight:</span> <span className="font-medium">₹{calculation.calculatedFreight.toFixed(2)}</span></div>
+                                    <div className="flex justify-between text-destructive"><span>(-) Commission:</span> <span className="font-medium">₹{calculation.commissionAmount.toFixed(2)}</span></div>
+                                    <div className="flex justify-between text-destructive"><span>(-) Other Expenses:</span> <span className="font-medium">₹{(Number(expenses) || 0).toFixed(2)}</span></div>
+                                    <Separator />
+                                    <div className={`flex justify-between font-bold text-lg ${calculation.netProfitOrLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        <span>Net Profit / Loss:</span>
+                                        <span>₹{calculation.netProfitOrLoss.toFixed(2)}</span>
+                                    </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex justify-between"><span>Gross Sale from Bikri:</span> <span className="font-medium">₹{calculation.grossSale.toFixed(2)}</span></div>
+                                    <div className="flex justify-between text-destructive"><span>(-) Calculated Freight:</span> <span className="font-medium">₹{calculation.calculatedFreight.toFixed(2)}</span></div>
+                                    <div className="flex justify-between text-destructive"><span>(-) Commission:</span> <span className="font-medium">₹{calculation.commissionAmount.toFixed(2)}</span></div>
+                                    <div className="flex justify-between text-destructive"><span>(-) Other Expenses:</span> <span className="font-medium">₹{(Number(expenses) || 0).toFixed(2)}</span></div>
+                                    <Separator />
+                                    <div className="flex justify-between font-bold text-lg text-green-600">
+                                        <span>Net Sale Payable to Grower:</span>
+                                        <span>₹{calculation.netSalePayableToGrower.toFixed(2)}</span>
+                                    </div>
+                                </div>
+                            )}
                         </Card>
                     </div>
 
@@ -389,11 +448,15 @@ export default function OutsideSalesPage() {
                                     <Card key={bikri.id} className="p-3">
                                         <div className="flex justify-between items-start">
                                             <div>
-                                                <p className="font-semibold">{bikri.market} Market</p>
+                                                <p className="font-semibold">{bikri.market}</p>
                                                 <p className="text-sm text-muted-foreground">Challan #{bikri.challanNo} &rarr; Bikri #{bikri.bikriNo}</p>
-                                                 <p className={`text-lg font-bold ${bikri.calculation.netProfitOrLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                    {bikri.calculation.netProfitOrLoss >= 0 ? 'Profit' : 'Loss'}: ₹{Math.abs(bikri.calculation.netProfitOrLoss).toFixed(2)}
-                                                 </p>
+                                                 {bikri.bikriType === 'growerForwarding' ? (
+                                                    <p className="text-lg font-bold text-blue-600">Net Sale: ₹{bikri.calculation.netSalePayableToGrower.toFixed(2)}</p>
+                                                 ) : (
+                                                    <p className={`text-lg font-bold ${bikri.calculation.netProfitOrLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                        {bikri.calculation.netProfitOrLoss >= 0 ? 'Profit' : 'Loss'}: ₹{Math.abs(bikri.calculation.netProfitOrLoss).toFixed(2)}
+                                                    </p>
+                                                 )}
                                             </div>
                                             <div className="flex flex-col items-end">
                                                 <div className="flex">
