@@ -15,6 +15,7 @@ import { saveDocument, deleteDocument } from '@/lib/actions';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PartySelector } from '@/components/party-selector';
 import { EntryTable, emptyRow, type EntryRow } from '@/components/outside-sales-entry-table';
+import { Badge } from '@/components/ui/badge';
 
 
 export default function OutsideSalesPage() {
@@ -71,6 +72,12 @@ export default function OutsideSalesPage() {
         };
         fetchData();
     }, []);
+
+    const yearlyCount = useMemo(() => {
+        if(!savedBikris) return 0;
+        const currentYear = new Date().getFullYear();
+        return savedBikris.filter(b => new Date(b.date).getFullYear() === currentYear).length;
+    }, [savedBikris]);
     
     const selectedChallan = useMemo(() => {
         return availableChallans.find(c => c.challanNo === selectedChallanNo);
@@ -367,7 +374,12 @@ export default function OutsideSalesPage() {
             </Card>
 
             <Card className="lg:col-span-1 h-fit">
-                <CardHeader><CardTitle>Saved Bikris</CardTitle></CardHeader>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        Saved Bikris
+                        {!isLoading && <Badge variant="secondary">{yearlyCount} This Year</Badge>}
+                    </CardTitle>
+                </CardHeader>
                 <CardContent>
                     <ScrollArea className="h-[500px]">
                         {isLoading ? <Loader2 className="mx-auto h-6 w-6 animate-spin" /> :
