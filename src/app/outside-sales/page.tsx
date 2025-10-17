@@ -278,7 +278,7 @@ export default function OutsideSalesPage() {
                         <CardTitle className="flex items-center gap-2"><Globe className="h-6 w-6" /> Outside Sales Register (Bikri)</CardTitle>
                         {isEditing && <Button variant="outline" size="sm" onClick={resetForm}><FilePlus className="h-4 w-4 mr-2" />Enter New Bikri</Button>}
                     </div>
-                    <CardDescription>Enter sales from outside markets. Choose a type: calculate profit/loss on your own stock or calculate net sale for a grower.</CardDescription>
+                    <CardDescription>Enter the purchase cost and sales invoice (Bikri) received from outside markets to calculate your profit/loss.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     {/* Header */}
