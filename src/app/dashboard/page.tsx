@@ -52,19 +52,13 @@ interface Bikri {
     }[];
 }
 
-const normalizeName = (name: string): string => {
-    if (!name) return '';
-    return name
-        .toUpperCase()
-        .replace(/R\/O.*$/i, '')
-        .replace(/\(.*\)/, '')
-        .replace(/\b(MOHAMMAD|MOHD|MD|GH\.)\b/g, 'MOHAMMAD')
-        .replace(/\b(AHMAD|AH)\b/g, 'AHMAD')
-        .replace(/S\/P|B\/P|K\/P|®/g, '')
-        .replace(/[\.\,']/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-};
+interface Challan {
+    id: string;
+    date: string;
+    totalPetti: number;
+    totalDabba: number;
+}
+
 
 const StatCard = ({ title, value, subtitle, icon: Icon }: { title: string, value: string, subtitle: string, icon: React.ElementType }) => (
     <Card className="bg-card/80 backdrop-blur-sm border border-white/10 shadow-lg p-4">
@@ -105,6 +99,7 @@ export default function DashboardPage() {
   const [allInvoices, setAllInvoices] = useState<Invoice[]>([]);
   const [allBikris, setAllBikris] = useState<Bikri[]>([]);
   const [allReceipts, setAllReceipts] = useState<Receipt[]>([]);
+  const [allChallans, setAllChallans] = useState<Challan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAllGrowers, setShowAllGrowers] = useState(false);
 
@@ -116,6 +111,7 @@ export default function DashboardPage() {
         const invoices: Invoice[] = [];
         const bikris: Bikri[] = [];
         const receipts: Receipt[] = [];
+        const challans: Challan[] = [];
 
         for(let i=0; i<localStorage.length; i++) {
             const key = localStorage.key(i);
@@ -128,10 +124,14 @@ export default function DashboardPage() {
              if (key?.startsWith('receipt-')) {
                 receipts.push(JSON.parse(localStorage.getItem(key)!));
             }
+             if (key?.startsWith('challan-')) {
+                challans.push(JSON.parse(localStorage.getItem(key)!));
+            }
         }
         setAllInvoices(invoices);
         setAllBikris(bikris);
         setAllReceipts(receipts);
+        setAllChallans(challans);
         setIsLoading(false);
     }
     fetchData();
@@ -154,10 +154,10 @@ export default function DashboardPage() {
     let yearNetSales = 0;
     let yearPattiSold = 0;
     let yearDabbaSold = 0;
-    let yearPattiSentOutside = 0;
-    let yearDabbaSentOutside = 0;
     let yearPattiReceived = 0;
     let yearDabbaReceived = 0;
+    let yearPattiSentOutside = 0;
+    let yearDabbaSentOutside = 0;
 
 
     allInvoices.forEach(sale => {
@@ -185,20 +185,6 @@ export default function DashboardPage() {
         }
     });
 
-    allBikris.forEach(bikri => {
-        const bikriDate = new Date(bikri.date);
-        if (bikriDate.getFullYear() === currentYear) {
-            bikri.saleEntries.forEach(entry => {
-                if (entry.type === 'Patti') {
-                    yearPattiSentOutside += Number(entry.qty) || 0;
-                }
-                if (entry.type === 'Dabba') {
-                    yearDabbaSentOutside += Number(entry.qty) || 0;
-                }
-            });
-        }
-    });
-
     allReceipts.forEach(receipt => {
         const receiptDate = new Date(receipt.date);
         if(receiptDate.getFullYear() === currentYear) {
@@ -206,6 +192,14 @@ export default function DashboardPage() {
                 yearPattiReceived += Number(entry.peti) || 0;
                 yearDabbaReceived += Number(entry.daba) || 0;
             })
+        }
+    });
+    
+    allChallans.forEach(challan => {
+        const challanDate = new Date(challan.date);
+        if (challanDate.getFullYear() === currentYear) {
+            yearPattiSentOutside += Number(challan.totalPetti) || 0;
+            yearDabbaSentOutside += Number(challan.totalDabba) || 0;
         }
     });
     
@@ -221,40 +215,28 @@ export default function DashboardPage() {
         yearPattiSold,
         yearDabbaSold,
         yearNugsSold: yearPattiSold + yearDabbaSold,
-        yearPattiSentOutside,
-        yearDabbaSentOutside,
-        yearNugsSentOutside: yearPattiSentOutside + yearDabbaSentOutside,
         yearPattiReceived,
         yearDabbaReceived,
         yearNugsReceived: yearPattiReceived + yearDabbaReceived,
+        yearPattiSentOutside,
+        yearDabbaSentOutside,
+        yearNugsSentOutside: yearPattiSentOutside + yearDabbaSentOutside,
     };
-  }, [allInvoices, allBikris, allReceipts, isLoading]);
+  }, [allInvoices, allBikris, allReceipts, allChallans, isLoading]);
   
   const growerProfits = useMemo(() => {
     if (isLoading) return [];
-    const profitsByGrower: { [canonicalName: string]: { name: string, profit: number } } = {};
-    const canonicalNameMap = new Map<string, string>();
+    const profitsByGrower: { [name: string]: { name: string, profit: number } } = {};
     const currentYear = new Date().getFullYear();
-
-    allInvoices.forEach(sale => {
-         if (sale.customerName) {
-            const normalized = normalizeName(sale.customerName);
-            if (!canonicalNameMap.has(normalized)) {
-                canonicalNameMap.set(normalized, sale.customerName);
-            }
-        }
-    });
 
     allInvoices.forEach(sale => {
         const saleYear = new Date(sale.date).getFullYear();
         if (saleYear === currentYear && sale.customerName && sale.totals.netSale) {
-            const normalized = normalizeName(sale.customerName);
-            const canonicalName = canonicalNameMap.get(normalized)!;
-
-            if (!profitsByGrower[canonicalName]) {
-                profitsByGrower[canonicalName] = { name: canonicalName, profit: 0 };
+            const name = sale.customerName;
+            if (!profitsByGrower[name]) {
+                profitsByGrower[name] = { name: name, profit: 0 };
             }
-            profitsByGrower[canonicalName].profit += sale.totals.netSale;
+            profitsByGrower[name].profit += sale.totals.netSale;
         }
     });
 
@@ -331,6 +313,7 @@ export default function DashboardPage() {
                 <StatCard title="Total Patti Sold (Local)" value={stats?.yearPattiSold.toLocaleString('en-IN') ?? '0'} subtitle="This year in Sopore Mandi" icon={Package} />
                 <StatCard title="Total Dabba Sold (Local)" value={stats?.yearDabbaSold.toLocaleString('en-IN') ?? '0'} subtitle="This year in Sopore Mandi" icon={Box} />
                 <StatCard title="Total Nugs Sold (Local)" value={stats?.yearNugsSold.toLocaleString('en-IN') ?? '0'} subtitle="Patti + Dabba this year" icon={ClipboardList} />
+                
                 <StatCard title="Total Patti Sent Outside" value={stats?.yearPattiSentOutside.toLocaleString('en-IN') ?? '0'} subtitle="This year via Challan" icon={Truck} />
                 <StatCard title="Total Dabba Sent Outside" value={stats?.yearDabbaSentOutside.toLocaleString('en-IN') ?? '0'} subtitle="This year via Challan" icon={Truck} />
                 <StatCard title="Total Nugs Sent Outside" value={stats?.yearNugsSentOutside.toLocaleString('en-IN') ?? '0'} subtitle="Patti + Dabba this year" icon={Globe} />
@@ -416,3 +399,5 @@ export default function DashboardPage() {
     
 
       
+
+    
