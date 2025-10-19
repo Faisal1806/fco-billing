@@ -512,7 +512,7 @@ export function BillMakingTab() {
                             disabled={formDisabled}
                             />
                         </TableCell>
-                        <TableCell className="text-right">{(totals.rowGross[i] || 0).toFixed(2)}</TableCell>
+                        <TableCell className="text-right font-medium">{(totals.rowGross[i] || 0).toFixed(2)}</TableCell>
                         <TableCell className="text-right">
                             <Button variant="ghost" size="icon" onClick={() => removeRow(i)} disabled={formDisabled}>
                                 <Trash2 className="text-red-600 h-4 w-4" />
