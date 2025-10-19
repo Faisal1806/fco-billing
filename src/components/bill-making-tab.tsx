@@ -266,7 +266,13 @@ export function BillMakingTab() {
       khata,
       watakNo,
       freight: Number(freight) || 0,
-      entries: rows.filter(r => r.qty > 0).map(r => ({...r, qty: Number(r.qty), rate: Number(r.rate), total: Number(r.qty) * Number(r.rate)})),
+      entries: rows.filter(r => r.qty > 0).map(r => ({
+        type: r.type,
+        qty: Number(r.qty),
+        variety: r.variety,
+        rate: Number(r.rate), 
+        total: Number(r.qty) * Number(r.rate)
+      })),
       totals: {
         pattiQty: totals.pattiQty,
         dabbaQty: totals.dabbaQty,
