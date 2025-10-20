@@ -22,7 +22,7 @@ import { PartySelector } from './party-selector';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
 import { cn } from '@/lib/utils';
-import { deleteDocument } from '@/lib/actions';
+import { saveDocument, deleteDocument } from '@/lib/actions';
 
 
 type Row = {
@@ -290,11 +290,21 @@ export function BillMakingTab() {
     
     localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
     
-    toast({
-      title: isEditing ? 'Invoice Updated!' : 'Invoice Saved!',
-      description: 'The invoice has been successfully saved locally.',
-      isSuccess: true,
-    });
+    try {
+        await saveDocument('invoices', billId, billData);
+        toast({
+            title: isEditing ? 'Invoice Updated & Synced' : 'Invoice Saved & Synced',
+            description: 'The invoice has been successfully saved to the cloud.',
+            isSuccess: true,
+        });
+    } catch(error) {
+        console.error("Error saving to cloud", error);
+        toast({
+            variant: 'destructive',
+            title: 'Cloud Sync Failed',
+            description: 'Could not save the invoice to the cloud. It is saved locally.',
+        });
+    }
     
     fetchBillsAndReceipts();
     setIsEditing(true); // Ensure form stays in editing mode for the current bill
@@ -340,7 +350,13 @@ export function BillMakingTab() {
         if(!window.confirm(`Are you sure you want to delete Invoice #${sNo}? This cannot be undone.`)) return;
 
         localStorage.removeItem(`invoice-${sNo}`);
-        toast({ title: "Invoice Deleted", description: `Invoice #${sNo} has been deleted locally.`});
+        
+        try {
+            await deleteDocument('invoices', sNo);
+            toast({ title: "Invoice Deleted", description: `Invoice #${sNo} has been deleted from local and cloud storage.`});
+        } catch (error) {
+            toast({ variant: "destructive", title: "Cloud Delete Failed", description: `Invoice #${sNo} was removed locally but failed to delete from the cloud.`});
+        }
         
         fetchBillsAndReceipts();
         if(sNo === sNo) { // if the deleted invoice is the one being edited
