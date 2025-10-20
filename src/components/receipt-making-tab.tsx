@@ -335,7 +335,7 @@ export function ReceiptMakingTab() {
                             <Input className="text-right" type="number" value={receiptDetails.freightPaid || ''} onChange={(e) => handleDetailChange('freightPaid', Number(e.target.value))} />
                         </div>
                         <div className="flex items-center gap-4">
-                            <Label>Invoice Ready On:</Label>
+                            <Label>Watak Ready On:</Label>
                             <Input value={receiptDetails.wattakReadyOn} onChange={(e) => handleDetailChange('wattakReadyOn', e.target.value)} />
                         </div>
                     </div>
