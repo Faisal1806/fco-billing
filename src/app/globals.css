@@ -102,12 +102,10 @@
 .login-container {
     position: relative;
     z-index: 10;
-    width: 800px;
-    min-height: 500px;
-    background: rgba(31, 41, 55, 0.75); /* bg-gray-800 with opacity */
+    background: rgba(31, 41, 55, 0.25);
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 25px 45px rgba(0,0,0,0.2);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(15px);
     border-radius: 20px;
     display: flex;
     overflow: hidden;
@@ -147,7 +145,3 @@
         transform: scale(1);
     }
 }
-
-    
-
-    

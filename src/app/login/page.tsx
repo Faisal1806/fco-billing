@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { KeyRound } from 'lucide-react';
+import { KeyRound, User as UserIcon } from 'lucide-react';
 import { Logo } from '@/components/logo';
 
 export default function LoginPage() {
@@ -29,6 +29,7 @@ export default function LoginPage() {
       toast({
         title: 'Login Successful',
         description: 'Welcome back!',
+        isSuccess: true,
       });
       router.push('/dashboard');
     } else {
@@ -51,34 +52,36 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="login-splash-screen">
-       <div className="animated-background"></div>
+    <div className="login-splash-screen bg-gray-900">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1 }}
+        className="fixed inset-0 z-0"
+        style={{
+          backgroundImage: `url('/backgrounds/abstract_glow.jpeg')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      />
+      <div className="fixed inset-0 bg-black/70 z-0"/>
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, delay: 0.3 }}
-        className="login-container"
+        className="login-container w-full max-w-sm md:max-w-md"
       >
-        <motion.div 
-            initial={{ x: "-100%", opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.8, ease: "easeOut", delay: 0.5 }}
-            className="flex-1 p-8 text-white flex flex-col justify-center items-center text-center"
-        >
-            <h2 className="text-3xl font-bold">Welcome Back!</h2>
-            <p className="mt-2 text-gray-300">Your trusted partner in fruit trading.</p>
-        </motion.div>
-        <div className="flex-1 p-8 bg-white/10 flex flex-col justify-center">
+        <div className="w-full p-8 bg-background/50 flex flex-col justify-center rounded-2xl">
             <motion.div 
                 initial={{ y: -50, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.7, ease: "easeOut", delay: 0.8 }}
                 className="flex items-center justify-center gap-4 mb-8"
             >
-                <Logo className="h-16 w-16 text-white" />
+                <Logo className="h-20 w-20 text-white" />
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-200">F.Co</h1>
-                    <p className="text-md text-gray-300">FIRDOUS AHMAD & COMPANY</p>
+                    <h1 className="text-4xl font-bold text-gray-200">F.Co</h1>
+                    <p className="text-lg text-gray-300">FIRDOUS AHMAD & COMPANY</p>
                 </div>
             </motion.div>
 
@@ -99,19 +102,19 @@ export default function LoginPage() {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             onKeyPress={handleKeyPress}
-                            className="bg-transparent border-2 border-gray-500/50 focus:border-sky-400 text-white w-full pl-10"
+                            className="bg-transparent border-2 border-gray-500/50 focus:border-sky-400 text-white w-full pl-10 h-12 text-lg"
                             autoComplete="current-password"
                         />
                          <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                     </div>
                 </div>
 
-                <Button onClick={handleLogin} className="w-full mt-6 bg-sky-500 hover:bg-sky-600 text-white">
-                Login
+                <Button onClick={handleLogin} className="w-full mt-6 h-12 text-lg bg-sky-500 hover:bg-sky-600 text-white">
+                    Login
                 </Button>
                 <div className="text-center mt-4">
-                    <Button variant="link" size="sm" onClick={() => router.push('/portal/login')} className="text-gray-400 hover:text-sky-400">
-                        Go to Customer Portal
+                    <Button variant="link" size="sm" onClick={() => router.push('/portal/login')} className="text-gray-400 hover:text-sky-400 gap-2">
+                        <UserIcon className="h-4 w-4" /> Go to Customer Portal
                     </Button>
                 </div>
             </motion.div>

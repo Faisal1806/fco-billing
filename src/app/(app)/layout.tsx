@@ -29,7 +29,7 @@ export default function AppLayout({
                 loop={true}
                 className="absolute inset-0 w-full h-full object-cover"
              />}
-             <div className="absolute inset-0 bg-background/80"></div>
+             <div className="absolute inset-0 bg-background/90"></div>
         </div>
       <div className="relative z-10 flex min-h-screen w-full flex-col">
         <Sidebar />
