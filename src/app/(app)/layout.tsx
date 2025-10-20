@@ -31,7 +31,7 @@ export default function AppLayout({
              />}
              <div className="absolute inset-0 bg-background/80"></div>
         </div>
-      <div className="relative z-10">
+      <div className="relative z-10 flex min-h-screen w-full flex-col">
         <Sidebar />
         <div className="flex flex-col md:pl-[220px] lg:pl-[280px]">
           <main className="flex flex-1 flex-col gap-4 p-4 sm:p-6 md:p-8 lg:p-10 pt-4 md:pt-10">
