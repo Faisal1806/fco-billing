@@ -102,6 +102,8 @@ export default function DashboardPage() {
   const [allReceipts, setAllReceipts] = useState<Receipt[]>([]);
   const [allChallans, setAllChallans] = useState<Challan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showAllGrowers, setShowAllGrowers] = React.useState(false);
+
 
   useEffect(() => {
     function fetchData() {
@@ -240,6 +242,8 @@ export default function DashboardPage() {
 
     return Object.values(profitsByGrower).sort((a, b) => b.profit - a.profit);
   }, [allInvoices, isLoading]);
+
+  const displayedGrowers = showAllGrowers ? growerProfits : growerProfits.slice(0, 10);
 
 
   if (isLoading) {
@@ -434,3 +438,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
