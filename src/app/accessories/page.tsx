@@ -30,6 +30,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import '../khata/print.css';
+import { saveDocument, deleteDocument } from '@/lib/actions';
 
 const STORAGE_PREFIX = 'accessory-ledger-';
 
@@ -118,12 +119,21 @@ export default function SuppliesPage() {
         const newEntry = { ...formState, id };
         
         localStorage.setItem(id, JSON.stringify(newEntry));
-
-        toast({
-            title: 'Ledger Entry Saved',
-            description: 'Your entry has been recorded locally.',
-            isSuccess: true,
-        });
+        
+        try {
+            await saveDocument('accessory-ledger', id, newEntry);
+            toast({
+                title: 'Ledger Entry Saved',
+                description: 'Your entry has been recorded locally and synced to the cloud.',
+                isSuccess: true,
+            });
+        } catch (error) {
+            toast({
+                variant: 'destructive',
+                title: 'Sync Failed',
+                description: 'Saved locally, but failed to sync to cloud.',
+            });
+        }
         
         fetchEntries();
         setFormState(emptyFormState); // Reset form
@@ -138,7 +148,12 @@ export default function SuppliesPage() {
         
         localStorage.removeItem(id);
         
-        toast({ title: 'Entry Deleted' });
+        try {
+            await deleteDocument('accessory-ledger', id);
+            toast({ title: 'Entry Deleted', description: 'The entry has been removed.' });
+        } catch (error) {
+             toast({ variant: 'destructive', title: 'Cloud Delete Failed', description: 'Entry removed locally.'});
+        }
         
         fetchEntries();
     };

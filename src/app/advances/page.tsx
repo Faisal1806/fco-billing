@@ -27,6 +27,7 @@ import { PlusCircle, Trash2, Banknote, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { PartySelector } from '@/components/party-selector';
+import { saveDocument, deleteDocument } from '@/lib/actions';
 
 const STORAGE_PREFIX = 'advance-';
 
@@ -107,10 +108,19 @@ export default function AdvancesPage() {
         
         localStorage.setItem(id, JSON.stringify(newEntry));
         
-        toast({
-            title: 'Transaction Saved',
-            description: 'The advance/repayment has been recorded locally.',
-        });
+        try {
+            await saveDocument('advances', id, newEntry);
+            toast({
+                title: 'Transaction Saved',
+                description: 'The transaction has been recorded locally and synced to the cloud.',
+            });
+        } catch (error) {
+             toast({
+                variant: 'destructive',
+                title: 'Sync Failed',
+                description: 'Saved locally, but failed to sync to cloud.',
+            });
+        }
         
         fetchEntries();
         setFormState(emptyFormState); // Reset form
@@ -124,7 +134,14 @@ export default function AdvancesPage() {
         if (!window.confirm('Are you sure you want to delete this transaction?')) return;
         
         localStorage.removeItem(id);
-        toast({ title: 'Entry Deleted' });
+
+        try {
+            await deleteDocument('advances', id);
+            toast({ title: 'Entry Deleted', description: 'The entry has been removed.' });
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Cloud Delete Failed', description: 'Entry removed locally.'});
+        }
+        
         fetchEntries();
     };
 

@@ -33,6 +33,7 @@ import {
 import { PlusCircle, ArrowUpRightFromSquare, Snowflake, Loader2, Trash2, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { saveDocument, deleteDocument } from '@/lib/actions';
 
 const STORAGE_PREFIX = 'cs-';
 
@@ -98,7 +99,7 @@ export default function ColdStoragePage() {
     setFormState(prev => ({ ...prev, [name]: type === 'number' ? (value ? Number(value) : '') : value }));
   };
 
-  const handleSaveStock = () => {
+  const handleSaveStock = async () => {
     const { dateIn, grower, item, chamberNo, initialQty } = formState;
     if (!dateIn || !grower || !item || !chamberNo || !initialQty || Number(initialQty) <= 0) {
       toast({ variant: 'destructive', title: 'Missing Fields', description: 'Please fill out all fields.' });
@@ -120,13 +121,20 @@ export default function ColdStoragePage() {
     };
 
     localStorage.setItem(id, JSON.stringify(newStockItem));
-    toast({ title: 'Stock Added', description: `${qtyNum} units of ${item} have been logged.` });
+    
+    try {
+        await saveDocument('cold-storage', id, newStockItem);
+        toast({ title: 'Stock Added', description: `${qtyNum} units of ${item} have been logged and synced.` });
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Sync Failed', description: 'Saved locally, but failed to sync to cloud.' });
+    }
+
     fetchStock();
     setIsDialogOpen(false);
     setFormState(emptyFormState);
   };
 
-  const handleRecordOutward = () => {
+  const handleRecordOutward = async () => {
     if (!selectedStock || outwardQty <= 0) {
         toast({variant: 'destructive', title: 'Invalid Quantity', description: 'Please enter a valid quantity.'});
         return;
@@ -149,7 +157,14 @@ export default function ColdStoragePage() {
     }
 
     localStorage.setItem(updatedStock.id, JSON.stringify(updatedStock));
-    toast({title: 'Stock Released', description: `${outwardQty} units of ${updatedStock.item} have been released.`});
+    
+    try {
+        await saveDocument('cold-storage', updatedStock.id, updatedStock);
+        toast({title: 'Stock Released', description: `${outwardQty} units of ${updatedStock.item} have been released and synced.`});
+    } catch (error) {
+        toast({variant: 'destructive', title: 'Sync Failed', description: 'Updated locally, but failed to sync to cloud.'});
+    }
+
     fetchStock();
     setIsOutwardDialogOpen(false);
     setSelectedStock(null);
@@ -157,7 +172,7 @@ export default function ColdStoragePage() {
     setOutwardNotes('');
   };
   
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (userRole !== 'admin') {
         toast({variant: 'destructive', title: 'Permission Denied'});
         return;
@@ -165,7 +180,14 @@ export default function ColdStoragePage() {
     if(!window.confirm('Are you sure? This will delete the entire stock record.')) return;
     
     localStorage.removeItem(id);
-    toast({title: 'Record Deleted'});
+
+    try {
+        await deleteDocument('cold-storage', id);
+        toast({title: 'Record Deleted'});
+    } catch (error) {
+        toast({variant: 'destructive', title: 'Cloud Delete Failed', description: 'Record removed locally.'});
+    }
+    
     fetchStock();
   }
 

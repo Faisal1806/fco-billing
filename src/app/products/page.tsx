@@ -37,6 +37,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { saveDocument, deleteDocument } from '@/lib/actions';
 
 
 interface Product {
@@ -150,7 +151,7 @@ export default function ProductsPage() {
     setFormState(prev => ({...prev, [name]: val}));
   };
 
-  const handleSaveProduct = () => {
+  const handleSaveProduct = async () => {
     if (!formState.name || !formState.category) {
       toast({
         variant: 'destructive',
@@ -164,10 +165,16 @@ export default function ProductsPage() {
     const newProduct: Product = { id, ...formState } as Product;
 
     localStorage.setItem(id, JSON.stringify(newProduct));
-    toast({
-      title: 'id' in formState ? 'Product Updated' : 'Product Added',
-      description: `${formState.name} has been saved.`,
-    });
+    
+    try {
+        await saveDocument('products', id, newProduct);
+        toast({
+          title: 'id' in formState ? 'Product Updated' : 'Product Added',
+          description: `${formState.name} has been saved and synced.`,
+        });
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Sync Failed', description: 'Saved locally, but failed to sync to cloud.' });
+    }
     
     fetchProducts();
     resetForm();
@@ -179,17 +186,24 @@ export default function ProductsPage() {
     setIsDialogOpen(true);
   }
   
-  const handleDeleteProduct = (id: string) => {
+  const handleDeleteProduct = async (id: string) => {
     if(userRole !== 'admin') {
       toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot delete products.' });
       return;
     }
     if (!window.confirm('Are you sure you want to delete this product?')) return;
     localStorage.removeItem(id);
-    toast({
-      title: 'Product Deleted',
-      description: 'The product has been removed.',
-    });
+
+    try {
+        await deleteDocument('products', id);
+        toast({
+          title: 'Product Deleted',
+          description: 'The product has been removed.',
+        });
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Cloud Delete Failed', description: 'Product removed locally.'});
+    }
+
     fetchProducts();
   }
   
