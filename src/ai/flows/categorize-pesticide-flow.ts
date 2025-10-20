@@ -4,23 +4,10 @@
  * @fileOverview An AI flow to categorize pesticide and fertilizer products.
  *
  * - categorizePesticide - a function that suggests a category for a given product name.
- * - PesticideCategoryInput - The input type for the flow.
- * - PesticideCategoryOutput - The return type for the flow.
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-
-const PesticideCategoryInputSchema = z.object({
-  name: z.string().describe('The name of the pesticide or fertilizer product.'),
-  apiKey: z.string().optional().describe('The Gemini API Key'),
-});
-export type PesticideCategoryInput = z.infer<typeof PesticideCategoryInputSchema>;
-
-const PesticideCategoryOutputSchema = z.object({
-  category: z.string().describe('The suggested category for the product. Should be one of: Fungicide, Insecticide, Herbicide, Fertilizer, Plant Growth Regulator, or Other.'),
-});
-export type PesticideCategoryOutput = z.infer<typeof PesticideCategoryOutputSchema>;
+import { PesticideCategoryInput, PesticideCategoryInputSchema, PesticideCategoryOutput, PesticideCategoryOutputSchema } from '@/ai/schemas/pesticide-category-schemas';
 
 const categorizePesticideFlow = ai.defineFlow(
     {

@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Search, Loader2, Bot, User } from 'lucide-react';
 import { useApiKey } from '@/hooks/use-api-key';
 import { useToast } from '@/hooks/use-toast';
-import { queryData, SmartSearchOutput } from '@/ai/flows/smart-search-flow';
+import { queryData } from '@/ai/flows/smart-search-flow';
+import { SmartSearchOutput } from '@/ai/schemas/smart-search-schemas';
 
 type Message = {
   role: 'user' | 'assistant' | 'error';
