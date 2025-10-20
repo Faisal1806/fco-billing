@@ -210,7 +210,7 @@ export default function BikriBillPage({ params }: { params: { id: string } }) {
                     <p><strong>Challan No:</strong> {billData.challanNo}</p>
                     <p><strong>Bikri No:</strong> {billData.bikriNo}</p>
                     <p><strong>Date:</strong> {new Date(billData.date).toLocaleDateString('en-GB')}</p>
-                    {isForwarding ? (
+                    {isForwarding && billData.growerName ? (
                          <p><strong>Grower:</strong> {billData.growerName}</p>
                     ) : (
                         <p><strong>Market:</strong> {billData.market}</p>
