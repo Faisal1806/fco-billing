@@ -23,6 +23,7 @@ import {
   Smile,
   LogOut,
   Menu,
+  Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -37,6 +38,7 @@ export const sidebarSections = [
       title: null,
       items: [
         { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+        { name: "Smart Search", href: "/smart-search", icon: Search },
         { name: "Sales", href: "/sales", icon: ShoppingCart },
         { name: "Watak Register", href: "/watak-register", icon: FileText },
         { name: "Purchases", href: "/purchases", icon: ShoppingBasket },
@@ -95,6 +97,13 @@ export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
   
   const sectionsToRender = [
      {
+        title: "MAIN",
+        items: [
+            { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+            { name: "Smart Search", href: "/smart-search", icon: Search },
+        ]
+     },
+     {
       title: "SALES & PURCHASES",
       items: [
         { name: "Sales", href: "/sales", icon: ShoppingCart },
@@ -143,7 +152,6 @@ export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
       </div>
       <div className="flex-1 overflow-y-auto">
         <nav className="grid items-start p-2 text-sm font-medium">
-          {renderLink({ name: "Dashboard", href: "/dashboard", icon: LayoutDashboard })}
           {sectionsToRender.map((section) => (
             <div key={section.title || 'home'} className="py-2">
              {section.title && <h3 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-primary-foreground/50">
