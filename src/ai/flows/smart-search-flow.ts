@@ -9,7 +9,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 const FilterSchema = z.object({
   field: z.string().describe('The field to filter on (e.g., "date", "customerName", "totals.netSale").'),
