@@ -14,6 +14,7 @@ import { Logo } from '@/components/logo';
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('');
   const [isClient, setIsClient] = useState(false);
 
@@ -22,13 +23,13 @@ export default function LoginPage() {
   }, []);
 
   const handleLogin = () => {
-    if (password === 'Faisal1806') {
+    if (username.toLowerCase() === 'admin' && password === 'Faisal1806') {
       if (typeof window !== 'undefined') {
         localStorage.setItem('userRole', 'admin');
       }
       toast({
         title: 'Login Successful',
-        description: 'Welcome back!',
+        description: 'Welcome back, Admin!',
         isSuccess: true,
       });
       router.push('/dashboard');
@@ -36,7 +37,7 @@ export default function LoginPage() {
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: 'Incorrect password. Please try again.',
+        description: 'Incorrect username or password. Please try again.',
       });
     }
   };
@@ -91,21 +92,40 @@ export default function LoginPage() {
                 transition={{ duration: 0.7, ease: "easeOut", delay: 1 }}
              >
                 <h2 className="text-2xl font-bold text-center text-white">Admin Login</h2>
-                <div className="mt-6">
-                    <Label htmlFor="password" className="sr-only">Password</Label>
-                    <div className="relative">
-                        <Input 
-                            id="password" 
-                            type="password" 
-                            placeholder="Password"
-                            required 
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            onKeyPress={handleKeyPress}
-                            className="bg-transparent border-2 border-gray-500/50 focus:border-sky-400 text-white w-full pl-10 h-12 text-lg"
-                            autoComplete="current-password"
-                        />
-                         <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <div className="mt-6 space-y-4">
+                     <div>
+                        <Label htmlFor="username" className="sr-only">Username</Label>
+                        <div className="relative">
+                            <Input 
+                                id="username" 
+                                type="text" 
+                                placeholder="Username"
+                                required 
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                onKeyPress={handleKeyPress}
+                                className="bg-transparent border-2 border-gray-500/50 focus:border-sky-400 text-white w-full pl-10 h-12 text-lg"
+                                autoComplete="username"
+                            />
+                            <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        </div>
+                    </div>
+                    <div>
+                        <Label htmlFor="password" className="sr-only">Password</Label>
+                        <div className="relative">
+                            <Input 
+                                id="password" 
+                                type="password" 
+                                placeholder="Password"
+                                required 
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                onKeyPress={handleKeyPress}
+                                className="bg-transparent border-2 border-gray-500/50 focus:border-sky-400 text-white w-full pl-10 h-12 text-lg"
+                                autoComplete="current-password"
+                            />
+                            <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        </div>
                     </div>
                 </div>
 
