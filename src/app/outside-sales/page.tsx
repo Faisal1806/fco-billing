@@ -156,7 +156,7 @@ export default function OutsideSalesPage() {
     };
 
     const handleSave = async () => {
-        if (!selectedChallanNo || !bikriNo || !date || (!market && bikriType === 'fcoStock') || (!growerName && bikriType === 'growerForwarding')) {
+        if (!selectedChallanNo || !bikriNo || !date || (bikriType === 'fcoStock' && !market) || (bikriType === 'growerForwarding' && !growerName)) {
             toast({ variant: 'destructive', title: 'Missing Details', description: 'Please fill out all required header fields before saving.' });
             return;
         }
@@ -168,15 +168,13 @@ export default function OutsideSalesPage() {
             setId(recordId);
         }
 
-        const partyName = bikriType === 'fcoStock' ? market : growerName;
-
         const data = {
             id: recordId,
             challanNo: selectedChallanNo,
             bikriNo,
             date,
-            market: partyName, // Unified field for the party name
-            growerName, // Specific for grower forwarding
+            market,
+            growerName,
             bikriType,
             purchaseEntries: purchaseRows.filter(r => r.qty > 0 && r.rate > 0).map(r => ({...r, total: r.qty * r.rate})),
             saleEntries: saleRows.filter(r => r.qty > 0 && r.rate > 0).map(r => ({...r, total: r.qty * r.rate})),
@@ -213,11 +211,8 @@ export default function OutsideSalesPage() {
         setSelectedChallanNo(bikri.challanNo);
         setBikriNo(bikri.bikriNo);
         setDate(bikri.date);
-        if (bikri.bikriType === 'growerForwarding') {
-            setGrowerName(bikri.growerName || bikri.market);
-        } else {
-            setMarket(bikri.market);
-        }
+        setMarket(bikri.market || '');
+        setGrowerName(bikri.growerName || '');
         setPurchaseRows(bikri.purchaseEntries?.length > 0 ? bikri.purchaseEntries : [emptyRow]);
         setSaleRows(bikri.saleEntries?.length > 0 ? bikri.saleEntries : [emptyRow]);
         setExpenses(bikri.expenses);
@@ -453,7 +448,7 @@ export default function OutsideSalesPage() {
                                     <Card key={bikri.id} className="p-3">
                                         <div className="flex justify-between items-start">
                                             <div>
-                                                <p className="font-semibold">{bikri.market}</p>
+                                                <p className="font-semibold">{bikri.market || bikri.growerName}</p>
                                                 <p className="text-sm text-muted-foreground">Challan #{bikri.challanNo} &rarr; Bikri #{bikri.bikriNo}</p>
                                                  {bikri.bikriType === 'growerForwarding' ? (
                                                     <p className="text-lg font-bold text-blue-600">Net Sale: ₹{bikri.calculation.netSalePayableToGrower.toFixed(2)}</p>

@@ -178,10 +178,11 @@ export default function KhataLedgerPage() {
                         allTransactions.push({ id: doc.id, date: doc.date, type, amount: doc.amount, grossAmount: doc.amount, expenses: 0, party: doc.partyName, docId: doc.id.replace('advance-',''), notes: doc.notes });
                     } else if (key.startsWith('bikri-')) {
                         const doc = JSON.parse(localStorage.getItem(key)!);
-                         const partyName = doc.bikriType === 'growerForwarding' ? doc.growerName : doc.market;
-                         const amount = doc.bikriType === 'growerForwarding' ? doc.calculation.netSalePayableToGrower : doc.calculation.netProfitOrLoss;
+                         const isForwarding = doc.bikriType === 'growerForwarding';
+                         const partyName = isForwarding ? doc.growerName : doc.market;
+                         const amount = isForwarding ? doc.calculation.netSalePayableToGrower : doc.calculation.netProfitOrLoss;
                         recordPartyActivity(partyName, 'Bikri');
-                        allTransactions.push({ id: doc.id, date: doc.date, type: 'Bikri', amount: amount, grossAmount: doc.calculation.grossSale, expenses: doc.calculation.totalExpenses, party: partyName, docId: doc.id, notes: `Bikri #${doc.bikriNo}` });
+                        allTransactions.push({ id: doc.id, date: doc.date, type: 'Bikri', amount: amount, grossAmount: doc.calculation.grossSale, expenses: doc.calculation.totalExpenses, party: partyName, docId: doc.id, notes: `Bikri #${doc.bikriNo} to ${isForwarding ? doc.market : ''}` });
                     }
                 } catch (e) {
                     console.error("Failed to parse ledger data from local storage for key:", key, e);
@@ -261,7 +262,7 @@ export default function KhataLedgerPage() {
                     } else if (partyType === 'outside') { // Bikri Party
                         runningBalance += amount; // Profit is receivable, loss is payable
                     } else if (partyType === 'fco') {
-                        if (trans.type === 'Purchase') runningBalance += amount; // Asset value increases
+                        if (trans.type === 'Purchase' || trans.type === 'Bikri') runningBalance += amount; // Asset value increases
                     }
                     else { // 'both' type
                          if (trans.type === 'Sale' || trans.type === 'Bikri') runningBalance += amount; // Owed to them as grower (Credit)

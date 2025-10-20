@@ -89,7 +89,8 @@ export default function BikriBillPage({ params }: { params: { id: string } }) {
 
     const handleShare = () => {
         if (billData) {
-            const message = `Check out this Bikri Bill (#${billData.bikriNo}) for ${billData.market}: ${window.location.href}`;
+            const partyName = billData.bikriType === 'growerForwarding' ? billData.growerName : billData.market;
+            const message = `Check out this Bikri Bill (#${billData.bikriNo}) for ${partyName}: ${window.location.href}`;
             const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
             window.open(whatsappUrl, '_blank');
         } else {
@@ -164,6 +165,8 @@ export default function BikriBillPage({ params }: { params: { id: string } }) {
     }
     
     const isForwarding = billData.bikriType === 'growerForwarding';
+    const partyName = isForwarding ? billData.growerName : billData.market;
+
 
     const EntryTable = ({ title, entries } : { title: string, entries: Entry[]}) => (
         <div>
@@ -210,11 +213,7 @@ export default function BikriBillPage({ params }: { params: { id: string } }) {
                     <p><strong>Challan No:</strong> {billData.challanNo}</p>
                     <p><strong>Bikri No:</strong> {billData.bikriNo}</p>
                     <p><strong>Date:</strong> {new Date(billData.date).toLocaleDateString('en-GB')}</p>
-                    {isForwarding && billData.growerName ? (
-                         <p><strong>Grower:</strong> {billData.growerName}</p>
-                    ) : (
-                        <p><strong>Market:</strong> {billData.market}</p>
-                    )}
+                    <p><strong>Party:</strong> {partyName}</p>
                 </div>
 
                 <div className="space-y-8">
