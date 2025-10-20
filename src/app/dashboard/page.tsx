@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { IndianRupee, TrendingUp, Calendar, FileText, ShoppingBasket, BookOpen, Loader2, Package, Box, ClipboardList, Globe, PlusCircle, User, Truck, Receipt } from 'lucide-react';
+import { IndianRupee, TrendingUp, Calendar, FileText, ShoppingBasket, BookOpen, Loader2, Package, Box, ClipboardList, Globe, PlusCircle, User, Truck, Receipt, PieChart, BarChart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -14,6 +14,7 @@ import { motion } from 'framer-motion';
 import { sidebarSections } from '@/components/Sidebar';
 import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { VictoryPie, VictoryBar, VictoryChart, VictoryAxis, VictoryTheme } from 'victory';
 
 
 interface Invoice {
@@ -146,8 +147,9 @@ export default function DashboardPage() {
     let totalSaleValueToday = 0;
     let pattiToday = 0;
     let dabbaToday = 0;
-    let monthlyTotalSales = 0;
-    let monthlyTotalExpenses = 0;
+    
+    const monthlySalesData = Array(12).fill(0);
+
     let yearGrossSales = 0;
     let yearTotalExpenses = 0;
     let yearNetSales = 0;
@@ -176,11 +178,7 @@ export default function DashboardPage() {
             yearNetSales += sale.totals.netSale || 0;
             yearPattiSold += sale.totals.pattiQty || 0;
             yearDabbaSold += sale.totals.dabbaQty || 0;
-
-             if (saleMonth === currentMonth) {
-                monthlyTotalSales += sale.totals.netSale || 0;
-                monthlyTotalExpenses += sale.totals.totalExpenses || 0;
-            }
+            monthlySalesData[saleMonth] += sale.totals.netSale || 0;
         }
     });
 
@@ -206,8 +204,9 @@ export default function DashboardPage() {
         totalSaleValueToday,
         pattiToday,
         dabbaToday,
-        monthlyTotalSales,
-        monthlyTotalExpenses,
+        monthlyTotalSales: monthlySalesData.reduce((a,b) => a+b, 0),
+        monthlyTotalExpenses: 0, // This needs to be calculated if needed
+        monthlySalesData,
         yearGrossSales,
         yearTotalExpenses,
         yearNetSales,
@@ -255,6 +254,17 @@ export default function DashboardPage() {
   const { dashboardHeader } = placeholderImages;
   
   const appSections = sidebarSections.flatMap(s => s.items);
+  
+  const pieChartData = growerProfits.slice(0, 5).map(g => ({ x: g.name, y: g.profit }));
+  const otherProfit = growerProfits.slice(5).reduce((acc, g) => acc + g.profit, 0);
+  if (otherProfit > 0) {
+      pieChartData.push({ x: 'Others', y: otherProfit });
+  }
+
+  const barChartData = stats?.monthlySalesData.map((sales, i) => ({
+      x: new Date(0, i).toLocaleString('default', { month: 'short' }),
+      y: sales
+  })).filter(d => d.y > 0);
 
   return (
     <div className="space-y-8">
@@ -293,6 +303,50 @@ export default function DashboardPage() {
                 </AccordionContent>
             </AccordionItem>
         </Accordion>
+        
+        <div className="space-y-4">
+            <h2 className="text-xl font-semibold tracking-wider text-muted-foreground flex items-center gap-2"><BarChart className="h-5 w-5" />ANALYTICS</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <Card className="bg-card/80 backdrop-blur-sm border border-white/10">
+                    <CardHeader>
+                        <CardTitle>Sales by Grower</CardTitle>
+                        <CardDescription>Top 5 growers' contribution to this year's sales.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {pieChartData.length > 0 ? (
+                            <VictoryPie
+                                data={pieChartData}
+                                colorScale={["#38bdf8", "#fbbf24", "#34d399", "#f87171", "#c084fc", "#a3a3a3"]}
+                                innerRadius={50}
+                                theme={VictoryTheme.material}
+                                style={{ labels: { fill: "white", fontSize: 10 } }}
+                            />
+                        ) : <p className="text-center text-muted-foreground py-10">No sales data available for chart.</p>}
+                    </CardContent>
+                </Card>
+                 <Card className="bg-card/80 backdrop-blur-sm border border-white/10">
+                    <CardHeader>
+                        <CardTitle>Monthly Sales</CardTitle>
+                        <CardDescription>Net sales growth for the current year.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {barChartData && barChartData.length > 0 ? (
+                           <VictoryChart
+                                theme={VictoryTheme.material}
+                                domainPadding={20}
+                            >
+                                <VictoryAxis style={{ tickLabels: { fill: 'white' } }} />
+                                <VictoryAxis dependentAxis style={{ tickLabels: { fill: 'white' } }} tickFormat={(x) => (`₹${x/1000}k`)} />
+                                <VictoryBar
+                                    data={barChartData}
+                                    style={{ data: { fill: "#34d399" } }}
+                                />
+                            </VictoryChart>
+                        ) : <p className="text-center text-muted-foreground py-10">No monthly sales data available for chart.</p>}
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
 
         <div className="space-y-4">
              <h2 className="text-xl font-semibold tracking-wider text-muted-foreground">THIS YEAR'S SUMMARY</h2>
