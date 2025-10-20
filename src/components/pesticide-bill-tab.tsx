@@ -16,7 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { PlusCircle, Trash2, FilePenLine, FilePlus, FlaskConical, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
-import Lottie from 'lottie-react';
+import { PartySelector } from './party-selector';
 
 type ItemEntry = {
   particulars: string;
@@ -129,9 +129,10 @@ export function PesticideBillTab() {
   };
   
   const grandTotal = entries.reduce((acc, entry) => {
-    const qty = parseFloat(entry.qty) || 0;
+    const qty = parseFloat(entry.qty) || 1; // Default to 1 if qty is not a valid number or empty, to handle items without explicit quantity
     return acc + qty * entry.rate;
   }, 0);
+  
 
   const resetForm = () => {
     setBillDetails(initialBillDetails);
@@ -151,7 +152,7 @@ export function PesticideBillTab() {
     const billId = billDetails.no;
     const billData = {
         ...billDetails,
-        entries: entries.map(entry => ({...entry, amount: (parseFloat(entry.qty) || 0) * entry.rate})).filter(e => e.particulars && e.qty),
+        entries: entries.map(entry => ({...entry, amount: (parseFloat(entry.qty) || 1) * entry.rate})).filter(e => e.particulars && e.rate > 0),
         grandTotal,
     };
     
@@ -226,19 +227,20 @@ export function PesticideBillTab() {
                         <p className="text-xs text-muted-foreground">NEAR JAMIA MASJID NADIHAL</p>
                     </div>
                     <div className="text-sm font-bold flex items-center gap-1"><FlaskConical className="h-4 w-4" /> F.Co</div>
-                     {isEditing && (
-                        <Button variant="outline" size="sm" onClick={resetForm} className="gap-2 ml-4">
-                            <FilePlus className="h-4 w-4" />
-                            New Bill
-                        </Button>
-                    )}
                  </div>
             </CardHeader>
             <CardContent className="space-y-6">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
                         <Label>No.</Label>
-                        <Input value={billDetails.no} onChange={e => handleDetailChange('no', e.target.value)} disabled={isEditing} />
+                         <div className="flex items-center gap-2">
+                            <Input value={billDetails.no} onChange={e => handleDetailChange('no', e.target.value)} disabled={isEditing} />
+                             {isEditing && (
+                                <Button variant="outline" size="icon" onClick={resetForm} title="Create a new bill">
+                                    <FilePlus className="h-4 w-4" />
+                                </Button>
+                            )}
+                        </div>
                     </div>
                     <div className="space-y-2">
                         <Label>Dated</Label>
@@ -246,7 +248,7 @@ export function PesticideBillTab() {
                     </div>
                     <div className="space-y-2 col-span-2 md:col-span-1">
                         <Label>M/s</Label>
-                        <Input placeholder="Customer Name" value={billDetails.customerName} onChange={e => handleDetailChange('customerName', e.target.value)} />
+                        <PartySelector value={billDetails.customerName} onChange={(val) => handleDetailChange('customerName', val)} filter="all" />
                     </div>
                 </div>
                 
