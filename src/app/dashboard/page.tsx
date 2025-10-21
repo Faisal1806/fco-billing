@@ -151,6 +151,7 @@ export default function DashboardPage() {
     let dabbaToday = 0;
     
     const monthlySalesData = Array(12).fill(0);
+    let monthlyTotalSales = 0;
 
     let yearGrossSales = 0;
     let yearTotalExpenses = 0;
@@ -173,14 +174,18 @@ export default function DashboardPage() {
             pattiToday += sale.totals.pattiQty || 0;
             dabbaToday += sale.totals.dabbaQty || 0;
         }
-
+        
         if (saleYear === currentYear) {
+            if (saleMonth === currentMonth) {
+                monthlyTotalSales += sale.totals.netSale || 0;
+            }
+            monthlySalesData[saleMonth] += sale.totals.netSale || 0;
+            
             yearGrossSales += sale.totals.grossSale || 0;
             yearTotalExpenses += sale.totals.totalExpenses || 0;
             yearNetSales += sale.totals.netSale || 0;
             yearPattiSold += sale.totals.pattiQty || 0;
             yearDabbaSold += sale.totals.dabbaQty || 0;
-            monthlySalesData[saleMonth] += sale.totals.netSale || 0;
         }
     });
 
@@ -206,7 +211,7 @@ export default function DashboardPage() {
         totalSaleValueToday,
         pattiToday,
         dabbaToday,
-        monthlyTotalSales: monthlySalesData.reduce((a,b) => a+b, 0),
+        monthlyTotalSales,
         monthlyTotalExpenses: 0, // This needs to be calculated if needed
         monthlySalesData,
         yearGrossSales,
