@@ -162,6 +162,7 @@ export default function DashboardPage() {
 
     let yearGrossSales = 0;
     let yearTotalExpenses = 0;
+    let yearLocalExpenses = 0;
     let yearNetSales = 0;
     let yearPattiSold = 0;
     let yearDabbaSold = 0;
@@ -189,7 +190,7 @@ export default function DashboardPage() {
             monthlySalesData[saleMonth] += sale.totals.netSale || 0;
             
             yearGrossSales += sale.totals.grossSale || 0;
-            yearTotalExpenses += sale.totals.totalExpenses || 0;
+            yearLocalExpenses += sale.totals.totalExpenses || 0;
             yearNetSales += sale.totals.netSale || 0;
             yearPattiSold += sale.totals.pattiQty || 0;
             yearDabbaSold += sale.totals.dabbaQty || 0;
@@ -215,10 +216,13 @@ export default function DashboardPage() {
             monthlySalesData[saleMonth] += netAmount;
             
             yearGrossSales += bikri.calculation.grossSale || 0;
+            // Add outside expenses to the overall total expenses, but not local
             yearTotalExpenses += bikri.calculation.totalExpenses || 0;
             yearNetSales += netAmount;
         }
     });
+
+    yearTotalExpenses += yearLocalExpenses; // Final total expenses
 
     allReceipts.forEach(receipt => {
         const receiptDate = new Date(receipt.date);
@@ -243,10 +247,10 @@ export default function DashboardPage() {
         pattiToday,
         dabbaToday,
         monthlyTotalSales,
-        monthlyTotalExpenses: 0, // This needs to be calculated if needed
+        monthlyTotalExpenses: 0,
         monthlySalesData,
         yearGrossSales,
-        yearTotalExpenses,
+        yearLocalExpenses, // Use this for the specific card
         yearNetSales,
         yearPattiSold,
         yearDabbaSold,
@@ -395,7 +399,7 @@ export default function DashboardPage() {
                 <StatCard title="This Month's Sales (Net)" value={`₹${stats?.monthlyTotalSales.toLocaleString('en-IN') ?? '0'}`} subtitle="Current calendar month" icon={Calendar} />
                 <StatCard title="This Year's Gross Sales" value={`₹${stats?.yearGrossSales.toLocaleString('en-IN') ?? '0'}`} subtitle="Total sale value this year" icon={IndianRupee} />
                 <StatCard title="This Year's Net Sales" value={`₹${stats?.yearNetSales.toLocaleString('en-IN') ?? '0'}`} subtitle="After all expenses" icon={IndianRupee} />
-                <StatCard title="Total Expenses" value={`₹${stats?.yearTotalExpenses.toLocaleString('en-IN') ?? '0'}`} subtitle="From local sales" icon={IndianRupee} />
+                <StatCard title="Total Expenses" value={`₹${stats?.yearLocalExpenses.toLocaleString('en-IN') ?? '0'}`} subtitle="From local sales" icon={IndianRupee} />
                 <StatCard title="Gross Profit Margin" value={`${stats?.yearGrossSales ? ((stats.yearNetSales / stats.yearGrossSales) * 100).toFixed(2) : '0'}%`} subtitle="Net / Gross Sales" icon={TrendingUp} />
 
                 <StatCard title="Total Patti Received" value={stats?.yearPattiReceived.toLocaleString('en-IN') ?? '0'} subtitle="This year via Goods Receipt" icon={Receipt} />
@@ -474,11 +478,5 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
-
-    
-
-    
 
     
