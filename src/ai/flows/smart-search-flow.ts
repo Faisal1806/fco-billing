@@ -27,13 +27,13 @@ Here are the available data collections and their queryable fields:
 - **products**
   - Fields: name (string), category (string), stock (number), supplier (string)
 
-- **parties** (also called customers or growers)
+- **parties**
   - Fields: name (string), type (string, "Grower", "Customer", "Both", etc.), address (string), phone (string)
 
 - **expenses**
   - Fields: date (string, YYYY-MM-DD), category (string), description (string), amount (number), partyName (string)
 
-- **advances** (also called loans)
+- **advances**
   - Fields: date (string, YYYY-MM-DD), partyName (string), type (string, "Advance Given" or "Repayment Received"), amount (number)
 
 - **cold_storage**
@@ -62,6 +62,9 @@ const smartSearchFlow = ai.defineFlow(
     - If you cannot determine the collection or filters, set the 'error' field with a helpful message. Do not guess.
     - For queries like "show me sales", default to the 'invoices' collection.
     - For queries about profit or loss from outside sales, use the 'bikris' collection.
+    - For "top N" or "bottom N" queries, add a 'limit' and 'sort' property to the output. For example, "top 5 sales" should be collection: 'invoices', sort: { field: 'totals.netSale', direction: 'desc' }, limit: 5.
+    - The 'sort' field should have 'field' and 'direction' ('asc' or 'desc').
+    - Do not invent fields. Only use the fields listed in the schemas.
 
     User Query: "${input.query}"`;
 

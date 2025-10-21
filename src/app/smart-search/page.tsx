@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -10,10 +10,17 @@ import { useApiKey } from '@/hooks/use-api-key';
 import { useToast } from '@/hooks/use-toast';
 import { queryData } from '@/ai/flows/smart-search-flow';
 import { SmartSearchOutput } from '@/ai/schemas/smart-search-schemas';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 type Message = {
   role: 'user' | 'assistant' | 'error';
   content: string | SmartSearchOutput;
+  results?: any[];
+};
+
+// Helper to access nested properties
+const getNestedValue = (obj: any, path: string) => {
+    return path.split('.').reduce((acc, part) => acc && acc[part], obj);
 };
 
 export default function SmartSearchPage() {
@@ -22,6 +29,33 @@ export default function SmartSearchPage() {
   const [query, setQuery] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [allData, setAllData] = useState<{[key: string]: any[]}>({});
+
+  useEffect(() => {
+    // Pre-load all data from localStorage on component mount
+    if (typeof window !== 'undefined') {
+        const data: {[key: string]: any[]} = {
+            invoices: [], purchases: [], receipts: [], challans: [], products: [], parties: [], expenses: [], advances: [], cold_storage: [], bikris: []
+        };
+        const prefixes: {[key: string]: string} = {
+            'invoice-': 'invoices', 'purchase-': 'purchases', 'receipt-': 'receipts', 'challan-': 'challans', 'product-': 'products',
+            'party-': 'parties', 'expense-': 'expenses', 'advance-': 'advances', 'cs-': 'cold_storage', 'bikri-': 'bikris'
+        };
+
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key) {
+                for (const prefix in prefixes) {
+                    if (key.startsWith(prefix)) {
+                        data[prefixes[prefix]].push(JSON.parse(localStorage.getItem(key)!));
+                        break;
+                    }
+                }
+            }
+        }
+        setAllData(data);
+    }
+  }, []);
 
   const handleSearch = async () => {
     if (!query.trim()) return;
@@ -46,9 +80,41 @@ export default function SmartSearchPage() {
       if (result.error) {
         assistantMessage = { role: 'error', content: result.error };
       } else {
-        // For now, we'll just display the structured query.
-        // In the next step, we'll execute this query and show the results.
-        assistantMessage = { role: 'assistant', content: result };
+        const collectionData = allData[result.collection] || [];
+
+        let filteredData = collectionData.filter(item => {
+            return result.filters.every(filter => {
+                const itemValue = getNestedValue(item, filter.field);
+                if (itemValue === undefined) return false;
+
+                switch(filter.operator) {
+                    case '==': return itemValue == filter.value;
+                    case '!=': return itemValue != filter.value;
+                    case '>': return itemValue > filter.value;
+                    case '>=': return itemValue >= filter.value;
+                    case '<': return itemValue < filter.value;
+                    case '<=': return itemValue <= filter.value;
+                    case 'contains': return typeof itemValue === 'string' && itemValue.toLowerCase().includes(String(filter.value).toLowerCase());
+                    default: return false;
+                }
+            })
+        });
+
+        if (result.sort) {
+            filteredData.sort((a, b) => {
+                const valA = getNestedValue(a, result.sort!.field);
+                const valB = getNestedValue(b, result.sort!.field);
+                if (valA < valB) return result.sort!.direction === 'asc' ? -1 : 1;
+                if (valA > valB) return result.sort!.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+
+        if (result.limit) {
+            filteredData = filteredData.slice(0, result.limit);
+        }
+
+        assistantMessage = { role: 'assistant', content: result, results: filteredData };
       }
       setMessages(prev => [...prev, assistantMessage]);
 
@@ -73,21 +139,47 @@ export default function SmartSearchPage() {
 
     return (
       <div key={index} className={`flex items-start gap-4 ${isUser ? 'justify-end' : ''}`}>
-        {!isUser && <div className="p-2 bg-primary/10 rounded-full"><Icon className="h-6 w-6 text-primary" /></div>}
-        <div className={`max-w-xl p-4 rounded-xl ${isUser ? 'bg-primary text-primary-foreground' : (isError ? 'bg-destructive/10 text-destructive-foreground' : 'bg-muted')}`}>
+        {!isUser && <div className="p-2 bg-primary/10 rounded-full shrink-0"><Icon className="h-6 w-6 text-primary" /></div>}
+        <div className={`max-w-3xl w-full p-4 rounded-xl ${isUser ? 'bg-primary text-primary-foreground' : (isError ? 'bg-destructive/10 text-destructive-foreground' : 'bg-muted')}`}>
           {typeof msg.content === 'string' ? (
             <p>{msg.content}</p>
           ) : (
             <div>
-              <p className="font-semibold">Understood! Here's the plan:</p>
-              <pre className="mt-2 text-xs bg-black/20 p-2 rounded-md overflow-x-auto">
-                {JSON.stringify(msg.content, null, 2)}
-              </pre>
-               <p className="text-xs italic mt-2 text-muted-foreground">(Result rendering will be implemented in the next step)</p>
+              {msg.results && msg.results.length > 0 ? (
+                <>
+                <p className="font-semibold mb-2">Found {msg.results.length} results for "{query}":</p>
+                <div className="overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                {Object.keys(msg.results[0]).map(key => <TableHead key={key}>{key}</TableHead>)}
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {msg.results.map((row, i) => (
+                                <TableRow key={i}>
+                                    {Object.values(row).map((val: any, j) => (
+                                        <TableCell key={j} className="whitespace-nowrap">
+                                            {typeof val === 'object' && val !== null ? JSON.stringify(val) : String(val)}
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+                </>
+              ) : msg.results && msg.results.length === 0 ? (
+                 <p>I couldn't find any results matching your query.</p>
+              ) : (
+                 <pre className="mt-2 text-xs bg-black/20 p-2 rounded-md overflow-x-auto">
+                    {JSON.stringify(msg.content, null, 2)}
+                 </pre>
+              )}
             </div>
           )}
         </div>
-         {isUser && <div className="p-2 bg-muted rounded-full"><Icon className="h-6 w-6" /></div>}
+         {isUser && <div className="p-2 bg-muted rounded-full shrink-0"><Icon className="h-6 w-6" /></div>}
       </div>
     );
   };
@@ -96,11 +188,11 @@ export default function SmartSearchPage() {
     <Card className="h-[calc(100vh-10rem)] flex flex-col">
       <CardHeader>
         <CardTitle className="flex items-center gap-3">
-          <Search className="h-6 w-6 text-primary" />
-          Smart Search Assistant
+          <Bot className="h-6 w-6 text-primary" />
+          AI Chat Assistant
         </CardTitle>
         <CardDescription>
-          Ask anything about your data in plain English. For example: "Show me all sales from last week" or "Find parties in Nadihal".
+          Ask anything about your data in plain English. For example: "Show me top 5 sales this month" or "Find parties from Nadihal".
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4 overflow-y-auto p-4">
@@ -124,12 +216,12 @@ export default function SmartSearchPage() {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleSearch()}
             disabled={isLoading}
-            className="pr-24"
+            className="pr-24 h-12"
           />
           <Button
-            className="absolute right-2 top-1/2 -translate-y-1/2 h-8"
+            className="absolute right-2 top-1/2 -translate-y-1/2 h-9"
             onClick={handleSearch}
-            disabled={isLoading}
+            disabled={isLoading || !query.trim()}
           >
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Search'}
           </Button>
