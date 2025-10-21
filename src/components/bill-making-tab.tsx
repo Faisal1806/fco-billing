@@ -336,7 +336,14 @@ export function BillMakingTab() {
         setWatakNo(watak.watakNo || '');
         setDate(watak.date);
         setFreight(watak.freight || 0);
-        setRows(watak.entries.length > 0 ? watak.entries : initialRows);
+        const loadedRows = watak.entries.map((e: any) => ({
+            type: e.type,
+            qty: e.qty,
+            variety: e.variety,
+            rate: e.rate,
+        }));
+
+        setRows(loadedRows.length > 0 ? loadedRows : initialRows);
         setSelectedReceiptNo(watak.linkedReceiptNo || '');
         setIsEditing(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
