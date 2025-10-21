@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2 } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
-import { WatakEntry } from '@/app/(app)/watak-register/page';
+import { WatakEntry } from '@/app/watak-register/page';
 
 interface PesticideBillData {
     no: string;
@@ -25,7 +25,7 @@ interface PesticideBillData {
 interface BikriData {
     id: string;
     market: string;
-    entries: {
+    saleEntries: {
         type: 'Patti' | 'Dabba';
         variety: string;
         rate: number;
@@ -86,7 +86,7 @@ export default function AutomaticRateList({ sourceType, title }: AutomaticRateLi
                         });
                     } else if (sourceType === 'outside' && key.startsWith('bikri-')) {
                         const bikri: BikriData = JSON.parse(localStorage.getItem(key)!);
-                        bikri.entries.forEach(entry => {
+                        (bikri.saleEntries || []).forEach(entry => {
                              if (entry.variety && entry.rate > 0) {
                                 // Group by Market -> Variety -> Type
                                 const compositeName = `${bikri.market} - ${entry.variety} (${entry.type})`;
