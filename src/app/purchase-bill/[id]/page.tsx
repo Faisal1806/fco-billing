@@ -96,7 +96,7 @@ export default function PurchaseBillPage({ params }: { params: { id:string } }) 
         const element = printRef.current;
         if (!element || !billData) return;
     
-        const activeLayout = printStyle === 'a4' ? element.querySelector('.print-area-a4') : element.querySelector('.print-area-thermal');
+        const activeLayout = printStyle === 'a4' ? element.querySelector('.print-area-a4 > div') : element.querySelector('.print-area-thermal');
         if (!activeLayout) return;
 
         const canvas = await html2canvas(activeLayout as HTMLElement, {
@@ -351,10 +351,10 @@ export default function PurchaseBillPage({ params }: { params: { id:string } }) 
                         height: 100%;
                     }
                     .print-area-a4 {
-                        display: ${printStyle === 'a4' ? 'flex !important' : 'none !important'};
+                        display: ${printStyle === 'a4' ? 'block' : 'none'} !important;
                     }
                      .print-area-thermal {
-                        display: ${printStyle === 'thermal' ? 'block !important' : 'none !important'};
+                        display: ${printStyle === 'thermal' ? 'block' : 'none'} !important;
                     }
 
                     @page {

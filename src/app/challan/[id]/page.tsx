@@ -107,13 +107,12 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
         const format = isThermal ? [80, 297] : 'a5';
         const orientation = 'portrait';
     
-        const canvas = await html2canvas(element, {
+        const activeLayout = printStyle === 'a4' ? element.querySelector('.print-area-a4 > div') : element.querySelector('.print-area-thermal');
+        if (!activeLayout) return;
+
+        const canvas = await html2canvas(activeLayout as HTMLElement, {
             scale: 2, // Higher scale for better quality
             useCORS: true,
-            width: element.scrollWidth,
-            height: element.scrollHeight,
-            windowWidth: element.scrollWidth,
-            windowHeight: element.scrollHeight,
         });
 
         const pdf = new jsPDF({
@@ -133,7 +132,7 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
          <div className="flex flex-col gap-4 print:hidden">
             <div className="flex items-center gap-2">
                  <Button onClick={() => setPrintStyle('a4')} variant={printStyle === 'a4' ? 'default' : 'outline'} size="sm" className="gap-2">
-                    <FileText className="h-4 w-4" /> A4
+                    <FileText className="h-4 w-4" /> A5
                 </Button>
                 <Button onClick={() => setPrintStyle('thermal')} variant={printStyle === 'thermal' ? 'default' : 'outline'} size="sm" className="gap-2">
                     <Receipt className="h-4 w-4" /> Thermal
@@ -349,16 +348,10 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
                         height: 100%;
                     }
                     .print-area-a4 {
-                        display: ${printStyle === 'a4' ? 'flex !important' : 'none !important'};
-                        width: 100%;
-                        height: 100%;
-                        box-shadow: none;
-                        border: none;
+                        display: ${printStyle === 'a4' ? 'block' : 'none'} !important;
                     }
                      .print-area-thermal {
-                        display: ${printStyle === 'thermal' ? 'block !important' : 'none !important'};
-                         box-shadow: none;
-                        border: none;
+                        display: ${printStyle === 'thermal' ? 'block' : 'none'} !important;
                     }
 
                     @page {

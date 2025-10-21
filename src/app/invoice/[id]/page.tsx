@@ -84,7 +84,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             if (data) {
                 data.entries = data.entries.map(e => ({
                     ...e, 
-                    qty: e.qty || e.peti || e.daba || 0
+                    qty: e.qty || e.peti || e.daba || 0,
+                    rate: e.rate || 0,
                 }));
                 setBillData(data);
             } else {
