@@ -16,12 +16,12 @@ export default function HomePage() {
       .then(data => {
         setAnimationData(data);
         setTimeout(() => {
-            router.replace('/login');
+            router.replace('/dashboard');
         }, 3200); // Corresponds to animation length
       })
       .catch(err => {
         console.error("Failed to load splash animation, redirecting...", err);
-        router.replace('/login');
+        router.replace('/dashboard');
       });
   }, [router]);
 
@@ -42,3 +42,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+    

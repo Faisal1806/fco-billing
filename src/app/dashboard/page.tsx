@@ -69,8 +69,8 @@ const StatCard = ({ title, value, subtitle, icon: Icon }: { title: string, value
                 <p className="text-2xl font-bold">{value}</p>
                 <p className="text-xs text-muted-foreground">{subtitle}</p>
             </div>
-            <div className="p-2 bg-yellow-500/10 rounded-full">
-                <Icon className="h-5 w-5 text-yellow-400" />
+            <div className="p-2 bg-primary/10 rounded-full">
+                <Icon className="h-5 w-5 text-primary-foreground/80" />
             </div>
         </div>
     </Card>
@@ -293,7 +293,7 @@ export default function DashboardPage() {
                 priority
             />
             <div className="relative z-10">
-                <h1 className="text-4xl md:text-5xl font-bold text-white shadow-lg">Welcome to F.Co</h1>
+                <h1 className="text-4xl md:text-5xl font-bold text-white shadow-lg">Welcome to SwiftSale</h1>
                 <p className="text-lg text-gray-300/80 shadow-md mt-2">Your complete business management solution.</p>
             </div>
         </motion.div>
@@ -384,16 +384,16 @@ export default function DashboardPage() {
         <div className="space-y-4">
              <h2 className="text-xl font-semibold tracking-wider text-muted-foreground">QUICK ACTIONS</h2>
              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                 <Button onClick={() => router.push('/sales')} className="h-20 text-lg bg-red-600/80 hover:bg-red-600 border border-red-500/50">
+                 <Button onClick={() => router.push('/sales')} className="h-20 text-lg bg-primary/80 hover:bg-primary border border-primary-foreground/20">
                      <PlusCircle className="mr-2 h-6 w-6" /> Sales Entry
                  </Button>
-                 <Button onClick={() => router.push('/watak-register')} className="h-20 text-lg bg-blue-600/80 hover:bg-blue-600 border border-blue-500/50">
+                 <Button onClick={() => router.push('/watak-register')} className="h-20 text-lg bg-primary/80 hover:bg-primary border border-primary-foreground/20">
                      <FileText className="mr-2 h-6 w-6" /> Watak Register
                  </Button>
-                 <Button onClick={() => router.push('/purchases')} className="h-20 text-lg bg-green-600/80 hover:bg-green-600 border border-green-500/50">
+                 <Button onClick={() => router.push('/purchases')} className="h-20 text-lg bg-primary/80 hover:bg-primary border border-primary-foreground/20">
                     <ShoppingBasket className="mr-2 h-6 w-6" /> Purchases
                  </Button>
-                 <Button onClick={() => router.push('/khata')} className="h-20 text-lg bg-yellow-500/80 hover:bg-yellow-500 border border-yellow-400/50">
+                 <Button onClick={() => router.push('/khata')} className="h-20 text-lg bg-primary/80 hover:bg-primary border border-primary-foreground/20">
                     <BookOpen className="mr-2 h-6 w-6" /> Khata Ledger
                  </Button>
             </div>
