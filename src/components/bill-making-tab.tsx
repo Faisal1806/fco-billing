@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Separator } from './ui/separator';
-import { PlusCircle, Trash2, FilePenLine, FilePlus, Share, FileText, ChevronsUpDown, Check } from 'lucide-react';
+import { PlusCircle, Trash2, FilePenLine, FilePlus, Share, FileText, ChevronsUpDown, Check, Search } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { ScrollArea } from './ui/scroll-area';
 import Lottie from 'lottie-react';
@@ -58,6 +58,7 @@ export function BillMakingTab() {
   const [loaderAnimation, setLoaderAnimation] = useState(null);
   const [savedWataks, setSavedWataks] = useState<any[]>([]);
   const [userRole, setUserRole] = React.useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = React.useState('');
 
 
   // Voice Input State
@@ -100,6 +101,16 @@ export function BillMakingTab() {
     const currentYear = new Date().getFullYear();
     return savedWataks.filter(w => new Date(w.date).getFullYear() === currentYear).length;
   }, [savedWataks]);
+  
+  const filteredWataks = useMemo(() => {
+      if (!searchTerm) return savedWataks;
+      const lowerCaseSearch = searchTerm.toLowerCase();
+      return savedWataks.filter(watak => 
+        watak.sNo?.toLowerCase().includes(lowerCaseSearch) ||
+        watak.watakNo?.toLowerCase().includes(lowerCaseSearch) ||
+        watak.customerName?.toLowerCase().includes(lowerCaseSearch)
+      );
+  }, [savedWataks, searchTerm]);
 
 
   useEffect(() => {
@@ -615,17 +626,28 @@ export function BillMakingTab() {
     
     <Card className="mt-6">
         <CardHeader>
-            <div className="flex items-center gap-4">
-               <CardTitle>Recent Invoices (Wataks)</CardTitle>
-               <Badge variant="secondary">{yearlyCount} This Year</Badge>
+            <div className="flex items-center justify-between gap-4">
+               <div className="flex items-center gap-2">
+                <CardTitle>Recent Invoices (Wataks)</CardTitle>
+                <Badge variant="secondary">{yearlyCount} This Year</Badge>
+               </div>
+               <div className="relative w-full max-w-sm">
+                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                 <Input 
+                    placeholder="Search by Invoice No, Watak No, or Name..." 
+                    className="pl-8"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+               </div>
             </div>
             <CardDescription>A list of your most recently created invoices.</CardDescription>
         </CardHeader>
         <CardContent>
             <ScrollArea className="h-96">
                 <div className="space-y-2">
-                    {savedWataks.length > 0 ? (
-                        savedWataks.map((watak) => (
+                    {filteredWataks.length > 0 ? (
+                        filteredWataks.map((watak) => (
                             <div key={watak.id} className="flex justify-between items-center p-3 border rounded-lg hover:bg-muted">
                                 <div>
                                     <p className="font-semibold">Invoice #{watak.sNo} {watak.watakNo && `(Watak #${watak.watakNo})`}</p>
@@ -646,7 +668,7 @@ export function BillMakingTab() {
                             </div>
                         ))
                     ) : (
-                        <p className="text-center text-muted-foreground py-10">No saved invoices found.</p>
+                        <p className="text-center text-muted-foreground py-10">No saved invoices found for your search.</p>
                     )}
                 </div>
             </ScrollArea>
