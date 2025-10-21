@@ -43,6 +43,13 @@ interface Receipt {
 interface Bikri {
     id: string;
     date: string;
+    bikriType?: 'fcoStock' | 'growerForwarding';
+    calculation: {
+        grossSale: number;
+        totalExpenses: number;
+        netProfitOrLoss?: number;
+        netSalePayableToGrower?: number;
+    };
     purchaseEntries: {
         type: 'Patti' | 'Dabba';
         qty: number;
@@ -186,6 +193,30 @@ export default function DashboardPage() {
             yearNetSales += sale.totals.netSale || 0;
             yearPattiSold += sale.totals.pattiQty || 0;
             yearDabbaSold += sale.totals.dabbaQty || 0;
+        }
+    });
+    
+    allBikris.forEach(bikri => {
+        const bikriDate = new Date(bikri.date);
+        if (bikriDate.getFullYear() === currentYear) {
+            const saleMonth = bikriDate.getMonth();
+            const netAmount = bikri.bikriType === 'fcoStock' 
+                ? (bikri.calculation.netProfitOrLoss || 0) 
+                : (bikri.calculation.netSalePayableToGrower || 0);
+
+            if (bikri.date === todayStr) {
+                totalSaleValueToday += netAmount;
+            }
+            
+            if (saleMonth === currentMonth) {
+                monthlyTotalSales += netAmount;
+            }
+
+            monthlySalesData[saleMonth] += netAmount;
+            
+            yearGrossSales += bikri.calculation.grossSale || 0;
+            yearTotalExpenses += bikri.calculation.totalExpenses || 0;
+            yearNetSales += netAmount;
         }
     });
 
@@ -443,6 +474,8 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
 
     
 
