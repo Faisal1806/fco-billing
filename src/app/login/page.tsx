@@ -81,7 +81,7 @@ export default function LoginPage() {
             >
                 <Logo className="h-20 w-20 text-white" />
                 <div>
-                    <h1 className="text-4xl font-bold text-gray-200">SwiftSale</h1>
+                    <h1 className="text-4xl font-bold text-gray-200">F.Co App</h1>
                     <p className="text-lg text-gray-300">ADMINISTRATION</p>
                 </div>
             </motion.div>
@@ -143,5 +143,7 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    
 
     

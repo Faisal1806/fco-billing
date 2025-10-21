@@ -324,7 +324,7 @@ export default function DashboardPage() {
                 priority
             />
             <div className="relative z-10">
-                <h1 className="text-4xl md:text-5xl font-bold text-white shadow-lg">Welcome to SwiftSale</h1>
+                <h1 className="text-4xl md:text-5xl font-bold text-white shadow-lg">Welcome to F.Co App</h1>
                 <p className="text-lg text-gray-300/80 shadow-md mt-2">Your complete business management solution.</p>
             </div>
         </motion.div>
@@ -474,6 +474,8 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
 
     
 

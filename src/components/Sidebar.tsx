@@ -122,7 +122,7 @@ export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
       <div className="flex h-16 items-center border-b border-white/10 px-4 shrink-0">
         <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-primary-foreground">
           <Logo className="h-8 w-8" />
-          <span className="">SwiftSale</span>
+          <span className="">F.Co App</span>
         </Link>
       </div>
       <div className="flex-1 overflow-y-auto">
@@ -175,7 +175,7 @@ const Sidebar = () => {
           </Sheet>
            <div className="flex items-center gap-2 font-semibold text-foreground">
               <Logo className="h-8 w-8" />
-              <span className="">SwiftSale</span>
+              <span className="">F.Co App</span>
             </div>
         </header>
       </>
@@ -183,3 +183,5 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
+
+    
