@@ -30,7 +30,7 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import { PlusCircle, Edit, Trash2, Users, Search, FileDown, Loader2, Leaf, ShoppingCart, Handshake } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Users, Search, FileDown, Loader2, Leaf, ShoppingCart, Handshake, Award, Star, TrendingUp, CalendarDays } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -108,11 +108,13 @@ const getCanonicalName = (name: string): string => {
 export default function PartiesPage() {
   const { toast } = useToast();
   const [parties, setParties] = useState<Party[]>([]);
-  const [balances, setBalances] = useState<{[key: string]: number}>({});
+  const [partyStats, setPartyStats] = useState<{[key: string]: any}>({});
   const [isLoading, setIsLoading] = useState(true);
   
   // Form state
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
+  const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
+  const [selectedParty, setSelectedParty] = useState<Party | null>(null);
   const [formState, setFormState] = useState<Party | Omit<Party, 'id'>>(emptyFormState);
   const [userRole, setUserRole] = useState<string | null>(null);
 
@@ -123,8 +125,7 @@ export default function PartiesPage() {
   const fetchPartiesAndTransactions = () => {
     setIsLoading(true);
     const partiesMap = new Map<string, Party>();
-    const transactionCounts = new Map<string, { sales: number; purchases: number }>();
-    const localBalances = new Map<string, number>();
+    const localPartyStats = new Map<string, any>();
 
     const addOrUpdateParty = (name: string, details: Partial<Party> = {}) => {
         if (!name) return;
@@ -132,97 +133,70 @@ export default function PartiesPage() {
         if (!partiesMap.has(canonical)) {
             partiesMap.set(canonical, {
                 id: `${PARTY_STORAGE_PREFIX}${canonical}`,
-                name: name, // Use first-seen name as display name
-                type: 'Grower', // Default type
+                name: name,
+                type: 'Grower',
                 ...details,
             } as Party);
         }
     };
 
-    // 1. Load default growers to establish a base set of canonical names
     defaultGrowers.forEach(g => addOrUpdateParty(g.name, { address: g.address, type: 'Grower' }));
 
-    // 2. Load explicitly saved parties from localStorage, overwriting defaults
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key?.startsWith(PARTY_STORAGE_PREFIX)) {
             try {
                 const party: Party = JSON.parse(localStorage.getItem(key)!);
                 const canonical = getCanonicalName(party.name);
-                // Overwrite any existing entry with the saved one
                 partiesMap.set(canonical, party);
-            } catch (e) {
-                console.error("Error parsing party:", e);
-            }
+            } catch (e) { console.error("Error parsing party:", e); }
         }
     }
-
-    // 3. Infer parties and calculate balances from transactions
+    
+    const allTransactions: any[] = [];
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (!key) continue;
-
-        let partyName: string | undefined;
-        let isSale = false;
-        let amount = 0;
-
-        if (key.startsWith('invoice-')) {
-            const doc = JSON.parse(localStorage.getItem(key)!);
-            partyName = doc.customerName;
-            isSale = true;
-            amount = doc.totals.netSale;
-        } else if (key.startsWith('purchase-')) {
-            const doc = JSON.parse(localStorage.getItem(key)!);
-            partyName = doc.growerName;
-            amount = -doc.totals.grandTotal;
-        } else if (key.startsWith('advance-')) {
-            const doc = JSON.parse(localStorage.getItem(key)!);
-            partyName = doc.partyName;
-            if (doc.type === 'Advance Given') {
-                amount = -doc.amount;
-            } else { // Repayment
-                amount = doc.amount; // A repayment reduces what a customer owes, so it's a positive adjustment
-            }
-        }
-
-        if (partyName) {
-            const canonical = getCanonicalName(partyName);
-            addOrUpdateParty(partyName); // Ensure party exists from transaction
-
-            // Update transaction counts
-            const counts = transactionCounts.get(canonical) || { sales: 0, purchases: 0 };
-            if (isSale) counts.sales++;
-            else counts.purchases++;
-            transactionCounts.set(canonical, counts);
-
-            // Update balances
-            const currentBalance = localBalances.get(canonical) || 0;
-            localBalances.set(canonical, currentBalance + amount);
+        if(key?.startsWith('invoice-') || key?.startsWith('purchase-') || key?.startsWith('advance-') || key?.startsWith('bikri-')) {
+             allTransactions.push(JSON.parse(localStorage.getItem(key)!));
         }
     }
 
-    // 4. Determine party type based on transactions
     partiesMap.forEach((party, canonical) => {
-        const counts = transactionCounts.get(canonical);
-        if (counts) {
-            const hasSales = counts.sales > 0;
-            const hasPurchases = counts.purchases > 0;
-            // Only update type if it hasn't been explicitly set to something else
-            if (party.type === 'Grower' || party.type === 'Customer') {
-              if (hasSales && hasPurchases) party.type = 'Both';
-              else if (hasSales) party.type = 'Grower';
-              else if (hasPurchases) party.type = 'Customer';
-            }
+        const stats = { balance: 0, totalBusiness: 0, lastPurchaseDate: null, transactionCount: 0 };
+        const partyTransactions = allTransactions
+            .filter(t => (t.customerName && getCanonicalName(t.customerName) === canonical) || 
+                         (t.growerName && getCanonicalName(t.growerName) === canonical) || 
+                         (t.partyName && getCanonicalName(t.partyName) === canonical));
+        
+        partyTransactions.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+        if (partyTransactions.length > 0) {
+            stats.lastPurchaseDate = partyTransactions[partyTransactions.length - 1].date;
         }
+        stats.transactionCount = partyTransactions.length;
+
+        partyTransactions.forEach(tx => {
+            if (tx.id.startsWith('invoice-')) {
+                stats.balance += tx.totals.netSale;
+                stats.totalBusiness += tx.totals.netSale;
+            } else if (tx.id.startsWith('purchase-')) {
+                stats.balance -= tx.totals.grandTotal;
+            } else if (tx.id.startsWith('advance-')) {
+                stats.balance += tx.type === 'Advance Given' ? -tx.amount : tx.amount;
+            } else if (tx.id.startsWith('bikri-')) {
+                const amount = tx.bikriType === 'growerForwarding' ? tx.calculation.netSalePayableToGrower : tx.calculation.netProfitOrLoss;
+                stats.balance += amount;
+                stats.totalBusiness += tx.calculation.grossSale;
+            }
+        });
+        localPartyStats.set(canonical, stats);
     });
 
-    const balancesObject: { [key: string]: number } = {};
-    localBalances.forEach((value, key) => {
-        balancesObject[key] = value;
-    });
+    const statsObject: { [key: string]: any } = {};
+    localPartyStats.forEach((value, key) => { statsObject[key] = value; });
 
     setParties(Array.from(partiesMap.values()).sort((a, b) => a.name.localeCompare(b.name)));
-    setBalances(balancesObject);
+    setPartyStats(statsObject);
     setIsLoading(false);
   };
   
@@ -248,9 +222,7 @@ export default function PartiesPage() {
         });
   }, [parties, searchTerm, typeFilter]);
 
-  const resetForm = () => {
-    setFormState(emptyFormState);
-  }
+  const resetForm = () => setFormState(emptyFormState);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -275,13 +247,18 @@ export default function PartiesPage() {
     
     fetchPartiesAndTransactions();
     resetForm();
-    setIsDialogOpen(false);
+    setIsFormDialogOpen(false);
   };
 
   const handleEditClick = (party: Party) => {
     setFormState(party);
-    setIsDialogOpen(true);
+    setIsFormDialogOpen(true);
   }
+
+  const handleRowClick = (party: Party) => {
+    setSelectedParty(party);
+    setIsProfileDialogOpen(true);
+  };
   
   const handleDeleteParty = (id: string) => {
     if(userRole !== 'admin') {
@@ -305,7 +282,7 @@ export default function PartiesPage() {
             p.type,
             p.phone || '',
             p.address || '',
-            (balances[getCanonicalName(p.name)] || 0).toFixed(2)
+            (partyStats[getCanonicalName(p.name)]?.balance || 0).toFixed(2)
         ]),
     });
     doc.save("parties-directory.pdf");
@@ -320,7 +297,7 @@ export default function PartiesPage() {
           'Address': p.address,
           'Email': p.email,
           'Notes': p.notes,
-          'Balance': balances[getCanonicalName(p.name)] || 0,
+          'Balance': partyStats[getCanonicalName(p.name)]?.balance || 0,
       })));
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Parties");
@@ -337,6 +314,55 @@ export default function PartiesPage() {
         default: return <Badge>{type}</Badge>;
     }
   }
+  
+  const StatCard = ({ icon: Icon, title, value, color }: { icon: React.ElementType, title: string, value: string, color?: string }) => (
+    <div className="flex items-center gap-4 bg-muted p-4 rounded-lg">
+        <div className={`p-3 rounded-full bg-background`}>
+            <Icon className={`h-6 w-6 ${color || 'text-primary'}`} />
+        </div>
+        <div>
+            <p className="text-sm text-muted-foreground">{title}</p>
+            <p className="text-xl font-bold">{value}</p>
+        </div>
+    </div>
+  );
+
+  const PartyProfileDialog = () => {
+    if (!selectedParty) return null;
+    const stats = partyStats[getCanonicalName(selectedParty.name)];
+    const loyaltyPoints = Math.floor((stats?.totalBusiness || 0) / 1000);
+    const balance = stats?.balance || 0;
+    
+    let balanceText, balanceColor;
+    if (selectedParty.type === 'Grower') {
+        balanceText = balance >= 0 ? 'Payable to Grower' : 'Advance to Grower';
+        balanceColor = balance >= 0 ? 'text-red-500' : 'text-green-500';
+    } else {
+        balanceText = balance >= 0 ? 'Receivable from Customer' : 'Customer Credit';
+        balanceColor = balance >= 0 ? 'text-green-500' : 'text-red-500';
+    }
+
+    return (
+        <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
+            <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle className="text-2xl">{selectedParty.name}</DialogTitle>
+                    <p className="text-muted-foreground">{selectedParty.address} &bull; {selectedParty.phone}</p>
+                </DialogHeader>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+                    <StatCard icon={Award} title="F.Co Loyalty Points" value={`${loyaltyPoints} Points`} color="text-yellow-500" />
+                    <StatCard icon={TrendingUp} title="Total Business" value={`₹${(stats?.totalBusiness || 0).toLocaleString('en-IN')}`} />
+                    <StatCard icon={CalendarDays} title="Last Activity" value={stats?.lastPurchaseDate ? new Date(stats.lastPurchaseDate).toLocaleDateString('en-GB') : 'N/A'} />
+                    <div className="md:col-span-2">
+                       <StatCard icon={Users} title="Current Dues" value={`₹${Math.abs(balance).toLocaleString('en-IN')}`} color={balanceColor.replace('text-', 'text-')} />
+                       <p className={`text-center mt-1 text-sm font-semibold ${balanceColor}`}>{balanceText}</p>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+  };
+
 
   if (isLoading) {
     return (
@@ -348,6 +374,7 @@ export default function PartiesPage() {
   }
 
   return (
+    <>
     <Card>
       <CardHeader>
         <div className="flex justify-between items-center flex-wrap gap-4">
@@ -381,8 +408,8 @@ export default function PartiesPage() {
             </Select>
             <Button onClick={exportToPDF} variant="outline" size="sm" className="gap-1"><FileDown className="h-4 w-4"/>PDF</Button>
             <Button onClick={exportToExcel} variant="outline" size="sm" className="gap-1"><FileDown className="h-4 w-4"/>Excel</Button>
-            <Dialog open={isDialogOpen} onOpenChange={(isOpen) => {
-                setIsDialogOpen(isOpen);
+            <Dialog open={isFormDialogOpen} onOpenChange={(isOpen) => {
+                setIsFormDialogOpen(isOpen);
                 if (!isOpen) resetForm();
             }}>
               <DialogTrigger asChild>
@@ -457,24 +484,33 @@ export default function PartiesPage() {
             </TableHeader>
             <TableBody>
               {filteredParties.map((party, index) => {
-                const balance = balances[getCanonicalName(party.name)] || 0;
+                const balance = partyStats[getCanonicalName(party.name)]?.balance || 0;
+                let balanceText, balanceColor;
+                if (party.type === 'Grower') {
+                    balanceText = balance >= 0 ? 'Payable' : 'Advance';
+                    balanceColor = balance >= 0 ? 'text-red-500' : 'text-green-500';
+                } else {
+                    balanceText = balance >= 0 ? 'Receivable' : 'Credit';
+                    balanceColor = balance >= 0 ? 'text-green-500' : 'text-red-500';
+                }
+
                 return (
-                <TableRow key={party.id}>
+                <TableRow key={party.id} className="cursor-pointer" onClick={() => handleRowClick(party)}>
                   <TableCell>{index + 1}</TableCell>
                   <TableCell className="font-medium">{party.name}</TableCell>
                   <TableCell><PartyTypeBadge type={party.type} /></TableCell>
                   <TableCell>{party.phone}</TableCell>
                   <TableCell>{party.address}</TableCell>
-                  <TableCell className={`text-right font-mono ${balance > 0 ? 'text-green-600' : (balance < 0 ? 'text-red-500' : '')}`}>
+                  <TableCell className={`text-right font-mono ${balanceColor}`}>
                     {balance >= 0 ? '₹' : '-₹'}{Math.abs(balance).toFixed(2)}
-                    <p className="text-xs text-muted-foreground">{balance > 0 ? 'Payable' : (balance < 0 ? 'Receivable' : 'Settled')}</p>
+                    <p className="text-xs">{balanceText}</p>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => handleEditClick(party)}>
+                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEditClick(party); }}>
                       <Edit className="h-4 w-4" />
                     </Button>
                     {userRole === 'admin' && (
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteParty(party.id)}>
+                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDeleteParty(party.id); }}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                     )}
@@ -492,5 +528,7 @@ export default function PartiesPage() {
         )}
       </CardContent>
     </Card>
+    <PartyProfileDialog />
+    </>
   );
 }

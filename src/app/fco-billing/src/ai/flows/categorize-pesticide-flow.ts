@@ -39,4 +39,3 @@ const categorizePesticideFlow = ai.defineFlow(
 export async function categorizePesticide(input: PesticideCategoryInput): Promise<PesticideCategoryOutput> {
     return await categorizePesticideFlow(input);
 }
-

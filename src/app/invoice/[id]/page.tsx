@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { useEffect, useState, useRef } from "react";
@@ -55,6 +56,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     const [pageUrl, setPageUrl] = useState('');
     const [printStyle, setPrintStyle] = useState<'a4' | 'thermal'>('a4');
     const [invoiceStyle, setInvoiceStyle] = useState('classic');
+    const [totalBuyers, setTotalBuyers] = useState(0);
 
 
     useEffect(() => {
@@ -94,6 +96,21 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                     title: "Invoice Not Found",
                     description: "The requested invoice was not found on this device."
                 });
+            }
+
+             // Calculate total unique growers for the season
+            if (typeof window !== 'undefined') {
+                const uniqueGrowers = new Set();
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key?.startsWith('party-')) {
+                        const party = JSON.parse(localStorage.getItem(key)!);
+                        if(party.type === 'Grower' || party.type === 'Both') {
+                            uniqueGrowers.add(party.name);
+                        }
+                    }
+                }
+                setTotalBuyers(uniqueGrowers.size);
             }
             
             setLoading(false);
@@ -259,6 +276,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         }
         
         doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6);
+        doc.text(`F.Co serviced ${totalBuyers} growers this season.`, margin, pageHeight - 5);
         doc.setFontSize(12);
         doc.text('Faisal', pageWidth - margin - 20, pageHeight - 20, { align: 'center' });
     
@@ -512,6 +531,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                         <div className="grid grid-cols-2 gap-x-4">
                             <div className="space-y-0.5 pr-4">
                                 <p><strong>Total Quantity:</strong> {totals.totalQty} (Patti: {totals.pattiQty}, Dabba: {totals.dabbaQty})</p>
+                                <p className="italic text-[10px] mt-1">F.Co serviced {totalBuyers} growers this season.</p>
                             </div>
                             <div className="space-y-0.5 border-l-2 border-green-700 pl-4 text-[10px]">
                                 <div className="flex justify-between"><span>Gross Sale:</span> <span className="font-semibold">₹{totals.grossSale.toFixed(2)}</span></div>
