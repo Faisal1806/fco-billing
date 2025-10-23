@@ -91,7 +91,7 @@ const defaultGrowers: { name: string, address: string }[] = [
     { name: 'Mohd. Shabaan Lone (Lama)', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Arif Lone (Uffa)', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Subhan Parry', address: 'R/o Nadihal Bla.' },
-    { name: 'GH. Mohiuddin Lone (Potty)', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Mohiuddin Lone (Poltry)', address: 'R/o Nadihal Bla.' },
     { name: 'Majoor Ahmad Lone ®', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Akbar Lone (Lama)', address: 'R/o Nadihal Bla.' },
     { name: 'Jaana ® B/P', address: 'R/o Nadihal Bla.' },
