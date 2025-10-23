@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import * as React from 'react';
@@ -203,6 +204,7 @@ export default function DashboardPage() {
         
         if (bikriDate.getFullYear() === currentYear) {
             const saleMonth = bikriDate.getMonth();
+            yearTotalExpenses += totalExpenses;
 
             if (bikri.date === todayStr) {
                 totalSaleValueToday += bikriNetSale;
@@ -217,7 +219,6 @@ export default function DashboardPage() {
             monthlySalesData[saleMonth] += bikriNetSale;
             
             yearGrossSales += grossSale;
-            yearTotalExpenses += totalExpenses;
             yearNetSales += bikriNetSale;
         }
     });
@@ -240,7 +241,7 @@ export default function DashboardPage() {
         }
     });
     
-    const grossProfitMargin = yearGrossSales > 0 ? ((yearNetSales / yearGrossSales) * 100).toFixed(2) : '0';
+    const grossProfitMargin = yearGrossSales > 0 ? ((yearNetSales / yearGrossSales) * 100) : 0;
 
     return {
         totalSaleValueToday,
@@ -395,12 +396,12 @@ export default function DashboardPage() {
         <div className="space-y-4">
              <h2 className="text-xl font-semibold tracking-wider text-muted-foreground">THIS YEAR'S SUMMARY</h2>
              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
-                <StatCard title="Today's Sales (Net)" value={`₹${stats?.totalSaleValueToday.toLocaleString('en-IN') ?? '0'}`} subtitle={`From ${stats?.pattiToday} Patti / ${stats?.dabbaToday} Dabba`} icon={TrendingUp} />
-                <StatCard title="This Month's Sales (Net)" value={`₹${stats?.monthlyTotalSales.toLocaleString('en-IN') ?? '0'}`} subtitle="Current calendar month" icon={Calendar} />
-                <StatCard title="This Year's Gross Sales" value={`₹${stats?.yearGrossSales.toLocaleString('en-IN') ?? '0'}`} subtitle="Total sale value this year" icon={IndianRupee} />
-                <StatCard title="This Year's Net Sales" value={`₹${stats?.yearNetSales.toLocaleString('en-IN') ?? '0'}`} subtitle="After all expenses" icon={IndianRupee} />
-                <StatCard title="Total Yearly Expenses" value={`₹${stats?.yearTotalExpenses.toLocaleString('en-IN') ?? '0'}`} subtitle="From all sales invoices" icon={IndianRupee} />
-                <StatCard title="Gross Profit Margin" value={`${stats?.grossProfitMargin}%`} subtitle="Net / Gross Sales" icon={TrendingUp} />
+                <StatCard title="Today's Sales (Net)" value={`₹${Math.round(stats?.totalSaleValueToday ?? 0).toLocaleString('en-IN')}`} subtitle={`From ${stats?.pattiToday} Patti / ${stats?.dabbaToday} Dabba`} icon={TrendingUp} />
+                <StatCard title="This Month's Sales (Net)" value={`₹${Math.round(stats?.monthlyTotalSales ?? 0).toLocaleString('en-IN')}`} subtitle="Current calendar month" icon={Calendar} />
+                <StatCard title="This Year's Gross Sales" value={`₹${Math.round(stats?.yearGrossSales ?? 0).toLocaleString('en-IN')}`} subtitle="Total sale value this year" icon={IndianRupee} />
+                <StatCard title="This Year's Net Sales" value={`₹${Math.round(stats?.yearNetSales ?? 0).toLocaleString('en-IN')}`} subtitle="After all expenses" icon={IndianRupee} />
+                <StatCard title="Total Yearly Expenses" value={`₹${Math.round(stats?.yearTotalExpenses ?? 0).toLocaleString('en-IN')}`} subtitle="From all sales invoices" icon={IndianRupee} />
+                <StatCard title="Gross Profit Margin" value={`${Math.round(stats?.grossProfitMargin ?? 0)}%`} subtitle="Net / Gross Sales" icon={TrendingUp} />
 
                 <StatCard title="Total Patti Received" value={stats?.yearPattiReceived.toLocaleString('en-IN') ?? '0'} subtitle="This year via Goods Receipt" icon={Receipt} />
                 <StatCard title="Total Dabba Received" value={stats?.yearDabbaReceived.toLocaleString('en-IN') ?? '0'} subtitle="This year via Goods Receipt" icon={Receipt} />
@@ -478,6 +479,8 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
 
     
 
