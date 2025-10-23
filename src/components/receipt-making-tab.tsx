@@ -13,10 +13,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
-import { PlusCircle, Trash2, FilePenLine, FilePlus, FileText } from 'lucide-react';
+import { PlusCircle, Trash2, FilePenLine, FilePlus, FileText, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
-import Lottie from 'lottie-react';
 import type { ReceiptExtractOutput } from '@/ai/flows/extract-receipt-flow';
 import { Badge } from '@/components/ui/badge';
 import { PartySelector } from './party-selector';
@@ -99,13 +98,13 @@ export function ReceiptMakingTab() {
   const [isEditing, setIsEditing] = React.useState(false);
   const [savedReceipts, setSavedReceipts] = React.useState<any[]>([]);
   const [userRole, setUserRole] = React.useState<string | null>(null);
-  const [loaderAnimation, setLoaderAnimation] = React.useState(null);
+  const [searchTerm, setSearchTerm] = React.useState('');
+
   
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
         setUserRole(localStorage.getItem('userRole'));
     }
-    fetch('/animations/forms/fco_loader.json').then(res => res.json()).then(setLoaderAnimation);
     fetchReceipts();
 
     const scannedDataJSON = localStorage.getItem('scannedReceiptData');
@@ -153,6 +152,16 @@ export function ReceiptMakingTab() {
     const currentYear = new Date().getFullYear();
     return savedReceipts.filter(r => new Date(r.date).getFullYear() === currentYear).length;
   }, [savedReceipts]);
+
+  const filteredReceipts = React.useMemo(() => {
+    if (!searchTerm) return savedReceipts;
+    const lowerCaseSearch = searchTerm.toLowerCase();
+    return savedReceipts.filter(receipt => 
+      receipt.no?.toLowerCase().includes(lowerCaseSearch) ||
+      receipt.customerName?.toLowerCase().includes(lowerCaseSearch)
+    );
+  }, [savedReceipts, searchTerm]);
+
 
   const handleEntryUpdate = (
     index: number,
@@ -357,15 +366,26 @@ export function ReceiptMakingTab() {
         </Card>
         <Card className="md:col-span-1 h-fit">
             <CardHeader>
-                <h3 className="text-lg font-medium flex items-center gap-2">
-                    Recent Receipts
-                    <Badge variant="secondary">{yearlyCount} This Year</Badge>
-                </h3>
+                 <div className="flex items-center justify-between gap-4">
+                    <h3 className="text-lg font-medium flex items-center gap-2">
+                        Recent Receipts
+                        <Badge variant="secondary">{yearlyCount} This Year</Badge>
+                    </h3>
+                    <div className="relative w-full max-w-[150px]">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                            placeholder="Search..." 
+                            className="pl-8"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                </div>
             </CardHeader>
             <CardContent>
                 <ScrollArea className="h-96">
                     <div className="space-y-2">
-                        {savedReceipts.map(receipt => (
+                        {filteredReceipts.map(receipt => (
                             <div key={receipt.no} className="flex justify-between items-center p-2 border rounded-md">
                                 <div>
                                     <p className="font-medium">Receipt #{receipt.no}</p>
@@ -384,11 +404,9 @@ export function ReceiptMakingTab() {
                                 </div>
                             </div>
                         ))}
-                         {savedReceipts.length === 0 && (!loaderAnimation ? (
-                           <p className="text-sm text-muted-foreground text-center">Loading...</p>
-                         ) : (
+                         {savedReceipts.length === 0 && (
                            <p className="text-sm text-muted-foreground text-center">No recent receipts found.</p>
-                         ))}
+                         )}
                     </div>
                 </ScrollArea>
             </CardContent>

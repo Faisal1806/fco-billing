@@ -13,10 +13,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
-import { PlusCircle, Trash2, FilePenLine, FilePlus, FileText } from 'lucide-react';
+import { PlusCircle, Trash2, FilePenLine, FilePlus, FileText, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
-import Lottie from 'lottie-react';
 import { saveDocument, deleteDocument } from '@/lib/actions';
 import { Badge } from '@/components/ui/badge';
 import { PartySelector } from './party-selector';
@@ -85,6 +84,7 @@ export function ChallanMakingTab() {
   const [isEditing, setIsEditing] = React.useState(false);
   const [savedChallans, setSavedChallans] = React.useState<any[]>([]);
   const [userRole, setUserRole] = React.useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = React.useState('');
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -117,6 +117,17 @@ export function ChallanMakingTab() {
     const currentYear = new Date().getFullYear();
     return savedChallans.filter(c => new Date(c.date).getFullYear() === currentYear).length;
   }, [savedChallans]);
+
+  const filteredChallans = React.useMemo(() => {
+    if (!searchTerm) return savedChallans;
+    const lowerCaseSearch = searchTerm.toLowerCase();
+    return savedChallans.filter(challan => 
+      challan.challanNo?.toLowerCase().includes(lowerCaseSearch) ||
+      challan.toMs?.toLowerCase().includes(lowerCaseSearch) ||
+      challan.vehicleNo?.toLowerCase().includes(lowerCaseSearch)
+    );
+  }, [savedChallans, searchTerm]);
+
 
   const handleEntryUpdate = (
     index: number,
@@ -352,15 +363,26 @@ export function ChallanMakingTab() {
         </Card>
         <Card className="lg:col-span-1 h-fit">
             <CardHeader>
-                <h3 className="text-lg font-medium flex items-center gap-2">
-                    Recent Delivery Notes
+                <div className="flex items-center justify-between gap-4">
+                   <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-medium">Recent Delivery Notes</h3>
                     <Badge variant="secondary">{yearlyCount} This Year</Badge>
-                </h3>
+                   </div>
+                   <div className="relative w-full max-w-xs">
+                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                     <Input 
+                        placeholder="Search notes..." 
+                        className="pl-8"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                   </div>
+                </div>
             </CardHeader>
             <CardContent>
                 <ScrollArea className="h-96">
                     <div className="space-y-2">
-                        {savedChallans.map(challan => (
+                        {filteredChallans.map(challan => (
                             <div key={challan.id} className="flex justify-between items-center p-2 border rounded-md">
                                 <div>
                                     <p className="font-medium">Note #{challan.challanNo}</p>

@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
-import { PlusCircle, Trash2, FilePenLine, FilePlus, FlaskConical, FileText } from 'lucide-react';
+import { PlusCircle, Trash2, FilePenLine, FilePlus, FlaskConical, FileText, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
 import { PartySelector } from './party-selector';
@@ -81,6 +81,8 @@ export function PesticideBillTab() {
   const [isEditing, setIsEditing] = React.useState(false);
   const [savedBills, setSavedBills] = React.useState<any[]>([]);
   const [userRole, setUserRole] = React.useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = React.useState('');
+
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -103,6 +105,15 @@ export function PesticideBillTab() {
   React.useEffect(() => {
     fetchBills();
   }, []);
+
+  const filteredBills = React.useMemo(() => {
+    if (!searchTerm) return savedBills;
+    const lowerCaseSearch = searchTerm.toLowerCase();
+    return savedBills.filter(bill => 
+      bill.no?.toLowerCase().includes(lowerCaseSearch) ||
+      bill.customerName?.toLowerCase().includes(lowerCaseSearch)
+    );
+  }, [savedBills, searchTerm]);
 
   const handleEntryUpdate = (
     index: number,
@@ -302,12 +313,23 @@ export function PesticideBillTab() {
         </Card>
          <Card className="md:col-span-1 h-fit">
             <CardHeader>
-                <h3 className="text-lg font-medium">Recent Pesticide Bills</h3>
+                 <div className="flex items-center justify-between gap-4">
+                    <h3 className="text-lg font-medium">Recent Pesticide Bills</h3>
+                    <div className="relative w-full max-w-[150px]">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                            placeholder="Search bills..." 
+                            className="pl-8"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                </div>
             </CardHeader>
             <CardContent>
                 <ScrollArea className="h-96">
                     <div className="space-y-2">
-                        {savedBills.map(bill => (
+                        {filteredBills.map(bill => (
                             <div key={bill.no} className="flex justify-between items-center p-2 border rounded-md">
                                 <div>
                                     <p className="font-medium">Bill #{bill.no}</p>

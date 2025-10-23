@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, FileText } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, FileText, Search } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { saveDocument, deleteDocument } from '@/lib/actions';
 import { Badge } from '@/components/ui/badge';
@@ -45,6 +45,7 @@ export default function PurchasesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [savedPurchases, setSavedPurchases] = useState<any[]>([]);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -75,6 +76,15 @@ export default function PurchasesPage() {
     const currentYear = new Date().getFullYear();
     return savedPurchases.filter(p => new Date(p.date).getFullYear() === currentYear).length;
   }, [savedPurchases]);
+
+  const filteredPurchases = useMemo(() => {
+    if (!searchTerm) return savedPurchases;
+    const lowerCaseSearch = searchTerm.toLowerCase();
+    return savedPurchases.filter(purchase => 
+      purchase.billNo?.toLowerCase().includes(lowerCaseSearch) ||
+      purchase.growerName?.toLowerCase().includes(lowerCaseSearch)
+    );
+  }, [savedPurchases, searchTerm]);
 
 
   const totals = useMemo(() => {
@@ -370,10 +380,21 @@ export default function PurchasesPage() {
         </Card>
         <Card className="lg:col-span-1 h-fit">
             <CardHeader>
-                <h3 className="text-lg font-medium flex items-center gap-2">
-                  Saved Purchases
-                  {!isLoading && <Badge variant="secondary">{yearlyCount} This Year</Badge>}
-                </h3>
+                 <div className="flex items-center justify-between gap-4">
+                    <h3 className="text-lg font-medium flex items-center gap-2">
+                      Saved Purchases
+                      {!isLoading && <Badge variant="secondary">{yearlyCount} This Year</Badge>}
+                    </h3>
+                    <div className="relative w-full max-w-[150px]">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                            placeholder="Search..." 
+                            className="pl-8"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                </div>
             </CardHeader>
             <CardContent>
                 <ScrollArea className="h-96">
@@ -382,8 +403,8 @@ export default function PurchasesPage() {
                              <div className="flex items-center justify-center p-4">
                                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                              </div>
-                        ) : savedPurchases.length > 0 ? (
-                            savedPurchases.map(purchase => (
+                        ) : filteredPurchases.length > 0 ? (
+                            filteredPurchases.map(purchase => (
                             <div key={purchase.billNo} className="flex justify-between items-center p-2 border rounded-md hover:bg-muted">
                                 <div>
                                     <p className="font-medium">Bill #{purchase.billNo}</p>
