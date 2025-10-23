@@ -38,6 +38,8 @@ import { Badge } from '@/components/ui/badge';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { saveDocument, deleteDocument } from '@/lib/actions';
+
 
 const PARTY_STORAGE_PREFIX = 'party-';
 
@@ -157,21 +159,24 @@ export default function PartiesPage() {
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if(key?.startsWith('invoice-') || key?.startsWith('purchase-') || key?.startsWith('advance-') || key?.startsWith('bikri-')) {
-             allTransactions.push(JSON.parse(localStorage.getItem(key)!));
+             try {
+                allTransactions.push(JSON.parse(localStorage.getItem(key)!));
+             } catch(e) { console.error("Failed to parse transaction:", key, e)}
         }
     }
 
     partiesMap.forEach((party, canonical) => {
-        const stats = { balance: 0, totalBusiness: 0, lastPurchaseDate: null, transactionCount: 0 };
+        const stats = { balance: 0, totalBusiness: 0, lastActivityDate: null, transactionCount: 0 };
         const partyTransactions = allTransactions
-            .filter(t => (t.customerName && getCanonicalName(t.customerName) === canonical) || 
-                         (t.growerName && getCanonicalName(t.growerName) === canonical) || 
-                         (t.partyName && getCanonicalName(t.partyName) === canonical));
+            .filter(t => {
+                const partyName = t.customerName || t.growerName || t.partyName || t.market;
+                return partyName && getCanonicalName(partyName) === canonical;
+            });
         
         partyTransactions.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
         if (partyTransactions.length > 0) {
-            stats.lastPurchaseDate = partyTransactions[partyTransactions.length - 1].date;
+            stats.lastActivityDate = partyTransactions[partyTransactions.length - 1].date;
         }
         stats.transactionCount = partyTransactions.length;
 
@@ -181,6 +186,7 @@ export default function PartiesPage() {
                 stats.totalBusiness += tx.totals.netSale;
             } else if (tx.id.startsWith('purchase-')) {
                 stats.balance -= tx.totals.grandTotal;
+                 stats.totalBusiness += tx.totals.grandTotal;
             } else if (tx.id.startsWith('advance-')) {
                 stats.balance += tx.type === 'Advance Given' ? -tx.amount : tx.amount;
             } else if (tx.id.startsWith('bikri-')) {
@@ -334,7 +340,7 @@ export default function PartiesPage() {
     const balance = stats?.balance || 0;
     
     let balanceText, balanceColor;
-    if (selectedParty.type === 'Grower') {
+    if (selectedParty.type === 'Grower' || selectedParty.type === 'Both') {
         balanceText = balance >= 0 ? 'Payable to Grower' : 'Advance to Grower';
         balanceColor = balance >= 0 ? 'text-red-500' : 'text-green-500';
     } else {
@@ -352,9 +358,9 @@ export default function PartiesPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
                     <StatCard icon={Award} title="F.Co Loyalty Points" value={`${loyaltyPoints} Points`} color="text-yellow-500" />
                     <StatCard icon={TrendingUp} title="Total Business" value={`₹${(stats?.totalBusiness || 0).toLocaleString('en-IN')}`} />
-                    <StatCard icon={CalendarDays} title="Last Activity" value={stats?.lastPurchaseDate ? new Date(stats.lastPurchaseDate).toLocaleDateString('en-GB') : 'N/A'} />
+                    <StatCard icon={CalendarDays} title="Last Activity" value={stats?.lastActivityDate ? new Date(stats.lastActivityDate).toLocaleDateString('en-GB') : 'N/A'} />
                     <div className="md:col-span-2">
-                       <StatCard icon={Users} title="Current Dues" value={`₹${Math.abs(balance).toLocaleString('en-IN')}`} color={balanceColor.replace('text-', 'text-')} />
+                       <StatCard icon={Users} title="Current Dues" value={`₹${Math.abs(balance).toLocaleString('en-IN')}`} color={balanceColor.replace('text-', '')} />
                        <p className={`text-center mt-1 text-sm font-semibold ${balanceColor}`}>{balanceText}</p>
                     </div>
                 </div>
@@ -486,7 +492,7 @@ export default function PartiesPage() {
               {filteredParties.map((party, index) => {
                 const balance = partyStats[getCanonicalName(party.name)]?.balance || 0;
                 let balanceText, balanceColor;
-                if (party.type === 'Grower') {
+                if (party.type === 'Grower' || party.type === 'Both') {
                     balanceText = balance >= 0 ? 'Payable' : 'Advance';
                     balanceColor = balance >= 0 ? 'text-red-500' : 'text-green-500';
                 } else {

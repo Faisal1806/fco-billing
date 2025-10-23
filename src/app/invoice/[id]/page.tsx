@@ -56,7 +56,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     const [pageUrl, setPageUrl] = useState('');
     const [printStyle, setPrintStyle] = useState<'a4' | 'thermal'>('a4');
     const [invoiceStyle, setInvoiceStyle] = useState('classic');
-    const [totalBuyers, setTotalBuyers] = useState(0);
+    const [totalGrowers, setTotalGrowers] = useState(0);
 
 
     useEffect(() => {
@@ -104,13 +104,15 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 for (let i = 0; i < localStorage.length; i++) {
                     const key = localStorage.key(i);
                     if (key?.startsWith('party-')) {
-                        const party = JSON.parse(localStorage.getItem(key)!);
-                        if(party.type === 'Grower' || party.type === 'Both') {
-                            uniqueGrowers.add(party.name);
-                        }
+                        try {
+                            const party = JSON.parse(localStorage.getItem(key)!);
+                            if(party.type === 'Grower' || party.type === 'Both') {
+                                uniqueGrowers.add(party.name);
+                            }
+                        } catch(e) { console.error('Failed to parse party for stats', e); }
                     }
                 }
-                setTotalBuyers(uniqueGrowers.size);
+                setTotalGrowers(uniqueGrowers.size);
             }
             
             setLoading(false);
@@ -277,7 +279,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(6);
-        doc.text(`F.Co serviced ${totalBuyers} growers this season.`, margin, pageHeight - 5);
+        doc.text(`F.Co App serviced ${totalGrowers} growers this season.`, margin, pageHeight - 5);
         doc.setFontSize(12);
         doc.text('Faisal', pageWidth - margin - 20, pageHeight - 20, { align: 'center' });
     
@@ -361,7 +363,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 <header className="bg-gradient-to-r from-green-500/80 to-teal-500/80 text-white p-4 rounded-xl shadow-lg">
                     <div className="flex justify-between items-center">
                         <div className="text-left text-sm font-bold flex items-center gap-2">
-                           <Logo className="h-8 w-8"/> F.Co
+                           <Logo className="h-8 w-8"/> F.Co App
                         </div>
                         <div className="text-center">
                             <h2 className="text-xl font-bold tracking-wider">FIRDOUS AHMAD & COMPANY</h2>
@@ -369,7 +371,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                             <p className="text-[8px] opacity-80">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
                         </div>
                         <div className="text-right text-sm font-bold flex items-center gap-2">
-                           F.Co <Logo className="h-8 w-8"/>
+                           F.Co App <Logo className="h-8 w-8"/>
                         </div>
                     </div>
                 </header>
@@ -470,7 +472,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 <div className="relative z-10 flex flex-col flex-grow">
                     <header className="text-center border-b-2 border-green-700 pb-1">
                         <div className="flex justify-between items-start">
-                            <div className="text-left text-xs font-bold"><p>🍎 F.Co</p></div>
+                            <div className="text-left text-xs font-bold"><p>🍎 F.Co App</p></div>
                             <div className="flex-grow">
                                 <div className="text-[8px] leading-tight">
                                     <p className="font-bold">Prop: Firdous Ahmad Lone (Nadihal)</p>
@@ -480,7 +482,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                                 <p className="text-[10px] font-semibold">Fruit Merchants & Commission Agents</p>
                                 <p className="text-[8px]">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
                             </div>
-                            <div className="text-right text-xs font-bold"><p>🍎 F.Co</p></div>
+                            <div className="text-right text-xs font-bold"><p>🍎 F.Co App</p></div>
                         </div>
                     </header>
                     <section className="flex justify-between items-end my-1 text-sm">
@@ -531,7 +533,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                         <div className="grid grid-cols-2 gap-x-4">
                             <div className="space-y-0.5 pr-4">
                                 <p><strong>Total Quantity:</strong> {totals.totalQty} (Patti: {totals.pattiQty}, Dabba: {totals.dabbaQty})</p>
-                                <p className="italic text-[10px] mt-1">F.Co serviced {totalBuyers} growers this season.</p>
+                                {totalGrowers > 0 && <p className="italic text-[10px] mt-1">F.Co App serviced {totalGrowers} growers this season.</p>}
                             </div>
                             <div className="space-y-0.5 border-l-2 border-green-700 pl-4 text-[10px]">
                                 <div className="flex justify-between"><span>Gross Sale:</span> <span className="font-semibold">₹{totals.grossSale.toFixed(2)}</span></div>

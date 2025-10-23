@@ -201,6 +201,7 @@ export default function DashboardPage() {
         const bikriDate = new Date(bikri.date);
         if (bikriDate.getFullYear() === currentYear) {
             const saleMonth = bikriDate.getMonth();
+            const grossAmount = bikri.calculation.grossSale || 0;
             const netAmount = bikri.bikriType === 'fcoStock' 
                 ? (bikri.calculation.netProfitOrLoss || 0) 
                 : (bikri.calculation.netSalePayableToGrower || 0);
@@ -213,10 +214,9 @@ export default function DashboardPage() {
                 monthlyTotalSales += netAmount;
             }
 
-            monthlySalesData[saleMonth] += netAmount;
+            monthlySalesData[saleMonth] += grossAmount; // For Bikris, it's better to track gross on monthly chart
             
-            yearGrossSales += bikri.calculation.grossSale || 0;
-            // Add outside expenses to the overall total expenses, but not local
+            yearGrossSales += grossAmount;
             yearTotalExpenses += bikri.calculation.totalExpenses || 0;
             yearNetSales += netAmount;
         }
@@ -251,6 +251,7 @@ export default function DashboardPage() {
         monthlySalesData,
         yearGrossSales,
         yearLocalExpenses, // Use this for the specific card
+        yearTotalExpenses,
         yearNetSales,
         yearPattiSold,
         yearDabbaSold,
@@ -399,7 +400,7 @@ export default function DashboardPage() {
                 <StatCard title="This Month's Sales (Net)" value={`₹${stats?.monthlyTotalSales.toLocaleString('en-IN') ?? '0'}`} subtitle="Current calendar month" icon={Calendar} />
                 <StatCard title="This Year's Gross Sales" value={`₹${stats?.yearGrossSales.toLocaleString('en-IN') ?? '0'}`} subtitle="Total sale value this year" icon={IndianRupee} />
                 <StatCard title="This Year's Net Sales" value={`₹${stats?.yearNetSales.toLocaleString('en-IN') ?? '0'}`} subtitle="After all expenses" icon={IndianRupee} />
-                <StatCard title="Total Expenses" value={`₹${stats?.yearLocalExpenses.toLocaleString('en-IN') ?? '0'}`} subtitle="From local sales" icon={IndianRupee} />
+                <StatCard title="Total Local Expenses" value={`₹${stats?.yearLocalExpenses.toLocaleString('en-IN') ?? '0'}`} subtitle="From local sales invoices" icon={IndianRupee} />
                 <StatCard title="Gross Profit Margin" value={`${stats?.yearGrossSales ? ((stats.yearNetSales / stats.yearGrossSales) * 100).toFixed(2) : '0'}%`} subtitle="Net / Gross Sales" icon={TrendingUp} />
 
                 <StatCard title="Total Patti Received" value={stats?.yearPattiReceived.toLocaleString('en-IN') ?? '0'} subtitle="This year via Goods Receipt" icon={Receipt} />
@@ -478,5 +479,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
