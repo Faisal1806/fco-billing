@@ -166,7 +166,7 @@ export default function PartiesPage() {
     }
 
     partiesMap.forEach((party, canonical) => {
-        const stats = { balance: 0, totalBusiness: 0, lastActivityDate: null, transactionCount: 0 };
+        const stats = { balance: 0, totalBusiness: 0, totalSales: 0, lastActivityDate: null, transactionCount: 0 };
         const partyTransactions = allTransactions
             .filter(t => {
                 const partyName = t.customerName || t.growerName || t.partyName || t.market;
@@ -184,15 +184,17 @@ export default function PartiesPage() {
             if (tx.id.startsWith('invoice-')) {
                 stats.balance += tx.totals.netSale;
                 stats.totalBusiness += tx.totals.netSale;
+                stats.totalSales += tx.totals.grossSale;
             } else if (tx.id.startsWith('purchase-')) {
                 stats.balance -= tx.totals.grandTotal;
-                 stats.totalBusiness += tx.totals.grandTotal;
+                stats.totalBusiness += tx.totals.grandTotal;
             } else if (tx.id.startsWith('advance-')) {
                 stats.balance += tx.type === 'Advance Given' ? -tx.amount : tx.amount;
             } else if (tx.id.startsWith('bikri-')) {
                 const amount = tx.bikriType === 'growerForwarding' ? tx.calculation.netSalePayableToGrower : tx.calculation.netProfitOrLoss;
                 stats.balance += amount;
                 stats.totalBusiness += tx.calculation.grossSale;
+                stats.totalSales += tx.calculation.grossSale;
             }
         });
         localPartyStats.set(canonical, stats);
@@ -482,15 +484,18 @@ export default function PartiesPage() {
                 <TableHead className="w-[50px]">S.No.</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Type</TableHead>
-                <TableHead>Phone</TableHead>
                 <TableHead>Address</TableHead>
+                <TableHead className="text-right">Total Sales</TableHead>
                 <TableHead className="text-right">Balance</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredParties.map((party, index) => {
-                const balance = partyStats[getCanonicalName(party.name)]?.balance || 0;
+                const stats = partyStats[getCanonicalName(party.name)];
+                const balance = stats?.balance || 0;
+                const totalSales = stats?.totalSales || 0;
+
                 let balanceText, balanceColor;
                 if (party.type === 'Grower' || party.type === 'Both') {
                     balanceText = balance >= 0 ? 'Payable' : 'Advance';
@@ -505,8 +510,10 @@ export default function PartiesPage() {
                   <TableCell>{index + 1}</TableCell>
                   <TableCell className="font-medium">{party.name}</TableCell>
                   <TableCell><PartyTypeBadge type={party.type} /></TableCell>
-                  <TableCell>{party.phone}</TableCell>
                   <TableCell>{party.address}</TableCell>
+                  <TableCell className="text-right font-mono">
+                    ₹{totalSales.toFixed(2)}
+                  </TableCell>
                   <TableCell className={`text-right font-mono ${balanceColor}`}>
                     {balance >= 0 ? '₹' : '-₹'}{Math.abs(balance).toFixed(2)}
                     <p className="text-xs">{balanceText}</p>
@@ -538,3 +545,4 @@ export default function PartiesPage() {
     </>
   );
 }
+
