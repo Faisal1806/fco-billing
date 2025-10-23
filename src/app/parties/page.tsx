@@ -166,7 +166,7 @@ export default function PartiesPage() {
     }
 
     partiesMap.forEach((party, canonical) => {
-        const stats = { balance: 0, totalBusiness: 0, totalSales: 0, lastActivityDate: null, transactionCount: 0 };
+        const stats = { balance: 0, totalBusiness: 0, netSales: 0, lastActivityDate: null, transactionCount: 0 };
         const partyTransactions = allTransactions
             .filter(t => {
                 const partyName = t.customerName || t.growerName || t.partyName || t.market;
@@ -184,7 +184,7 @@ export default function PartiesPage() {
             if (tx.id.startsWith('invoice-')) {
                 stats.balance += tx.totals.netSale;
                 stats.totalBusiness += tx.totals.netSale;
-                stats.totalSales += tx.totals.grossSale;
+                stats.netSales += tx.totals.netSale;
             } else if (tx.id.startsWith('purchase-')) {
                 stats.balance -= tx.totals.grandTotal;
                 stats.totalBusiness += tx.totals.grandTotal;
@@ -194,7 +194,7 @@ export default function PartiesPage() {
                 const amount = tx.bikriType === 'growerForwarding' ? tx.calculation.netSalePayableToGrower : tx.calculation.netProfitOrLoss;
                 stats.balance += amount;
                 stats.totalBusiness += tx.calculation.grossSale;
-                stats.totalSales += tx.calculation.grossSale;
+                stats.netSales += amount;
             }
         });
         localPartyStats.set(canonical, stats);
@@ -485,7 +485,7 @@ export default function PartiesPage() {
                 <TableHead>Name</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Address</TableHead>
-                <TableHead className="text-right">Total Sales</TableHead>
+                <TableHead className="text-right">Net Sales</TableHead>
                 <TableHead className="text-right">Balance</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -494,7 +494,7 @@ export default function PartiesPage() {
               {filteredParties.map((party, index) => {
                 const stats = partyStats[getCanonicalName(party.name)];
                 const balance = stats?.balance || 0;
-                const totalSales = stats?.totalSales || 0;
+                const netSales = stats?.netSales || 0;
 
                 let balanceText, balanceColor;
                 if (party.type === 'Grower' || party.type === 'Both') {
@@ -512,7 +512,7 @@ export default function PartiesPage() {
                   <TableCell><PartyTypeBadge type={party.type} /></TableCell>
                   <TableCell>{party.address}</TableCell>
                   <TableCell className="text-right font-mono">
-                    ₹{totalSales.toFixed(2)}
+                    ₹{netSales.toFixed(2)}
                   </TableCell>
                   <TableCell className={`text-right font-mono ${balanceColor}`}>
                     {balance >= 0 ? '₹' : '-₹'}{Math.abs(balance).toFixed(2)}
@@ -545,4 +545,5 @@ export default function PartiesPage() {
     </>
   );
 }
+
 
