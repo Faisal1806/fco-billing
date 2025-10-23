@@ -50,11 +50,7 @@ interface Bikri {
         netProfitOrLoss?: number;
         netSalePayableToGrower?: number;
     };
-    purchaseEntries: {
-        type: 'Patti' | 'Dabba';
-        qty: number;
-    }[];
-     saleEntries: {
+    saleEntries: {
         type: 'Patti' | 'Dabba';
         qty: number;
     }[];
@@ -176,22 +172,23 @@ export default function DashboardPage() {
         const saleDate = new Date(sale.date);
         const saleYear = saleDate.getFullYear();
         const saleMonth = saleDate.getMonth();
+        const netSale = sale.totals.netSale || 0;
 
         if (sale.date === todayStr) {
-            totalSaleValueToday += sale.totals.netSale || 0;
+            totalSaleValueToday += netSale;
             pattiToday += sale.totals.pattiQty || 0;
             dabbaToday += sale.totals.dabbaQty || 0;
         }
         
         if (saleYear === currentYear) {
             if (saleMonth === currentMonth) {
-                monthlyTotalSales += sale.totals.netSale || 0;
+                monthlyTotalSales += netSale;
             }
-            monthlySalesData[saleMonth] += sale.totals.netSale || 0;
+            monthlySalesData[saleMonth] += netSale;
             
             yearGrossSales += sale.totals.grossSale || 0;
             yearLocalExpenses += sale.totals.totalExpenses || 0;
-            yearNetSales += sale.totals.netSale || 0;
+            yearNetSales += netSale;
             yearPattiSold += sale.totals.pattiQty || 0;
             yearDabbaSold += sale.totals.dabbaQty || 0;
         }
@@ -199,31 +196,28 @@ export default function DashboardPage() {
     
     allBikris.forEach(bikri => {
         const bikriDate = new Date(bikri.date);
-        const grossAmount = bikri.calculation.grossSale || 0;
-        let netAmountForCalc = 0;
+        const grossSale = bikri.calculation.grossSale || 0;
+        const totalExpenses = bikri.calculation.totalExpenses || 0;
+        const bikriNetSale = grossSale - totalExpenses; // Net sale is always Gross - Expenses for a Bikri
         
-        if (bikri.bikriType === 'fcoStock') {
-            netAmountForCalc = bikri.calculation.netProfitOrLoss || 0;
-        } else { // growerForwarding
-            netAmountForCalc = bikri.calculation.netSalePayableToGrower || 0;
-        }
-
         if (bikriDate.getFullYear() === currentYear) {
             const saleMonth = bikriDate.getMonth();
 
             if (bikri.date === todayStr) {
-                totalSaleValueToday += netAmountForCalc;
+                totalSaleValueToday += bikriNetSale;
+                pattiToday += bikri.saleEntries?.filter(e => e.type === 'Patti').reduce((acc, e) => acc + e.qty, 0) || 0;
+                dabbaToday += bikri.saleEntries?.filter(e => e.type === 'Dabba').reduce((acc, e) => acc + e.qty, 0) || 0;
             }
             
             if (saleMonth === currentMonth) {
-                monthlyTotalSales += netAmountForCalc;
+                monthlyTotalSales += bikriNetSale;
             }
 
-            monthlySalesData[saleMonth] += grossAmount;
+            monthlySalesData[saleMonth] += bikriNetSale;
             
-            yearGrossSales += grossAmount;
-            yearTotalExpenses += bikri.calculation.totalExpenses || 0;
-            yearNetSales += netAmountForCalc;
+            yearGrossSales += grossSale;
+            yearTotalExpenses += totalExpenses;
+            yearNetSales += bikriNetSale;
         }
     });
 
@@ -486,5 +480,7 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
 
     
