@@ -22,7 +22,7 @@ Here are the available data collections and their queryable fields:
   - Fields: no (string), date (string, YYYY-MM-DD), customerName (string), totalNugs (number)
 
 - **challans** (also called delivery notes)
-  - Fields: challanNo (string), date (string, YYYY-MM-DD), toMs (string), vehicleNo (string), driverName (string), totalPetti (number), totalDabba (number)
+  _ Fields: challanNo (string), date (string, YYYY-MM-DD), toMs (string), vehicleNo (string), driverName (string), totalPetti (number), totalDabba (number)
 
 - **products**
   - Fields: name (string), category (string), stock (number), supplier (string)
@@ -75,9 +75,8 @@ const smartSearchFlow = ai.defineFlow(
         output: {
           schema: SmartSearchOutputSchema,
         },
-        config: {
-          apiKey: input.apiKey,
-        }
+        // Pass apiKey at the top level, not inside a nested config object.
+        apiKey: input.apiKey,
       });
       if (!output) {
         return { collection: 'invoices', filters: [], error: 'The AI could not process the query. Please try rephrasing.' };

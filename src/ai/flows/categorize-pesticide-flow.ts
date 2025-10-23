@@ -24,9 +24,8 @@ Product Name: ${input.name}`,
             output: {
                 schema: PesticideCategoryOutputSchema,
             },
-            config: {
-                apiKey: input.apiKey,
-            }
+            // Pass apiKey at the top level, not inside a nested config object.
+            apiKey: input.apiKey,
         });
         if (!output) {
             throw new Error('AI failed to categorize the product.');
