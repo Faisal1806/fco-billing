@@ -44,6 +44,8 @@ interface Receipt {
 interface Bikri {
     id: string;
     date: string;
+    growerName?: string;
+    market?: string;
     bikriType?: 'fcoStock' | 'growerForwarding';
     calculation: {
         grossSale: number;
@@ -106,8 +108,6 @@ export default function DashboardPage() {
   const [allReceipts, setAllReceipts] = useState<Receipt[]>([]);
   const [allChallans, setAllChallans] = useState<Challan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showAllGrowers, setShowAllGrowers] = React.useState(false);
-
 
   useEffect(() => {
     function fetchData() {
@@ -267,24 +267,36 @@ export default function DashboardPage() {
   
   const growerProfits = useMemo(() => {
     if (isLoading) return [];
-    const profitsByGrower: { [name: string]: { name: string, profit: number } } = {};
+    
+    const profitsByGrower: { [name: string]: { name: string; profit: number } } = {};
     const currentYear = new Date().getFullYear();
 
+    const addProfit = (name: string, amount: number) => {
+        if (!name || !amount) return;
+        if (!profitsByGrower[name]) {
+            profitsByGrower[name] = { name: name, profit: 0 };
+        }
+        profitsByGrower[name].profit += amount;
+    };
+
+    // Process local invoices
     allInvoices.forEach(sale => {
         const saleYear = new Date(sale.date).getFullYear();
-        if (saleYear === currentYear && sale.customerName && sale.totals.netSale) {
-            const name = sale.customerName;
-            if (!profitsByGrower[name]) {
-                profitsByGrower[name] = { name: name, profit: 0 };
-            }
-            profitsByGrower[name].profit += sale.totals.netSale;
+        if (saleYear === currentYear) {
+            addProfit(sale.customerName, sale.totals.netSale);
+        }
+    });
+
+    // Process outside sales (bikris)
+    allBikris.forEach(bikri => {
+        const bikriYear = new Date(bikri.date).getFullYear();
+        if (bikriYear === currentYear && bikri.bikriType === 'growerForwarding' && bikri.growerName) {
+            addProfit(bikri.growerName, bikri.calculation.netSalePayableToGrower || 0);
         }
     });
 
     return Object.values(profitsByGrower).sort((a, b) => b.profit - a.profit);
-  }, [allInvoices, isLoading]);
-
-  const displayedGrowers = showAllGrowers ? growerProfits : growerProfits.slice(0, 10);
+  }, [allInvoices, allBikris, isLoading]);
 
 
   if (isLoading) {
@@ -479,11 +491,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
-
-    
-
-    
-
-    
