@@ -26,11 +26,10 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import { PlusCircle, Edit, Trash2, Users, Search, FileDown, Loader2, Leaf, ShoppingCart, Handshake, Award, Star, TrendingUp, CalendarDays, Gift, ListChecks } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Users, Search, FileDown, Loader2, Leaf, ShoppingCart, Handshake, Award, Star, TrendingUp, CalendarDays, Gift, ListChecks, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -160,14 +159,18 @@ export default function PartiesPage() {
     const allTransactions: any[] = [];
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        const txId = key?.replace('invoice-','').replace('purchase-','').replace('advance-','').replace('bikri-','');
-        if(key?.startsWith('invoice-') || key?.startsWith('purchase-') || key?.startsWith('advance-') || key?.startsWith('bikri-')) {
+        if (!key) continue;
+
+        const prefixes = ['invoice-', 'purchase-', 'advance-', 'bikri-'];
+        const matchingPrefix = prefixes.find(p => key.startsWith(p));
+
+        if (matchingPrefix) {
              try {
                 const tx = JSON.parse(localStorage.getItem(key)!);
-                tx.id = tx.id || txId;
-                if (tx.id) {
-                    allTransactions.push(tx);
+                if (!tx.id) {
+                    tx.id = key;
                 }
+                allTransactions.push(tx);
              } catch(e) { console.error("Failed to parse transaction:", key, e)}
         }
     }
@@ -185,7 +188,7 @@ export default function PartiesPage() {
     });
 
     partiesMap.forEach((party, canonical) => {
-        const stats = { balance: 0, netSales: 0, lastActivityDate: null, transactionCount: 0, loyaltyPoints: 0, tier: 'Bronze' };
+        const stats = { balance: 0, netSales: 0, lastActivityDate: null, transactionCount: 0, loyaltyPoints: 0, tier: 'Bronze', lastRedemptionDate: null };
         const partyTransactions = allTransactions
             .filter(t => {
                 if(!t.id) return false;
@@ -208,38 +211,44 @@ export default function PartiesPage() {
         partyTransactions.forEach(tx => {
             let saleAmount = 0;
             if (tx.id.startsWith('invoice-')) { 
-                stats.balance += tx.totals.netSale || 0;
-                saleAmount = tx.totals.netSale || 0;
+                const sale = tx.totals?.netSale || 0;
+                stats.balance += sale;
+                saleAmount = sale;
             } else if (tx.id.startsWith('purchase-')) {
-                stats.balance -= tx.totals.grandTotal || 0;
+                stats.balance -= tx.totals?.grandTotal || 0;
             } else if (tx.id.startsWith('advance-')) {
                 if (tx.type === 'Advance Given') {
                     stats.balance -= tx.amount || 0;
                 } else { // Repayment or Discount
                     stats.balance += tx.amount || 0;
                 }
+                if (tx.type === 'Discount') {
+                    stats.lastRedemptionDate = tx.date; // Tracks the most recent discount date
+                }
             } else if (tx.id.startsWith('bikri-')) {
                 if (tx.bikriType === 'growerForwarding' && tx.growerName && getCanonicalName(tx.growerName) === canonical) {
-                    const payable = tx.calculation.netSalePayableToGrower || 0;
+                    const payable = tx.calculation?.netSalePayableToGrower || 0;
                     stats.balance += payable;
                     saleAmount = payable;
                 } else if (party.type === 'Outside Party' && tx.bikriType === 'fcoStock'){ // Profit/loss for outside parties
-                    stats.balance += tx.calculation.netProfitOrLoss || 0;
+                    stats.balance += tx.calculation?.netProfitOrLoss || 0;
                 }
             }
             stats.netSales += saleAmount;
         });
 
         // Tier-based Loyalty Points Calculation
-        let rewardPercentage = 0.01; // Bronze
         if (stats.netSales > 150000) {
             stats.tier = 'Gold';
-            rewardPercentage = 0.02; // 2%
+            stats.loyaltyPoints = Math.floor(stats.netSales * 0.02);
         } else if (stats.netSales > 50000) {
             stats.tier = 'Silver';
-            rewardPercentage = 0.015; // 1.5%
+            stats.loyaltyPoints = Math.floor(stats.netSales * 0.015);
+        } else {
+            stats.tier = 'Bronze';
+            stats.loyaltyPoints = Math.floor(stats.netSales * 0.01);
         }
-        stats.loyaltyPoints = Math.floor(stats.netSales * rewardPercentage);
+        
 
         localPartyStats.set(canonical, stats);
     });
@@ -370,14 +379,15 @@ export default function PartiesPage() {
     }
   }
   
-  const StatCard = ({ icon: Icon, title, value, color }: { icon: React.ElementType, title: string, value: string, color?: string }) => (
-    <div className="flex items-center gap-4 bg-muted p-4 rounded-lg">
+  const StatCard = ({ icon: Icon, title, value, color, description }: { icon: React.ElementType, title: string, value: string, color?: string, description?: string }) => (
+    <div className="flex items-center gap-4 bg-muted p-3 rounded-lg">
         <div className={`p-3 rounded-full bg-background`}>
-            <Icon className={`h-6 w-6 ${color || 'text-primary'}`} />
+            <Icon className={`h-5 w-5 ${color || 'text-primary'}`} />
         </div>
         <div>
             <p className="text-sm text-muted-foreground">{title}</p>
-            <p className="text-xl font-bold">{value}</p>
+            <p className="text-lg font-bold">{value}</p>
+            {description && <p className="text-xs text-muted-foreground">{description}</p>}
         </div>
     </div>
   );
@@ -432,32 +442,44 @@ export default function PartiesPage() {
 
     return (
         <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-3xl">
                 <DialogHeader>
-                    <DialogTitle className="text-2xl">{selectedParty.name}</DialogTitle>
+                    <DialogTitle className="text-2xl flex items-center gap-2">{selectedParty.name} <PartyTypeBadge type={selectedParty.type} /></DialogTitle>
                     <p className="text-muted-foreground">{selectedParty.address} &bull; {selectedParty.phone}</p>
                 </DialogHeader>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-                    <StatCard icon={TrendingUp} title="Total Business (Net)" value={`₹${(stats?.netSales || 0).toLocaleString('en-IN')}`} />
-                    <StatCard icon={CalendarDays} title="Last Activity" value={stats?.lastActivityDate ? new Date(stats.lastActivityDate).toLocaleDateString('en-GB') : 'N/A'} />
+                     <div className="md:col-span-2 space-y-4 rounded-lg border bg-muted/30 p-4">
+                        <h4 className="font-semibold text-lg flex items-center gap-2">
+                           <Info className="h-5 w-5 text-blue-500" /> Account Summary
+                        </h4>
+                        <div className="grid grid-cols-2 gap-4">
+                            <StatCard icon={TrendingUp} title="Total Net Sales" value={`₹${(stats?.netSales || 0).toLocaleString('en-IN')}`} />
+                             <StatCard icon={Users} title="Current Dues" value={`₹${Math.abs(balance).toLocaleString('en-IN')}`} color={balanceColor.replace('text-', '')} description={balanceText} />
+                        </div>
+                     </div>
 
-                    <div className="md:col-span-2">
-                       <StatCard icon={Users} title="Current Dues" value={`₹${Math.abs(balance).toLocaleString('en-IN')}`} color={balanceColor.replace('text-', '')} />
-                       <p className={`text-center mt-1 text-sm font-semibold ${balanceColor}`}>{balanceText}</p>
-                    </div>
 
                     <div className="md:col-span-2 space-y-4 rounded-lg border p-4">
                         <h4 className="font-semibold text-lg flex items-center gap-2">
-                            <Award className="h-5 w-5 text-yellow-500" /> F.Co Loyalty: {stats?.tier} Tier
+                            <Award className="h-5 w-5 text-yellow-500" /> F.Co Loyalty Rewards
+                             <Badge variant="secondary">{stats?.tier} Tier</Badge>
                         </h4>
-                        <StatCard icon={Award} title="Available Loyalty Points" value={`${loyaltyPoints} Points`} color="text-yellow-500" />
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <StatCard icon={Star} title="Loyalty Points" value={`${loyaltyPoints.toLocaleString('en-IN')}`} color="text-yellow-500" />
+                            <StatCard icon={Gift} title="Equivalent in ₹" value={`₹${loyaltyPoints.toLocaleString('en-IN')}`} />
+                            <StatCard icon={CalendarDays} title="Last Redemption" value={stats?.lastRedemptionDate ? new Date(stats.lastRedemptionDate).toLocaleDateString('en-GB') : 'Not yet redeemed'} />
+                        </div>
+
                         {loyaltyPoints > 0 && (
-                            <div className="flex items-center gap-2">
-                                <Input type="number" className="w-32" placeholder="Points to redeem" value={redemptionAmount || ''} onChange={e => setRedemptionAmount(Number(e.target.value))} max={loyaltyPoints} />
-                                <Button onClick={handleRedeem} disabled={redemptionAmount <= 0 || redemptionAmount > loyaltyPoints}>Redeem as Discount</Button>
+                            <div className="pt-4 border-t">
+                                <Label className="font-semibold">Redeem Points as Discount</Label>
+                                <div className="flex items-center gap-2 mt-2">
+                                    <Input type="number" className="w-40" placeholder="Points to redeem" value={redemptionAmount || ''} onChange={e => setRedemptionAmount(Number(e.target.value))} max={loyaltyPoints} />
+                                    <Button onClick={handleRedeem} disabled={redemptionAmount <= 0 || redemptionAmount > loyaltyPoints}>Redeem Points</Button>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">This will create a "Discount" transaction, reducing the party's dues.</p>
                             </div>
                         )}
-                        <p className="text-xs text-muted-foreground">1 Point = ₹1 Discount. Redeeming points will create a "Discount" transaction in the Khata, reducing the party's dues.</p>
                     </div>
                 </div>
             </DialogContent>
