@@ -6,7 +6,7 @@ import * as React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { IndianRupee, TrendingUp, Calendar, FileText, ShoppingBasket, BookOpen, Loader2, Package, Box, ClipboardList, Globe, PlusCircle, User, Truck, Receipt, PieChart, BarChart } from 'lucide-react';
+import { IndianRupee, TrendingUp, Calendar, FileText, ShoppingBasket, BookOpen, Loader2, Package, Box, ClipboardList, Globe, PlusCircle, User, Truck, Receipt, PieChart, BarChart, Award } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -66,6 +66,13 @@ interface Challan {
     totalDabba: number;
 }
 
+interface Advance {
+    id: string;
+    date: string;
+    type: string;
+    amount: number;
+}
+
 
 const StatCard = ({ title, value, subtitle, icon: Icon }: { title: string, value: string, subtitle: string, icon: React.ElementType }) => (
     <Card className="bg-card/80 backdrop-blur-sm border border-white/10 shadow-lg p-4">
@@ -107,6 +114,7 @@ export default function DashboardPage() {
   const [allBikris, setAllBikris] = useState<Bikri[]>([]);
   const [allReceipts, setAllReceipts] = useState<Receipt[]>([]);
   const [allChallans, setAllChallans] = useState<Challan[]>([]);
+  const [allAdvances, setAllAdvances] = useState<Advance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -118,6 +126,8 @@ export default function DashboardPage() {
         const bikris: Bikri[] = [];
         const receipts: Receipt[] = [];
         const challans: Challan[] = [];
+        const advances: Advance[] = [];
+
 
         for(let i=0; i<localStorage.length; i++) {
             const key = localStorage.key(i);
@@ -133,11 +143,15 @@ export default function DashboardPage() {
              if (key?.startsWith('challan-')) {
                 challans.push(JSON.parse(localStorage.getItem(key)!));
             }
+             if (key?.startsWith('advance-')) {
+                advances.push(JSON.parse(localStorage.getItem(key)!));
+            }
         }
         setAllInvoices(invoices);
         setAllBikris(bikris);
         setAllReceipts(receipts);
         setAllChallans(challans);
+        setAllAdvances(advances);
         setIsLoading(false);
     }
     fetchData();
@@ -298,6 +312,34 @@ export default function DashboardPage() {
     return Object.values(profitsByGrower).sort((a, b) => b.profit - a.profit);
   }, [allInvoices, allBikris, isLoading]);
 
+  const loyaltyStats = useMemo(() => {
+        if (isLoading) return null;
+        
+        let totalPointsDistributed = 0;
+        let redeemedThisMonth = 0;
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+
+        growerProfits.forEach(grower => {
+            totalPointsDistributed += Math.floor(grower.profit / 100);
+        });
+
+        allAdvances.forEach(advance => {
+            const advanceDate = new Date(advance.date);
+            if(advance.type === 'Discount' && advanceDate.getMonth() === currentMonth && advanceDate.getFullYear() === currentYear) {
+                redeemedThisMonth += advance.amount;
+            }
+        });
+
+        const topGrower = growerProfits.length > 0 ? growerProfits[0] : null;
+
+        return {
+            totalPointsDistributed: totalPointsDistributed.toLocaleString(),
+            redeemedThisMonth: `₹${redeemedThisMonth.toLocaleString()}`,
+            topGrower: topGrower ? `${topGrower.name} (${Math.floor(topGrower.profit / 100).toLocaleString()} pts)` : 'N/A',
+        };
+    }, [isLoading, growerProfits, allAdvances]);
+
 
   if (isLoading) {
     return (
@@ -360,6 +402,27 @@ export default function DashboardPage() {
                 </AccordionContent>
             </AccordionItem>
         </Accordion>
+
+        <Card className="bg-card/80 backdrop-blur-sm border border-white/10">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Award className="h-5 w-5 text-yellow-400" />Loyalty Program Summary</CardTitle>
+                <CardDescription>A quick overview of your grower rewards program.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                 <div className="p-4 bg-muted/50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Total Points Distributed</p>
+                    <p className="text-2xl font-bold">{loyaltyStats?.totalPointsDistributed}</p>
+                </div>
+                 <div className="p-4 bg-muted/50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Redeemed This Month</p>
+                    <p className="text-2xl font-bold">{loyaltyStats?.redeemedThisMonth}</p>
+                </div>
+                 <div className="p-4 bg-muted/50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Top Grower</p>
+                    <p className="text-2xl font-bold">{loyaltyStats?.topGrower}</p>
+                </div>
+            </CardContent>
+        </Card>
         
         <div className="space-y-4">
             <h2 className="text-xl font-semibold tracking-wider text-muted-foreground flex items-center gap-2"><BarChart className="h-5 w-5" />ANALYTICS</h2>

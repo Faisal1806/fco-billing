@@ -175,7 +175,7 @@ export default function PartiesPage() {
     }
     
     allTransactions.forEach(tx => {
-        if(!tx.id) return;
+        if(!tx.id && !tx.billNo && !tx.sNo) return;
         let partyName;
         if (tx.customerName) partyName = tx.customerName;
         else if (tx.growerName) partyName = tx.growerName;
@@ -191,7 +191,7 @@ export default function PartiesPage() {
         const stats = { balance: 0, netSales: 0, lastActivityDate: null, transactionCount: 0, loyaltyPoints: 0, tier: 'Bronze', lastRedemptionDate: null };
         const partyTransactions = allTransactions
             .filter(t => {
-                if(!t.id) return false;
+                if(!t.id && !t.billNo && !t.sNo) return false;
                 let partyName;
                 if (t.customerName) partyName = t.customerName;
                 else if (t.growerName) partyName = t.growerName;
@@ -210,13 +210,14 @@ export default function PartiesPage() {
 
         partyTransactions.forEach(tx => {
             let saleAmount = 0;
-            if (tx.id.startsWith('invoice-')) { 
+            const txId = tx.id || tx.billNo || tx.sNo;
+            if (txId.startsWith('invoice-')) { 
                 const sale = tx.totals?.netSale || 0;
                 stats.balance += sale;
                 saleAmount = sale;
-            } else if (tx.id.startsWith('purchase-')) {
+            } else if (txId.startsWith('purchase-')) {
                 stats.balance -= tx.totals?.grandTotal || 0;
-            } else if (tx.id.startsWith('advance-')) {
+            } else if (txId.startsWith('advance-')) {
                 if (tx.type === 'Advance Given') {
                     stats.balance -= tx.amount || 0;
                 } else { // Repayment or Discount
@@ -225,7 +226,7 @@ export default function PartiesPage() {
                  if (tx.type === 'Discount') {
                     stats.lastRedemptionDate = tx.date; // Tracks the most recent discount date
                 }
-            } else if (tx.id.startsWith('bikri-')) {
+            } else if (txId.startsWith('bikri-')) {
                 if (tx.bikriType === 'growerForwarding' && tx.growerName && getCanonicalName(tx.growerName) === canonical) {
                     const payable = tx.calculation?.netSalePayableToGrower || 0;
                     stats.balance += payable;
@@ -451,42 +452,43 @@ export default function PartiesPage() {
                     <DialogTitle className="text-2xl flex items-center gap-2">{selectedParty.name} <PartyTypeBadge type={selectedParty.type} /></DialogTitle>
                     <p className="text-muted-foreground">{selectedParty.address} &bull; {selectedParty.phone}</p>
                 </DialogHeader>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-                     <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
-                        <h4 className="font-semibold text-lg flex items-center gap-2">
-                           <Info className="h-5 w-5 text-blue-500" /> Account Summary
-                        </h4>
-                        <div className="space-y-2">
-                             <div className="flex justify-between"><span>Total Net Sales:</span> <span className="font-bold">₹{netSales.toLocaleString('en-IN')}</span></div>
-                             <div className="flex justify-between"><span>Current Dues:</span> <span className={`font-bold ${balanceColor}`}>₹{Math.abs(balance).toLocaleString('en-IN')}</span></div>
-                             <p className="text-xs text-muted-foreground text-right">{balanceText}</p>
-                        </div>
-                     </div>
-
-
-                    <div className="space-y-4 rounded-lg border p-4">
-                        <h4 className="font-semibold text-lg flex items-center gap-2">
-                            <Award className="h-5 w-5 text-yellow-500" /> F.Co Loyalty Rewards
-                             <Badge variant="secondary">{stats?.tier} Tier</Badge>
-                        </h4>
-                        <div className="space-y-2">
-                           <div className="flex justify-between"><span>Loyalty Points:</span> <span className="font-bold">{loyaltyPoints.toLocaleString('en-IN')}</span></div>
-                           <div className="flex justify-between"><span>Equivalent in ₹:</span> <span className="font-bold">₹{loyaltyPoints.toLocaleString('en-IN')}</span></div>
-                           <div className="flex justify-between"><span>Redeemable:</span> <span className="font-bold">{hasPointsToRedeem ? 'YES' : 'NO'}</span></div>
-                           <div className="flex justify-between"><span>Last Redemption:</span> <span className="font-bold">{stats?.lastRedemptionDate ? new Date(stats.lastRedemptionDate).toLocaleDateString('en-GB') : 'N/A'}</span></div>
-                        </div>
-
-                        {hasPointsToRedeem && (
-                            <div className="pt-4 border-t">
-                                <Label className="font-semibold">Redeem Points as Discount</Label>
-                                <div className="flex items-center gap-2 mt-2">
-                                    <Input type="number" className="w-40" placeholder="Points to redeem" value={redemptionAmount || ''} onChange={e => setRedemptionAmount(Number(e.target.value))} max={loyaltyPoints} />
-                                    <Button onClick={handleRedeem} disabled={redemptionAmount <= 0 || redemptionAmount > loyaltyPoints}>Redeem</Button>
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-1">This creates a "Discount" transaction, reducing their dues.</p>
+                <div className="space-y-4 py-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
+                            <h4 className="font-semibold text-lg flex items-center gap-2">
+                            <Info className="h-5 w-5 text-blue-500" /> Account Summary
+                            </h4>
+                            <div className="space-y-2">
+                                <div className="flex justify-between"><span>Total Net Sales:</span> <span className="font-bold">₹{netSales.toLocaleString('en-IN')}</span></div>
+                                <div className="flex justify-between"><span>Current Dues:</span> <span className={`font-bold ${balanceColor}`}>₹{Math.abs(balance).toLocaleString('en-IN')}</span></div>
+                                <p className="text-xs text-muted-foreground text-right">{balanceText}</p>
                             </div>
-                        )}
+                        </div>
+
+                        <div className="space-y-4 rounded-lg border p-4">
+                            <h4 className="font-semibold text-lg flex items-center gap-2">
+                                <Award className="h-5 w-5 text-yellow-500" /> F.Co Loyalty Rewards
+                                <Badge variant="secondary">{stats?.tier} Tier</Badge>
+                            </h4>
+                            <div className="space-y-2">
+                            <div className="flex justify-between"><span>Loyalty Points:</span> <span className="font-bold">{loyaltyPoints.toLocaleString('en-IN')}</span></div>
+                            <div className="flex justify-between"><span>Equivalent in ₹:</span> <span className="font-bold">₹{loyaltyPoints.toLocaleString('en-IN')}</span></div>
+                            <div className="flex justify-between"><span>Redeemable:</span> <span className="font-bold">{hasPointsToRedeem ? 'YES' : 'NO'}</span></div>
+                            <div className="flex justify-between"><span>Last Redemption:</span> <span className="font-bold">{stats?.lastRedemptionDate ? new Date(stats.lastRedemptionDate).toLocaleDateString('en-GB') : 'N/A'}</span></div>
+                            </div>
+                        </div>
                     </div>
+
+                    {hasPointsToRedeem && (
+                        <div className="pt-4 border-t">
+                            <Label className="font-semibold">Redeem Points as Discount</Label>
+                            <div className="flex items-center gap-2 mt-2">
+                                <Input type="number" className="w-40" placeholder="Points to redeem" value={redemptionAmount || ''} onChange={e => setRedemptionAmount(Number(e.target.value))} max={loyaltyPoints} />
+                                <Button onClick={handleRedeem} disabled={redemptionAmount <= 0 || redemptionAmount > loyaltyPoints}>Redeem</Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">This creates a "Discount" transaction, reducing their dues.</p>
+                        </div>
+                    )}
                 </div>
             </DialogContent>
         </Dialog>
@@ -683,7 +685,3 @@ export default function PartiesPage() {
     </>
   );
 }
-
-  
-
-    
