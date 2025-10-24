@@ -28,6 +28,7 @@ import {
   DialogTitle,
   DialogFooter,
   DialogClose,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { PlusCircle, Edit, Trash2, Users, Search, FileDown, Loader2, Leaf, ShoppingCart, Handshake, Award, Star, TrendingUp, CalendarDays, Gift, ListChecks, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -176,6 +177,7 @@ export default function PartiesPage() {
     }
     
     allTransactions.forEach(tx => {
+        if(!tx.id) return;
         let partyName;
         if (tx.customerName) partyName = tx.customerName;
         else if (tx.growerName) partyName = tx.growerName;
@@ -222,7 +224,7 @@ export default function PartiesPage() {
                 } else { // Repayment or Discount
                     stats.balance += tx.amount || 0;
                 }
-                if (tx.type === 'Discount') {
+                 if (tx.type === 'Discount') {
                     stats.lastRedemptionDate = tx.date; // Tracks the most recent discount date
                 }
             } else if (tx.id.startsWith('bikri-')) {
@@ -249,7 +251,6 @@ export default function PartiesPage() {
             stats.loyaltyPoints = Math.floor(stats.netSales * 0.01);
         }
         
-
         localPartyStats.set(canonical, stats);
     });
 
@@ -397,8 +398,11 @@ export default function PartiesPage() {
 
     if (!selectedParty) return null;
     const stats = partyStats[getCanonicalName(selectedParty.name)];
-    const loyaltyPoints = stats?.loyaltyPoints || 0;
-    const balance = stats?.balance || 0;
+    if (!stats) return null;
+
+    const loyaltyPoints = stats.loyaltyPoints || 0;
+    const balance = stats.balance || 0;
+    const netSales = stats.netSales || 0;
     
     let balanceText, balanceColor;
     if (selectedParty.type === 'Grower' || selectedParty.type === 'Both') {
@@ -439,6 +443,8 @@ export default function PartiesPage() {
         }
     };
 
+    const hasPointsToRedeem = loyaltyPoints > 0;
+
 
     return (
         <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
@@ -464,13 +470,14 @@ export default function PartiesPage() {
                             <Award className="h-5 w-5 text-yellow-500" /> F.Co Loyalty Rewards
                              <Badge variant="secondary">{stats?.tier} Tier</Badge>
                         </h4>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             <StatCard icon={Star} title="Loyalty Points" value={`${loyaltyPoints.toLocaleString('en-IN')}`} color="text-yellow-500" />
                             <StatCard icon={Gift} title="Equivalent in ₹" value={`₹${loyaltyPoints.toLocaleString('en-IN')}`} />
-                            <StatCard icon={CalendarDays} title="Last Redemption" value={stats?.lastRedemptionDate ? new Date(stats.lastRedemptionDate).toLocaleDateString('en-GB') : 'Not yet redeemed'} />
+                            <p className="p-3 rounded-lg"><span className="text-sm text-muted-foreground">Redeemable:</span> <span className="text-lg font-bold">{loyaltyPoints > 0 ? 'YES' : 'NO'}</span></p>
+                            <StatCard icon={CalendarDays} title="Last Redemption" value={stats?.lastRedemptionDate ? new Date(stats.lastRedemptionDate).toLocaleDateString('en-GB') : 'N/A'} />
                         </div>
 
-                        {loyaltyPoints > 0 && (
+                        {hasPointsToRedeem && (
                             <div className="pt-4 border-t">
                                 <Label className="font-semibold">Redeem Points as Discount</Label>
                                 <div className="flex items-center gap-2 mt-2">
