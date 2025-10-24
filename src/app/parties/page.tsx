@@ -138,6 +138,9 @@ export default function PartiesPage() {
                 type: 'Grower',
                 ...details,
             } as Party);
+        } else {
+             const existingParty = partiesMap.get(canonical)!;
+             partiesMap.set(canonical, { ...existingParty, ...details });
         }
     };
 
@@ -148,8 +151,7 @@ export default function PartiesPage() {
         if (key?.startsWith(PARTY_STORAGE_PREFIX)) {
             try {
                 const party: Party = JSON.parse(localStorage.getItem(key)!);
-                const canonical = getCanonicalName(party.name);
-                partiesMap.set(canonical, party);
+                addOrUpdateParty(party.name, party);
             } catch (e) { console.error("Error parsing party:", e); }
         }
     }
@@ -160,18 +162,25 @@ export default function PartiesPage() {
         if(key?.startsWith('invoice-') || key?.startsWith('purchase-') || key?.startsWith('advance-') || key?.startsWith('bikri-')) {
              try {
                 const tx = JSON.parse(localStorage.getItem(key)!);
-                 if (tx.id) { // Ensure transaction has an ID
+                 if (tx.id || tx.sNo || tx.billNo) {
                     allTransactions.push(tx);
                  }
              } catch(e) { console.error("Failed to parse transaction:", key, e)}
         }
     }
+    
+    // Ensure all parties from transactions are in the map
+    allTransactions.forEach(tx => {
+        const partyName = tx.customerName || tx.growerName || tx.partyName || tx.market;
+        if (partyName) {
+            addOrUpdateParty(partyName);
+        }
+    });
 
     partiesMap.forEach((party, canonical) => {
         const stats = { balance: 0, netSales: 0, lastActivityDate: null, transactionCount: 0, loyaltyPoints: 0 };
         const partyTransactions = allTransactions
             .filter(t => {
-                if (!t.id) return false;
                 const partyName = t.customerName || t.growerName || t.partyName || t.market;
                 return partyName && getCanonicalName(partyName) === canonical;
             });
@@ -185,24 +194,24 @@ export default function PartiesPage() {
 
         partyTransactions.forEach(tx => {
             let netSale = 0;
-            if (tx.id.startsWith('invoice-')) { // Sale to a grower
+            const txId = tx.id || tx.sNo || tx.billNo;
+            if (txId.startsWith('invoice-')) { 
                 stats.balance += tx.totals.netSale;
                 netSale = tx.totals.netSale;
-            } else if (tx.id.startsWith('purchase-')) { // Purchase from a customer
+            } else if (txId.startsWith('purchase-')) {
                 stats.balance -= tx.totals.grandTotal;
-                netSale = tx.totals.grandTotal;
-            } else if (tx.id.startsWith('advance-')) { // Advance or Repayment
+            } else if (txId.startsWith('advance-')) {
                 if (tx.type === 'Advance Given') {
                     stats.balance -= tx.amount;
-                } else { // Repayment or Discount
+                } else { 
                     stats.balance += tx.amount;
                 }
-            } else if (tx.id.startsWith('bikri-')) { // Outside Sale
+            } else if (txId.startsWith('bikri-')) {
                 if (tx.bikriType === 'growerForwarding') {
                     stats.balance += tx.calculation.netSalePayableToGrower;
                     netSale = tx.calculation.netSalePayableToGrower;
-                } else {
-                    stats.balance += tx.calculation.netProfitOrLoss; // If it's for an outside market
+                } else if (party.type === 'Outside Party'){
+                    stats.balance += tx.calculation.netProfitOrLoss;
                 }
             }
             stats.netSales += netSale;
@@ -617,3 +626,5 @@ export default function PartiesPage() {
     </>
   );
 }
+
+  
