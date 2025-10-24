@@ -24,6 +24,7 @@ import {
   LogOut,
   Menu,
   Search,
+  Award,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -58,8 +59,9 @@ export const sidebarSections = [
             { name: "Parties", href: "/parties", icon: Users },
             { name: "Expenses", href: "/expenses", icon: DollarSign },
             { name: "Advances", href: "/advances", icon: Banknote },
-            { name: "Cold Storage", href: "/cold-storage", icon: Snowflake },
             { name: "Khata Ledger", href: "/khata", icon: BookOpen },
+            { name: "Loyalty", href: "/loyalty", icon: Award },
+            { name: "Cold Storage", href: "/cold-storage", icon: Snowflake },
         ]
     },
     {

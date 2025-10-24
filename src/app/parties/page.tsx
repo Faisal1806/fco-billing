@@ -168,9 +168,7 @@ export default function PartiesPage() {
         if (matchingPrefix) {
              try {
                 const tx = JSON.parse(localStorage.getItem(key)!);
-                if (!tx.id) {
-                    tx.id = key;
-                }
+                if (!tx.id) tx.id = key;
                 allTransactions.push(tx);
              } catch(e) { console.error("Failed to parse transaction:", key, e)}
         }
@@ -448,33 +446,34 @@ export default function PartiesPage() {
 
     return (
         <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
-            <DialogContent className="max-w-3xl">
+            <DialogContent className="max-w-xl">
                 <DialogHeader>
                     <DialogTitle className="text-2xl flex items-center gap-2">{selectedParty.name} <PartyTypeBadge type={selectedParty.type} /></DialogTitle>
                     <p className="text-muted-foreground">{selectedParty.address} &bull; {selectedParty.phone}</p>
                 </DialogHeader>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-                     <div className="md:col-span-2 space-y-4 rounded-lg border bg-muted/30 p-4">
+                     <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
                         <h4 className="font-semibold text-lg flex items-center gap-2">
                            <Info className="h-5 w-5 text-blue-500" /> Account Summary
                         </h4>
-                        <div className="grid grid-cols-2 gap-4">
-                            <StatCard icon={TrendingUp} title="Total Net Sales" value={`₹${(stats?.netSales || 0).toLocaleString('en-IN')}`} />
-                             <StatCard icon={Users} title="Current Dues" value={`₹${Math.abs(balance).toLocaleString('en-IN')}`} color={balanceColor.replace('text-', '')} description={balanceText} />
+                        <div className="space-y-2">
+                             <div className="flex justify-between"><span>Total Net Sales:</span> <span className="font-bold">₹{netSales.toLocaleString('en-IN')}</span></div>
+                             <div className="flex justify-between"><span>Current Dues:</span> <span className={`font-bold ${balanceColor}`}>₹{Math.abs(balance).toLocaleString('en-IN')}</span></div>
+                             <p className="text-xs text-muted-foreground text-right">{balanceText}</p>
                         </div>
                      </div>
 
 
-                    <div className="md:col-span-2 space-y-4 rounded-lg border p-4">
+                    <div className="space-y-4 rounded-lg border p-4">
                         <h4 className="font-semibold text-lg flex items-center gap-2">
                             <Award className="h-5 w-5 text-yellow-500" /> F.Co Loyalty Rewards
                              <Badge variant="secondary">{stats?.tier} Tier</Badge>
                         </h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <StatCard icon={Star} title="Loyalty Points" value={`${loyaltyPoints.toLocaleString('en-IN')}`} color="text-yellow-500" />
-                            <StatCard icon={Gift} title="Equivalent in ₹" value={`₹${loyaltyPoints.toLocaleString('en-IN')}`} />
-                            <p className="p-3 rounded-lg"><span className="text-sm text-muted-foreground">Redeemable:</span> <span className="text-lg font-bold">{loyaltyPoints > 0 ? 'YES' : 'NO'}</span></p>
-                            <StatCard icon={CalendarDays} title="Last Redemption" value={stats?.lastRedemptionDate ? new Date(stats.lastRedemptionDate).toLocaleDateString('en-GB') : 'N/A'} />
+                        <div className="space-y-2">
+                           <div className="flex justify-between"><span>Loyalty Points:</span> <span className="font-bold">{loyaltyPoints.toLocaleString('en-IN')}</span></div>
+                           <div className="flex justify-between"><span>Equivalent in ₹:</span> <span className="font-bold">₹{loyaltyPoints.toLocaleString('en-IN')}</span></div>
+                           <div className="flex justify-between"><span>Redeemable:</span> <span className="font-bold">{hasPointsToRedeem ? 'YES' : 'NO'}</span></div>
+                           <div className="flex justify-between"><span>Last Redemption:</span> <span className="font-bold">{stats?.lastRedemptionDate ? new Date(stats.lastRedemptionDate).toLocaleDateString('en-GB') : 'N/A'}</span></div>
                         </div>
 
                         {hasPointsToRedeem && (
@@ -482,9 +481,9 @@ export default function PartiesPage() {
                                 <Label className="font-semibold">Redeem Points as Discount</Label>
                                 <div className="flex items-center gap-2 mt-2">
                                     <Input type="number" className="w-40" placeholder="Points to redeem" value={redemptionAmount || ''} onChange={e => setRedemptionAmount(Number(e.target.value))} max={loyaltyPoints} />
-                                    <Button onClick={handleRedeem} disabled={redemptionAmount <= 0 || redemptionAmount > loyaltyPoints}>Redeem Points</Button>
+                                    <Button onClick={handleRedeem} disabled={redemptionAmount <= 0 || redemptionAmount > loyaltyPoints}>Redeem</Button>
                                 </div>
-                                <p className="text-xs text-muted-foreground mt-1">This will create a "Discount" transaction, reducing the party's dues.</p>
+                                <p className="text-xs text-muted-foreground mt-1">This creates a "Discount" transaction, reducing their dues.</p>
                             </div>
                         )}
                     </div>
