@@ -182,15 +182,19 @@ export default function PartiesPage() {
 
         partyTransactions.forEach(tx => {
             let netSale = 0;
-            if (tx.id.startsWith('invoice-')) { // Sale to a grower
+            // IMPORTANT: Ensure tx.id exists before calling startsWith
+            if (tx.id && tx.id.startsWith('invoice-')) { // Sale to a grower
                 stats.balance += tx.totals.netSale;
                 netSale = tx.totals.netSale;
-            } else if (tx.id.startsWith('purchase-')) { // Purchase from a customer
+            } else if (tx.id && tx.id.startsWith('purchase-')) { // Purchase from a customer
                 stats.balance -= tx.totals.grandTotal;
                 netSale = tx.totals.grandTotal;
-            } else if (tx.id.startsWith('advance-')) { // Advance or Repayment
+            } else if (tx.id && tx.id.startsWith('advance-')) { // Advance or Repayment
                 stats.balance += tx.type === 'Advance Given' ? -tx.amount : tx.amount;
-            } else if (tx.id.startsWith('bikri-')) { // Outside Sale
+                if (tx.type === 'Discount') {
+                    // Discounts count as business value, but don't add to netSales
+                }
+            } else if (tx.id && tx.id.startsWith('bikri-')) { // Outside Sale
                 if (tx.bikriType === 'growerForwarding') {
                     stats.balance += tx.calculation.netSalePayableToGrower;
                     netSale = tx.calculation.netSalePayableToGrower;
@@ -606,6 +610,7 @@ export default function PartiesPage() {
     </>
   );
 }
+
 
 
 
