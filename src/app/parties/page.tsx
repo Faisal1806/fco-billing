@@ -1,3 +1,4 @@
+
 'use client'
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -167,7 +168,7 @@ export default function PartiesPage() {
     }
 
     partiesMap.forEach((party, canonical) => {
-        const stats = { balance: 0, totalBusiness: 0, netSales: 0, lastActivityDate: null, transactionCount: 0, loyaltyPoints: 0 };
+        const stats = { balance: 0, netSales: 0, lastActivityDate: null, transactionCount: 0, loyaltyPoints: 0 };
         const partyTransactions = allTransactions
             .filter(t => {
                 const partyName = t.customerName || t.growerName || t.partyName || t.market;
@@ -182,21 +183,21 @@ export default function PartiesPage() {
         stats.transactionCount = partyTransactions.length;
 
         partyTransactions.forEach(tx => {
+            if (!tx.id) return;
             let netSale = 0;
-            // IMPORTANT: Ensure tx.id exists before calling startsWith
-            if (tx.id && tx.id.startsWith('invoice-')) { // Sale to a grower
+            if (tx.id.startsWith('invoice-')) { // Sale to a grower
                 stats.balance += tx.totals.netSale;
                 netSale = tx.totals.netSale;
-            } else if (tx.id && tx.id.startsWith('purchase-')) { // Purchase from a customer
+            } else if (tx.id.startsWith('purchase-')) { // Purchase from a customer
                 stats.balance -= tx.totals.grandTotal;
                 netSale = tx.totals.grandTotal;
-            } else if (tx.id && tx.id.startsWith('advance-')) { // Advance or Repayment
+            } else if (tx.id.startsWith('advance-')) { // Advance or Repayment
                 if (tx.type === 'Advance Given') {
                     stats.balance -= tx.amount;
                 } else { // Repayment or Discount
                     stats.balance += tx.amount;
                 }
-            } else if (tx.id && tx.id.startsWith('bikri-')) { // Outside Sale
+            } else if (tx.id.startsWith('bikri-')) { // Outside Sale
                 if (tx.bikriType === 'growerForwarding') {
                     stats.balance += tx.calculation.netSalePayableToGrower;
                     netSale = tx.calculation.netSalePayableToGrower;
@@ -204,7 +205,6 @@ export default function PartiesPage() {
                     stats.balance += tx.calculation.netProfitOrLoss; // If it's for an outside market
                 }
             }
-            stats.totalBusiness += netSale;
             stats.netSales += netSale;
         });
 
