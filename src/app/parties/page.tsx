@@ -30,7 +30,7 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import { PlusCircle, Edit, Trash2, Users, Search, FileDown, Loader2, Leaf, ShoppingCart, Handshake, Award, Star, TrendingUp, CalendarDays } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Users, Search, FileDown, Loader2, Leaf, ShoppingCart, Handshake, Award, Star, TrendingUp, CalendarDays, Gift } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -166,7 +166,7 @@ export default function PartiesPage() {
     }
 
     partiesMap.forEach((party, canonical) => {
-        const stats = { balance: 0, totalBusiness: 0, netSales: 0, lastActivityDate: null, transactionCount: 0 };
+        const stats = { balance: 0, totalBusiness: 0, netSales: 0, lastActivityDate: null, transactionCount: 0, loyaltyPoints: 0 };
         const partyTransactions = allTransactions
             .filter(t => {
                 const partyName = t.customerName || t.growerName || t.partyName || t.market;
@@ -181,22 +181,28 @@ export default function PartiesPage() {
         stats.transactionCount = partyTransactions.length;
 
         partyTransactions.forEach(tx => {
-            if (tx.id.startsWith('invoice-')) {
+            let netSale = 0;
+            if (tx.id.startsWith('invoice-')) { // Sale to a grower
                 stats.balance += tx.totals.netSale;
-                stats.totalBusiness += tx.totals.netSale;
-                stats.netSales += tx.totals.netSale;
-            } else if (tx.id.startsWith('purchase-')) {
+                netSale = tx.totals.netSale;
+            } else if (tx.id.startsWith('purchase-')) { // Purchase from a customer
                 stats.balance -= tx.totals.grandTotal;
-                stats.totalBusiness += tx.totals.grandTotal;
-            } else if (tx.id.startsWith('advance-')) {
+                netSale = tx.totals.grandTotal;
+            } else if (tx.id.startsWith('advance-')) { // Advance or Repayment
                 stats.balance += tx.type === 'Advance Given' ? -tx.amount : tx.amount;
-            } else if (tx.id.startsWith('bikri-')) {
-                const amount = tx.bikriType === 'growerForwarding' ? tx.calculation.netSalePayableToGrower : tx.calculation.netProfitOrLoss;
-                stats.balance += amount;
-                stats.totalBusiness += tx.calculation.grossSale;
-                stats.netSales += amount;
+            } else if (tx.id.startsWith('bikri-')) { // Outside Sale
+                if (tx.bikriType === 'growerForwarding') {
+                    stats.balance += tx.calculation.netSalePayableToGrower;
+                    netSale = tx.calculation.netSalePayableToGrower;
+                } else {
+                    stats.balance += tx.calculation.netProfitOrLoss; // If it's for an outside market
+                }
             }
+            stats.totalBusiness += netSale;
+            stats.netSales += netSale;
         });
+
+        stats.loyaltyPoints = Math.floor(stats.totalBusiness / 1000);
         localPartyStats.set(canonical, stats);
     });
 
@@ -283,14 +289,15 @@ export default function PartiesPage() {
     const doc = new jsPDF();
     doc.text("Parties Master Directory", 14, 15);
     autoTable(doc, {
-        head: [['S.No.', 'Name', 'Type', 'Phone', 'Address', 'Balance']],
+        head: [['S.No.', 'Name', 'Type', 'Phone', 'Address', 'Balance', 'Net Sales']],
         body: filteredParties.map((p, index) => [
             index + 1,
             p.name,
             p.type,
             p.phone || '',
             p.address || '',
-            (partyStats[getCanonicalName(p.name)]?.balance || 0).toFixed(2)
+            (partyStats[getCanonicalName(p.name)]?.balance || 0).toFixed(2),
+            (partyStats[getCanonicalName(p.name)]?.netSales || 0).toFixed(2),
         ]),
     });
     doc.save("parties-directory.pdf");
@@ -306,6 +313,8 @@ export default function PartiesPage() {
           'Email': p.email,
           'Notes': p.notes,
           'Balance': partyStats[getCanonicalName(p.name)]?.balance || 0,
+          'Net Sales': partyStats[getCanonicalName(p.name)]?.netSales || 0,
+          'Loyalty Points': partyStats[getCanonicalName(p.name)]?.loyaltyPoints || 0,
       })));
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Parties");
@@ -336,9 +345,11 @@ export default function PartiesPage() {
   );
 
   const PartyProfileDialog = () => {
+    const [redemptionAmount, setRedemptionAmount] = useState(0);
+
     if (!selectedParty) return null;
     const stats = partyStats[getCanonicalName(selectedParty.name)];
-    const loyaltyPoints = Math.floor((stats?.totalBusiness || 0) / 1000);
+    const loyaltyPoints = stats?.loyaltyPoints || 0;
     const balance = stats?.balance || 0;
     
     let balanceText, balanceColor;
@@ -350,6 +361,37 @@ export default function PartiesPage() {
         balanceColor = balance >= 0 ? 'text-green-500' : 'text-red-500';
     }
 
+    const handleRedeem = async () => {
+        if (redemptionAmount <= 0) {
+            toast({ variant: 'destructive', title: 'Invalid Amount', description: 'Please enter a positive amount to redeem.' });
+            return;
+        }
+        if (redemptionAmount > loyaltyPoints) {
+            toast({ variant: 'destructive', title: 'Not Enough Points', description: `You cannot redeem more than the available ${loyaltyPoints} points.` });
+            return;
+        }
+
+        const discountTransaction = {
+            id: `advance-discount-${Date.now()}`,
+            date: new Date().toISOString().split('T')[0],
+            partyName: selectedParty.name,
+            type: 'Discount',
+            amount: redemptionAmount,
+            notes: `Redeemed ${redemptionAmount} loyalty points as discount.`
+        };
+
+        try {
+            await saveDocument('advances', discountTransaction.id, discountTransaction);
+            localStorage.setItem(discountTransaction.id, JSON.stringify(discountTransaction));
+            toast({ title: 'Points Redeemed!', description: `${redemptionAmount} points have been applied as a discount.` });
+            fetchPartiesAndTransactions(); // Re-fetch to update stats
+            setIsProfileDialogOpen(false); // Close dialog on success
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Redemption Failed', description: 'Could not save the discount transaction.' });
+        }
+    };
+
+
     return (
         <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
             <DialogContent className="max-w-2xl">
@@ -358,12 +400,24 @@ export default function PartiesPage() {
                     <p className="text-muted-foreground">{selectedParty.address} &bull; {selectedParty.phone}</p>
                 </DialogHeader>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-                    <StatCard icon={Award} title="F.Co Loyalty Points" value={`${loyaltyPoints} Points`} color="text-yellow-500" />
-                    <StatCard icon={TrendingUp} title="Total Business" value={`₹${(stats?.totalBusiness || 0).toLocaleString('en-IN')}`} />
+                    <StatCard icon={TrendingUp} title="Total Business (Net)" value={`₹${(stats?.netSales || 0).toLocaleString('en-IN')}`} />
                     <StatCard icon={CalendarDays} title="Last Activity" value={stats?.lastActivityDate ? new Date(stats.lastActivityDate).toLocaleDateString('en-GB') : 'N/A'} />
+
                     <div className="md:col-span-2">
                        <StatCard icon={Users} title="Current Dues" value={`₹${Math.abs(balance).toLocaleString('en-IN')}`} color={balanceColor.replace('text-', '')} />
                        <p className={`text-center mt-1 text-sm font-semibold ${balanceColor}`}>{balanceText}</p>
+                    </div>
+
+                    <div className="md:col-span-2 space-y-4 rounded-lg border p-4">
+                        <h4 className="font-semibold text-lg flex items-center gap-2"><Award className="h-5 w-5 text-yellow-500" /> F.Co Loyalty Program</h4>
+                        <div className="flex justify-between items-center">
+                            <StatCard icon={Award} title="Available Loyalty Points" value={`${loyaltyPoints} Points`} color="text-yellow-500" />
+                            <div className="flex items-center gap-2">
+                                <Input type="number" className="w-24" placeholder="Points" value={redemptionAmount || ''} onChange={e => setRedemptionAmount(Number(e.target.value))} max={loyaltyPoints} />
+                                <Button onClick={handleRedeem} disabled={redemptionAmount <= 0}>Redeem</Button>
+                            </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground">1 Point = ₹1 Discount. Redeeming points will create a "Discount" transaction in the Khata, reducing the party's dues.</p>
                     </div>
                 </div>
             </DialogContent>
@@ -512,10 +566,10 @@ export default function PartiesPage() {
                   <TableCell><PartyTypeBadge type={party.type} /></TableCell>
                   <TableCell>{party.address}</TableCell>
                   <TableCell className="text-right font-mono">
-                    ₹{netSales.toFixed(2)}
+                    ₹{netSales.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                   </TableCell>
                   <TableCell className={`text-right font-mono ${balanceColor}`}>
-                    {balance >= 0 ? '₹' : '-₹'}{Math.abs(balance).toFixed(2)}
+                    {balance >= 0 ? '₹' : '-₹'}{Math.abs(balance).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                     <p className="text-xs">{balanceText}</p>
                   </TableCell>
                   <TableCell className="text-right">
@@ -545,5 +599,6 @@ export default function PartiesPage() {
     </>
   );
 }
+
 
 
