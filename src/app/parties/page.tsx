@@ -1,5 +1,3 @@
-
-
 'use client'
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -30,7 +28,7 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import { PlusCircle, Edit, Trash2, Users, Search, FileDown, Loader2, Leaf, ShoppingCart, Handshake, Award, Star, TrendingUp, CalendarDays, Gift } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Users, Search, FileDown, Loader2, Leaf, ShoppingCart, Handshake, Award, Star, TrendingUp, CalendarDays, Gift, ListChecks } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -160,7 +158,10 @@ export default function PartiesPage() {
         const key = localStorage.key(i);
         if(key?.startsWith('invoice-') || key?.startsWith('purchase-') || key?.startsWith('advance-') || key?.startsWith('bikri-')) {
              try {
-                allTransactions.push(JSON.parse(localStorage.getItem(key)!));
+                const tx = JSON.parse(localStorage.getItem(key)!);
+                 if (tx.id) { // Ensure transaction has an ID
+                    allTransactions.push(tx);
+                 }
              } catch(e) { console.error("Failed to parse transaction:", key, e)}
         }
     }
@@ -190,9 +191,10 @@ export default function PartiesPage() {
                 stats.balance -= tx.totals.grandTotal;
                 netSale = tx.totals.grandTotal;
             } else if (tx.id && tx.id.startsWith('advance-')) { // Advance or Repayment
-                stats.balance += tx.type === 'Advance Given' ? -tx.amount : tx.amount;
-                if (tx.type === 'Discount') {
-                    // Discounts count as business value, but don't add to netSales
+                if (tx.type === 'Advance Given') {
+                    stats.balance -= tx.amount;
+                } else { // Repayment or Discount
+                    stats.balance += tx.amount;
                 }
             } else if (tx.id && tx.id.startsWith('bikri-')) { // Outside Sale
                 if (tx.bikriType === 'growerForwarding') {
@@ -206,7 +208,7 @@ export default function PartiesPage() {
             stats.netSales += netSale;
         });
 
-        stats.loyaltyPoints = Math.floor(stats.totalBusiness / 1000);
+        stats.loyaltyPoints = Math.floor(stats.netSales / 1000);
         localPartyStats.set(canonical, stats);
     });
 
@@ -322,7 +324,7 @@ export default function PartiesPage() {
       })));
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Parties");
-      XLSX.writeFile(workbook, "parties-directory.xlsx");
+      XLSX.writeFile(wb, "parties-directory.xlsx");
   };
 
   const PartyTypeBadge = ({type}: {type: Party['type']}) => {
@@ -542,7 +544,7 @@ export default function PartiesPage() {
                 <TableHead className="w-[50px]">S.No.</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Type</TableHead>
-                <TableHead>Address</TableHead>
+                <TableHead className="text-right">Transactions</TableHead>
                 <TableHead className="text-right">Net Sales</TableHead>
                 <TableHead className="text-right">Loyalty Points</TableHead>
                 <TableHead className="text-right">Balance</TableHead>
@@ -555,6 +557,7 @@ export default function PartiesPage() {
                 const balance = stats?.balance || 0;
                 const netSales = stats?.netSales || 0;
                 const loyaltyPoints = stats?.loyaltyPoints || 0;
+                const transactionCount = stats?.transactionCount || 0;
 
                 let balanceText, balanceColor;
                 if (party.type === 'Grower' || party.type === 'Both') {
@@ -570,7 +573,11 @@ export default function PartiesPage() {
                   <TableCell>{index + 1}</TableCell>
                   <TableCell className="font-medium">{party.name}</TableCell>
                   <TableCell><PartyTypeBadge type={party.type} /></TableCell>
-                  <TableCell>{party.address}</TableCell>
+                  <TableCell className="text-right font-mono">
+                    <div className="flex items-center justify-end gap-1">
+                        <ListChecks className="h-4 w-4 text-muted-foreground" /> {transactionCount}
+                    </div>
+                  </TableCell>
                   <TableCell className="text-right font-mono">
                     ₹{netSales.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                   </TableCell>
@@ -610,8 +617,3 @@ export default function PartiesPage() {
     </>
   );
 }
-
-
-
-
-
