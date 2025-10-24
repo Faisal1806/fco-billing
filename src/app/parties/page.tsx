@@ -169,9 +169,13 @@ export default function PartiesPage() {
         }
     }
     
-    // Ensure all parties from transactions are in the map
     allTransactions.forEach(tx => {
-        const partyName = tx.customerName || tx.growerName || tx.partyName || tx.market;
+        let partyName;
+        if (tx.customerName) partyName = tx.customerName;
+        else if (tx.growerName) partyName = tx.growerName;
+        else if (tx.partyName) partyName = tx.partyName;
+        else if (tx.market && tx.bikriType !== 'growerForwarding') partyName = tx.market;
+
         if (partyName) {
             addOrUpdateParty(partyName);
         }
@@ -181,7 +185,12 @@ export default function PartiesPage() {
         const stats = { balance: 0, netSales: 0, lastActivityDate: null, transactionCount: 0, loyaltyPoints: 0 };
         const partyTransactions = allTransactions
             .filter(t => {
-                const partyName = t.customerName || t.growerName || t.partyName || t.market;
+                let partyName;
+                if (t.customerName) partyName = t.customerName;
+                else if (t.growerName) partyName = t.growerName;
+                else if (t.partyName) partyName = t.partyName;
+                else if (t.market && t.bikriType !== 'growerForwarding') partyName = t.market;
+                
                 return partyName && getCanonicalName(partyName) === canonical;
             });
         
@@ -195,6 +204,8 @@ export default function PartiesPage() {
         partyTransactions.forEach(tx => {
             let netSale = 0;
             const txId = tx.id || tx.sNo || tx.billNo;
+            if (!txId) return;
+
             if (txId.startsWith('invoice-')) { 
                 stats.balance += tx.totals.netSale;
                 netSale = tx.totals.netSale;
@@ -628,3 +639,5 @@ export default function PartiesPage() {
 }
 
   
+
+    
