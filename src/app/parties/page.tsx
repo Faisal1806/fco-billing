@@ -171,6 +171,7 @@ export default function PartiesPage() {
         const stats = { balance: 0, netSales: 0, lastActivityDate: null, transactionCount: 0, loyaltyPoints: 0 };
         const partyTransactions = allTransactions
             .filter(t => {
+                if (!t.id) return false;
                 const partyName = t.customerName || t.growerName || t.partyName || t.market;
                 return partyName && getCanonicalName(partyName) === canonical;
             });
@@ -183,7 +184,6 @@ export default function PartiesPage() {
         stats.transactionCount = partyTransactions.length;
 
         partyTransactions.forEach(tx => {
-            if (!tx.id) return;
             let netSale = 0;
             if (tx.id.startsWith('invoice-')) { // Sale to a grower
                 stats.balance += tx.totals.netSale;
