@@ -163,8 +163,8 @@ export default function PartiesPage() {
         if(key?.startsWith('invoice-') || key?.startsWith('purchase-') || key?.startsWith('advance-') || key?.startsWith('bikri-')) {
              try {
                 const tx = JSON.parse(localStorage.getItem(key)!);
-                const txId = tx.id || tx.sNo || tx.billNo;
-                if (txId) {
+                tx.id = tx.id || tx.sNo || tx.billNo; // Ensure an ID exists
+                if (tx.id) {
                     allTransactions.push(tx);
                 }
              } catch(e) { console.error("Failed to parse transaction:", key, e)}
@@ -187,6 +187,7 @@ export default function PartiesPage() {
         const stats = { balance: 0, netSales: 0, lastActivityDate: null, transactionCount: 0, loyaltyPoints: 0 };
         const partyTransactions = allTransactions
             .filter(t => {
+                if(!t.id) return false;
                 let partyName;
                 if (t.customerName) partyName = t.customerName;
                 else if (t.growerName) partyName = t.growerName;
@@ -203,24 +204,21 @@ export default function PartiesPage() {
         }
         stats.transactionCount = partyTransactions.length;
 
+        let netSaleContribution = 0;
         partyTransactions.forEach(tx => {
-            const txId = tx.id || tx.sNo || tx.billNo;
-            if (!txId) return;
-
-            let netSaleContribution = 0;
-
-            if (txId.startsWith('invoice-')) { 
+            
+            if (tx.id.startsWith('invoice-')) { 
                 stats.balance += tx.totals.netSale || 0;
                 netSaleContribution = tx.totals.netSale || 0;
-            } else if (txId.startsWith('purchase-')) {
+            } else if (tx.id.startsWith('purchase-')) {
                 stats.balance -= tx.totals.grandTotal || 0;
-            } else if (txId.startsWith('advance-')) {
+            } else if (tx.id.startsWith('advance-')) {
                 if (tx.type === 'Advance Given') {
                     stats.balance -= tx.amount || 0;
                 } else { // Repayment or Discount
                     stats.balance += tx.amount || 0;
                 }
-            } else if (txId.startsWith('bikri-')) {
+            } else if (tx.id.startsWith('bikri-')) {
                 if (tx.bikriType === 'growerForwarding' && tx.growerName && getCanonicalName(tx.growerName) === canonical) {
                     const payable = tx.calculation.netSalePayableToGrower || 0;
                     stats.balance += payable;
@@ -230,21 +228,16 @@ export default function PartiesPage() {
                 }
             }
             stats.netSales += netSaleContribution;
+            netSaleContribution = 0; // Reset for next iteration
         });
 
-        // Standard Loyalty Points Calculation
+        // Standard Loyalty Points Calculation (1 point per 100)
         stats.loyaltyPoints = Math.floor(stats.netSales / 100);
 
         // Milestone Bonuses
-        if (stats.netSales > 250000) {
-            stats.loyaltyPoints += 2500;
-        }
-        if (stats.netSales > 100000) {
-            stats.loyaltyPoints += 1000;
-        }
-        if (stats.netSales > 50000) {
-            stats.loyaltyPoints += 500;
-        }
+        if (stats.netSales > 250000) stats.loyaltyPoints += 2500;
+        if (stats.netSales > 100000) stats.loyaltyPoints += 1000;
+        if (stats.netSales > 50000) stats.loyaltyPoints += 500;
 
         localPartyStats.set(canonical, stats);
     });
@@ -453,13 +446,13 @@ export default function PartiesPage() {
 
                     <div className="md:col-span-2 space-y-4 rounded-lg border p-4">
                         <h4 className="font-semibold text-lg flex items-center gap-2"><Award className="h-5 w-5 text-yellow-500" /> F.Co Loyalty Program</h4>
-                        <div className="flex justify-between items-center">
-                            <StatCard icon={Award} title="Available Loyalty Points" value={`${loyaltyPoints} Points`} color="text-yellow-500" />
+                        <StatCard icon={Award} title="Available Loyalty Points" value={`${loyaltyPoints} Points`} color="text-yellow-500" />
+                        {loyaltyPoints > 0 && (
                             <div className="flex items-center gap-2">
-                                <Input type="number" className="w-24" placeholder="Points" value={redemptionAmount || ''} onChange={e => setRedemptionAmount(Number(e.target.value))} max={loyaltyPoints} />
-                                <Button onClick={handleRedeem} disabled={redemptionAmount <= 0}>Redeem</Button>
+                                <Input type="number" className="w-32" placeholder="Points to redeem" value={redemptionAmount || ''} onChange={e => setRedemptionAmount(Number(e.target.value))} max={loyaltyPoints} />
+                                <Button onClick={handleRedeem} disabled={redemptionAmount <= 0 || redemptionAmount > loyaltyPoints}>Redeem as Discount</Button>
                             </div>
-                        </div>
+                        )}
                         <p className="text-xs text-muted-foreground">1 Point = ₹1 Discount. Redeeming points will create a "Discount" transaction in the Khata, reducing the party's dues.</p>
                     </div>
                 </div>
@@ -616,11 +609,11 @@ export default function PartiesPage() {
                     </div>
                   </TableCell>
                   <TableCell className="text-right font-mono">
-                    ₹{netSales.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                    ₹{netSales.toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0})}
                   </TableCell>
                    <TableCell className="text-right font-mono text-yellow-500">
                     <div className="flex items-center justify-end gap-1">
-                       <Star className="h-4 w-4" /> {loyaltyPoints}
+                       <Star className="h-4 w-4" /> {loyaltyPoints.toLocaleString('en-IN')}
                     </div>
                   </TableCell>
                   <TableCell className={`text-right font-mono ${balanceColor}`}>
