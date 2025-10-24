@@ -540,6 +540,7 @@ export default function PartiesPage() {
                 <TableHead>Type</TableHead>
                 <TableHead>Address</TableHead>
                 <TableHead className="text-right">Net Sales</TableHead>
+                <TableHead className="text-right">Loyalty Points</TableHead>
                 <TableHead className="text-right">Balance</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -549,6 +550,7 @@ export default function PartiesPage() {
                 const stats = partyStats[getCanonicalName(party.name)];
                 const balance = stats?.balance || 0;
                 const netSales = stats?.netSales || 0;
+                const loyaltyPoints = stats?.loyaltyPoints || 0;
 
                 let balanceText, balanceColor;
                 if (party.type === 'Grower' || party.type === 'Both') {
@@ -567,6 +569,11 @@ export default function PartiesPage() {
                   <TableCell>{party.address}</TableCell>
                   <TableCell className="text-right font-mono">
                     ₹{netSales.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                  </TableCell>
+                   <TableCell className="text-right font-mono text-yellow-500">
+                    <div className="flex items-center justify-end gap-1">
+                       <Star className="h-4 w-4" /> {loyaltyPoints}
+                    </div>
                   </TableCell>
                   <TableCell className={`text-right font-mono ${balanceColor}`}>
                     {balance >= 0 ? '₹' : '-₹'}{Math.abs(balance).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
@@ -599,6 +606,7 @@ export default function PartiesPage() {
     </>
   );
 }
+
 
 
 
