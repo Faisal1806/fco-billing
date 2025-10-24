@@ -5,7 +5,7 @@ import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { Paintbrush, Palette, CheckCircle, Upload, Type, Move, QrCode, SlidersHorizontal, List, Truck, User, Phone, Box, TreePine, Banknote, Percent, Package, Pencil, Building, Snowflake, Weight, Signature, Lock, MessageSquare, Hash, FileText, DownloadCloud, Rocket } from 'lucide-react';
+import { Paintbrush, Palette, CheckCircle, Upload, Type, Move, QrCode, SlidersHorizontal, List, Truck, User, Phone, Box, TreePine, Banknote, Percent, Package, Pencil, Building, Snowflake, Weight, Signature, Lock, MessageSquare, Hash, FileText, DownloadCloud, Rocket, Award, Star, Settings } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +31,7 @@ import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import * as XLSX from 'xlsx';
+import { Switch } from '@/components/ui/switch';
 
 
 const InvoicePreview = ({ title, colors, logoPosition, qrPosition, font, footer, features, children }: {
@@ -400,6 +401,92 @@ export default function SettingsPage() {
             </Card>
 
             <CompanyInfoForm />
+
+             <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-3"><Settings className="h-6 w-6" /> Loyalty Program Settings</CardTitle>
+                    <CardDescription>Configure how your customer loyalty program works.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-8">
+                    <div>
+                        <h4 className="font-semibold text-lg mb-2">Tier-Based Earning Rules</h4>
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-4 p-3 border rounded-lg">
+                                <div className="flex items-center gap-2">
+                                    <Badge className="text-lg">🥉</Badge>
+                                    <Label className="font-bold">Bronze Tier</Label>
+                                </div>
+                                <Input defaultValue="50000" placeholder="Sales up to" />
+                                <div className="flex items-center gap-2">
+                                    <Input defaultValue="1" placeholder="Reward %" />
+                                    <span className="text-muted-foreground">%</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground md:col-span-4">For sales from ₹0 up to this amount.</p>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-4 p-3 border rounded-lg">
+                                <div className="flex items-center gap-2">
+                                    <Badge className="text-lg">🥈</Badge>
+                                    <Label className="font-bold">Silver Tier</Label>
+                                </div>
+                                <Input defaultValue="150000" placeholder="Sales up to" />
+                                <div className="flex items-center gap-2">
+                                    <Input defaultValue="1.5" placeholder="Reward %" />
+                                    <span className="text-muted-foreground">%</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground md:col-span-4">For sales between Bronze tier and this amount.</p>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-4 p-3 border rounded-lg">
+                                <div className="flex items-center gap-2">
+                                    <Badge className="text-lg">🥇</Badge>
+                                    <Label className="font-bold">Gold Tier</Label>
+                                </div>
+                                <Input disabled placeholder="Sales over Silver" />
+                                <div className="flex items-center gap-2">
+                                    <Input defaultValue="2" placeholder="Reward %" />
+                                    <span className="text-muted-foreground">%</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground md:col-span-4">For all sales above the Silver tier limit.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <Separator />
+
+                     <div>
+                        <h4 className="font-semibold text-lg mb-2">Redemption Rules</h4>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="pointValue">Point Value</Label>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm">1 Point = ₹</span>
+                                    <Input id="pointValue" type="number" defaultValue="1" className="w-24" />
+                                </div>
+                                <p className="text-xs text-muted-foreground">The cash value of a single loyalty point.</p>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="minRedeem">Minimum Points to Redeem</Label>
+                                <Input id="minRedeem" type="number" defaultValue="500" />
+                                 <p className="text-xs text-muted-foreground">Customer must have at least this many points to redeem.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <Separator />
+                    
+                    <div>
+                        <h4 className="font-semibold text-lg mb-2">Notifications</h4>
+                         <div className="flex items-center space-x-2">
+                            <Switch id="auto-notifications" disabled />
+                            <Label htmlFor="auto-notifications">Enable Auto-Notifications (Coming Soon)</Label>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">Automatically send a WhatsApp message like "You've earned 50 points today!"</p>
+                    </div>
+
+                </CardContent>
+                 <CardFooter>
+                    <Button>Save Loyalty Settings</Button>
+                </CardFooter>
+            </Card>
 
             <Card>
                 <CardHeader>
