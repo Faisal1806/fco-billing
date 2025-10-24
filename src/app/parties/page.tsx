@@ -160,10 +160,11 @@ export default function PartiesPage() {
     const allTransactions: any[] = [];
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
+        const txId = key?.replace('invoice-','').replace('purchase-','').replace('advance-','').replace('bikri-','');
         if(key?.startsWith('invoice-') || key?.startsWith('purchase-') || key?.startsWith('advance-') || key?.startsWith('bikri-')) {
              try {
                 const tx = JSON.parse(localStorage.getItem(key)!);
-                tx.id = tx.id || tx.sNo || tx.billNo; // Ensure an ID exists
+                tx.id = tx.id || txId;
                 if (tx.id) {
                     allTransactions.push(tx);
                 }
@@ -184,7 +185,7 @@ export default function PartiesPage() {
     });
 
     partiesMap.forEach((party, canonical) => {
-        const stats = { balance: 0, netSales: 0, lastActivityDate: null, transactionCount: 0, loyaltyPoints: 0 };
+        const stats = { balance: 0, netSales: 0, lastActivityDate: null, transactionCount: 0, loyaltyPoints: 0, tier: 'Bronze' };
         const partyTransactions = allTransactions
             .filter(t => {
                 if(!t.id) return false;
@@ -204,12 +205,11 @@ export default function PartiesPage() {
         }
         stats.transactionCount = partyTransactions.length;
 
-        let netSaleContribution = 0;
         partyTransactions.forEach(tx => {
-            
+            let saleAmount = 0;
             if (tx.id.startsWith('invoice-')) { 
                 stats.balance += tx.totals.netSale || 0;
-                netSaleContribution = tx.totals.netSale || 0;
+                saleAmount = tx.totals.netSale || 0;
             } else if (tx.id.startsWith('purchase-')) {
                 stats.balance -= tx.totals.grandTotal || 0;
             } else if (tx.id.startsWith('advance-')) {
@@ -222,22 +222,24 @@ export default function PartiesPage() {
                 if (tx.bikriType === 'growerForwarding' && tx.growerName && getCanonicalName(tx.growerName) === canonical) {
                     const payable = tx.calculation.netSalePayableToGrower || 0;
                     stats.balance += payable;
-                    netSaleContribution = payable;
+                    saleAmount = payable;
                 } else if (party.type === 'Outside Party' && tx.bikriType === 'fcoStock'){ // Profit/loss for outside parties
                     stats.balance += tx.calculation.netProfitOrLoss || 0;
                 }
             }
-            stats.netSales += netSaleContribution;
-            netSaleContribution = 0; // Reset for next iteration
+            stats.netSales += saleAmount;
         });
 
-        // Standard Loyalty Points Calculation (1 point per 100)
-        stats.loyaltyPoints = Math.floor(stats.netSales / 100);
-
-        // Milestone Bonuses
-        if (stats.netSales > 250000) stats.loyaltyPoints += 2500;
-        if (stats.netSales > 100000) stats.loyaltyPoints += 1000;
-        if (stats.netSales > 50000) stats.loyaltyPoints += 500;
+        // Tier-based Loyalty Points Calculation
+        let rewardPercentage = 0.01; // Bronze
+        if (stats.netSales > 150000) {
+            stats.tier = 'Gold';
+            rewardPercentage = 0.02; // 2%
+        } else if (stats.netSales > 50000) {
+            stats.tier = 'Silver';
+            rewardPercentage = 0.015; // 1.5%
+        }
+        stats.loyaltyPoints = Math.floor(stats.netSales * rewardPercentage);
 
         localPartyStats.set(canonical, stats);
     });
@@ -445,7 +447,9 @@ export default function PartiesPage() {
                     </div>
 
                     <div className="md:col-span-2 space-y-4 rounded-lg border p-4">
-                        <h4 className="font-semibold text-lg flex items-center gap-2"><Award className="h-5 w-5 text-yellow-500" /> F.Co Loyalty Program</h4>
+                        <h4 className="font-semibold text-lg flex items-center gap-2">
+                            <Award className="h-5 w-5 text-yellow-500" /> F.Co Loyalty: {stats?.tier} Tier
+                        </h4>
                         <StatCard icon={Award} title="Available Loyalty Points" value={`${loyaltyPoints} Points`} color="text-yellow-500" />
                         {loyaltyPoints > 0 && (
                             <div className="flex items-center gap-2">
@@ -588,6 +592,7 @@ export default function PartiesPage() {
                 const netSales = stats?.netSales || 0;
                 const loyaltyPoints = stats?.loyaltyPoints || 0;
                 const transactionCount = stats?.transactionCount || 0;
+                const tier = stats?.tier || 'Bronze';
 
                 let balanceText, balanceColor;
                 if (party.type === 'Grower' || party.type === 'Both') {
@@ -597,11 +602,14 @@ export default function PartiesPage() {
                     balanceText = balance >= 0 ? 'Receivable' : 'Credit';
                     balanceColor = balance >= 0 ? 'text-green-500' : 'text-red-500';
                 }
+                
+                const tierIcon = tier === 'Gold' ? '🥇' : tier === 'Silver' ? '🥈' : '🥉';
+
 
                 return (
                 <TableRow key={party.id} className="cursor-pointer" onClick={() => handleRowClick(party)}>
                   <TableCell>{index + 1}</TableCell>
-                  <TableCell className="font-medium">{party.name}</TableCell>
+                  <TableCell className="font-medium">{party.name} <span title={tier + ' Tier'}>{tierIcon}</span></TableCell>
                   <TableCell><PartyTypeBadge type={party.type} /></TableCell>
                   <TableCell className="text-right font-mono">
                     <div className="flex items-center justify-end gap-1">
