@@ -163,10 +163,10 @@ export default function PartiesPage() {
         if(key?.startsWith('invoice-') || key?.startsWith('purchase-') || key?.startsWith('advance-') || key?.startsWith('bikri-')) {
              try {
                 const tx = JSON.parse(localStorage.getItem(key)!);
-                // Ensure transaction has a valid identifier
-                 if (tx.id || tx.sNo || tx.billNo) {
+                const txId = tx.id || tx.sNo || tx.billNo;
+                if (txId) {
                     allTransactions.push(tx);
-                 }
+                }
              } catch(e) { console.error("Failed to parse transaction:", key, e)}
         }
     }
@@ -204,13 +204,14 @@ export default function PartiesPage() {
         stats.transactionCount = partyTransactions.length;
 
         partyTransactions.forEach(tx => {
-            let netSale = 0;
             const txId = tx.id || tx.sNo || tx.billNo;
             if (!txId) return;
 
+            let netSaleContribution = 0;
+
             if (txId.startsWith('invoice-')) { 
                 stats.balance += tx.totals.netSale || 0;
-                netSale = tx.totals.netSale || 0;
+                netSaleContribution = tx.totals.netSale || 0;
             } else if (txId.startsWith('purchase-')) {
                 stats.balance -= tx.totals.grandTotal || 0;
             } else if (txId.startsWith('advance-')) {
@@ -221,16 +222,30 @@ export default function PartiesPage() {
                 }
             } else if (txId.startsWith('bikri-')) {
                 if (tx.bikriType === 'growerForwarding' && tx.growerName && getCanonicalName(tx.growerName) === canonical) {
-                    stats.balance += tx.calculation.netSalePayableToGrower || 0;
-                    netSale = tx.calculation.netSalePayableToGrower || 0;
+                    const payable = tx.calculation.netSalePayableToGrower || 0;
+                    stats.balance += payable;
+                    netSaleContribution = payable;
                 } else if (party.type === 'Outside Party' && tx.bikriType === 'fcoStock'){ // Profit/loss for outside parties
                     stats.balance += tx.calculation.netProfitOrLoss || 0;
                 }
             }
-            stats.netSales += netSale;
+            stats.netSales += netSaleContribution;
         });
 
+        // Standard Loyalty Points Calculation
         stats.loyaltyPoints = Math.floor(stats.netSales / 100);
+
+        // Milestone Bonuses
+        if (stats.netSales > 250000) {
+            stats.loyaltyPoints += 2500;
+        }
+        if (stats.netSales > 100000) {
+            stats.loyaltyPoints += 1000;
+        }
+        if (stats.netSales > 50000) {
+            stats.loyaltyPoints += 500;
+        }
+
         localPartyStats.set(canonical, stats);
     });
 
