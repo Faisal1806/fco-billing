@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -162,6 +163,7 @@ export default function PartiesPage() {
         if(key?.startsWith('invoice-') || key?.startsWith('purchase-') || key?.startsWith('advance-') || key?.startsWith('bikri-')) {
              try {
                 const tx = JSON.parse(localStorage.getItem(key)!);
+                // Ensure transaction has a valid identifier
                  if (tx.id || tx.sNo || tx.billNo) {
                     allTransactions.push(tx);
                  }
@@ -207,28 +209,28 @@ export default function PartiesPage() {
             if (!txId) return;
 
             if (txId.startsWith('invoice-')) { 
-                stats.balance += tx.totals.netSale;
-                netSale = tx.totals.netSale;
+                stats.balance += tx.totals.netSale || 0;
+                netSale = tx.totals.netSale || 0;
             } else if (txId.startsWith('purchase-')) {
-                stats.balance -= tx.totals.grandTotal;
+                stats.balance -= tx.totals.grandTotal || 0;
             } else if (txId.startsWith('advance-')) {
                 if (tx.type === 'Advance Given') {
-                    stats.balance -= tx.amount;
-                } else { 
-                    stats.balance += tx.amount;
+                    stats.balance -= tx.amount || 0;
+                } else { // Repayment or Discount
+                    stats.balance += tx.amount || 0;
                 }
             } else if (txId.startsWith('bikri-')) {
-                if (tx.bikriType === 'growerForwarding') {
-                    stats.balance += tx.calculation.netSalePayableToGrower;
-                    netSale = tx.calculation.netSalePayableToGrower;
-                } else if (party.type === 'Outside Party'){
-                    stats.balance += tx.calculation.netProfitOrLoss;
+                if (tx.bikriType === 'growerForwarding' && tx.growerName && getCanonicalName(tx.growerName) === canonical) {
+                    stats.balance += tx.calculation.netSalePayableToGrower || 0;
+                    netSale = tx.calculation.netSalePayableToGrower || 0;
+                } else if (party.type === 'Outside Party' && tx.bikriType === 'fcoStock'){ // Profit/loss for outside parties
+                    stats.balance += tx.calculation.netProfitOrLoss || 0;
                 }
             }
             stats.netSales += netSale;
         });
 
-        stats.loyaltyPoints = Math.floor(stats.netSales / 1000);
+        stats.loyaltyPoints = Math.floor(stats.netSales / 100);
         localPartyStats.set(canonical, stats);
     });
 
