@@ -122,36 +122,44 @@ export default function DashboardPage() {
         if (typeof window === 'undefined') return;
         setIsLoading(true);
 
-        const invoices: Invoice[] = [];
-        const bikris: Bikri[] = [];
-        const receipts: Receipt[] = [];
-        const challans: Challan[] = [];
-        const advances: Advance[] = [];
+        const invoicesMap = new Map<string, Invoice>();
+        const bikrisMap = new Map<string, Bikri>();
+        const receiptsMap = new Map<string, Receipt>();
+        const challansMap = new Map<string, Challan>();
+        const advancesMap = new Map<string, Advance>();
 
-
-        for(let i=0; i<localStorage.length; i++) {
+        for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (key?.startsWith('invoice-')) {
-                invoices.push(JSON.parse(localStorage.getItem(key)!));
-            }
-             if (key?.startsWith('bikri-')) {
-                bikris.push(JSON.parse(localStorage.getItem(key)!));
-            }
-             if (key?.startsWith('receipt-')) {
-                receipts.push(JSON.parse(localStorage.getItem(key)!));
-            }
-             if (key?.startsWith('challan-')) {
-                challans.push(JSON.parse(localStorage.getItem(key)!));
-            }
-             if (key?.startsWith('advance-')) {
-                advances.push(JSON.parse(localStorage.getItem(key)!));
+            if (!key) continue;
+
+            try {
+                if (key.startsWith('invoice-')) {
+                    const invoice = JSON.parse(localStorage.getItem(key)!);
+                    if (invoice.sNo) invoicesMap.set(invoice.sNo, invoice);
+                } else if (key.startsWith('bikri-')) {
+                    const bikri = JSON.parse(localStorage.getItem(key)!);
+                    if (bikri.id) bikrisMap.set(bikri.id, bikri);
+                } else if (key.startsWith('receipt-')) {
+                    const receipt = JSON.parse(localStorage.getItem(key)!);
+                    if (receipt.no) receiptsMap.set(receipt.no, receipt);
+                } else if (key.startsWith('challan-')) {
+                    const challan = JSON.parse(localStorage.getItem(key)!);
+                    if (challan.id) challansMap.set(challan.id, challan);
+                } else if (key.startsWith('advance-')) {
+                    const advance = JSON.parse(localStorage.getItem(key)!);
+                    if (advance.id) advancesMap.set(advance.id, advance);
+                }
+            } catch (error) {
+                console.error(`Error parsing item from localStorage with key: ${key}`, error);
             }
         }
-        setAllInvoices(invoices);
-        setAllBikris(bikris);
-        setAllReceipts(receipts);
-        setAllChallans(challans);
-        setAllAdvances(advances);
+        
+        setAllInvoices(Array.from(invoicesMap.values()));
+        setAllBikris(Array.from(bikrisMap.values()));
+        setAllReceipts(Array.from(receiptsMap.values()));
+        setAllChallans(Array.from(challansMap.values()));
+        setAllAdvances(Array.from(advancesMap.values()));
+        
         setIsLoading(false);
     }
     fetchData();
