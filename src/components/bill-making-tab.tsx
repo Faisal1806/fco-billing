@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useMemo, useRef, useState, useEffect } from 'react';
@@ -42,6 +43,7 @@ export function BillMakingTab() {
   const [khata, setKhata] = useState('');           // Khata Name
   const [watakNo, setWatakNo] = useState('');   // Watak No
   const [date, setDate] = useState('');
+  const [date2, setDate2] = useState('');
   const [freight, setFreight] = useState<number>(0);
   const [rows, setRows] = useState<Row[]>(initialRows);
   const [selectedReceiptNo, setSelectedReceiptNo] = useState('');
@@ -250,6 +252,7 @@ export function BillMakingTab() {
         setKhata('');
         setWatakNo('');
         setDate('');
+        setDate2('');
         setFreight(0);
         setRows(initialRows);
         setIsEditing(false);
@@ -273,6 +276,7 @@ export function BillMakingTab() {
       id: billId,
       sNo,
       date,
+      date2,
       customerName: ms,
       khata,
       watakNo,
@@ -346,6 +350,7 @@ export function BillMakingTab() {
         setKhata(watak.khata || '');
         setWatakNo(watak.watakNo || '');
         setDate(watak.date);
+        setDate2(watak.date2 || '');
         setFreight(watak.freight || 0);
         const loadedRows = watak.entries.map((e: any) => ({
             type: e.type,
@@ -475,7 +480,11 @@ export function BillMakingTab() {
                     <Label>Date</Label>
                     <Input type="date" value={date} onChange={e => setDate(e.target.value)} disabled={formDisabled} />
                 </div>
-                <div className="col-span-2">
+                 <div>
+                    <Label>Date 2 (Optional)</Label>
+                    <Input type="date" value={date2} onChange={e => setDate2(e.target.value)} disabled={formDisabled} />
+                </div>
+                <div className="col-span-2 md:col-span-1">
                     <Label>M/S (Grower)</Label>
                     <PartySelector value={ms} onChange={setMs} filter="grower" disabled={formDisabled} />
                 </div>

@@ -20,6 +20,7 @@ interface BillData {
     id: string;
     sNo: string;
     date: string;
+    date2?: string;
     customerName: string;
     watakNo: string;
     khata: string;
@@ -193,8 +194,11 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         doc.setFontSize(8);
         doc.text(`Bill No: ${billData.sNo}`, pageWidth - margin, margin + 22, { align: 'right' });
         doc.text(`Date: ${new Date(billData.date).toLocaleDateString('en-GB')}`, pageWidth - margin, margin + 26, { align: 'right' });
+        if(billData.date2) {
+             doc.text(`Date 2: ${new Date(billData.date2).toLocaleDateString('en-GB')}`, pageWidth - margin, margin + 30, { align: 'right' });
+        }
         if(billData.watakNo) {
-            doc.text(`Watak No: ${billData.watakNo}`, pageWidth - margin, margin + 30, { align: 'right' });
+            doc.text(`Watak No: ${billData.watakNo}`, pageWidth - margin, margin + 34, { align: 'right' });
         }
     
         // Table
@@ -209,7 +213,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         autoTable(doc, {
             head: [['TYPE', 'VARIETY', 'QTY', 'RATE', 'GROSS']],
             body: tableData,
-            startY: margin + 35,
+            startY: margin + 40,
             theme: 'grid',
             headStyles: {
                 fillColor: '#16a34a',
@@ -356,7 +360,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     }
 
     const {
-        sNo, date, customerName, watakNo, khata, entries, totals, freight
+        sNo, date, date2, customerName, watakNo, khata, entries, totals, freight
     } = billData;
     
     const ModernA4Layout = () => (
@@ -391,6 +395,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                         <div className="text-right text-xs text-gray-400">
                              <p><strong>Bill No:</strong> <span className="text-white font-mono">{sNo}</span></p>
                              <p><strong>Date:</strong> <span className="text-white font-mono">{new Date(date).toLocaleDateString('en-GB')}</span></p>
+                             {date2 && <p><strong>Date 2:</strong> <span className="text-white font-mono">{new Date(date2).toLocaleDateString('en-GB')}</span></p>}
                              <p><strong>Watak No:</strong> <span className="text-white font-mono">{watakNo}</span></p>
                         </div>
                     </div>
@@ -498,6 +503,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                         <div className="text-right text-xs">
                             <p><strong>Bill No:</strong> {sNo}</p>
                             <p><strong>Date:</strong> {new Date(date).toLocaleDateString('en-GB')}</p>
+                            {date2 && <p><strong>Date 2:</strong> {new Date(date2).toLocaleDateString('en-GB')}</p>}
                             <p><strong>Watak No:</strong> {watakNo}</p>
                         </div>
                     </section>
@@ -574,6 +580,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             </header>
             <main className="my-2 border-t border-b border-dashed border-black py-2 space-y-1 text-[11px]">
                 <div className="flex justify-between"><span>Bill No: {sNo}</span> <span>Date: {new Date(date).toLocaleDateString('en-GB')}</span></div>
+                {date2 && <div className="flex justify-end"><span>Date 2: {new Date(date2).toLocaleDateString('en-GB')}</span></div>}
                 {watakNo && <div className="flex justify-between"><span>Watak: {watakNo}</span></div>}
                 <div>Customer: {customerName}</div>
             </main>
@@ -627,7 +634,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
     return (
         <div className="bg-gray-900 font-sans print:bg-white flex flex-col md:flex-row gap-8 justify-center p-4 md:p-8">
-             <style jsx global>{\`
+             <style jsx global>{`
                 @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
                 
                 @media print {
@@ -656,7 +663,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                         }
                     }
                 }
-            \`}</style>
+            `}</style>
             
             <div className="print:hidden w-full max-w-[250px] space-y-4 sticky top-4 self-start">
                 <Controls />
