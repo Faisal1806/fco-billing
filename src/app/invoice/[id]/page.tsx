@@ -25,8 +25,8 @@ interface BillData {
     watakNo: string;
     khata: string;
     entries: {
-        peti: number;
-        daba: number;
+        peti?: number;
+        daba?: number;
         variety: string;
         rate: number;
         type: 'Patti' | 'Dabba';
@@ -50,7 +50,7 @@ interface BillData {
 
 
 export default function InvoicePage({ params }: { params: { id: string } }) {
-    const [billData, setBillData] = useState<BillData | null>(null);
+    const [billData, setBillData = useState<BillData | null>(null);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
     const printRef = useRef<HTMLDivElement>(null);
@@ -207,7 +207,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             e.variety,
             e.qty.toString(),
             `₹${e.rate.toFixed(2)}`,
-            `₹${(e.qty * e.rate).toFixed(2)}`
+            `₹${(e.total).toFixed(2)}`
         ]);
     
         autoTable(doc, {
@@ -682,5 +682,3 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         </div>
     );
 }
-
-    
