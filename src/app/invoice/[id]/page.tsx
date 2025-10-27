@@ -84,10 +84,14 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             }
 
             if (data) {
+                // Normalize entries to ensure all required fields are present
                 data.entries = data.entries.map(e => ({
                     ...e, 
+                    peti: e.peti || (e.type === 'Patti' ? e.qty : 0),
+                    daba: e.daba || (e.type === 'Dabba' ? e.qty : 0),
                     qty: e.qty || e.peti || e.daba || 0,
                     rate: e.rate || 0,
+                    total: (e.qty || e.peti || e.daba || 0) * (e.rate || 0)
                 }));
                 setBillData(data);
             } else {
