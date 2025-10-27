@@ -29,7 +29,7 @@ export default function OutsideSalesPage() {
 
     // Form State
     const [id, setId] = useState<string | null>(null); // To store the unique ID of the record being edited
-    const [selectedChallanNo, setSelectedChallanNo] = useState('');
+    const [selectedChallanId, setSelectedChallanId] = useState('');
     const [bikriNo, setBikriNo] = useState('');
     const [date, setDate] = useState('');
     const [market, setMarket] = useState('');
@@ -89,8 +89,8 @@ export default function OutsideSalesPage() {
     }, [savedBikris]);
     
     const selectedChallan = useMemo(() => {
-        return availableChallans.find(c => c.challanNo === selectedChallanNo);
-    }, [selectedChallanNo, availableChallans]);
+        return availableChallans.find(c => c.id === selectedChallanId);
+    }, [selectedChallanId, availableChallans]);
 
      useEffect(() => {
         if (selectedChallan && !isEditing) {
@@ -145,7 +145,7 @@ export default function OutsideSalesPage() {
 
     const resetForm = () => {
         setId(null);
-        setSelectedChallanNo('');
+        setSelectedChallanId('');
         setBikriNo('');
         setDate('');
         setMarket('');
@@ -160,21 +160,23 @@ export default function OutsideSalesPage() {
     };
 
     const handleSave = async () => {
-        if (!selectedChallanNo || !bikriNo || !date || (bikriType === 'fcoStock' && !market) || (bikriType === 'growerForwarding' && !growerName)) {
+        if (!selectedChallanId || !bikriNo || !date || (bikriType === 'fcoStock' && !market) || (bikriType === 'growerForwarding' && !growerName)) {
             toast({ variant: 'destructive', title: 'Missing Details', description: 'Please fill out all required header fields before saving.' });
             return;
         }
         setIsSubmitting(true);
         
+        const challanNo = selectedChallan?.challanNo;
         // Use existing ID if editing, otherwise generate a new one.
-        const recordId = id || `bikri-${selectedChallanNo}-${bikriNo}-${Date.now()}`;
+        const recordId = id || `bikri-${challanNo}-${bikriNo}-${Date.now()}`;
         if (!id) {
             setId(recordId);
         }
 
         const data = {
             id: recordId,
-            challanNo: selectedChallanNo,
+            challanId: selectedChallanId,
+            challanNo: challanNo,
             bikriNo,
             date,
             market,
@@ -212,7 +214,7 @@ export default function OutsideSalesPage() {
         resetForm();
         setId(bikri.id);
         setBikriType(bikri.bikriType || 'fcoStock');
-        setSelectedChallanNo(bikri.challanNo);
+        setSelectedChallanId(bikri.challanId || availableChallans.find(c => c.challanNo === bikri.challanNo)?.id || '');
         setBikriNo(bikri.bikriNo);
         setDate(bikri.date);
         setMarket(bikri.market || '');
@@ -278,7 +280,7 @@ export default function OutsideSalesPage() {
     const addSaleRow = useCallback(() => setSaleRows(prev => [...prev, { ...emptyRow }]), []);
     const removeSaleRow = useCallback((i: number) => setSaleRows(prev => (prev.length > 1 ? prev.filter((_, idx) => idx !== i) : prev)), []);
     
-    const usedChallanNos = useMemo(() => new Set(savedBikris.map(b => b.challanNo)), [savedBikris]);
+    const usedChallanIds = useMemo(() => new Set(savedBikris.map(b => b.challanId)), [savedBikris]);
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -304,7 +306,7 @@ export default function OutsideSalesPage() {
                             </Select>
                         </div>
                         <div>
-                            <Label htmlFor="challanNo">Original Challan No.</Label>
+                            <Label htmlFor="challanId">Original Challan No.</Label>
                             <Popover open={challanPopoverOpen} onOpenChange={setChallanPopoverOpen}>
                                 <PopoverTrigger asChild>
                                     <Button
@@ -314,8 +316,8 @@ export default function OutsideSalesPage() {
                                     className="w-full justify-between"
                                     disabled={isEditing}
                                     >
-                                    {selectedChallanNo
-                                        ? availableChallans.find(c => c.challanNo === selectedChallanNo)?.challanNo + ' - ' + availableChallans.find(c => c.challanNo === selectedChallanNo)?.toMs
+                                    {selectedChallanId
+                                        ? availableChallans.find(c => c.id === selectedChallanId)?.challanNo + ' - ' + availableChallans.find(c => c.id === selectedChallanId)?.toMs
                                         : "Select Challan"}
                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                     </Button>
@@ -327,13 +329,13 @@ export default function OutsideSalesPage() {
                                         <CommandEmpty>No challan found.</CommandEmpty>
                                         <CommandGroup>
                                         {availableChallans.map((c) => {
-                                            const isUsed = usedChallanNos.has(c.challanNo);
+                                            const isUsed = usedChallanIds.has(c.id);
                                             return (
                                                 <CommandItem
-                                                    key={c.challanNo}
+                                                    key={c.id}
                                                     value={`${c.challanNo} ${c.toMs}`}
                                                     onSelect={() => {
-                                                        setSelectedChallanNo(c.challanNo)
+                                                        setSelectedChallanId(c.id)
                                                         setChallanPopoverOpen(false)
                                                     }}
                                                     disabled={isUsed}
@@ -342,7 +344,7 @@ export default function OutsideSalesPage() {
                                                 <Check
                                                 className={cn(
                                                     "mr-2 h-4 w-4",
-                                                    selectedChallanNo === c.challanNo || isUsed ? "opacity-100" : "opacity-0",
+                                                    selectedChallanId === c.id || isUsed ? "opacity-100" : "opacity-0",
                                                     isUsed && "text-destructive"
                                                 )}
                                                 />
