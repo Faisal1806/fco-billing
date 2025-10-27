@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, FilePenLine, FilePlus, Globe, Percent, Minus, Package, ShoppingCart, Truck, FileText, Trash2, User, Repeat } from 'lucide-react';
+import { Loader2, FilePenLine, FilePlus, Globe, Percent, Minus, Package, ShoppingCart, Truck, FileText, Trash2, User, Repeat, ChevronsUpDown, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { saveDocument, deleteDocument } from '@/lib/actions';
@@ -17,6 +17,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { PartySelector } from '@/components/party-selector';
 import { EntryTable, emptyRow, type EntryRow } from '@/components/outside-sales-entry-table';
 import { Badge } from '@/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { cn } from '@/lib/utils';
 
 type BikriType = 'fcoStock' | 'growerForwarding';
 
@@ -50,6 +53,7 @@ export default function OutsideSalesPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [userRole, setUserRole] = useState<string | null>(null);
+    const [challanPopoverOpen, setChallanPopoverOpen] = useState(false);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -299,12 +303,50 @@ export default function OutsideSalesPage() {
                         </div>
                         <div>
                             <Label htmlFor="challanNo">Original Challan No.</Label>
-                            <Select value={selectedChallanNo} onValueChange={setSelectedChallanNo} disabled={isEditing}>
-                                <SelectTrigger id="challanNo"><SelectValue placeholder="Select Challan" /></SelectTrigger>
-                                <SelectContent>
-                                    {availableChallans.map(c => <SelectItem key={c.challanNo} value={c.challanNo}>{c.challanNo} - {c.toMs}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
+                            <Popover open={challanPopoverOpen} onOpenChange={setChallanPopoverOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    aria-expanded={challanPopoverOpen}
+                                    className="w-full justify-between"
+                                    disabled={isEditing}
+                                    >
+                                    {selectedChallanNo
+                                        ? availableChallans.find(c => c.challanNo === selectedChallanNo)?.challanNo + ' - ' + availableChallans.find(c => c.challanNo === selectedChallanNo)?.toMs
+                                        : "Select Challan"}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                    <Command>
+                                    <CommandInput placeholder="Search challan..." />
+                                    <CommandList>
+                                        <CommandEmpty>No challan found.</CommandEmpty>
+                                        <CommandGroup>
+                                        {availableChallans.map((c) => (
+                                            <CommandItem
+                                                key={c.challanNo}
+                                                value={`${c.challanNo} ${c.toMs}`}
+                                                onSelect={() => {
+                                                    setSelectedChallanNo(c.challanNo)
+                                                    setChallanPopoverOpen(false)
+                                                }}
+                                                >
+                                                <Check
+                                                className={cn(
+                                                    "mr-2 h-4 w-4",
+                                                    selectedChallanNo === c.challanNo ? "opacity-100" : "opacity-0"
+                                                )}
+                                                />
+                                                {c.challanNo} - {c.toMs}
+                                            </CommandItem>
+                                        ))}
+                                        </CommandGroup>
+                                    </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
                         </div>
                          <div>
                             <Label htmlFor="bikriNo">Bikri No.</Label>
