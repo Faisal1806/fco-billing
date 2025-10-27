@@ -278,6 +278,8 @@ export default function OutsideSalesPage() {
     const addSaleRow = useCallback(() => setSaleRows(prev => [...prev, { ...emptyRow }]), []);
     const removeSaleRow = useCallback((i: number) => setSaleRows(prev => (prev.length > 1 ? prev.filter((_, idx) => idx !== i) : prev)), []);
     
+    const usedChallanNos = useMemo(() => new Set(savedBikris.map(b => b.challanNo)), [savedBikris]);
+
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="lg:col-span-2">
@@ -324,24 +326,30 @@ export default function OutsideSalesPage() {
                                     <CommandList>
                                         <CommandEmpty>No challan found.</CommandEmpty>
                                         <CommandGroup>
-                                        {availableChallans.map((c) => (
-                                            <CommandItem
-                                                key={c.challanNo}
-                                                value={`${c.challanNo} ${c.toMs}`}
-                                                onSelect={() => {
-                                                    setSelectedChallanNo(c.challanNo)
-                                                    setChallanPopoverOpen(false)
-                                                }}
+                                        {availableChallans.map((c) => {
+                                            const isUsed = usedChallanNos.has(c.challanNo);
+                                            return (
+                                                <CommandItem
+                                                    key={c.challanNo}
+                                                    value={`${c.challanNo} ${c.toMs}`}
+                                                    onSelect={() => {
+                                                        setSelectedChallanNo(c.challanNo)
+                                                        setChallanPopoverOpen(false)
+                                                    }}
+                                                    disabled={isUsed}
+                                                    className={cn('cursor-pointer', isUsed && 'opacity-50 cursor-not-allowed')}
                                                 >
                                                 <Check
                                                 className={cn(
                                                     "mr-2 h-4 w-4",
-                                                    selectedChallanNo === c.challanNo ? "opacity-100" : "opacity-0"
+                                                    selectedChallanNo === c.challanNo || isUsed ? "opacity-100" : "opacity-0",
+                                                    isUsed && "text-destructive"
                                                 )}
                                                 />
                                                 {c.challanNo} - {c.toMs}
+                                                {isUsed && <Badge variant="secondary" className="ml-auto">Used</Badge>}
                                             </CommandItem>
-                                        ))}
+                                        )})}
                                         </CommandGroup>
                                     </CommandList>
                                     </Command>
