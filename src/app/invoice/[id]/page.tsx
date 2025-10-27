@@ -49,14 +49,14 @@ interface BillData {
 
 
 export default function InvoicePage({ params }: { params: { id: string } }) {
-    const [billData, setBillData] = useState<BillData | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [billData, setBillData = useState<BillData | null>(null);
+    const [loading, setLoading = useState(true);
     const { toast } = useToast();
     const printRef = useRef<HTMLDivElement>(null);
-    const [pageUrl, setPageUrl] = useState('');
-    const [printStyle, setPrintStyle] = useState<'a4' | 'thermal'>('a4');
-    const [invoiceStyle, setInvoiceStyle] = useState('classic');
-    const [totalGrowers, setTotalGrowers] = useState(0);
+    const [pageUrl, setPageUrl = useState('');
+    const [printStyle, setPrintStyle = useState<'a4' | 'thermal'>('a4');
+    const [invoiceStyle, setInvoiceStyle = useState('classic');
+    const [totalGrowers, setTotalGrowers = useState(0);
 
 
     useEffect(() => {
@@ -84,16 +84,25 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             }
 
             if (data) {
-                // Normalize entries to ensure all required fields are present
-                data.entries = data.entries.map(e => ({
-                    ...e, 
-                    peti: e.peti || (e.type === 'Patti' ? e.qty : 0),
-                    daba: e.daba || (e.type === 'Dabba' ? e.qty : 0),
-                    qty: e.qty || e.peti || e.daba || 0,
-                    rate: e.rate || 0,
-                    total: (e.qty || e.peti || e.daba || 0) * (e.rate || 0)
-                }));
-                setBillData(data);
+                // Ensure all necessary fields have default values if they are missing from older records
+                const normalizedData: BillData = {
+                    ...data,
+                    freight: data.freight || 0,
+                    entries: data.entries.map(e => ({
+                        peti: e.peti || (e.type === 'Patti' ? e.qty : 0),
+                        daba: e.daba || (e.type === 'Dabba' ? e.qty : 0),
+                        qty: e.qty || e.peti || e.daba || 0,
+                        rate: e.rate || 0,
+                        total: e.total || (e.qty || 0) * (e.rate || 0),
+                        variety: e.variety || '',
+                        type: e.type || (e.peti > 0 ? 'Patti' : 'Dabba')
+                    })),
+                    totals: {
+                        ...data.totals,
+                        netSale: data.totals.netSale || 0
+                    }
+                };
+                setBillData(normalizedData);
             } else {
                 toast({
                     variant: "destructive",
@@ -518,7 +527,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                                         <td className="py-0.5 px-1 border-x border-green-600">{entry.variety}</td>
                                         <td className="py-0.5 px-1 border-x border-green-600 text-center">{entry.qty}</td>
                                         <td className="py-0.5 px-1 border-x border-green-600 text-right">₹{entry.rate.toFixed(2)}</td>
-                                        <td className="py-0.5 px-1 border-x border-green-600 text-right font-semibold">₹{(entry.qty * entry.rate).toFixed(2)}</td>
+                                        <td className="py-0.5 px-1 border-x border-green-600 text-right font-semibold">₹{entry.total.toFixed(2)}</td>
                                     </tr>
                                 ))}
                                 {emptyRows.map((_, index) => (
@@ -591,7 +600,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                             <td className="text-left py-1">{entry.variety} ({entry.type})</td>
                             <td className="text-right">{entry.qty}</td>
                             <td className="text-right">{entry.rate.toFixed(2)}</td>
-                            <td className="text-right">{(entry.qty * entry.rate).toFixed(2)}</td>
+                            <td className="text-right">{entry.total.toFixed(2)}</td>
                         </tr>
                     ))}
                 </tbody>
@@ -674,3 +683,5 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         </div>
     );
 }
+
+    
