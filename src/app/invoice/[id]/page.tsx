@@ -49,14 +49,14 @@ interface BillData {
 
 
 export default function InvoicePage({ params }: { params: { id: string } }) {
-    const [billData, setBillData = useState<BillData | null>(null);
-    const [loading, setLoading = useState(true);
+    const [billData, setBillData] = useState<BillData | null>(null);
+    const [loading, setLoading] = useState(true);
     const { toast } = useToast();
     const printRef = useRef<HTMLDivElement>(null);
-    const [pageUrl, setPageUrl = useState('');
-    const [printStyle, setPrintStyle = useState<'a4' | 'thermal'>('a4');
-    const [invoiceStyle, setInvoiceStyle = useState('classic');
-    const [totalGrowers, setTotalGrowers = useState(0);
+    const [pageUrl, setPageUrl] = useState('');
+    const [printStyle, setPrintStyle] = useState<'a4' | 'thermal'>('a4');
+    const [invoiceStyle, setInvoiceStyle] = useState('classic');
+    const [totalGrowers, setTotalGrowers] = useState(0);
 
 
     useEffect(() => {
@@ -79,30 +79,22 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
             let data: BillData | null = null;
             const localData = localStorage.getItem(`invoice-${params.id}`);
+            
             if (localData) {
-                data = JSON.parse(localData);
+                try {
+                    data = JSON.parse(localData) as BillData;
+                } catch (e) {
+                    console.error("Failed to parse invoice data", e);
+                    toast({
+                        variant: "destructive",
+                        title: "Error Loading Invoice",
+                        description: "The saved invoice data appears to be corrupted."
+                    });
+                }
             }
 
             if (data) {
-                // Ensure all necessary fields have default values if they are missing from older records
-                const normalizedData: BillData = {
-                    ...data,
-                    freight: data.freight || 0,
-                    entries: data.entries.map(e => ({
-                        peti: e.peti || (e.type === 'Patti' ? e.qty : 0),
-                        daba: e.daba || (e.type === 'Dabba' ? e.qty : 0),
-                        qty: e.qty || e.peti || e.daba || 0,
-                        rate: e.rate || 0,
-                        total: e.total || (e.qty || 0) * (e.rate || 0),
-                        variety: e.variety || '',
-                        type: e.type || (e.peti > 0 ? 'Patti' : 'Dabba')
-                    })),
-                    totals: {
-                        ...data.totals,
-                        netSale: data.totals.netSale || 0
-                    }
-                };
-                setBillData(normalizedData);
+                setBillData(data);
             } else {
                 toast({
                     variant: "destructive",
@@ -635,7 +627,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
     return (
         <div className="bg-gray-900 font-sans print:bg-white flex flex-col md:flex-row gap-8 justify-center p-4 md:p-8">
-             <style jsx global>{`
+             <style jsx global>{\`
                 @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
                 
                 @media print {
@@ -664,7 +656,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                         }
                     }
                 }
-            `}</style>
+            \`}</style>
             
             <div className="print:hidden w-full max-w-[250px] space-y-4 sticky top-4 self-start">
                 <Controls />
