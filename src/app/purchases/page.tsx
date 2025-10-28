@@ -77,6 +77,14 @@ export default function PurchasesPage() {
     return savedPurchases.filter(p => new Date(p.date).getFullYear() === currentYear).length;
   }, [savedPurchases]);
 
+  const yearlyNugs = useMemo(() => {
+    if(!savedPurchases) return 0;
+    const currentYear = new Date().getFullYear();
+    return savedPurchases
+      .filter(p => new Date(p.date).getFullYear() === currentYear)
+      .reduce((acc, p) => acc + (p.totals?.totalQty || 0), 0);
+  }, [savedPurchases]);
+
   const filteredPurchases = useMemo(() => {
     if (!searchTerm) return savedPurchases;
     const lowerCaseSearch = searchTerm.toLowerCase();
@@ -381,10 +389,10 @@ export default function PurchasesPage() {
         <Card className="lg:col-span-1 h-fit">
             <CardHeader>
                  <div className="flex items-center justify-between gap-4">
-                    <h3 className="text-lg font-medium flex items-center gap-2">
-                      Saved Purchases
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-medium">Saved Purchases</h3>
                       {!isLoading && <Badge variant="secondary">{yearlyCount} This Year</Badge>}
-                    </h3>
+                    </div>
                     <div className="relative w-full max-w-[150px]">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input 
@@ -394,6 +402,9 @@ export default function PurchasesPage() {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
+                </div>
+                 <div className="text-sm text-muted-foreground mt-2">
+                    Total Nugs Purchased This Year: <span className="font-bold text-foreground">{yearlyNugs.toLocaleString()}</span>
                 </div>
             </CardHeader>
             <CardContent>
@@ -433,3 +444,4 @@ export default function PurchasesPage() {
     </div>
   );
 }
+
