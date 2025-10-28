@@ -87,17 +87,21 @@ export default function LoyaltyPage() {
 
     const loyaltyData = useMemo(() => {
         const partyData: {[key: string]: { name: string; netSales: number; redeemed: number; history: any[] }} = {};
+        const currentYear = new Date().getFullYear();
 
         allTransactions.forEach(tx => {
+            const txDate = new Date(tx.date);
             const canonical = getCanonicalName(tx.party);
             if (!partyData[canonical]) {
                 partyData[canonical] = { name: tx.party, netSales: 0, redeemed: 0, history: [] };
             }
 
             if (tx.type === 'Sale' || tx.type === 'Bikri') {
-                const points = Math.floor(tx.amount / 100);
-                partyData[canonical].netSales += tx.amount;
-                partyData[canonical].history.push({ date: tx.date, type: 'Earned', points: points, notes: tx.notes });
+                 if (txDate.getFullYear() === currentYear) {
+                    const points = Math.floor(tx.amount * 0.01);
+                    partyData[canonical].netSales += tx.amount;
+                    partyData[canonical].history.push({ date: tx.date, type: 'Earned', points: points, notes: tx.notes });
+                }
             } else if (tx.type === 'Discount') {
                 partyData[canonical].redeemed += tx.amount;
                 partyData[canonical].history.push({ date: tx.date, type: 'Redeemed', points: -tx.amount, notes: tx.notes });
@@ -116,7 +120,7 @@ export default function LoyaltyPage() {
         let totalRedeemed = 0;
 
         Object.values(loyaltyData).forEach(party => {
-            totalEarned += Math.floor(party.netSales / 100);
+            totalEarned += Math.floor(party.netSales * 0.01);
             totalRedeemed += party.redeemed;
         });
 
@@ -148,7 +152,7 @@ export default function LoyaltyPage() {
         
         // Add bonus points for top 3
         const leaderboardWithPoints = sortedBySales.map((data, index) => {
-            let points = Math.floor(data.netSales / 100);
+            let points = Math.floor(data.netSales * 0.01);
             if (index === 0) points += 10;
             if (index === 1) points += 10;
             if (index === 2) points += 10;
@@ -159,7 +163,7 @@ export default function LoyaltyPage() {
     }, [allTransactions]);
 
     const selectedPartyData = selectedParty ? loyaltyData[getCanonicalName(selectedParty)] : null;
-    const selectedPartyPoints = selectedPartyData ? Math.floor(selectedPartyData.netSales / 100) - selectedPartyData.redeemed : 0;
+    const selectedPartyPoints = selectedPartyData ? Math.floor(selectedPartyData.netSales * 0.01) - selectedPartyData.redeemed : 0;
     
     const handleRedeem = async () => {
         if (!selectedPartyData || !selectedParty) return;
@@ -259,7 +263,7 @@ export default function LoyaltyPage() {
                             <>
                                 <div className='grid grid-cols-2 gap-4 mb-4'>
                                     <div className="p-4 bg-muted/50 rounded-lg">
-                                        <p className="text-sm text-muted-foreground">Total Sales</p>
+                                        <p className="text-sm text-muted-foreground">Total Sales (This Year)</p>
                                         <p className="text-2xl font-bold">₹{selectedPartyData.netSales.toLocaleString('en-IN')}</p>
                                     </div>
                                     <div className="p-4 bg-muted/50 rounded-lg">
