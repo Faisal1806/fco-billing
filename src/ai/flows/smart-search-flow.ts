@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A smart search AI agent for querying business data.
@@ -76,22 +77,17 @@ const smartSearchFlow = ai.defineFlow(
     outputSchema: SmartSearchOutputSchema,
   },
   async (input) => {
-    const { output } = await ai.generate({
-        prompt: smartSearchPrompt.prompt,
-        input: input,
-        model: genkit.model('googleai/gemini-pro'),
-        output: {
-            schema: SmartSearchOutputSchema,
-        },
-        config: {
-            temperature: 0,
-        },
-    });
+    try {
+      const { output } = await smartSearchPrompt(input);
 
-    if (!output) {
-      return { collection: 'invoices', filters: [], error: 'The AI could not process the query. Please try rephrasing.' };
+      if (!output) {
+        return { collection: 'invoices', filters: [], error: 'The AI could not process the query. Please try rephrasing.' };
+      }
+      return output;
+    } catch (e) {
+      console.error(e);
+      return { collection: 'invoices', filters: [], error: 'An unexpected error occurred while processing your query.' };
     }
-    return output;
   }
 );
 
