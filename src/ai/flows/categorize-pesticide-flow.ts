@@ -20,22 +20,10 @@ Product Name: {{{name}}}`,
     },
 );
 
-const categorizePesticideFlow = ai.defineFlow(
-    {
-        name: 'categorizePesticideFlow',
-        inputSchema: PesticideCategoryInputSchema,
-        outputSchema: PesticideCategoryOutputSchema,
-    },
-    async (input) => {
-        const { output } = await categorizePesticidePrompt(input);
-        if (!output) {
-            throw new Error('AI failed to categorize the product.');
-        }
-        return output;
-    }
-);
-
-
 export async function categorizePesticide(input: PesticideCategoryInput): Promise<PesticideCategoryOutput> {
-    return await categorizePesticideFlow(input);
+    const { output } = await categorizePesticidePrompt(input);
+    if (!output) {
+        throw new Error('AI failed to categorize the product.');
+    }
+    return output;
 }

@@ -8,7 +8,6 @@
 
 import { ai } from '@/ai/genkit';
 import { SmartSearchInput, SmartSearchInputSchema, SmartSearchOutput, SmartSearchOutputSchema } from '@/ai/schemas/smart-search-schemas';
-import { genkit } from 'genkit';
 
 const collectionsSchema = `
 Here are the available data collections and their queryable fields:
@@ -69,15 +68,8 @@ const smartSearchPrompt = ai.definePrompt(
     }
 );
 
-
-const smartSearchFlow = ai.defineFlow(
-  {
-    name: 'smartSearchFlow',
-    inputSchema: SmartSearchInputSchema,
-    outputSchema: SmartSearchOutputSchema,
-  },
-  async (input) => {
-    try {
+export async function queryData(input: SmartSearchInput): Promise<SmartSearchOutput> {
+  try {
       const { output } = await smartSearchPrompt(input);
 
       if (!output) {
@@ -88,9 +80,4 @@ const smartSearchFlow = ai.defineFlow(
       console.error(e);
       return { collection: 'invoices', filters: [], error: 'An unexpected error occurred while processing your query.' };
     }
-  }
-);
-
-export async function queryData(input: SmartSearchInput): Promise<SmartSearchOutput> {
-  return await smartSearchFlow(input);
 }
