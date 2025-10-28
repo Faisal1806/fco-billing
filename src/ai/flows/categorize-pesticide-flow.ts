@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI flow to categorize pesticide and fertilizer products.
@@ -8,6 +7,7 @@
 
 import {ai} from '@/ai/genkit';
 import { PesticideCategoryInput, PesticideCategoryInputSchema, PesticideCategoryOutput, PesticideCategoryOutputSchema } from '@/ai/schemas/pesticide-category-schemas';
+import { genkit } from 'genkit';
 
 const categorizePesticidePrompt = ai.definePrompt(
     {
@@ -27,7 +27,18 @@ const categorizePesticideFlow = ai.defineFlow(
         outputSchema: PesticideCategoryOutputSchema,
     },
     async (input) => {
-        const { output } = await categorizePesticidePrompt(input);
+        const { output } = await ai.generate({
+            prompt: categorizePesticidePrompt.prompt,
+            input: input,
+            model: genkit.model('googleai/gemini-pro'),
+            output: {
+                schema: PesticideCategoryOutputSchema,
+            },
+            config: {
+                temperature: 0,
+            },
+        });
+
         if (!output) {
             throw new Error('AI failed to categorize the product.');
         }
@@ -39,4 +50,3 @@ const categorizePesticideFlow = ai.defineFlow(
 export async function categorizePesticide(input: PesticideCategoryInput): Promise<PesticideCategoryOutput> {
     return await categorizePesticideFlow(input);
 }
-

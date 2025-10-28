@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -11,36 +10,17 @@ export default function HomePage() {
   const [animationData, setAnimationData] = useState(null);
 
   useEffect(() => {
-    fetch('/animations/splash/fco_splash_dark.json')
-      .then(res => res.json())
-      .then(data => {
-        setAnimationData(data);
-        setTimeout(() => {
-            router.replace('/dashboard');
-        }, 3200); // Corresponds to animation length
-      })
-      .catch(err => {
-        console.error("Failed to load splash animation, redirecting...", err);
-        router.replace('/dashboard');
-      });
+    if (localStorage.getItem('userRole') === 'admin') {
+      router.replace('/dashboard');
+    } else {
+      router.replace('/login');
+    }
   }, [router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
-      {animationData ? (
-        <Lottie 
-            animationData={animationData} 
-            loop={false}
-            style={{ width: 400, height: 400 }}
-        />
-      ) : (
-        <>
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <p className="ml-4">Loading Application...</p>
-        </>
-      )}
+      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <p className="ml-4">Loading Application...</p>
     </div>
   );
 }
-
-    

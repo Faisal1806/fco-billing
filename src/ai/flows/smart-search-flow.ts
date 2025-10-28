@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A smart search AI agent for querying business data.
@@ -8,6 +7,7 @@
 
 import { ai } from '@/ai/genkit';
 import { SmartSearchInput, SmartSearchInputSchema, SmartSearchOutput, SmartSearchOutputSchema } from '@/ai/schemas/smart-search-schemas';
+import { genkit } from 'genkit';
 
 const collectionsSchema = `
 Here are the available data collections and their queryable fields:
@@ -76,17 +76,22 @@ const smartSearchFlow = ai.defineFlow(
     outputSchema: SmartSearchOutputSchema,
   },
   async (input) => {
-    try {
-      const { output } = await smartSearchPrompt(input);
+    const { output } = await ai.generate({
+        prompt: smartSearchPrompt.prompt,
+        input: input,
+        model: genkit.model('googleai/gemini-pro'),
+        output: {
+            schema: SmartSearchOutputSchema,
+        },
+        config: {
+            temperature: 0,
+        },
+    });
 
-      if (!output) {
-        return { collection: 'invoices', filters: [], error: 'The AI could not process the query. Please try rephrasing.' };
-      }
-      return output;
-    } catch (e) {
-      console.error(e);
-      return { collection: 'invoices', filters: [], error: 'An unexpected error occurred while processing your query.' };
+    if (!output) {
+      return { collection: 'invoices', filters: [], error: 'The AI could not process the query. Please try rephrasing.' };
     }
+    return output;
   }
 );
 
