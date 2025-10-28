@@ -132,25 +132,23 @@ export default function LoyaltyPage() {
     }, [loyaltyData]);
     
     const leaderboard = useMemo(() => {
-        const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
 
-        const monthlySales: {[key: string]: { name: string, netSales: number }} = {};
+        const yearlySales: {[key: string]: { name: string, netSales: number }} = {};
 
         allTransactions.forEach(tx => {
             const txDate = new Date(tx.date);
-            if ((tx.type === 'Sale' || tx.type === 'Bikri') && txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear) {
+            if ((tx.type === 'Sale' || tx.type === 'Bikri') && txDate.getFullYear() === currentYear) {
                 const canonical = getCanonicalName(tx.party);
-                if (!monthlySales[canonical]) {
-                    monthlySales[canonical] = { name: tx.party, netSales: 0 };
+                if (!yearlySales[canonical]) {
+                    yearlySales[canonical] = { name: tx.party, netSales: 0 };
                 }
-                monthlySales[canonical].netSales += tx.amount;
+                yearlySales[canonical].netSales += tx.amount;
             }
         });
 
-        const sortedBySales = Object.values(monthlySales).sort((a,b) => b.netSales - a.netSales).slice(0, 10);
+        const sortedBySales = Object.values(yearlySales).sort((a,b) => b.netSales - a.netSales).slice(0, 10);
         
-        // Add bonus points for top 3
         const leaderboardWithPoints = sortedBySales.map((data, index) => {
             let points = Math.floor(data.netSales * 0.01);
             if (index === 0) points += 10;
@@ -219,8 +217,8 @@ export default function LoyaltyPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                     <CardHeader>
-                        <CardTitle>🏆 Monthly Leaderboard</CardTitle>
-                        <CardDescription>Top growers for the current month based on sales volume, with bonus points.</CardDescription>
+                        <CardTitle>🏆 Yearly Leaderboard</CardTitle>
+                        <CardDescription>Top growers for the current year based on sales volume.</CardDescription>
                     </CardHeader>
                     <CardContent>
                          <Table>
@@ -246,7 +244,7 @@ export default function LoyaltyPage() {
                                 })}
                             </TableBody>
                         </Table>
-                         {leaderboard.length === 0 && <p className="text-center text-muted-foreground p-8">No sales recorded this month.</p>}
+                         {leaderboard.length === 0 && <p className="text-center text-muted-foreground p-8">No sales recorded this year.</p>}
                     </CardContent>
                 </Card>
 
