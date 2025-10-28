@@ -1,7 +1,8 @@
+
 'use client';
 
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,28 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { KeyRound, User as UserIcon } from 'lucide-react';
 import { Logo } from '@/components/logo';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls, useGLTF } from '@react-three/drei';
+
+function AppleModel(props: any) {
+  const { scene } = useGLTF('/models/apple/scene.gltf');
+  return <primitive object={scene} {...props} />;
+}
+
+function Scene() {
+  return (
+    <>
+      <ambientLight intensity={1.5} />
+      <directionalLight position={[10, 10, 5]} intensity={2} />
+      <directionalLight position={[-10, -10, -5]} intensity={1} />
+      <Suspense fallback={null}>
+        <AppleModel scale={15} />
+      </Suspense>
+      <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={0.5} />
+    </>
+  );
+}
+
 
 export default function LoginPage() {
   const router = useRouter();
@@ -58,12 +81,11 @@ export default function LoginPage() {
         animate={{ opacity: 1 }}
         transition={{ duration: 1 }}
         className="fixed inset-0 z-0"
-        style={{
-          backgroundImage: `url('/backgrounds/abstract_glow.jpeg')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      />
+      >
+        <Canvas camera={{ position: [0, 0, 5], fov: 45 }}>
+          <Scene />
+        </Canvas>
+      </motion.div>
       <div className="fixed inset-0 bg-black/70 z-0"/>
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
