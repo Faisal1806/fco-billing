@@ -57,7 +57,6 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     const [pageUrl, setPageUrl] = useState('');
     const [printStyle, setPrintStyle] = useState<'a4' | 'thermal'>('a4');
     const [invoiceStyle, setInvoiceStyle] = useState('classic');
-    const [totalGrowers, setTotalGrowers] = useState(0);
 
 
     useEffect(() => {
@@ -490,29 +489,29 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                         <table className="w-full text-xs border-collapse">
                             <thead>
                                 <tr className="border-y-2 border-green-700">
-                                    <th className="p-1 text-left">TYPE</th>
-                                    <th className="p-1 text-left">VARIETY</th>
-                                    <th className="p-1 text-center">QTY</th>
-                                    <th className="p-1 text-right">RATE</th>
+                                    <th className="p-1 text-left border-r border-green-600/50">TYPE</th>
+                                    <th className="p-1 text-left border-r border-green-600/50">VARIETY</th>
+                                    <th className="p-1 text-center border-r border-green-600/50">QTY</th>
+                                    <th className="p-1 text-right border-r border-green-600/50">RATE</th>
                                     <th className="p-1 text-right">GROSS</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {entries.map((entry, index) => (
                                     <tr key={index} className="border-b border-green-600/50 h-5">
-                                        <td className="py-0.5 px-1">{entry.type}</td>
-                                        <td className="py-0.5 px-1">{entry.variety}</td>
-                                        <td className="py-0.5 px-1 text-center">{entry.qty}</td>
-                                        <td className="py-0.5 px-1 text-right">₹{entry.rate.toFixed(2)}</td>
+                                        <td className="py-0.5 px-1 border-r border-green-600/50">{entry.type}</td>
+                                        <td className="py-0.5 px-1 border-r border-green-600/50">{entry.variety}</td>
+                                        <td className="py-0.5 px-1 text-center border-r border-green-600/50">{entry.qty}</td>
+                                        <td className="py-0.5 px-1 text-right border-r border-green-600/50">₹{entry.rate.toFixed(2)}</td>
                                         <td className="py-0.5 px-1 text-right font-semibold">₹{entry.total.toFixed(2)}</td>
                                     </tr>
                                 ))}
                                 {emptyRows.map((_, index) => (
                                     <tr key={`empty-${index}`} className="border-b border-green-600/50 h-5">
-                                        <td className="py-0.5 px-1">&nbsp;</td>
-                                        <td className="py-0.5 px-1"></td>
-                                        <td className="py-0.5 px-1"></td>
-                                        <td className="py-0.5 px-1"></td>
+                                        <td className="py-0.5 px-1 border-r border-green-600/50">&nbsp;</td>
+                                        <td className="py-0.5 px-1 border-r border-green-600/50"></td>
+                                        <td className="py-0.5 px-1 border-r border-green-600/50"></td>
+                                        <td className="py-0.5 px-1 border-r border-green-600/50"></td>
                                         <td className="py-0.5 px-1"></td>
                                     </tr>
                                 ))}
