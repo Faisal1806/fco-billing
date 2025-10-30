@@ -50,7 +50,7 @@ interface BillData {
 
 
 export default function InvoicePage({ params }: { params: { id: string } }) {
-    const [billData, setBillData = useState<BillData | null>(null);
+    const [billData, setBillData] = useState<BillData | null>(null);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
     const printRef = useRef<HTMLDivElement>(null);
