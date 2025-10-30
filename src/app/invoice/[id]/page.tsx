@@ -461,9 +461,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 <footer className="flex justify-between items-end mt-auto pt-4 border-t border-gray-700 text-xs">
                     <BusinessCardQR size={64} />
                     <div className="text-right text-gray-400">
-                        <p className="text-3xl text-gray-200">Faisal</p>
-                        <p className="font-bold -mt-2">For Firdous Ahmad & Company</p>
-                        <p className="text-[10px]">Sign. Of Manager</p>
+                        <p className="font-signature text-3xl text-gray-200">Faisal</p>
+                        <p className="font-bold -mt-2">Sign. Of Manager</p>
                     </div>
                 </footer>
             </div>
@@ -560,8 +559,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                         <div className="flex justify-between items-end mt-1">
                             <BusinessCardQR size={40} />
                             <div className="text-center">
-                                <p className="text-xl">Faisal</p>
-                                <p className="font-bold -mt-2 text-[10px]">For Firdous Ahmad & Company</p>
+                                <p className="font-signature text-2xl text-gray-700">Faisal</p>
+                                <p className="font-bold -mt-2 text-[10px]">Sign. of Manager</p>
                             </div>
                         </div>
                     </footer>
@@ -636,7 +635,9 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         <div className="bg-gray-900 font-sans print:bg-white flex flex-col md:flex-row gap-8 justify-center p-4 md:p-8">
              <style jsx global>{`
                 @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
-                
+                .font-signature {
+                    font-family: 'Dancing Script', cursive;
+                }
                 @media print {
                     body {
                         background: white !important;

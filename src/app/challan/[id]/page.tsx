@@ -264,7 +264,7 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
                      </div>
                      <div className="text-center text-xs">
                          <p className="font-signature text-2xl text-gray-700 dark:text-gray-300">Faisal</p>
-                        <p className="font-bold">Sign. Of Manager</p>
+                        <p className="font-bold -mt-2">Sign. Of Manager</p>
                      </div>
                 </footer>
             </div>
