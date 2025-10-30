@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useMemo, useRef, useState, useEffect } from 'react';
@@ -171,7 +170,7 @@ export function BillMakingTab() {
   const formDisabled = isReceiptUsed;
 
   useEffect(() => {
-    if (selectedReceipt) {
+    if (selectedReceipt && !isEditing) {
         setMs(selectedReceipt.customerName);
         setDate(selectedReceipt.date);
         
@@ -195,7 +194,7 @@ export function BillMakingTab() {
             toast({ title: "Invoice Populated", description: `Loaded details from Receipt #${selectedReceipt.no}. Please enter the rates.` });
         }
     }
-  }, [selectedReceipt, isReceiptUsed, toast]);
+  }, [selectedReceipt, isEditing, isReceiptUsed, toast]);
 
   // --- Calculations (ALL from your spec) ---
   const totals = useMemo(() => {
@@ -686,3 +685,5 @@ export function BillMakingTab() {
     </>
   );
 }
+
+    
