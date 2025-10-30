@@ -173,7 +173,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         }
     
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
+        docsetFontSize(8);
         doc.text(`Bill No: ${billData.sNo}`, pageWidth - margin, margin + 22, { align: 'right' });
         doc.text(`Date: ${new Date(billData.date).toLocaleDateString('en-GB')}`, pageWidth - margin, margin + 26, { align: 'right' });
         if(billData.date2) {
@@ -498,7 +498,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                             </thead>
                             <tbody>
                                 {entries.map((entry, index) => (
-                                    <tr key={index} className="border-b border-green-600/50 h-5">
+                                    <tr key={index} className="h-5">
                                         <td className="py-0.5 px-1 border-r border-green-600/50">{entry.type}</td>
                                         <td className="py-0.5 px-1 border-r border-green-600/50">{entry.variety}</td>
                                         <td className="py-0.5 px-1 text-center border-r border-green-600/50">{entry.qty}</td>
@@ -507,7 +507,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                                     </tr>
                                 ))}
                                 {emptyRows.map((_, index) => (
-                                    <tr key={`empty-${index}`} className="border-b border-green-600/50 h-5">
+                                    <tr key={`empty-${index}`} className="h-5">
                                         <td className="py-0.5 px-1 border-r border-green-600/50">&nbsp;</td>
                                         <td className="py-0.5 px-1 border-r border-green-600/50"></td>
                                         <td className="py-0.5 px-1 border-r border-green-600/50"></td>
