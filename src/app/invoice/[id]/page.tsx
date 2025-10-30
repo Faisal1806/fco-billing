@@ -442,7 +442,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                     <BusinessCardQR size={64} />
                     <div className="text-right text-gray-400">
                         <p className="font-signature text-3xl text-gray-200">Faisal</p>
-                        <p className="font-bold -mt-2">Sign. Of Manager</p>
+                        <p className="font-bold -mt-2">Sign. of Manager</p>
                     </div>
                 </footer>
             </div>
@@ -490,30 +490,30 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                         <table className="w-full text-xs border-collapse">
                             <thead>
                                 <tr className="border-y-2 border-green-700">
-                                    <th className="p-1 border-x border-green-600">TYPE</th>
-                                    <th className="p-1 border-x border-green-600">VARIETY</th>
-                                    <th className="p-1 border-x border-green-600">QTY</th>
-                                    <th className="p-1 border-x border-green-600">RATE</th>
-                                    <th className="p-1 border-x border-green-600">GROSS</th>
+                                    <th className="p-1 text-left">TYPE</th>
+                                    <th className="p-1 text-left">VARIETY</th>
+                                    <th className="p-1 text-center">QTY</th>
+                                    <th className="p-1 text-right">RATE</th>
+                                    <th className="p-1 text-right">GROSS</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {entries.map((entry, index) => (
                                     <tr key={index} className="border-b border-green-600/50 h-5">
-                                        <td className="py-0.5 px-1 border-x border-green-600">{entry.type}</td>
-                                        <td className="py-0.5 px-1 border-x border-green-600">{entry.variety}</td>
-                                        <td className="py-0.5 px-1 border-x border-green-600 text-center">{entry.qty}</td>
-                                        <td className="py-0.5 px-1 border-x border-green-600 text-right">₹{entry.rate.toFixed(2)}</td>
-                                        <td className="py-0.5 px-1 border-x border-green-600 text-right font-semibold">₹{entry.total.toFixed(2)}</td>
+                                        <td className="py-0.5 px-1">{entry.type}</td>
+                                        <td className="py-0.5 px-1">{entry.variety}</td>
+                                        <td className="py-0.5 px-1 text-center">{entry.qty}</td>
+                                        <td className="py-0.5 px-1 text-right">₹{entry.rate.toFixed(2)}</td>
+                                        <td className="py-0.5 px-1 text-right font-semibold">₹{entry.total.toFixed(2)}</td>
                                     </tr>
                                 ))}
                                 {emptyRows.map((_, index) => (
                                     <tr key={`empty-${index}`} className="border-b border-green-600/50 h-5">
-                                        <td className="py-0.5 px-1 border-x border-green-600">&nbsp;</td>
-                                        <td className="py-0.5 px-1 border-x border-green-600"></td>
-                                        <td className="py-0.5 px-1 border-x border-green-600"></td>
-                                        <td className="py-0.5 px-1 border-x border-green-600"></td>
-                                        <td className="py-0.5 px-1 border-x border-green-600"></td>
+                                        <td className="py-0.5 px-1">&nbsp;</td>
+                                        <td className="py-0.5 px-1"></td>
+                                        <td className="py-0.5 px-1"></td>
+                                        <td className="py-0.5 px-1"></td>
+                                        <td className="py-0.5 px-1"></td>
                                     </tr>
                                 ))}
                             </tbody>
