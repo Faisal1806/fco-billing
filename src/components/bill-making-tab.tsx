@@ -1,7 +1,8 @@
 
 'use client';
 
-import React, { useMemo, useRef, useState, useEffect } from 'react';
+import * as React from 'react';
+import { useMemo, useRef, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
@@ -23,6 +24,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
 import { cn } from '@/lib/utils';
 import { saveDocument, deleteDocument } from '@/lib/actions';
+import { Checkbox } from './ui/checkbox';
 
 
 type Row = {
@@ -30,9 +32,10 @@ type Row = {
   qty: number;
   variety: string;
   rate: number;
+  isForwarded: boolean;
 };
 
-const emptyRow: Row = { type: 'Patti', qty: 0, variety: '', rate: 0 };
+const emptyRow: Row = { type: 'Patti', qty: 0, variety: '', rate: 0, isForwarded: false };
 const initialRows: Row[] = Array.from({ length: 5 }, () => ({ ...emptyRow }));
 
 
@@ -135,7 +138,8 @@ export function BillMakingTab() {
                 type: e.type,
                 qty: e.qty,
                 variety: e.variety,
-                rate: e.rate
+                rate: e.rate,
+                isForwarded: false
             }));
             
             setSNo(scannedData.sNo);
@@ -177,10 +181,10 @@ export function BillMakingTab() {
         const newRows: Row[] = [];
         selectedReceipt.entries.forEach((entry: any) => {
             if (entry.peti > 0) {
-                newRows.push({ type: 'Patti', variety: entry.kind, qty: entry.peti, rate: 0 });
+                newRows.push({ type: 'Patti', variety: entry.kind, qty: entry.peti, rate: 0, isForwarded: false });
             }
             if (entry.daba > 0) {
-                newRows.push({ type: 'Dabba', variety: entry.kind, qty: entry.daba, rate: 0 });
+                newRows.push({ type: 'Dabba', variety: entry.kind, qty: entry.daba, rate: 0, isForwarded: false });
             }
         });
 
@@ -206,7 +210,7 @@ export function BillMakingTab() {
       .filter(r => r.type === 'Dabba')
       .reduce((s, r) => s + (Number(r.qty) || 0), 0);
 
-    const rowGross = rows.map(r => (Number(r.qty) || 0) * (Number(r.rate) || 0));
+    const rowGross = rows.map(r => (r.isForwarded ? 0 : (Number(r.qty) || 0) * (Number(r.rate) || 0)));
     const totalGrossSale = rowGross.reduce((s, v) => s + v, 0);
 
     // Expenses by formula
@@ -237,6 +241,10 @@ export function BillMakingTab() {
     setRows(prev => {
       const copy = [...prev];
       copy[i] = { ...copy[i], ...patch };
+      // if forwarded, zero out the rate
+      if (patch.isForwarded === true) {
+          copy[i].rate = 0;
+      }
       return copy;
     });
   };
@@ -284,8 +292,9 @@ export function BillMakingTab() {
         type: r.type,
         qty: Number(r.qty),
         variety: r.variety,
-        rate: Number(r.rate), 
-        total: Number(r.qty) * Number(r.rate)
+        rate: Number(r.rate),
+        isForwarded: r.isForwarded,
+        total: r.isForwarded ? 0 : Number(r.qty) * Number(r.rate)
       })),
       totals: {
         pattiQty: totals.pattiQty,
@@ -356,6 +365,7 @@ export function BillMakingTab() {
             qty: e.qty,
             variety: e.variety,
             rate: e.rate,
+            isForwarded: e.isForwarded || false,
         }));
 
         setRows(loadedRows.length > 0 ? loadedRows : initialRows);
@@ -508,6 +518,7 @@ export function BillMakingTab() {
                         <TableHead>Type</TableHead>
                         <TableHead>Variety</TableHead>
                         <TableHead className="text-right">Qty</TableHead>
+                        <TableHead>Forward</TableHead>
                         <TableHead className="text-right">Rate</TableHead>
                         <TableHead className="text-right">Gross</TableHead>
                         <TableHead className="w-12"></TableHead>
@@ -545,16 +556,25 @@ export function BillMakingTab() {
                             disabled={formDisabled}
                             />
                         </TableCell>
+                         <TableCell className="text-center">
+                            <Checkbox 
+                                checked={r.isForwarded} 
+                                onCheckedChange={(checked) => updateRow(i, { isForwarded: !!checked })}
+                                disabled={formDisabled}
+                            />
+                        </TableCell>
                         <TableCell>
                             <Input
                             type="number"
                             className="w-24 text-right"
                             value={r.rate || ''}
                             onChange={e => updateRow(i, { rate: Number(e.target.value) || 0 })}
-                            disabled={formDisabled}
+                            disabled={formDisabled || r.isForwarded}
                             />
                         </TableCell>
-                        <TableCell className="text-right font-medium">{(totals.rowGross[i] || 0).toFixed(2)}</TableCell>
+                        <TableCell className="text-right font-medium">
+                            {r.isForwarded ? <Badge variant="secondary">Forwarded</Badge> : (totals.rowGross[i] || 0).toFixed(2)}
+                        </TableCell>
                         <TableCell className="text-right">
                             <Button variant="ghost" size="icon" onClick={() => removeRow(i)} disabled={formDisabled}>
                                 <Trash2 className="text-red-600 h-4 w-4" />
@@ -565,7 +585,7 @@ export function BillMakingTab() {
                     </TableBody>
                     <TableFooter>
                         <TableRow>
-                            <TableCell colSpan={7}>
+                            <TableCell colSpan={8}>
                                  <Button onClick={addRow} variant="outline" size="sm" className="mt-2" disabled={formDisabled}>
                                     <PlusCircle className="h-4 w-4 mr-2" />
                                     Add Row

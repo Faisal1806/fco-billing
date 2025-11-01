@@ -15,6 +15,7 @@ import BusinessCardQR from "@/components/BusinessCardQR";
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import QRCode from 'qrcode.react';
+import { Badge } from "@/components/ui/badge";
 
 interface BillData {
     id: string;
@@ -32,6 +33,7 @@ interface BillData {
         type: 'Patti' | 'Dabba';
         qty: number;
         total: number;
+        isForwarded?: boolean;
     }[];
     totals: {
       pattiQty: number;
@@ -173,7 +175,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         }
     
         doc.setFont('helvetica', 'normal');
-        docsetFontSize(8);
+        doc.setFontSize(8);
         doc.text(`Bill No: ${billData.sNo}`, pageWidth - margin, margin + 22, { align: 'right' });
         doc.text(`Date: ${new Date(billData.date).toLocaleDateString('en-GB')}`, pageWidth - margin, margin + 26, { align: 'right' });
         if(billData.date2) {
@@ -188,8 +190,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             e.type,
             e.variety,
             e.qty.toString(),
-            `₹${e.rate.toFixed(2)}`,
-            `₹${(e.total).toFixed(2)}`
+            e.isForwarded ? 'Forwarded' : `₹${e.rate.toFixed(2)}`,
+            e.isForwarded ? 'Forwarded' : `₹${(e.total).toFixed(2)}`
         ]);
     
         autoTable(doc, {
@@ -396,7 +398,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                                             <td className="py-2">{entry.type}</td>
                                             <td className="py-2">{entry.variety}</td>
                                             <td className="py-2 text-center font-mono">{entry.qty}</td>
-                                            <td className="py-2 text-right font-mono">₹{entry.rate.toFixed(2)}</td>
+                                            <td className="py-2 text-right font-mono">{entry.isForwarded ? 'Forward' : `₹${entry.rate.toFixed(2)}`}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -502,8 +504,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                                         <td className="py-0.5 px-1 border-r border-green-600/50">{entry.type}</td>
                                         <td className="py-0.5 px-1 border-r border-green-600/50">{entry.variety}</td>
                                         <td className="py-0.5 px-1 text-center border-r border-green-600/50">{entry.qty}</td>
-                                        <td className="py-0.5 px-1 text-right border-r border-green-600/50">₹{entry.rate.toFixed(2)}</td>
-                                        <td className="py-0.5 px-1 text-right font-semibold">₹{entry.total.toFixed(2)}</td>
+                                        <td className="py-0.5 px-1 text-right border-r border-green-600/50">{entry.isForwarded ? 'Forwarded' : `₹${entry.rate.toFixed(2)}`}</td>
+                                        <td className="py-0.5 px-1 text-right font-semibold">{entry.isForwarded ? 'Forwarded' : `₹${entry.total.toFixed(2)}`}</td>
                                     </tr>
                                 ))}
                                 {emptyRows.map((_, index) => (
@@ -575,8 +577,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                         <tr key={i} className="border-b border-dashed border-black">
                             <td className="text-left py-1">{entry.variety} ({entry.type})</td>
                             <td className="text-right">{entry.qty}</td>
-                            <td className="text-right">{entry.rate.toFixed(2)}</td>
-                            <td className="text-right">{entry.total.toFixed(2)}</td>
+                            <td className="text-right">{entry.isForwarded ? 'Fwd' : entry.rate.toFixed(2)}</td>
+                            <td className="text-right">{entry.isForwarded ? 'Fwd' : entry.total.toFixed(2)}</td>
                         </tr>
                     ))}
                 </tbody>
