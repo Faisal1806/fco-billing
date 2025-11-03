@@ -29,6 +29,11 @@ interface Invoice {
         pattiQty: number;
         dabbaQty: number;
     };
+    entries: {
+        isForwarded?: boolean;
+        qty: number;
+        type: 'Patti' | 'Dabba';
+    }[];
     customerName: string;
 }
 
@@ -197,11 +202,15 @@ export default function DashboardPage() {
         const netSale = sale.totals.netSale || 0;
         const grossSale = sale.totals.grossSale || 0;
         const totalExpenses = sale.totals.totalExpenses || 0;
+        
+        const nonForwardedEntries = sale.entries?.filter(e => !e.isForwarded) || [];
 
         if (sale.date === todayStr) {
-            totalSaleValueToday += netSale;
-            pattiToday += sale.totals.pattiQty || 0;
-            dabbaToday += sale.totals.dabbaQty || 0;
+            totalSaleValueToday += netSale; // Net sale is already calculated correctly
+            nonForwardedEntries.forEach(entry => {
+                if (entry.type === 'Patti') pattiToday += entry.qty;
+                if (entry.type === 'Dabba') dabbaToday += entry.qty;
+            });
         }
         
         if (saleYear === currentYear) {
@@ -213,8 +222,11 @@ export default function DashboardPage() {
             yearGrossSales += grossSale;
             yearTotalExpenses += totalExpenses;
             yearNetSales += netSale;
-            yearPattiSold += sale.totals.pattiQty || 0;
-            yearDabbaSold += sale.totals.dabbaQty || 0;
+            
+            nonForwardedEntries.forEach(entry => {
+                if (entry.type === 'Patti') yearPattiSold += entry.qty;
+                if (entry.type === 'Dabba') yearDabbaSold += entry.qty;
+            });
         }
     });
     
@@ -566,5 +578,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-  
