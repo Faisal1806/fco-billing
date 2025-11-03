@@ -441,15 +441,17 @@ export default function DashboardPage() {
                         <CardDescription>Top 5 growers' contribution to this year's sales.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {pieChartData.length > 0 ? (
-                            <VictoryPie
-                                data={pieChartData}
-                                colorScale={["#38bdf8", "#fbbf24", "#34d399", "#f87171", "#c084fc", "#a3a3a3"]}
-                                innerRadius={50}
-                                theme={VictoryTheme.material}
-                                style={{ labels: { fill: "white", fontSize: 10 } }}
-                            />
-                        ) : <p className="text-center text-muted-foreground py-10">No sales data available for chart.</p>}
+                        <div className="pointer-events-none">
+                            {pieChartData.length > 0 ? (
+                                <VictoryPie
+                                    data={pieChartData}
+                                    colorScale={["#38bdf8", "#fbbf24", "#34d399", "#f87171", "#c084fc", "#a3a3a3"]}
+                                    innerRadius={50}
+                                    theme={VictoryTheme.material}
+                                    style={{ labels: { fill: "white", fontSize: 10 } }}
+                                />
+                            ) : <p className="text-center text-muted-foreground py-10">No sales data available for chart.</p>}
+                        </div>
                     </CardContent>
                 </Card>
                  <Card className="bg-card/80 backdrop-blur-sm border border-white/10">
@@ -458,19 +460,21 @@ export default function DashboardPage() {
                         <CardDescription>Net sales growth for the current year.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {barChartData && barChartData.length > 0 ? (
-                           <VictoryChart
-                                theme={VictoryTheme.material}
-                                domainPadding={20}
-                            >
-                                <VictoryAxis style={{ tickLabels: { fill: 'white' } }} />
-                                <VictoryAxis dependentAxis style={{ tickLabels: { fill: 'white' } }} tickFormat={(x) => (`₹${x/1000}k`)} />
-                                <VictoryBar
-                                    data={barChartData}
-                                    style={{ data: { fill: "#34d399" } }}
-                                />
-                            </VictoryChart>
-                        ) : <p className="text-center text-muted-foreground py-10">No monthly sales data available for chart.</p>}
+                        <div className="pointer-events-none">
+                            {barChartData && barChartData.length > 0 ? (
+                            <VictoryChart
+                                    theme={VictoryTheme.material}
+                                    domainPadding={20}
+                                >
+                                    <VictoryAxis style={{ tickLabels: { fill: 'white' } }} />
+                                    <VictoryAxis dependentAxis style={{ tickLabels: { fill: 'white' } }} tickFormat={(x) => (`₹${x/1000}k`)} />
+                                    <VictoryBar
+                                        data={barChartData}
+                                        style={{ data: { fill: "#34d399" } }}
+                                    />
+                                </VictoryChart>
+                            ) : <p className="text-center text-muted-foreground py-10">No monthly sales data available for chart.</p>}
+                        </div>
                     </CardContent>
                 </Card>
             </div>
