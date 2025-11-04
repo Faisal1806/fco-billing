@@ -476,7 +476,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                         </div>
                     </header>
                     <section className="flex justify-between items-end my-1 text-sm">
-                        <div>
+                        <div className="flex-1">
                             <p><strong>M/s:</strong> {customerName}</p>
                             {khata && <p><strong>Khata:</strong> {khata}</p>}
                         </div>
