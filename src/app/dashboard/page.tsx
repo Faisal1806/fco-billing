@@ -446,26 +446,7 @@ export default function DashboardPage() {
         
         <div className="space-y-4">
             <h2 className="text-xl font-semibold tracking-wider text-muted-foreground flex items-center gap-2"><BarChart className="h-5 w-5" />ANALYTICS</h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <Card className="bg-card/80 backdrop-blur-sm border border-white/10">
-                    <CardHeader>
-                        <CardTitle>Sales by Grower</CardTitle>
-                        <CardDescription>Top 5 growers' contribution to this year's sales.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="pointer-events-none">
-                            {pieChartData.length > 0 ? (
-                                <VictoryPie
-                                    data={pieChartData}
-                                    colorScale={["#38bdf8", "#fbbf24", "#34d399", "#f87171", "#c084fc", "#a3a3a3"]}
-                                    innerRadius={50}
-                                    theme={VictoryTheme.material}
-                                    style={{ labels: { fill: "white", fontSize: 10 } }}
-                                />
-                            ) : <p className="text-center text-muted-foreground py-10">No sales data available for chart.</p>}
-                        </div>
-                    </CardContent>
-                </Card>
+            <div className="grid grid-cols-1 gap-4">
                  <Card className="bg-card/80 backdrop-blur-sm border border-white/10">
                     <CardHeader>
                         <CardTitle>Monthly Sales</CardTitle>
