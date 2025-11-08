@@ -252,7 +252,8 @@ export default function DashboardPage() {
 
             monthlySalesData[saleMonth] += bikriNetSale;
             
-            yearGrossSales += grossSale;
+            // This was the bug: Gross Sales from Bikris were being added to the main gross sales.
+            // yearGrossSales += grossSale;
             yearNetSales += bikriNetSale;
         }
     });
