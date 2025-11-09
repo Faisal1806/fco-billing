@@ -101,14 +101,17 @@ export default function OutsideSalesPage() {
 
     const handleClearAllBikris = () => {
         if (typeof window !== 'undefined') {
-            const bikriKeys = [];
+            const bikriKeys: string[] = [];
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key?.startsWith('bikri-')) {
                     bikriKeys.push(key);
                 }
             }
-            bikriKeys.forEach(key => localStorage.removeItem(key));
+            bikriKeys.forEach(key => {
+                 localStorage.removeItem(key)
+                 deleteDocument('bikris', key);
+            });
             toast({ title: "Bikri Records Cleared", description: "You can now start fresh." });
         }
         fetchData();
@@ -140,28 +143,26 @@ export default function OutsideSalesPage() {
      useEffect(() => {
         if (selectedChallan && !isEditing) {
             setMarket(selectedChallan.toMs);
-
             const newRows: EntryRow[] = [];
+            
             selectedChallan.entries.forEach((entry: any) => {
                 if (entry.peti > 0) {
-                    newRows.push({ type: 'Patti', variety: entry.kind, qty: entry.peti, rate: 0, isStored: false });
+                    newRows.push({ ...emptyRow, type: 'Patti', variety: entry.kind, qty: entry.peti });
                 }
                 if (entry.daba > 0) {
-                    newRows.push({ type: 'Dabba', variety: entry.kind, qty: entry.daba, rate: 0, isStored: false });
+                    newRows.push({ ...emptyRow, type: 'Dabba', variety: entry.kind, qty: entry.daba });
                 }
             });
 
-            if(newRows.length > 0) {
+            if (newRows.length > 0) {
                 setSaleRows(newRows);
-                if (bikriType === 'fcoStock') {
-                    setPurchaseRows(newRows); // Populate purchase for F.Co stock type
-                }
+                setPurchaseRows(newRows);
             } else {
                 setSaleRows([emptyRow]);
                 setPurchaseRows([emptyRow]);
             }
         }
-    }, [selectedChallan, isEditing, bikriType]);
+    }, [selectedChallan, isEditing]);
 
     const calculation = useMemo(() => {
         const soldSaleRows = saleRows.filter(r => !r.isStored);
@@ -405,9 +406,9 @@ export default function OutsideSalesPage() {
                                             return (
                                                 <CommandItem
                                                     key={c.id}
-                                                    value={`${c.challanNo} ${c.toMs}`}
-                                                    onSelect={() => {
-                                                        setSelectedChallanId(c.id)
+                                                    value={c.id}
+                                                    onSelect={(currentValue) => {
+                                                        setSelectedChallanId(currentValue === selectedChallanId ? '' : currentValue)
                                                         setChallanPopoverOpen(false)
                                                     }}
                                                     disabled={isUsed}
