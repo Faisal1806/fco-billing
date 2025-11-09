@@ -20,6 +20,17 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type BikriType = 'fcoStock' | 'growerForwarding';
 
@@ -64,9 +75,21 @@ export default function OutsideSalesPage() {
         }
     }, []);
 
-    useEffect(() => {
-        const fetchData = () => {
-            setIsLoading(true);
+    const fetchData = useCallback((clearBikris = false) => {
+        setIsLoading(true);
+        if (typeof window !== 'undefined') {
+            if (clearBikris) {
+                const bikriKeys = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key?.startsWith('bikri-')) {
+                        bikriKeys.push(key);
+                    }
+                }
+                bikriKeys.forEach(key => localStorage.removeItem(key));
+                toast({ title: "Bikri Records Cleared", description: "You can now start fresh." });
+            }
+
             const allChallans = [];
             const allBikris = [];
             for (let i = 0; i < localStorage.length; i++) {
@@ -80,10 +103,25 @@ export default function OutsideSalesPage() {
             }
             setAvailableChallans(allChallans.sort((a,b) => (a.challanNo > b.challanNo) ? 1 : -1));
             setSavedBikris(allBikris.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-            setIsLoading(false);
-        };
-        fetchData();
-    }, []);
+        }
+        setIsLoading(false);
+    }, [toast]);
+    
+    useEffect(() => {
+        const hasCleared = sessionStorage.getItem('bikrisCleared');
+        if (!hasCleared) {
+            fetchData(true);
+            sessionStorage.setItem('bikrisCleared', 'true');
+        } else {
+            fetchData(false);
+        }
+    }, [fetchData]);
+
+    const handleClearAllBikris = () => {
+        fetchData(true); // This will clear and then refetch data
+        resetForm();
+    };
+
     
     const filteredBikris = useMemo(() => {
         if (!searchTerm) return savedBikris;
@@ -551,6 +589,25 @@ export default function OutsideSalesPage() {
                             />
                         </div>
                     </div>
+                     <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="sm" className="gap-2 mt-2">
+                                <Trash2 className="h-4 w-4" /> Clear All Bikris
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This will permanently delete all Bikri records from this device. This action cannot be undone.
+                            </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleClearAllBikris}>Yes, Delete All</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </CardHeader>
                 <CardContent>
                     <ScrollArea className="h-[500px]">
