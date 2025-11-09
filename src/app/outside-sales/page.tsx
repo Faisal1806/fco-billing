@@ -143,8 +143,6 @@ export default function OutsideSalesPage() {
      useEffect(() => {
         if (selectedChallan && !isEditing) {
             setMarket(selectedChallan.toMs);
-            setPurchaseRows([emptyRow]);
-            setSaleRows([emptyRow]);
             
             const newRows: EntryRow[] = [];
             
@@ -160,6 +158,9 @@ export default function OutsideSalesPage() {
             if (newRows.length > 0) {
                 setSaleRows(newRows);
                 setPurchaseRows(newRows);
+            } else {
+                setPurchaseRows([emptyRow]);
+                setSaleRows([emptyRow]);
             }
         }
     }, [selectedChallan, isEditing]);
@@ -389,8 +390,8 @@ export default function OutsideSalesPage() {
                                     className="w-full justify-between"
                                     disabled={isEditing}
                                     >
-                                    {selectedChallanId
-                                        ? availableChallans.find(c => c.id === selectedChallanId)?.challanNo + ' - ' + availableChallans.find(c => c.id === selectedChallanId)?.toMs
+                                    {(selectedChallanId && availableChallans.find(c => c.id === selectedChallanId))
+                                        ? `${availableChallans.find(c => c.id === selectedChallanId).challanNo} - ${availableChallans.find(c => c.id === selectedChallanId).toMs}`
                                         : "Select Challan"}
                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                     </Button>
@@ -632,4 +633,5 @@ export default function OutsideSalesPage() {
         </div>
     );
 }
+
 
