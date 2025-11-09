@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, FilePenLine, FilePlus, Globe, Percent, Minus, Package, ShoppingCart, Truck, FileText, Trash2, User, Repeat, ChevronsUpDown, Check } from 'lucide-react';
+import { Loader2, FilePenLine, FilePlus, Globe, Percent, Minus, Package, ShoppingCart, Truck, FileText, Trash2, User, Repeat, ChevronsUpDown, Check, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { saveDocument, deleteDocument } from '@/lib/actions';
@@ -54,6 +54,7 @@ export default function OutsideSalesPage() {
     const [isEditing, setIsEditing] = useState(false);
     const [userRole, setUserRole] = useState<string | null>(null);
     const [challanPopoverOpen, setChallanPopoverOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -76,11 +77,22 @@ export default function OutsideSalesPage() {
                 }
             }
             setAvailableChallans(allChallans.sort((a,b) => (a.challanNo > b.challanNo) ? 1 : -1));
-            setSavedBikris(allBikris);
+            setSavedBikris(allBikris.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
             setIsLoading(false);
         };
         fetchData();
     }, []);
+    
+    const filteredBikris = useMemo(() => {
+        if (!searchTerm) return savedBikris;
+        const lowerCaseSearch = searchTerm.toLowerCase();
+        return savedBikris.filter(bikri => 
+            bikri.market?.toLowerCase().includes(lowerCaseSearch) ||
+            bikri.growerName?.toLowerCase().includes(lowerCaseSearch) ||
+            bikri.challanNo?.toLowerCase().includes(lowerCaseSearch) ||
+            bikri.bikriNo?.toLowerCase().includes(lowerCaseSearch)
+        );
+    }, [savedBikris, searchTerm]);
 
     const yearlyCount = useMemo(() => {
         if(!savedBikris) return 0;
@@ -486,17 +498,28 @@ export default function OutsideSalesPage() {
 
             <Card className="lg:col-span-1 h-fit">
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        Saved Bikris
-                        {!isLoading && <Badge variant="secondary">{yearlyCount} This Year</Badge>}
-                    </CardTitle>
+                    <div className="flex items-center justify-between gap-4">
+                        <CardTitle className="flex items-center gap-2">
+                            Saved Bikris
+                            {!isLoading && <Badge variant="secondary">{yearlyCount} This Year</Badge>}
+                        </CardTitle>
+                         <div className="relative w-full max-w-xs">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input 
+                                placeholder="Search bikris..." 
+                                className="pl-8"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <ScrollArea className="h-[500px]">
                         {isLoading ? <Loader2 className="mx-auto h-6 w-6 animate-spin" /> :
-                         savedBikris.length > 0 ? (
+                         filteredBikris.length > 0 ? (
                             <div className="space-y-2">
-                                {savedBikris.map(bikri => (
+                                {filteredBikris.map(bikri => (
                                     <Card key={bikri.id} className="p-3">
                                         <div className="flex justify-between items-start">
                                             <div>
@@ -521,7 +544,7 @@ export default function OutsideSalesPage() {
                                     </Card>
                                 ))}
                             </div>
-                         ) : <p className="text-sm text-center text-muted-foreground">No outside sales records yet.</p>
+                         ) : <p className="text-sm text-center text-muted-foreground">No outside sales records found.</p>
                         }
                     </ScrollArea>
                 </CardContent>
