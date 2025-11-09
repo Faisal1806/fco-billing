@@ -109,12 +109,14 @@ export default function OutsideSalesPage() {
     
     useEffect(() => {
         const hasCleared = sessionStorage.getItem('bikrisCleared');
-        if (!hasCleared) {
-            fetchData(true);
-            sessionStorage.setItem('bikrisCleared', 'true');
-        } else {
+        // Temporarily disable the one-time clear to prevent data loss for users.
+        // Can be re-enabled if needed for development.
+        // if (!hasCleared) {
+        //     fetchData(true);
+        //     sessionStorage.setItem('bikrisCleared', 'true');
+        // } else {
             fetchData(false);
-        }
+        // }
     }, [fetchData]);
 
     const handleClearAllBikris = () => {
