@@ -21,15 +21,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { PlusCircle, Trash2 } from 'lucide-react';
+import { Checkbox } from './ui/checkbox';
+import { Badge } from './ui/badge';
 
 export type EntryRow = {
   type: 'Patti' | 'Dabba';
   qty: number;
   variety: string;
   rate: number;
+  isStored?: boolean;
 };
 
-export const emptyRow: EntryRow = { type: 'Patti', qty: 0, variety: '', rate: 0 };
+export const emptyRow: EntryRow = { type: 'Patti', qty: 0, variety: '', rate: 0, isStored: false };
 
 interface EntryTableProps {
   title: string;
@@ -38,9 +41,10 @@ interface EntryTableProps {
   onUpdate: (index: number, patch: Partial<EntryRow>) => void;
   onAdd: () => void;
   onRemove: (index: number) => void;
+  showStorageOption?: boolean;
 }
 
-const EntryTableComponent = ({ title, rows, icon, onUpdate, onAdd, onRemove }: EntryTableProps) => {
+const EntryTableComponent = ({ title, rows, icon, onUpdate, onAdd, onRemove, showStorageOption = false }: EntryTableProps) => {
   return (
     <div>
       <Label className="text-base font-semibold flex items-center gap-2 mb-2">
@@ -51,6 +55,7 @@ const EntryTableComponent = ({ title, rows, icon, onUpdate, onAdd, onRemove }: E
           <TableRow>
             <TableHead>Type</TableHead>
             <TableHead>Variety</TableHead>
+            {showStorageOption && <TableHead>Store</TableHead>}
             <TableHead className="text-right">Qty</TableHead>
             <TableHead className="text-right">Rate</TableHead>
             <TableHead className="text-right">Amount</TableHead>
@@ -81,6 +86,14 @@ const EntryTableComponent = ({ title, rows, icon, onUpdate, onAdd, onRemove }: E
                   onChange={(e) => onUpdate(i, { variety: e.target.value })}
                 />
               </TableCell>
+              {showStorageOption && (
+                 <TableCell className="text-center">
+                    <Checkbox
+                        checked={r.isStored}
+                        onCheckedChange={(checked) => onUpdate(i, { isStored: !!checked })}
+                    />
+                 </TableCell>
+              )}
               <TableCell>
                 <Input
                   type="number"
@@ -95,10 +108,11 @@ const EntryTableComponent = ({ title, rows, icon, onUpdate, onAdd, onRemove }: E
                   className="text-right"
                   value={r.rate || ''}
                   onChange={(e) => onUpdate(i, { rate: Number(e.target.value) })}
+                  disabled={r.isStored}
                 />
               </TableCell>
               <TableCell className="text-right font-medium">
-                ₹{((r.qty || 0) * (r.rate || 0)).toFixed(2)}
+                 {r.isStored ? <Badge variant="secondary">Stored</Badge> : `₹${((r.qty || 0) * (r.rate || 0)).toFixed(2)}`}
               </TableCell>
               <TableCell>
                 <Button variant="ghost" size="icon" onClick={() => onRemove(i)}>

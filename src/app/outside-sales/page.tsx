@@ -23,6 +23,8 @@ import { cn } from '@/lib/utils';
 
 type BikriType = 'fcoStock' | 'growerForwarding';
 
+const CS_STORAGE_PREFIX = 'cs-';
+
 export default function OutsideSalesPage() {
     const { toast } = useToast();
     const router = useRouter();
@@ -111,10 +113,10 @@ export default function OutsideSalesPage() {
             const newRows: EntryRow[] = [];
             selectedChallan.entries.forEach((entry: any) => {
                 if (entry.peti > 0) {
-                    newRows.push({ type: 'Patti', variety: entry.kind, qty: entry.peti, rate: 0 });
+                    newRows.push({ type: 'Patti', variety: entry.kind, qty: entry.peti, rate: 0, isStored: false });
                 }
                 if (entry.daba > 0) {
-                    newRows.push({ type: 'Dabba', variety: entry.kind, qty: entry.daba, rate: 0 });
+                    newRows.push({ type: 'Dabba', variety: entry.kind, qty: entry.daba, rate: 0, isStored: false });
                 }
             });
 
@@ -131,12 +133,13 @@ export default function OutsideSalesPage() {
     }, [selectedChallan, isEditing, bikriType]);
 
     const calculation = useMemo(() => {
+        const soldSaleRows = saleRows.filter(r => !r.isStored);
         const totalPurchaseCost = bikriType === 'fcoStock' ? purchaseRows.reduce((acc, row) => acc + (Number(row.qty) || 0) * (Number(row.rate) || 0), 0) : 0;
-        const grossSale = saleRows.reduce((acc, row) => acc + (Number(row.qty) || 0) * (Number(row.rate) || 0), 0);
+        const grossSale = soldSaleRows.reduce((acc, row) => acc + (Number(row.qty) || 0) * (Number(row.rate) || 0), 0);
         const commissionAmount = grossSale * ((Number(commissionRate) || 0) / 100);
 
-        const pattiQty = saleRows.filter(r => r.type === 'Patti').reduce((acc, r) => acc + (Number(r.qty) || 0), 0);
-        const dabbaQty = saleRows.filter(r => r.type === 'Dabba').reduce((acc, r) => acc + (Number(r.qty) || 0), 0);
+        const pattiQty = soldSaleRows.filter(r => r.type === 'Patti').reduce((acc, r) => acc + (Number(r.qty) || 0), 0);
+        const dabbaQty = soldSaleRows.filter(r => r.type === 'Dabba').reduce((acc, r) => acc + (Number(r.qty) || 0), 0);
         const calculatedFreight = (pattiQty * (Number(freightPerPatti) || 0)) + (dabbaQty * ((Number(freightPerPatti) || 0) / 2));
         
         const totalExpenses = calculatedFreight + (Number(expenses) || 0) + commissionAmount;
@@ -195,16 +198,47 @@ export default function OutsideSalesPage() {
             growerName,
             bikriType,
             purchaseEntries: purchaseRows.filter(r => r.qty > 0 && r.rate > 0).map(r => ({...r, total: r.qty * r.rate})),
-            saleEntries: saleRows.filter(r => r.qty > 0 && r.rate > 0).map(r => ({...r, total: r.qty * r.rate})),
+            saleEntries: saleRows.filter(r => r.qty > 0).map(r => ({...r, total: r.isStored ? 0 : r.qty * r.rate})),
             expenses: Number(expenses),
             commissionRate: Number(commissionRate),
             freightPerPatti: Number(freightPerPatti),
             calculation
         };
         localStorage.setItem(recordId, JSON.stringify(data));
+
+        // Handle cold storage entries for stored items
+        const storedItems = saleRows.filter(r => r.isStored && r.qty > 0);
+        let storedItemsCount = 0;
+        for (const item of storedItems) {
+            const csId = `${CS_STORAGE_PREFIX}${Date.now()}-${storedItemsCount}`;
+            const party = bikriType === 'growerForwarding' ? growerName : 'F.Co (Own Stock)';
+            const newStockItem = {
+              id: csId,
+              dateIn: date,
+              grower: party,
+              item: `${item.variety} (${item.type})`,
+              chamberNo: `${market} Store`,
+              initialQty: item.qty,
+              currentQty: item.qty,
+              status: 'In Stock' as const,
+              outwardHistory: [],
+            };
+            localStorage.setItem(csId, JSON.stringify(newStockItem));
+            try {
+                await saveDocument('cold-storage', csId, newStockItem);
+                storedItemsCount++;
+            } catch (error) {
+                console.error("Failed to save stored item to cloud:", error);
+            }
+        }
+        
         try {
             await saveDocument('bikris', recordId, data);
-            toast({ title: isEditing ? 'Bikri Updated' : 'Bikri Saved', description: 'The outside sale has been recorded.' });
+            let description = 'The outside sale has been recorded.';
+            if (storedItemsCount > 0) {
+                description += ` ${storedItemsCount} item(s) were automatically added to Cold Storage.`
+            }
+            toast({ title: isEditing ? 'Bikri Updated' : 'Bikri Saved', description });
         } catch (error) {
             toast({ variant: 'destructive', title: 'Sync Failed', description: 'Saved locally, but failed to sync to cloud.' });
         } finally {
@@ -231,7 +265,7 @@ export default function OutsideSalesPage() {
         setDate(bikri.date);
         setMarket(bikri.market || '');
         setGrowerName(bikri.growerName || '');
-        setPurchaseRows(bikri.purchaseEntries?.length > 0 ? bikri.purchaseEntries : [emptyRow]);
+        setPurchaseRows(bikri.purchaseEntries?.length > 0 ? bikri.purchaseEntries.map((r: EntryRow) => ({...r, isStored: false})) : [emptyRow]);
         setSaleRows(bikri.saleEntries?.length > 0 ? bikri.saleEntries : [emptyRow]);
         setExpenses(bikri.expenses);
         setCommissionRate(bikri.commissionRate || 0);
@@ -286,6 +320,9 @@ export default function OutsideSalesPage() {
         setSaleRows(prev => {
           const copy = [...prev];
           copy[i] = { ...copy[i], ...patch };
+          if (patch.isStored === true) {
+              copy[i].rate = 0;
+          }
           return copy;
         });
     }, []);
@@ -424,6 +461,7 @@ export default function OutsideSalesPage() {
                             onUpdate={updateSaleRow}
                             onAdd={addSaleRow}
                             onRemove={removeSaleRow}
+                            showStorageOption={true}
                         />
                     </div>
 
