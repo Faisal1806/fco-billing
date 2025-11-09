@@ -260,7 +260,7 @@ export default function OutsideSalesPage() {
         resetForm();
         setId(bikri.id);
         setBikriType(bikri.bikriType || 'fcoStock');
-        setSelectedChallanId(bikri.challanId || availableChallans.find(c => c.challanNo === bikri.challanNo)?.id || '');
+        setSelectedChallanId(bikri.challanId);
         setBikriNo(bikri.bikriNo);
         setDate(bikri.date);
         setMarket(bikri.market || '');
