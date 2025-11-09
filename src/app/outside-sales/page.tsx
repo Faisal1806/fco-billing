@@ -143,6 +143,9 @@ export default function OutsideSalesPage() {
      useEffect(() => {
         if (selectedChallan && !isEditing) {
             setMarket(selectedChallan.toMs);
+            setPurchaseRows([emptyRow]);
+            setSaleRows([emptyRow]);
+            
             const newRows: EntryRow[] = [];
             
             selectedChallan.entries.forEach((entry: any) => {
@@ -157,9 +160,6 @@ export default function OutsideSalesPage() {
             if (newRows.length > 0) {
                 setSaleRows(newRows);
                 setPurchaseRows(newRows);
-            } else {
-                setSaleRows([emptyRow]);
-                setPurchaseRows([emptyRow]);
             }
         }
     }, [selectedChallan, isEditing]);
@@ -402,7 +402,7 @@ export default function OutsideSalesPage() {
                                         <CommandEmpty>No challan found.</CommandEmpty>
                                         <CommandGroup>
                                         {availableChallans.map((c) => {
-                                            const isUsed = usedChallanIds.has(c.id);
+                                            const isUsed = usedChallanIds.has(c.id) && c.id !== selectedChallanId;
                                             return (
                                                 <CommandItem
                                                     key={c.id}
@@ -632,3 +632,4 @@ export default function OutsideSalesPage() {
         </div>
     );
 }
+
