@@ -75,21 +75,9 @@ export default function OutsideSalesPage() {
         }
     }, []);
 
-    const fetchData = useCallback((clearBikris = false) => {
+    const fetchData = useCallback(() => {
         setIsLoading(true);
         if (typeof window !== 'undefined') {
-            if (clearBikris) {
-                const bikriKeys = [];
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key?.startsWith('bikri-')) {
-                        bikriKeys.push(key);
-                    }
-                }
-                bikriKeys.forEach(key => localStorage.removeItem(key));
-                toast({ title: "Bikri Records Cleared", description: "You can now start fresh." });
-            }
-
             const allChallans = [];
             const allBikris = [];
             for (let i = 0; i < localStorage.length; i++) {
@@ -105,22 +93,25 @@ export default function OutsideSalesPage() {
             setSavedBikris(allBikris.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         }
         setIsLoading(false);
-    }, [toast]);
+    }, []);
     
     useEffect(() => {
-        const hasCleared = sessionStorage.getItem('bikrisCleared');
-        // Temporarily disable the one-time clear to prevent data loss for users.
-        // Can be re-enabled if needed for development.
-        // if (!hasCleared) {
-        //     fetchData(true);
-        //     sessionStorage.setItem('bikrisCleared', 'true');
-        // } else {
-            fetchData(false);
-        // }
+        fetchData();
     }, [fetchData]);
 
     const handleClearAllBikris = () => {
-        fetchData(true); // This will clear and then refetch data
+        if (typeof window !== 'undefined') {
+            const bikriKeys = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key?.startsWith('bikri-')) {
+                    bikriKeys.push(key);
+                }
+            }
+            bikriKeys.forEach(key => localStorage.removeItem(key));
+            toast({ title: "Bikri Records Cleared", description: "You can now start fresh." });
+        }
+        fetchData();
         resetForm();
     };
 
@@ -282,15 +273,7 @@ export default function OutsideSalesPage() {
         } catch (error) {
             toast({ variant: 'destructive', title: 'Sync Failed', description: 'Saved locally, but failed to sync to cloud.' });
         } finally {
-            setSavedBikris(prev => {
-                const existing = prev.findIndex(b => b.id === data.id);
-                if (existing > -1) {
-                    const copy = [...prev];
-                    copy[existing] = data;
-                    return copy;
-                }
-                return [...prev, data];
-            });
+            fetchData();
             setIsEditing(true);
             setIsSubmitting(false);
         }
@@ -340,7 +323,7 @@ export default function OutsideSalesPage() {
         } catch (error) {
             toast({variant: 'destructive', title: 'Cloud Delete Failed', description: 'Record removed locally.'});
         }
-        setSavedBikris(prev => prev.filter(b => b.id !== idToDelete));
+        fetchData();
          if (id === idToDelete) {
             resetForm();
         }
@@ -433,8 +416,7 @@ export default function OutsideSalesPage() {
                                                 <Check
                                                 className={cn(
                                                     "mr-2 h-4 w-4",
-                                                    selectedChallanId === c.id || isUsed ? "opacity-100" : "opacity-0",
-                                                    isUsed && "text-destructive"
+                                                    selectedChallanId === c.id ? "opacity-100" : "opacity-0"
                                                 )}
                                                 />
                                                 {c.challanNo} - {c.toMs}
