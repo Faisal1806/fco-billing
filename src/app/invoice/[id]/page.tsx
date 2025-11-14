@@ -142,8 +142,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         // Header
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(8);
-        doc.text('🍎 F.Co', margin, margin);
-        doc.text('🍎 F.Co', pageWidth - margin, margin, { align: 'right' });
+        doc.text('🍎 F.Co App', margin, margin);
+        doc.text('🍎 F.Co App', pageWidth - margin, margin, { align: 'right' });
     
         doc.setFontSize(7);
         doc.setFont('helvetica', 'normal');
