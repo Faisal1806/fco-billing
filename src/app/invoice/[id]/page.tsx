@@ -133,15 +133,16 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
         const margin = 10;
-    
-        // Draw border
-        doc.setDrawColor('#16a34a'); // green-700
-        doc.setLineWidth(1);
-        doc.rect(5, 5, pageWidth - 10, pageHeight - 10);
-    
+        
+        // Use the font used in the classic layout
+        doc.setFont('helvetica');
+
+        // Draw border (optional, can be removed if not desired)
+        doc.setDrawColor(0); 
+
         // Header
-        doc.setFont('helvetica', 'bold');
         doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
         doc.text('🍎 F.Co App', margin, margin);
         doc.text('🍎 F.Co App', pageWidth - margin, margin, { align: 'right' });
     
@@ -152,7 +153,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor('#15803d'); // green-800
+        doc.setTextColor('#166534'); // dark green
         doc.text('FIRDOUS AHMAD & COMPANY', pageWidth / 2, margin + 6, { align: 'center' });
         
         doc.setFontSize(8);
@@ -167,11 +168,13 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         doc.line(margin, margin + 15, pageWidth - margin, margin + 15);
     
         // Bill Info
+        let billInfoY = margin + 22;
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
-        doc.text(`M/s: ${billData.customerName}`, margin, margin + 22);
+        doc.text(`M/s: ${billData.customerName}`, margin, billInfoY);
         if (billData.khata) {
-            doc.text(`Khata: ${billData.khata}`, margin, margin + 27);
+            billInfoY += 5;
+            doc.text(`Khata: ${billData.khata}`, margin, billInfoY);
         }
     
         doc.setFont('helvetica', 'normal');
@@ -197,18 +200,22 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         autoTable(doc, {
             head: [['TYPE', 'VARIETY', 'QTY', 'RATE', 'GROSS']],
             body: tableData,
-            startY: margin + 40,
+            startY: billInfoY + 8,
             theme: 'grid',
             headStyles: {
-                fillColor: '#16a34a',
-                textColor: '#ffffff',
+                fillColor: '#dcfce7', // light green
+                textColor: '#166534', // dark green
                 fontStyle: 'bold',
-                halign: 'center'
+                halign: 'center',
+                lineColor: '#15803d',
+                lineWidth: 0.1
             },
             styles: {
                 fontSize: 8,
                 cellPadding: 1.5,
-                font: 'helvetica'
+                font: 'helvetica',
+                lineColor: '#15803d',
+                lineWidth: 0.1
             },
             columnStyles: {
                 2: { halign: 'center' },
@@ -220,7 +227,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         const finalY = (doc as any).lastAutoTable.finalY;
     
         // Totals
-        const summaryX = pageWidth / 2;
+        const summaryX = pageWidth / 2 + 10;
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
         doc.text(`Total Quantity: ${billData.totals.totalQty} (Patti: ${billData.totals.pattiQty}, Dabba: ${billData.totals.dabbaQty})`, margin, finalY + 8);
@@ -234,8 +241,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             { label: 'Commission:', value: `- ₹${billData.totals.commissionAmount.toFixed(2)}` }
         ];
         
-        const netSaleY = finalY + 8;
-        let currentY = netSaleY;
+        let currentY = finalY + 8;
         
         doc.setFont('helvetica', 'normal');
         expenseLines.forEach(line => {
@@ -261,9 +267,9 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         doc.text(`₹${billData.totals.netSale.toFixed(2)}`, pageWidth - margin, currentY, { align: 'right' });
     
         // Footer
-        const qrCanvas = document.querySelector('canvas');
+        const qrCanvas = document.querySelector('#invoice-qr-code canvas');
         if (qrCanvas) {
-            const qrImage = qrCanvas.toDataURL('image/png');
+            const qrImage = (qrCanvas as HTMLCanvasElement).toDataURL('image/png');
             doc.addImage(qrImage, 'PNG', margin, pageHeight - 35, 20, 20);
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(6);
@@ -271,11 +277,12 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         }
         
         doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal'); // Assuming Faisal is not a custom font
         doc.text('Faisal', pageWidth - margin - 20, pageHeight - 20, { align: 'center' });
     
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(6);
-        doc.text('For Firdous Ahmad & Company', pageWidth - margin - 20, pageHeight - 15, { align: 'center'});
+        doc.text('Sign. Of Manager', pageWidth - margin - 20, pageHeight - 15, { align: 'center'});
         doc.setLineWidth(0.2);
         doc.line(pageWidth - margin - 40, pageHeight-16, pageWidth - margin, pageHeight-16);
     
@@ -309,7 +316,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                     Save to Device
                 </Button>
              </div>
-             <div className="p-2 border border-gray-700 bg-gray-900 rounded-md flex flex-col items-center">
+             <div id="invoice-qr-code" className="p-2 border border-gray-700 bg-gray-900 rounded-md flex flex-col items-center">
                 <QRCode value={pageUrl} size={80} bgColor="#111827" fgColor="#FFFFFF"/>
                 <p className="text-xs font-semibold mt-2 text-gray-400">Scan to View Bill</p>
             </div>
