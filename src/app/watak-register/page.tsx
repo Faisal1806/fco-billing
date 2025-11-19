@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/language-context';
-import { ChevronDown, PlusCircle, Loader2, FilePenLine, Trash2, List, LayoutGrid, Search, FileDown } from 'lucide-react';
+import { ChevronDown, PlusCircle, Loader2, FilePenLine, Trash2, List, LayoutGrid, Search, FileDown, DownloadCloud } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import {
   DropdownMenu,
@@ -42,23 +42,30 @@ export interface WatakEntry {
     id: string;
     sNo: string;
     date: string;
+    date2?: string;
     watakNo: string;
     customerName: string;
     customerUrdu?: string;
+    khata?: string;
     entries: {
-        peti: number;
-        daba: number;
+        peti?: number;
+        daba?: number;
         variety: string;
         rate: number;
         type: 'Patti' | 'Dabba';
         qty: number;
         total: number;
+        isForwarded?: boolean;
     }[];
     totals: {
       pattiQty: number;
       dabbaQty: number;
       totalQty: number;
       grossSale: number;
+      commissionAmount: number;
+      labour: number;
+      association: number;
+      security: number;
       totalExpenses: number;
       netSale: number;
     }
@@ -120,6 +127,7 @@ export default function SalesRegisterPage() {
   const [selectedGrower, setSelectedGrower] = React.useState('All Growers');
   const [searchTerm, setSearchTerm] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isDownloading, setIsDownloading] = React.useState(false);
   const [viewMode, setViewMode] = React.useState<'table' | 'grid'>('grid');
   const [userRole, setUserRole] = React.useState<string | null>(null);
   const [partyNameMap, setPartyNameMap] = React.useState<Map<string, string>>(new Map());
@@ -248,6 +256,144 @@ export default function SalesRegisterPage() {
     doc.save(`Sales-Register-${selectedGrower}.pdf`);
   };
 
+  const exportAllToPDFs = async () => {
+    if (selectedGrower === 'All Growers' || filteredWataks.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Select a Grower',
+        description: 'You must select a specific grower with invoices to use this feature.',
+      });
+      return;
+    }
+
+    setIsDownloading(true);
+    toast({
+      title: 'Starting Bulk Download',
+      description: `Preparing to download ${filteredWataks.length} invoices for ${selectedGrower}.`,
+    });
+
+    for (let i = 0; i < filteredWataks.length; i++) {
+      const billData = filteredWataks[i];
+      try {
+        const doc = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a5'
+        });
+        
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const margin = 10;
+
+        doc.setFont('helvetica');
+
+        // Header
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.text('🍎 F.Co App', margin, margin);
+        doc.text('🍎 F.Co App', pageWidth - margin, margin, { align: 'right' });
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Prop: Firdous Ahmad Lone (Nadihal)', pageWidth / 2, margin - 2, { align: 'center' });
+        doc.text('Cell: 7006136330, 9797002164, 9906740921', pageWidth / 2, margin + 1, { align: 'center' });
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor('#166534');
+        doc.text('FIRDOUS AHMAD & COMPANY', pageWidth / 2, margin + 6, { align: 'center' });
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(0, 0, 0);
+        doc.text('Fruit Merchants & Commission Agents', pageWidth / 2, margin + 10, { align: 'center' });
+        doc.setFontSize(6);
+        doc.text('SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.', pageWidth / 2, margin + 13, { align: 'center' });
+        doc.setLineWidth(0.5);
+        doc.setDrawColor('#16a34a');
+        doc.line(margin, margin + 15, pageWidth - margin, margin + 15);
+
+        // Bill Info
+        let billInfoY = margin + 22;
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`M/s: ${billData.customerName}`, margin, billInfoY);
+        if (billData.khata) {
+            billInfoY += 5;
+            doc.text(`Khata: ${billData.khata}`, margin, billInfoY);
+        }
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.text(`Bill No: ${billData.sNo}`, pageWidth - margin, margin + 22, { align: 'right' });
+        doc.text(`Date: ${new Date(billData.date).toLocaleDateString('en-GB')}`, pageWidth - margin, margin + 26, { align: 'right' });
+        if(billData.date2) {
+             doc.text(`Date 2: ${new Date(billData.date2).toLocaleDateString('en-GB')}`, pageWidth - margin, margin + 30, { align: 'right' });
+        }
+        if(billData.watakNo) {
+            doc.text(`Watak No: ${billData.watakNo}`, pageWidth - margin, margin + 34, { align: 'right' });
+        }
+
+        // Table
+        const tableData = billData.entries.map(e => [
+            e.type,
+            e.variety,
+            e.qty.toString(),
+            e.isForwarded ? 'Forwarded' : `₹${e.rate.toFixed(2)}`,
+            e.isForwarded ? 'Forwarded' : `₹${(e.total).toFixed(2)}`
+        ]);
+        autoTable(doc, {
+            head: [['TYPE', 'VARIETY', 'QTY', 'RATE', 'GROSS']],
+            body: tableData,
+            startY: billInfoY + 8,
+            theme: 'grid',
+            headStyles: { fillColor: '#dcfce7', textColor: '#166534', fontStyle: 'bold', halign: 'center', lineColor: '#15803d', lineWidth: 0.1 },
+            styles: { fontSize: 8, cellPadding: 1.5, font: 'helvetica', lineColor: '#15803d', lineWidth: 0.1 },
+            columnStyles: { 2: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right', fontStyle: 'bold' } }
+        });
+
+        const finalY = (doc as any).lastAutoTable.finalY;
+        
+        // Totals
+        const summaryX = pageWidth / 2 + 10;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.text(`Total Quantity: ${billData.totals.totalQty} (Patti: ${billData.totals.pattiQty}, Dabba: ${billData.totals.dabbaQty})`, margin, finalY + 8);
+        const expenseLines = [
+            { label: 'Gross Sale:', value: `₹${billData.totals.grossSale.toFixed(2)}` }, { label: 'Freight:', value: `- ₹${billData.freight.toFixed(2)}` },
+            { label: 'Labour:', value: `- ₹${billData.totals.labour.toFixed(2)}` }, { label: 'Association:', value: `- ₹${billData.totals.association.toFixed(2)}` },
+            { label: 'Security:', value: `- ₹${billData.totals.security.toFixed(2)}` }, { label: 'Commission:', value: `- ₹${billData.totals.commissionAmount.toFixed(2)}` }
+        ];
+        let currentY = finalY + 8;
+        doc.setFont('helvetica', 'normal');
+        expenseLines.forEach(line => { doc.text(line.label, summaryX, currentY, { align: 'left' }); doc.text(line.value, pageWidth - margin, currentY, { align: 'right' }); currentY += 4; });
+        doc.setLineWidth(0.2);
+        doc.line(summaryX, currentY, pageWidth - margin, currentY); currentY += 4;
+        doc.setFont('helvetica', 'bold');
+        doc.text('Total Exp:', summaryX, currentY, { align: 'left' });
+        doc.text(`- ₹${billData.totals.totalExpenses.toFixed(2)}`, pageWidth - margin, currentY, { align: 'right' }); currentY += 4;
+        doc.line(summaryX, currentY, pageWidth - margin, currentY); currentY += 5;
+        doc.setFontSize(12);
+        doc.text('Net Sale:', summaryX, currentY, { align: 'left' });
+        doc.text(`₹${billData.totals.netSale.toFixed(2)}`, pageWidth - margin, currentY, { align: 'right' });
+
+        doc.save(`Invoice-${billData.sNo}_${billData.customerName}.pdf`);
+        
+        // Give browser a moment to process the download
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+      } catch (error) {
+          console.error("Failed to generate PDF for invoice:", billData.sNo, error);
+          toast({
+            variant: "destructive",
+            title: `Failed to Download Invoice #${billData.sNo}`,
+            description: "An error occurred while generating this PDF.",
+          });
+      }
+    }
+
+    setIsDownloading(false);
+    toast({
+      title: 'Bulk Download Complete',
+      description: `Finished downloading ${filteredWataks.length} invoices.`,
+    });
+  };
+
   const exportToExcel = () => {
       const worksheetData = filteredWataks.map(w => {
         const canonicalName = partyNameMap.get(getCanonicalName(w.customerName)) || w.customerName;
@@ -365,6 +511,16 @@ export default function SalesRegisterPage() {
                       <FileDown className="h-3.5 w-3.5" />
                       PDF
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1"
+                    onClick={exportAllToPDFs}
+                    disabled={selectedGrower === 'All Growers' || isDownloading}
+                    >
+                    {isDownloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <DownloadCloud className="h-3.5 w-3.5" />}
+                    Download All
+                </Button>
                   <Button size="sm" variant="outline" className="gap-1" onClick={exportToExcel}>
                       <FileDown className="h-3.5 w-3.5" />
                       Excel
