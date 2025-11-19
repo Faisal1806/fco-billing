@@ -198,19 +198,18 @@ export default function SalesRegisterPage() {
 
   const filteredWataks = wataks
     .filter(w => {
-        if (selectedGrower === 'All Growers') return true;
-        const canonicalName = partyNameMap.get(getCanonicalName(w.customerName));
-        return canonicalName === selectedGrower;
-    })
-    .filter(w => {
-      if (!searchTerm) return true;
-      const lowerCaseSearch = searchTerm.toLowerCase();
-      const canonicalName = partyNameMap.get(getCanonicalName(w.customerName)) || w.customerName;
-      return (
-        canonicalName.toLowerCase().includes(lowerCaseSearch) ||
-        w.sNo.toLowerCase().includes(lowerCaseSearch) ||
-        (w.watakNo && w.watakNo.toLowerCase().includes(lowerCaseSearch))
-      );
+        if (selectedGrower === 'All Growers' && !searchTerm) return true;
+        const canonicalName = partyNameMap.get(getCanonicalName(w.customerName)) || w.customerName;
+        if (selectedGrower !== 'All Growers' && canonicalName !== selectedGrower) return false;
+        if (searchTerm) {
+             const lowerCaseSearch = searchTerm.toLowerCase();
+             return (
+                canonicalName.toLowerCase().includes(lowerCaseSearch) ||
+                w.sNo.toLowerCase().includes(lowerCaseSearch) ||
+                (w.watakNo && w.watakNo.toLowerCase().includes(lowerCaseSearch))
+            );
+        }
+        return true;
     });
 
   const footerTotals = filteredWataks.reduce((acc, watak) => {
@@ -257,7 +256,9 @@ export default function SalesRegisterPage() {
   };
 
   const exportAllToPDFs = async () => {
-    if (selectedGrower === 'All Growers' || filteredWataks.length === 0) {
+    const growerToDownload = selectedGrower !== 'All Growers' ? selectedGrower : (searchTerm && filteredWataks.length > 0) ? filteredWataks[0].customerName : null;
+
+    if (!growerToDownload || filteredWataks.length === 0) {
       toast({
         variant: 'destructive',
         title: 'Select a Grower',
@@ -269,7 +270,7 @@ export default function SalesRegisterPage() {
     setIsDownloading(true);
     toast({
       title: 'Starting Bulk Download',
-      description: `Preparing to download ${filteredWataks.length} invoices for ${selectedGrower}.`,
+      description: `Preparing to download ${filteredWataks.length} invoices for ${growerToDownload}.`,
     });
 
     for (let i = 0; i < filteredWataks.length; i++) {
@@ -457,6 +458,8 @@ export default function SalesRegisterPage() {
     toast({ title: "Invoice Deleted", description: `Invoice #${sNo} has been deleted locally.`});
     fetchWataks();
   }
+  
+  const isDownloadAllDisabled = (selectedGrower === 'All Growers' && !searchTerm) || isDownloading;
 
   return (
     <div className="space-y-6">
@@ -516,7 +519,7 @@ export default function SalesRegisterPage() {
                     variant="outline"
                     className="gap-1"
                     onClick={exportAllToPDFs}
-                    disabled={selectedGrower === 'All Growers' || isDownloading}
+                    disabled={isDownloadAllDisabled}
                     >
                     {isDownloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <DownloadCloud className="h-3.5 w-3.5" />}
                     Download All
