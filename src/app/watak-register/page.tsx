@@ -177,7 +177,7 @@ export default function SalesRegisterPage() {
                 }
             }
         }
-        setWataks(items.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        setWataks(items.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
         setPartyNameMap(growerMap);
         const uniqueGrowers = ['All Growers', ...Array.from(growerMap.values()).sort()];
         setGrowers(uniqueGrowers);
@@ -256,9 +256,16 @@ export default function SalesRegisterPage() {
   };
 
   const exportAllToPDFs = async () => {
-    const growerToDownload = selectedGrower !== 'All Growers' ? selectedGrower : (searchTerm && filteredWataks.length > 0) ? filteredWataks[0].customerName : null;
+    let growerToDownload = selectedGrower;
 
-    if (!growerToDownload || filteredWataks.length === 0) {
+    if (selectedGrower === 'All Growers' && searchTerm) {
+        const searchedNames = new Set(filteredWataks.map(w => partyNameMap.get(getCanonicalName(w.customerName)) || w.customerName));
+        if (searchedNames.size === 1) {
+            growerToDownload = Array.from(searchedNames)[0];
+        }
+    }
+    
+    if (growerToDownload === 'All Growers' || filteredWataks.length === 0) {
       toast({
         variant: 'destructive',
         title: 'Select a Grower',
