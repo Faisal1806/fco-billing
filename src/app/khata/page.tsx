@@ -500,7 +500,7 @@ export default function KhataLedgerPage() {
                                 <Equals className="h-6 w-6 text-muted-foreground" />
                                  <div className="text-center">
                                     <p className="text-sm text-muted-foreground">Final Balance</p>
-                                    <p className={`${statementData.balance >= 0 ? 'text-red-500' : 'text-green-500'}`}>
+                                    <p className={`${statementData.balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                                         ₹{Math.abs(statementData.balance).toFixed(2)}
                                         <span className="text-xs ml-1">({statementData.balance >= 0 ? 'Payable' : 'Receivable'})</span>
                                     </p>
