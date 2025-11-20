@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import * as React from 'react';
@@ -9,6 +8,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import {
   Table,
@@ -17,24 +17,22 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  TableFooter
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, FileDown, User, Users, Plus, ChevronDown, Leaf, Printer, UserCheck, UserX, ShoppingCart, Banknote, Building, Globe, TrendingUp, Gift } from 'lucide-react';
+import { Loader2, FileDown, User, Users, Plus, ChevronDown, Leaf, Printer, ShoppingCart, Banknote, Building, Globe, Gift, ArrowDown, ArrowUp, Minus, Equals } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import './print.css';
 import Lottie from 'lottie-react';
+import { Separator } from '@/components/ui/separator';
 
 type TransactionType = 'Sale' | 'Purchase' | 'Advance' | 'Repayment' | 'Bikri' | 'Discount';
 
@@ -42,12 +40,19 @@ type Transaction = {
     id: string;
     date: string;
     type: TransactionType;
-    amount: number; 
-    grossAmount: number; 
-    expenses: number; 
-    party: string;
     docId: string;
     notes?: string;
+
+    // Credit side fields
+    peti?: number;
+    dabba?: number;
+    grossSale?: number;
+    expenses?: number;
+    netSale?: number;
+    
+    // Debit side fields
+    remittanceDetails?: string;
+    debitAmount?: number;
 };
 
 type PartyType = 'supplier' | 'customer' | 'both' | 'outside' | 'fco';
@@ -55,13 +60,10 @@ type PartyType = 'supplier' | 'customer' | 'both' | 'outside' | 'fco';
 type Ledger = {
     [canonicalPartyName: string]: {
         transactions: Transaction[];
-        balance: number;
         partyType: PartyType;
         displayName: string; 
     }
 }
-
-type LedgerEntryWithRunningBalance = Transaction & { runningBalance: number };
 
 const getCanonicalName = (name: string): string => {
     if (!name) return '';
@@ -111,9 +113,7 @@ export default function KhataLedgerPage() {
     const router = useRouter();
     const [ledgers, setLedgers] = React.useState<Ledger>({});
     const [allParties, setAllParties] = React.useState<string[]>([]);
-    const [filteredParties, setFilteredParties] = React.useState<string[]>([]);
     const [selectedParty, setSelectedParty] = React.useState<string | null>(null);
-    const [activeTab, setActiveTab] = React.useState('growers');
     const [isLoading, setIsLoading] = React.useState(true);
     const [loaderAnimation, setLoaderAnimation] = React.useState(null);
     
@@ -124,9 +124,9 @@ export default function KhataLedgerPage() {
             
             fetch('/animations/forms/fco_loader.json').then(res => res.json()).then(setLoaderAnimation);
 
-            const allTransactions: Transaction[] = [];
-            const partyTypes = new Map<string, Set<TransactionType>>();
+            const allTransactions: any[] = [];
             const partyDisplayNameMap = new Map<string, string>();
+             const partyTypes = new Map<string, Set<TransactionType>>();
 
             const addParty = (name: string) => {
                 if (!name) return;
@@ -166,23 +166,22 @@ export default function KhataLedgerPage() {
                     if (key.startsWith('invoice-')) {
                         const doc = JSON.parse(localStorage.getItem(key)!);
                         recordPartyActivity(doc.customerName, 'Sale');
-                        allTransactions.push({ id: `sale-${doc.sNo}`, date: doc.date, type: 'Sale', amount: doc.totals.netSale, grossAmount: doc.totals.grossSale, expenses: doc.totals.totalExpenses, party: doc.customerName, docId: doc.id });
+                        allTransactions.push({ ...doc, _type: 'Sale' });
                     } else if (key.startsWith('purchase-')) {
                         const doc = JSON.parse(localStorage.getItem(key)!);
                         recordPartyActivity(doc.growerName, 'Purchase');
-                        allTransactions.push({ id: `purchase-${doc.billNo}`, date: doc.date, type: 'Purchase', amount: doc.totals.grandTotal, grossAmount: doc.totals.grandTotal, expenses: 0, party: doc.growerName, docId: doc.billNo });
+                        allTransactions.push({ ...doc, _type: 'Purchase' });
                     } else if (key.startsWith('advance-')) {
                         const doc = JSON.parse(localStorage.getItem(key)!);
                         const type = doc.type === 'Advance Given' ? 'Advance' : (doc.type === 'Discount' ? 'Discount' : 'Repayment');
                         recordPartyActivity(doc.partyName, type);
-                        allTransactions.push({ id: doc.id, date: doc.date, type, amount: doc.amount, grossAmount: doc.amount, expenses: 0, party: doc.partyName, docId: doc.id.replace('advance-',''), notes: doc.notes });
+                         allTransactions.push({ ...doc, _type: type });
                     } else if (key.startsWith('bikri-')) {
                         const doc = JSON.parse(localStorage.getItem(key)!);
                          const isForwarding = doc.bikriType === 'growerForwarding';
                          const partyName = isForwarding ? doc.growerName : doc.market;
-                         const amount = isForwarding ? doc.calculation.netSalePayableToGrower : doc.calculation.netProfitOrLoss;
                         recordPartyActivity(partyName, 'Bikri');
-                        allTransactions.push({ id: doc.id, date: doc.date, type: 'Bikri', amount: amount, grossAmount: doc.calculation.grossSale, expenses: doc.calculation.totalExpenses, party: partyName, docId: doc.id, notes: `Bikri #${doc.bikriNo} to ${isForwarding ? doc.market : ''}` });
+                        allTransactions.push({ ...doc, _type: 'Bikri' });
                     }
                 } catch (e) {
                     console.error("Failed to parse ledger data from local storage for key:", key, e);
@@ -196,125 +195,118 @@ export default function KhataLedgerPage() {
             partyDisplayNameMap.forEach((displayName, canonicalName) => {
                  const activities = partyTypes.get(canonicalName) || new Set();
                  let partyType: PartyType;
-
                  const hasSales = activities.has('Sale');
                  const hasPurchases = activities.has('Purchase');
-                 const hasAdvances = activities.has('Advance') || activities.has('Repayment') || activities.has('Discount');
                  const hasBikri = activities.has('Bikri');
-
                  if (displayName === 'F.Co (Own Stock)') {
                      partyType = 'fco';
-                 } else if (hasBikri && !hasSales && !hasPurchases && !hasAdvances) {
+                 } else if (hasBikri && !hasSales && !hasPurchases) {
                      partyType = 'outside';
                  } else if (hasSales && !hasPurchases) {
-                     partyType = 'supplier'; // Grower
+                     partyType = 'supplier';
                  } else if (hasPurchases && !hasSales) {
-                     partyType = 'customer'; // Buyer
-                 } else if (hasSales && hasPurchases) {
+                     partyType = 'customer';
+                 } else if (hasSales || hasPurchases) {
                      partyType = 'both';
-                 } else if (hasAdvances && !hasSales && !hasPurchases) {
-                     partyType = 'customer'; // Purely a loanee
                  }
                  else {
-                     partyType = 'customer'; // Default for parties with no txns
+                     partyType = 'customer';
                  }
-
-                 calculatedLedgers[displayName] = { 
-                    transactions: [], 
-                    balance: 0, 
-                    partyType: partyType,
-                    displayName: displayName
-                };
+                 calculatedLedgers[displayName] = { transactions: [], partyType: partyType, displayName: displayName };
             });
 
-            for (const trans of allTransactions) {
-                if (!trans.party) continue;
+            for (const tx of allTransactions) {
+                let partyName: string | undefined;
+                if (tx._type === 'Sale') partyName = tx.customerName;
+                else if (tx._type === 'Purchase') partyName = tx.growerName;
+                else if (tx._type === 'Advance' || tx._type === 'Repayment' || tx._type === 'Discount') partyName = tx.partyName;
+                else if (tx._type === 'Bikri') partyName = tx.bikriType === 'growerForwarding' ? tx.growerName : tx.market;
+
+                if (!partyName) continue;
                 
-                const foundKey = Array.from(partyDisplayNameMap.keys()).find(k => getCanonicalName(trans.party) === k);
-                const displayName = foundKey ? partyDisplayNameMap.get(foundKey) : trans.party;
+                const foundKey = Array.from(partyDisplayNameMap.keys()).find(k => getCanonicalName(partyName!) === k);
+                const displayName = foundKey ? partyDisplayNameMap.get(foundKey) : partyName;
                 
-                if (calculatedLedgers[displayName]) {
-                    calculatedLedgers[displayName].transactions.push(trans);
-                } else if (displayName) {
-                    // This is a fallback for a party that somehow wasn't pre-populated.
-                    calculatedLedgers[displayName] = {
-                        transactions: [trans],
-                        balance: 0,
-                        partyType: 'customer',
-                        displayName: displayName
-                    };
+                if (calculatedLedgers[displayName!]) {
+                    let transaction: Transaction | null = null;
+                     if (tx._type === 'Sale') {
+                        transaction = { id: `sale-${tx.sNo}`, date: tx.date, type: 'Sale', docId: tx.id, peti: tx.totals.pattiQty, dabba: tx.totals.dabbaQty, grossSale: tx.totals.grossSale, expenses: tx.totals.totalExpenses, netSale: tx.totals.netSale, notes: `Watak #${tx.watakNo}` };
+                    } else if (tx._type === 'Bikri' && calculatedLedgers[displayName!].partyType === 'supplier') {
+                        transaction = { id: `bikri-${tx.id}`, date: tx.date, type: 'Bikri', docId: tx.id, grossSale: tx.calculation.grossSale, expenses: tx.calculation.totalExpenses, netSale: tx.calculation.netSalePayableToGrower, notes: `Bikri #${tx.bikriNo}` };
+                    } else if (tx._type === 'Purchase') {
+                        transaction = { id: `purchase-${tx.billNo}`, date: tx.date, type: 'Purchase', docId: tx.billNo, remittanceDetails: `Goods purchased`, debitAmount: tx.totals.grandTotal, notes: `Purchase Bill #${tx.billNo}` };
+                    } else if (tx._type === 'Advance') {
+                        transaction = { id: tx.id, date: tx.date, type: 'Advance', docId: tx.id.replace('advance-', ''), remittanceDetails: tx.notes || 'Advance paid', debitAmount: tx.amount };
+                    } else if (tx._type === 'Repayment') {
+                         transaction = { id: tx.id, date: tx.date, type: 'Repayment', docId: tx.id.replace('advance-', ''), remittanceDetails: tx.notes || 'Payment Received', debitAmount: -tx.amount }; // Negative for credit
+                    } else if (tx._type === 'Discount') {
+                         transaction = { id: tx.id, date: tx.date, type: 'Discount', docId: tx.id.replace('advance-',''), remittanceDetails: tx.notes || 'Discount given', debitAmount: tx.amount };
+                    }
+
+                    if (transaction) {
+                        calculatedLedgers[displayName!].transactions.push(transaction);
+                    }
                 }
             }
             
-            Object.keys(calculatedLedgers).forEach(partyKey => {
-                let runningBalance = 0;
-                const partyType = calculatedLedgers[partyKey].partyType;
-
-                calculatedLedgers[partyKey].transactions.forEach(trans => {
-                    let amount = trans.amount;
-
-                    if (partyType === 'supplier') { // Grower
-                        if (trans.type === 'Sale' || trans.type === 'Bikri') runningBalance += amount; // We owe them for their produce (Credit)
-                        else if (trans.type === 'Advance' || trans.type === 'Purchase' || trans.type === 'Discount') runningBalance -= amount; // We paid them, so our debt decreases (Debit)
-                    } else if (partyType === 'customer') { // Buyer / Loanee
-                         if (trans.type === 'Purchase' || trans.type === 'Advance') runningBalance += amount; // They owe us for goods/cash (Debit)
-                         else if (trans.type === 'Repayment' || trans.type === 'Discount') runningBalance -= amount; // They paid us, so their debt decreases (Credit)
-                    } else if (partyType === 'outside') { // Bikri Party
-                        runningBalance += amount; // Profit is receivable, loss is payable
-                    } else if (partyType === 'fco') {
-                        if (trans.type === 'Purchase' || trans.type === 'Bikri') runningBalance += amount; // Asset value increases
-                    }
-                    else { // 'both' type
-                         if (trans.type === 'Sale' || trans.type === 'Bikri') runningBalance += amount; // Owed to them as grower (Credit)
-                         else if (trans.type === 'Purchase' || trans.type === 'Advance') runningBalance -= amount; // They owe us as customer (Debit)
-                         else if (trans.type === 'Repayment' || trans.type === 'Discount') runningBalance -= amount;
-                    }
-                });
-                calculatedLedgers[partyKey].balance = runningBalance;
-            });
-            
-            const sortedParties = Object.keys(calculatedLedgers).sort((a, b) => a.localeCompare(b));
+            const sortedParties = Object.keys(calculatedLedgers).filter(p => calculatedLedgers[p].partyType === 'supplier').sort((a, b) => a.localeCompare(b));
             
             setLedgers(calculatedLedgers);
             setAllParties(sortedParties);
+            if (sortedParties.length > 0) {
+                setSelectedParty(sortedParties[0]);
+            }
             setIsLoading(false);
         }
         fetchLedgerData();
     }, []);
 
-    React.useEffect(() => {
-        const filterAndSetParties = () => {
-            const parties = allParties.filter(p => {
-                if (!p) return false;
-                const ledger = ledgers[p];
-                if (!ledger) return false;
-
-                switch (activeTab) {
-                    case 'growers': return ledger.partyType === 'supplier' || ledger.partyType === 'both';
-                    case 'customers': return ledger.partyType === 'customer' || ledger.partyType === 'both';
-                    case 'outside': return ledger.partyType === 'outside';
-                    case 'fco': return ledger.partyType === 'fco';
-                    case 'all': return true;
-                    default: return false;
-                }
-            });
-
-            setFilteredParties(parties);
-            if (parties.length > 0) {
-                if (!selectedParty || !parties.includes(selectedParty)) {
-                  setSelectedParty(parties[0]);
-                }
-            } else {
-                setSelectedParty(null);
-            }
-        };
-        
-        if (!isLoading) {
-            filterAndSetParties();
-        }
-    }, [activeTab, allParties, ledgers, isLoading, selectedParty]);
-
     const selectedLedger = selectedParty ? ledgers[selectedParty] : null;
+
+    const statementData = React.useMemo(() => {
+        if (!selectedLedger) return { creditRows: [], debitRows: [], creditTotals: {}, debitTotals: {}, balance: 0 };
+        
+        const creditRows: Transaction[] = [];
+        const debitRows: Transaction[] = [];
+
+        selectedLedger.transactions.forEach(tx => {
+            if (tx.netSale !== undefined) {
+                creditRows.push(tx);
+            } else if (tx.debitAmount !== undefined) {
+                debitRows.push(tx);
+            }
+        });
+        
+        const maxRows = Math.max(creditRows.length, debitRows.length);
+        const paddedCreditRows = [...creditRows, ...Array(Math.max(0, maxRows - creditRows.length)).fill({})];
+        const paddedDebitRows = [...debitRows, ...Array(Math.max(0, maxRows - debitRows.length)).fill({})];
+
+
+        const creditTotals = creditRows.reduce((acc, tx) => {
+            acc.peti += tx.peti || 0;
+            acc.dabba += tx.dabba || 0;
+            acc.grossSale += tx.grossSale || 0;
+            acc.expenses += tx.expenses || 0;
+            acc.netSale += tx.netSale || 0;
+            return acc;
+        }, { peti: 0, dabba: 0, grossSale: 0, expenses: 0, netSale: 0 });
+
+        const debitTotals = debitRows.reduce((acc, tx) => {
+            acc.debitAmount += tx.debitAmount || 0;
+            return acc;
+        }, { debitAmount: 0 });
+
+        const balance = creditTotals.netSale - debitTotals.debitAmount;
+
+        return {
+            creditRows: paddedCreditRows,
+            debitRows: paddedDebitRows,
+            creditTotals,
+            debitTotals,
+            balance
+        };
+    }, [selectedLedger]);
+
 
     const navigateToDoc = (type: TransactionType, docId: string) => {
         let path = '';
@@ -325,141 +317,10 @@ export default function KhataLedgerPage() {
         
         if (path) router.push(path);
     };
-
-    const getLedgerWithRunningBalance = (): LedgerEntryWithRunningBalance[] => {
-        if (!selectedLedger) return [];
-        let runningBalance = 0;
-        return selectedLedger.transactions.map(tx => {
-            const partyType = selectedLedger.partyType;
-            let amount = tx.amount;
-
-            if (partyType === 'supplier') { // Grower
-                if (tx.type === 'Sale' || tx.type === 'Bikri') runningBalance += amount;
-                else if (['Purchase', 'Advance', 'Repayment', 'Discount'].includes(tx.type)) runningBalance -= amount;
-            } else if (partyType === 'customer') { // Buyer
-                if (['Purchase', 'Advance'].includes(tx.type)) runningBalance += amount;
-                else if (['Sale', 'Repayment', 'Discount'].includes(tx.type)) runningBalance -= amount;
-            } else if (partyType === 'outside') {
-                runningBalance += amount;
-            } else if (partyType === 'fco') {
-                if (tx.type === 'Purchase' || tx.type === 'Bikri') runningBalance += amount;
-            } else { // 'both'
-                if (tx.type === 'Sale' || tx.type === 'Bikri') runningBalance += amount; // We owe them (credit)
-                else if (tx.type === 'Purchase' || tx.type === 'Advance') runningBalance -= amount; // They owe us (debit)
-                else if (tx.type === 'Repayment' || tx.type === 'Discount') runningBalance -= amount; 
-            }
-            return {...tx, runningBalance};
-        });
-    };
-
-    const ledgerForExport = getLedgerWithRunningBalance();
-    
-    const exportToPDF = () => {
-        if (!selectedParty || !selectedLedger) return;
-        
-        const doc = new jsPDF();
-        
-        doc.setFontSize(18);
-        doc.text(`Ledger Statement for ${selectedParty}`, 14, 22);
-        doc.setFontSize(11);
-        doc.setTextColor(100);
-        doc.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, 14, 28);
-        
-        doc.setFontSize(10);
-        doc.text("F.Co - FIRDOUS AHMAD & COMPANY", doc.internal.pageSize.width - 14, 22, { align: 'right'});
-
-        autoTable(doc, {
-            startY: 35,
-            head: [['Date', 'Doc ID / Particulars', 'Type', 'Debit (You Paid)', 'Credit (You Received)', 'Balance']],
-            body: ledgerForExport.map(tx => {
-                 const isCredit = (selectedLedger.partyType === 'supplier' && (tx.type === 'Sale' || tx.type === 'Bikri')) ||
-                                 (selectedLedger.partyType === 'customer' && (tx.type === 'Repayment' || tx.type === 'Discount')) ||
-                                 (selectedLedger.partyType === 'both' && (tx.type === 'Sale' || tx.type === 'Bikri' || tx.type === 'Repayment' || tx.type === 'Discount'));
-
-                return [
-                    new Date(tx.date).toLocaleDateString('en-GB'),
-                    tx.notes || (tx.type === 'Sale' ? `Bill #${tx.docId}` : tx.type === 'Purchase' ? `Purchase #${tx.docId}` : tx.type),
-                    tx.type,
-                    !isCredit ? `₹${Math.abs(tx.amount).toFixed(2)}` : '-',
-                    isCredit ? `₹${tx.amount.toFixed(2)}` : '-',
-                    `₹${tx.runningBalance.toFixed(2)}`
-                ]
-            }),
-            foot: [
-                [{ content: 'Final Balance', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, 
-                 { content: `₹${selectedLedger.balance.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold' } }]
-            ],
-            theme: 'striped',
-            headStyles: { fillColor: [22, 163, 74] }
-        });
-
-        const pageCount = (doc as any).internal.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
-            doc.setPage(i);
-            doc.setFontSize(8);
-            doc.text('Your Satisfaction is Our Success – Subject to Sopore Jurisdiction Only', doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center'});
-        }
-        
-        doc.save(`Ledger-${selectedParty}.pdf`);
-    };
-
-    const exportToExcel = () => {
-        if (!selectedParty || !selectedLedger) return;
-
-        const worksheetData = ledgerForExport.map(tx => {
-            const isCredit = (selectedLedger.partyType === 'supplier' && (tx.type === 'Sale' || tx.type === 'Bikri')) ||
-                             (selectedLedger.partyType === 'customer' && (tx.type === 'Repayment' || tx.type === 'Discount')) ||
-                             (selectedLedger.partyType === 'both' && (tx.type === 'Sale' || tx.type === 'Bikri' || tx.type === 'Repayment' || tx.type === 'Discount'));
-
-            return {
-                Date: new Date(tx.date).toLocaleDateString('en-GB'),
-                'Document ID': tx.docId,
-                'Particulars (Original Name)': tx.party,
-                Type: tx.type,
-                'Debit (Payable)': !isCredit ? Math.abs(tx.amount) : '',
-                'Credit (Receivable)': isCredit ? tx.amount : '',
-                'Running Balance': tx.runningBalance,
-                'Notes': tx.notes || '',
-            }
-        });
-        
-        const worksheet = XLSX.utils.json_to_sheet(worksheetData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Ledger');
-        
-        XLSX.utils.sheet_add_aoa(worksheet, [
-            ["", "", "", "", "","Final Balance", selectedLedger.balance]
-        ], { origin: -1 });
-
-        XLSX.writeFile(workbook, `Ledger-${selectedParty}.xlsx`);
-    };
     
     const handlePrint = () => {
         window.print();
     }
-
-    const PartyIcon = ({ type }: { type: PartyType }) => {
-        if (type === 'supplier') return <Leaf className="h-4 w-4 mr-2 text-green-500" />;
-        if (type === 'customer') return <ShoppingCart className="h-4 w-4 mr-2 text-blue-500" />;
-        if (type === 'outside') return <Globe className="h-4 w-4 mr-2 text-orange-500" />;
-        if (type === 'fco') return <Building className="h-4 w-4 mr-2 text-gray-500" />;
-        return <Users className="h-4 w-4 mr-2 text-purple-500" />;
-    };
-    
-    const totals = React.useMemo(() => {
-        if (!selectedLedger) return { debit: 0, credit: 0 };
-        return selectedLedger.transactions.reduce((acc, tx) => {
-            const isCredit = (selectedLedger.partyType === 'supplier' && (tx.type === 'Sale' || tx.type === 'Bikri')) ||
-                             (selectedLedger.partyType === 'customer' && (tx.type === 'Repayment' || tx.type === 'Discount')) ||
-                             (selectedLedger.partyType === 'both' && (tx.type === 'Sale' || tx.type === 'Bikri' || tx.type === 'Repayment' || tx.type === 'Discount'));
-             if (isCredit) {
-                acc.credit += tx.amount;
-            } else {
-                acc.debit += Math.abs(tx.amount);
-            }
-            return acc;
-        }, { debit: 0, credit: 0 });
-    }, [selectedLedger]);
 
     const AddNewFab = () => (
         <DropdownMenu>
@@ -482,115 +343,27 @@ export default function KhataLedgerPage() {
         </DropdownMenu>
     );
     
-    const getBadgeVariant = (type: TransactionType) => {
-        switch (type) {
-            case 'Sale': return 'default';
-            case 'Purchase': return 'secondary';
-            case 'Advance': return 'destructive';
-            case 'Repayment': return 'outline';
-            case 'Discount': return 'default';
-            case 'Bikri': return 'default';
-            default: return 'default';
-        }
-    }
-    
-    const TransactionIcon = ({ type }: { type: TransactionType }) => {
-        switch (type) {
-            case 'Sale': return <TrendingUp className="h-4 w-4 text-green-500" />;
-            case 'Purchase': return <ShoppingCart className="h-4 w-4 text-blue-500" />;
-            case 'Advance': return <Banknote className="h-4 w-4 text-red-500" />;
-            case 'Repayment': return <Banknote className="h-4 w-4 text-green-500" />;
-            case 'Discount': return <Gift className="h-4 w-4 text-yellow-500" />;
-            case 'Bikri': return <Globe className="h-4 w-4 text-orange-500" />;
-            default: return <Users className="h-4 w-4" />;
-        }
-    }
-
-    const FinalBalanceDisplay = () => {
-        if (!selectedLedger) return null;
-
-        const partyType = selectedLedger.partyType;
-        let balanceText: string;
-        let balanceColor: string;
-        
-        if (partyType === 'supplier') { // Grower
-            balanceText = selectedLedger.balance >= 0 ? '(You Owe / Payable)' : '(Advance Paid)';
-            balanceColor = selectedLedger.balance >= 0 ? 'text-red-500' : 'text-green-500';
-        } else if (partyType === 'customer') { // Buyer
-            balanceText = selectedLedger.balance >= 0 ? '(Receivable)' : '(Credit Balance)';
-            balanceColor = selectedLedger.balance >= 0 ? 'text-green-500' : 'text-red-500';
-        } else if (partyType === 'outside') {
-             balanceText = selectedLedger.balance >= 0 ? '(Profit Receivable)' : '(Loss Payable)';
-            balanceColor = selectedLedger.balance >= 0 ? 'text-green-500' : 'text-red-500';
-        }
-        else if (partyType === 'fco') {
-            balanceText = '(Own Stock Value)';
-            balanceColor = 'text-blue-500';
-        }
-        else { // both
-             balanceText = selectedLedger.balance >= 0 ? '(Payable)' : '(Receivable)';
-             balanceColor = selectedLedger.balance >= 0 ? 'text-red-500' : 'text-green-500';
-        }
-        
-        return (
-            <TableRow className="font-bold text-lg bg-muted">
-                <TableCell colSpan={5} className="text-right">Final Balance</TableCell>
-                <TableCell className={`text-right ${balanceColor}`}>
-                    ₹{Math.abs(selectedLedger.balance).toFixed(2)}
-                    <span className="text-xs text-muted-foreground ml-1">
-                        {balanceText}
-                    </span>
-                </TableCell>
-            </TableRow>
-        );
-    }
-
-
     return (
     <>
         <Card className="printable-area">
             <CardHeader className="print-hidden">
                 <div className="flex justify-between items-start">
                     <div>
-                        <CardTitle>Fruit Ledger (Khata)</CardTitle>
-                        <CardDescription>Separate ledgers for what you owe to Growers (Payable) and what Customers owe you (Receivable).</CardDescription>
+                        <CardTitle>Statement of Account</CardTitle>
+                        <CardDescription>A complete credit/debit statement for each grower.</CardDescription>
                     </div>
                      <div className="flex items-center gap-2">
                          {selectedParty && (
-                            <>
-                                <Button onClick={handlePrint} variant="outline" size="sm" className="gap-1">
-                                    <Printer className="h-3.5 w-3.5" /> Print
-                                </Button>
-                                <Button onClick={exportToPDF} variant="outline" size="sm" className="gap-1">
-                                    <FileDown className="h-3.5 w-3.5" /> PDF
-                                </Button>
-                                <Button onClick={exportToExcel} variant="outline" size="sm" className="gap-1">
-                                    <FileDown className="h-3.5 w-3.5" /> Excel
-                                </Button>
-                            </>
+                            <Button onClick={handlePrint} variant="outline" size="sm" className="gap-1">
+                                <Printer className="h-3.5 w-3.5" /> Print
+                            </Button>
                         )}
                     </div>
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="print-header hidden print:block text-center mb-4">
-                    <h1 className="text-xl font-bold">Fruit Ledger Statement</h1>
-                    <h2 className="text-lg font-semibold">{selectedParty}</h2>
-                    <p className="text-sm">Firdous Ahmad & Company, Sopore</p>
-                    <p className="text-xs">Date: {new Date().toLocaleDateString('en-GB')}</p>
-                </div>
-
                 <div className="flex justify-between items-center mb-4 print-hidden">
-                    <Tabs value={activeTab} onValueChange={setActiveTab}>
-                        <TabsList className="grid w-full grid-cols-5">
-                            <TabsTrigger value="growers"><Leaf className="h-4 w-4 mr-2"/>Grower Ledger</TabsTrigger>
-                            <TabsTrigger value="customers"><ShoppingCart className="h-4 w-4 mr-2"/>Customer Ledger</TabsTrigger>
-                             <TabsTrigger value="outside"><Globe className="h-4 w-4 mr-2"/>Outside Sales</TabsTrigger>
-                            <TabsTrigger value="fco"><Building className="h-4 w-4 mr-2"/>F.Co Ledger</TabsTrigger>
-                            <TabsTrigger value="all"><Users className="h-4 w-4 mr-2"/>All Parties</TabsTrigger>
-                        </TabsList>
-                    </Tabs>
-                    
+                     <p className="text-muted-foreground">Select a grower to view their statement.</p>
                     {isLoading || !loaderAnimation ? (
                         <div className="flex justify-center items-center p-4">
                             {loaderAnimation && <Lottie animationData={loaderAnimation} loop={true} style={{ width: 40, height: 40 }} />}
@@ -599,15 +372,15 @@ export default function KhataLedgerPage() {
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="outline" className="flex items-center gap-2 min-w-[250px]">
-                                {selectedParty && ledgers[selectedParty] && <PartyIcon type={ledgers[selectedParty].partyType} />}
-                                <span className="flex-1 text-left">{selectedParty || 'Select a Party'}</span>
+                                <Leaf className="h-4 w-4 mr-2 text-green-500" />
+                                <span className="flex-1 text-left">{selectedParty || 'Select a Grower'}</span>
                                 <ChevronDown className="h-4 w-4" />
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="start" className="max-h-96 overflow-y-auto">
-                                {filteredParties.map(party => (
+                                {allParties.map(party => (
                                     <DropdownMenuItem key={party} onSelect={() => setSelectedParty(party)}>
-                                        {ledgers[party] && <PartyIcon type={ledgers[party].partyType} />}
+                                        <Leaf className="h-4 w-4 mr-2 text-green-500" />
                                         {party}
                                     </DropdownMenuItem>
                                 ))}
@@ -616,65 +389,130 @@ export default function KhataLedgerPage() {
                     )}
                 </div>
 
-                {isLoading || !loaderAnimation ? (
+                <div className="print-header hidden print:block text-center mb-4 border-b-2 pb-2">
+                    <h1 className="text-xl font-bold">STATEMENT OF ACCOUNT</h1>
+                    <h2 className="text-lg">Firdous Ahmad & Company</h2>
+                    <p className="text-xs">Shed No.13, Fud No-12 A Fruit Mandi Apple Town Sopore -193201 (KMR)</p>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mb-4 print:grid-cols-2">
+                    <p><strong>M/s:</strong> {selectedParty}</p>
+                    <p className="text-right"><strong>Date:</strong> {new Date().toLocaleDateString('en-GB')}</p>
+                </div>
+
+                {isLoading ? (
                     <div className="flex justify-center items-center h-64 print-hidden">
                         {loaderAnimation && <Lottie animationData={loaderAnimation} loop={true} style={{ width: 100, height: 100 }} />}
                     </div>
                 ) : selectedLedger ? (
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Particulars</TableHead>
-                                <TableHead>Type</TableHead>
-                                <TableHead className="text-right">Debit (You Paid / They Owe)</TableHead>
-                                <TableHead className="text-right">Credit (You Received / You Owe)</TableHead>
-                                <TableHead className="text-right">Balance</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {getLedgerWithRunningBalance().map((tx) => {
-                                 const isCredit = (selectedLedger.partyType === 'supplier' && (tx.type === 'Sale' || tx.type === 'Bikri')) ||
-                                                  (selectedLedger.partyType === 'customer' && (tx.type === 'Repayment' || tx.type === 'Discount')) ||
-                                                  (selectedLedger.partyType === 'both' && (tx.type === 'Sale' || tx.type === 'Bikri' || tx.type === 'Repayment' || tx.type === 'Discount'));
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+                        {/* CREDIT SIDE */}
+                        <div className="border-r pr-2">
+                            <h3 className="font-bold text-center mb-2">CREDIT</h3>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="h-8 p-1 text-xs">Date</TableHead>
+                                        <TableHead className="h-8 p-1 text-xs">Doc</TableHead>
+                                        <TableHead className="h-8 p-1 text-xs">Peti</TableHead>
+                                        <TableHead className="h-8 p-1 text-xs">Daba</TableHead>
+                                        <TableHead className="h-8 p-1 text-xs text-right">Gross</TableHead>
+                                        <TableHead className="h-8 p-1 text-xs text-right">Exp</TableHead>
+                                        <TableHead className="h-8 p-1 text-xs text-right">Net Sale</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {statementData.creditRows.map((tx, i) => (
+                                        <TableRow key={`credit-${i}`} className="h-6">
+                                            <TableCell className="p-1 text-xs">{tx.date ? new Date(tx.date).toLocaleDateString('en-GB') : ''}</TableCell>
+                                            <TableCell className="p-1 text-xs">{tx.notes || ''}</TableCell>
+                                            <TableCell className="p-1 text-xs">{tx.peti || ''}</TableCell>
+                                            <TableCell className="p-1 text-xs">{tx.dabba || ''}</TableCell>
+                                            <TableCell className="p-1 text-xs text-right font-mono">{tx.grossSale?.toFixed(2) || ''}</TableCell>
+                                            <TableCell className="p-1 text-xs text-right font-mono">{tx.expenses?.toFixed(2) || ''}</TableCell>
+                                            <TableCell className="p-1 text-xs text-right font-mono font-bold">{tx.netSale?.toFixed(2) || ''}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                        {/* DEBIT SIDE */}
+                        <div>
+                            <h3 className="font-bold text-center mb-2">DEBIT</h3>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="h-8 p-1 text-xs">Date</TableHead>
+                                        <TableHead className="h-8 p-1 text-xs">Details of Remittance</TableHead>
+                                        <TableHead className="h-8 p-1 text-xs text-right">Amount</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {statementData.debitRows.map((tx, i) => (
+                                         <TableRow key={`debit-${i}`} className="h-6">
+                                            <TableCell className="p-1 text-xs">{tx.date ? new Date(tx.date).toLocaleDateString('en-GB') : ''}</TableCell>
+                                            <TableCell className="p-1 text-xs">{tx.remittanceDetails || ''}</TableCell>
+                                            <TableCell className="p-1 text-xs text-right font-mono">{tx.debitAmount?.toFixed(2) || ''}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
 
-                                return (
-                                <TableRow key={tx.id}>
-                                    <TableCell>{new Date(tx.date).toLocaleDateString('en-GB')}</TableCell>
-                                    <TableCell>
-                                        <Button variant="link" className="p-0 h-auto print-hidden" onClick={() => navigateToDoc(tx.type, tx.docId)}>
-                                            {tx.notes || (tx.type === 'Sale' ? `Bill #${tx.docId}` : tx.type === 'Purchase' ? `Purchase #${tx.docId}` : tx.type)}
-                                        </Button>
-                                        <span className="hidden print:inline">{tx.notes || (tx.type === 'Sale' ? `Bill #${tx.docId}` : tx.type === 'Purchase' ? `Purchase #${tx.docId}` : tx.type)}</span>
-                                        <p className="text-xs text-muted-foreground hidden print:block">({tx.party})</p>
-                                    </TableCell>
-                                    <TableCell>
-                                    <Badge variant={getBadgeVariant(tx.type)} className="gap-1.5"><TransactionIcon type={tx.type} />{tx.type}</Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right font-mono text-red-500">
-                                        {!isCredit ? `₹${Math.abs(tx.amount).toFixed(2)}` : '-'}
-                                    </TableCell>
-                                    <TableCell className="text-right font-mono text-green-600">
-                                        {isCredit ? `₹${Math.abs(tx.amount).toFixed(2)}` : '-'}
-                                    </TableCell>
-                                    <TableCell className="text-right font-mono">₹{tx.runningBalance.toFixed(2)}</TableCell>
-                                </TableRow>
-                            )})}
-                        </TableBody>
-                        <TableFooter>
-                            <TableRow className="font-bold">
-                                <TableCell colSpan={3} className="text-right">Totals</TableCell>
-                                <TableCell className="text-right text-red-500">₹{totals.debit.toFixed(2)}</TableCell>
-                                <TableCell className="text-right text-green-600">₹{totals.credit.toFixed(2)}</TableCell>
-                                <TableCell></TableCell>
-                            </TableRow>
-                            <FinalBalanceDisplay />
-                        </TableFooter>
-                    </Table>
+                         {/* TOTALS */}
+                        <Separator className="col-span-2 my-2" />
+                        <div className="border-r pr-2">
+                             <Table>
+                                <TableBody>
+                                    <TableRow className="h-6 font-bold">
+                                        <TableCell className="p-1 text-xs" colSpan={2}>Total Credit</TableCell>
+                                        <TableCell className="p-1 text-xs">{statementData.creditTotals.peti}</TableCell>
+                                        <TableCell className="p-1 text-xs">{statementData.creditTotals.dabba}</TableCell>
+                                        <TableCell className="p-1 text-xs text-right font-mono">{statementData.creditTotals.grossSale.toFixed(2)}</TableCell>
+                                        <TableCell className="p-1 text-xs text-right font-mono">{statementData.creditTotals.expenses.toFixed(2)}</TableCell>
+                                        <TableCell className="p-1 text-xs text-right font-mono">{statementData.creditTotals.netSale.toFixed(2)}</TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
+                        </div>
+                         <div>
+                             <Table>
+                                <TableBody>
+                                    <TableRow className="h-6 font-bold">
+                                         <TableCell className="p-1 text-xs" colSpan={2}>Total Debit</TableCell>
+                                         <TableCell className="p-1 text-xs text-right font-mono">{statementData.debitTotals.debitAmount.toFixed(2)}</TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
+                        </div>
+
+                        <Separator className="col-span-2 my-2" />
+                         <CardFooter className="col-span-2 mt-4 p-4 bg-muted rounded-lg">
+                            <div className="w-full flex justify-around items-center text-lg font-bold">
+                                <div className="text-center">
+                                    <p className="text-sm text-muted-foreground">Total Credit</p>
+                                    <p className="flex items-center gap-1"><ArrowDown className="h-5 w-5 text-green-500" /> ₹{statementData.creditTotals.netSale.toFixed(2)}</p>
+                                </div>
+                                 <Minus className="h-6 w-6 text-muted-foreground" />
+                                <div className="text-center">
+                                    <p className="text-sm text-muted-foreground">Total Debit</p>
+                                    <p className="flex items-center gap-1"><ArrowUp className="h-5 w-5 text-red-500" /> ₹{statementData.debitTotals.debitAmount.toFixed(2)}</p>
+                                </div>
+                                <Equals className="h-6 w-6 text-muted-foreground" />
+                                 <div className="text-center">
+                                    <p className="text-sm text-muted-foreground">Final Balance</p>
+                                    <p className={`${statementData.balance >= 0 ? 'text-red-500' : 'text-green-500'}`}>
+                                        ₹{Math.abs(statementData.balance).toFixed(2)}
+                                        <span className="text-xs ml-1">({statementData.balance >= 0 ? 'Payable' : 'Receivable'})</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </CardFooter>
+
+                    </div>
                 ) : (
                     <div className="text-center text-muted-foreground py-12 print-hidden">
-                        <p>No transactions found for the selected category or party.</p>
-                        <p className="text-sm">Start by creating sales or purchases, or select a different category.</p>
+                        <p>No transactions found for the selected grower.</p>
+                        <p className="text-sm">Start by creating sales or purchases, or select a different grower.</p>
                     </div>
                 )}
             </CardContent>
@@ -683,3 +521,5 @@ export default function KhataLedgerPage() {
     </>
   );
 }
+
+    
