@@ -174,7 +174,7 @@ export default function KhataLedgerPage() {
                     } else if (key.startsWith('advance-')) {
                         const doc = JSON.parse(localStorage.getItem(key)!);
                         const type = doc.type === 'Advance Given' ? 'Advance' : (doc.type === 'Discount' ? 'Discount' : 'Repayment');
-                        recordPartyActivity(doc.partyName, type);
+                        recordPartyActivity(doc.partyName, type as TransactionType);
                          allTransactions.push({ ...doc, _type: type });
                     } else if (key.startsWith('bikri-')) {
                         const doc = JSON.parse(localStorage.getItem(key)!);
@@ -249,7 +249,7 @@ export default function KhataLedgerPage() {
                 }
             }
             
-            const sortedParties = Object.keys(calculatedLedgers).filter(p => calculatedLedgers[p].partyType === 'supplier').sort((a, b) => a.localeCompare(b));
+            const sortedParties = Object.keys(calculatedLedgers).filter(p => calculatedLedgers[p].partyType === 'supplier' || calculatedLedgers[p].partyType === 'both').sort((a, b) => a.localeCompare(b));
             
             setLedgers(calculatedLedgers);
             setAllParties(sortedParties);
@@ -521,5 +521,3 @@ export default function KhataLedgerPage() {
     </>
   );
 }
-
-    
