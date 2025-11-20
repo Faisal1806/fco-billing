@@ -404,10 +404,10 @@ export default function KhataLedgerPage() {
                         {loaderAnimation && <Lottie animationData={loaderAnimation} loop={true} style={{ width: 100, height: 100 }} />}
                     </div>
                 ) : selectedLedger ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+                    <div className="grid grid-cols-2 gap-0 border">
                         {/* CREDIT SIDE */}
-                        <div className="border-r pr-2">
-                            <h3 className="font-bold text-center mb-2">CREDIT</h3>
+                        <div className="border-r pr-1">
+                            <h3 className="font-bold text-center mb-2 p-1 bg-muted">CREDIT</h3>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -427,8 +427,8 @@ export default function KhataLedgerPage() {
                                             <TableCell className="p-1 text-xs">{tx.notes || ''}</TableCell>
                                             <TableCell className="p-1 text-xs">{tx.peti || ''}</TableCell>
                                             <TableCell className="p-1 text-xs">{tx.dabba || ''}</TableCell>
-                                            <TableCell className="p-1 text-xs text-right font-mono">{tx.grossSale?.toFixed(2) || ''}</TableCell>
-                                            <TableCell className="p-1 text-xs text-right font-mono">{tx.expenses?.toFixed(2) || ''}</TableCell>
+                                            <TableCell className="p-1 text-xs text-right font-mono">{tx.grossSale?.toFixed(0) || ''}</TableCell>
+                                            <TableCell className="p-1 text-xs text-right font-mono">{tx.expenses?.toFixed(0) || ''}</TableCell>
                                             <TableCell className="p-1 text-xs text-right font-mono font-bold">{tx.netSale?.toFixed(2) || ''}</TableCell>
                                         </TableRow>
                                     ))}
@@ -436,8 +436,8 @@ export default function KhataLedgerPage() {
                             </Table>
                         </div>
                         {/* DEBIT SIDE */}
-                        <div>
-                            <h3 className="font-bold text-center mb-2">DEBIT</h3>
+                        <div className="pl-1">
+                            <h3 className="font-bold text-center mb-2 p-1 bg-muted">DEBIT</h3>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -459,22 +459,22 @@ export default function KhataLedgerPage() {
                         </div>
 
                          {/* TOTALS */}
-                        <Separator className="col-span-2 my-2" />
-                        <div className="border-r pr-2">
+                        <div className="col-span-2 border-t mt-2"></div>
+                        <div className="border-r pr-1">
                              <Table>
                                 <TableBody>
                                     <TableRow className="h-6 font-bold">
                                         <TableCell className="p-1 text-xs" colSpan={2}>Total Credit</TableCell>
                                         <TableCell className="p-1 text-xs">{statementData.creditTotals.peti}</TableCell>
                                         <TableCell className="p-1 text-xs">{statementData.creditTotals.dabba}</TableCell>
-                                        <TableCell className="p-1 text-xs text-right font-mono">{statementData.creditTotals.grossSale.toFixed(2)}</TableCell>
-                                        <TableCell className="p-1 text-xs text-right font-mono">{statementData.creditTotals.expenses.toFixed(2)}</TableCell>
+                                        <TableCell className="p-1 text-xs text-right font-mono">{statementData.creditTotals.grossSale.toFixed(0)}</TableCell>
+                                        <TableCell className="p-1 text-xs text-right font-mono">{statementData.creditTotals.expenses.toFixed(0)}</TableCell>
                                         <TableCell className="p-1 text-xs text-right font-mono">{statementData.creditTotals.netSale.toFixed(2)}</TableCell>
                                     </TableRow>
                                 </TableBody>
                             </Table>
                         </div>
-                         <div>
+                         <div className="pl-1">
                              <Table>
                                 <TableBody>
                                     <TableRow className="h-6 font-bold">
@@ -485,28 +485,29 @@ export default function KhataLedgerPage() {
                             </Table>
                         </div>
 
-                        <Separator className="col-span-2 my-2" />
-                         <CardFooter className="col-span-2 mt-4 p-4 bg-muted rounded-lg">
-                            <div className="w-full flex justify-around items-center text-lg font-bold">
-                                <div className="text-center">
-                                    <p className="text-sm text-muted-foreground">Total Credit</p>
-                                    <p className="flex items-center gap-1"><ArrowDown className="h-5 w-5 text-green-500" /> ₹{statementData.creditTotals.netSale.toFixed(2)}</p>
+                        <div className="col-span-2 mt-2">
+                            <CardFooter className="p-4 bg-muted rounded-lg">
+                                <div className="w-full flex justify-around items-center text-lg font-bold">
+                                    <div className="text-center">
+                                        <p className="text-sm text-muted-foreground">Total Credit</p>
+                                        <p className="flex items-center gap-1"><ArrowDown className="h-5 w-5 text-green-500" /> ₹{statementData.creditTotals.netSale.toFixed(2)}</p>
+                                    </div>
+                                    <Minus className="h-6 w-6 text-muted-foreground" />
+                                    <div className="text-center">
+                                        <p className="text-sm text-muted-foreground">Total Debit</p>
+                                        <p className="flex items-center gap-1"><ArrowUp className="h-5 w-5 text-red-500" /> ₹{statementData.debitTotals.debitAmount.toFixed(2)}</p>
+                                    </div>
+                                    <Equals className="h-6 w-6 text-muted-foreground" />
+                                    <div className="text-center">
+                                        <p className="text-sm text-muted-foreground">Final Balance</p>
+                                        <p className={`${statementData.balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                            ₹{Math.abs(statementData.balance).toFixed(2)}
+                                            <span className="text-xs ml-1">({statementData.balance >= 0 ? 'Payable' : 'Receivable'})</span>
+                                        </p>
+                                    </div>
                                 </div>
-                                 <Minus className="h-6 w-6 text-muted-foreground" />
-                                <div className="text-center">
-                                    <p className="text-sm text-muted-foreground">Total Debit</p>
-                                    <p className="flex items-center gap-1"><ArrowUp className="h-5 w-5 text-red-500" /> ₹{statementData.debitTotals.debitAmount.toFixed(2)}</p>
-                                </div>
-                                <Equals className="h-6 w-6 text-muted-foreground" />
-                                 <div className="text-center">
-                                    <p className="text-sm text-muted-foreground">Final Balance</p>
-                                    <p className={`${statementData.balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                        ₹{Math.abs(statementData.balance).toFixed(2)}
-                                        <span className="text-xs ml-1">({statementData.balance >= 0 ? 'Payable' : 'Receivable'})</span>
-                                    </p>
-                                </div>
-                            </div>
-                        </CardFooter>
+                            </CardFooter>
+                        </div>
 
                     </div>
                 ) : (
@@ -521,3 +522,4 @@ export default function KhataLedgerPage() {
     </>
   );
 }
+
