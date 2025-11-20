@@ -59,7 +59,7 @@ export const sidebarSections = [
             { name: "Parties", href: "/parties", icon: Users },
             { name: "Expenses", href: "/expenses", icon: DollarSign },
             { name: "Advances", href: "/advances", icon: Banknote },
-            { name: "Khata Ledger", href: "/khata", icon: BookOpen },
+            { name: "Statements", href: "/statement", icon: BookOpen },
             { name: "Loyalty Points", href: "/loyalty", icon: Award },
             { name: "Cold Storage", href: "/cold-storage", icon: Snowflake },
         ]

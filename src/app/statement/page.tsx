@@ -27,10 +27,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useRouter } from 'next/navigation';
-import { jsPDF } from 'jspdf';
+import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import './print.css';
+import '../khata/print.css';
 import Lottie from 'lottie-react';
 import { Separator } from '@/components/ui/separator';
 
@@ -58,10 +58,9 @@ type Transaction = {
 type PartyType = 'supplier' | 'customer' | 'both' | 'outside' | 'fco';
 
 type Ledger = {
-    [canonicalPartyName: string]: {
+    [partyName: string]: {
         transactions: Transaction[];
         partyType: PartyType;
-        displayName: string; 
     }
 }
 
@@ -70,46 +69,7 @@ const getCanonicalName = (name: string): string => {
     return name.trim();
 };
 
-const defaultGrowers: { name: string, address: string }[] = [
-    { name: 'AB. Majeed Lone S/P', address: 'R/o Nadihal Bla.' },
-    { name: 'AB. Salaam Lone K/P', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Ayoub Khan', address: 'R/o Nadihal Bla.' },
-    { name: 'Nazir Ahmad Dar (Happa)', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Maqbool Dar (Happa)', address: 'R/o Nadihal Bla.' },
-    { name: 'Mushtaq Ahmad Lone K/P', address: 'R/o Nadihal Bla.' },
-    { name: 'Manzoor Ahmad Lone K/P', address: 'R/o Nadihal Bla.' },
-    { name: 'Naseer Ahmad Bhat', address: 'R/o Nadihal Bla.' },
-    { name: 'GH. Mohd. Lone B/P', address: 'R/o Nadihal Bla.' },
-    { name: 'GH. Mohd. Bhat', address: 'R/o Nadihal Bla.' },
-    { name: 'Nazir Ahmad Lone B/P', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Maqbool Baigh', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Shabaan Ahangar', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Akbar Lone B/P', address: 'R/o Nadihal Bla.' },
-    { name: 'Tanveer Ahmad Lone B/P', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Shabaan Lone (Lama)', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Arif Lone (Uffa)', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Subhan Parry', address: 'R/o Nadihal Bla.' },
-    { name: 'GH. Mohiuddin Lone (Poltry)', address: 'R/o Nadihal Bla.' },
-    { name: 'Majoor Ahmad Lone ®', address: 'R/o Nadihal Bla.' },
-    { name: 'Jaana ® B/P', address: 'R/o Nadihal Bla.' },
-    { name: 'Rayees Rajab ®', address: 'R/o Nadihal Bla.' },
-    { name: 'Hilal Ahmad Wani', address: 'R/o Nadihal Bla.' },
-    { name: 'Javid Ahmad Sheikh', address: 'R/o Shanoo, Mawer Handwara' },
-    { name: 'Mohd. Ashraf wani', address: 'R/o Nadihal Bla.' },
-    { name: 'Bashir Ah. Lone B/P', address: 'R/o Nadihal Bla.' },
-    { name: 'GH. Nabi Lone', address: 'R/o Nadihal Bla.' },
-    { name: 'GH. Mohiuddin Lone (H)', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd Yousuf Lone (Waza)', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Akbar Lone (Lama)', address: 'R/o Nadihal Bla.' },
-    { name: 'Mushtaq Ahmed Lone B/P', address: 'R/o Nadihal Bla.'},
-    { name: 'Manzoor Ahmad Lone B/P', address: 'R/o Nadihal Bla.'},
-    { name: 'Mohd. Yousuf Lone B/P', address: 'R/o Nadihal Bla.' },
-    { name: 'Farooq Ahmad Lone (Lama)', address: 'R/o Nadihal Bla.' },
-    { name: 'Farooq Ahmad Bhat', address: 'R/o Nadihal Bla.' },
-    { name: 'GH. Nabi Wani', address: 'R/o Nadihal Bla.' }
-];
-
-export default function KhataLedgerPage() {
+export default function StatementPage() {
     const router = useRouter();
     const [ledgers, setLedgers] = React.useState<Ledger>({});
     const [allParties, setAllParties] = React.useState<string[]>([]);
@@ -125,15 +85,12 @@ export default function KhataLedgerPage() {
             fetch('/animations/forms/fco_loader.json').then(res => res.json()).then(setLoaderAnimation);
 
             const allTransactions: any[] = [];
-            const partyDisplayNameMap = new Map<string, string>();
-             const partyTypes = new Map<string, Set<TransactionType>>();
+            const partyTypes = new Map<string, Set<TransactionType>>();
+            const partyNames = new Set<string>();
 
             const addParty = (name: string) => {
                 if (!name) return;
-                const canonical = getCanonicalName(name);
-                if (!partyDisplayNameMap.has(canonical)) {
-                    partyDisplayNameMap.set(canonical, name);
-                }
+                partyNames.add(name);
             };
 
             const recordPartyActivity = (name: string, activity: TransactionType) => {
@@ -146,7 +103,6 @@ export default function KhataLedgerPage() {
                  partyTypes.get(canonical)!.add(activity);
             };
             
-            defaultGrowers.forEach(g => addParty(g.name));
             for (let i = 0; i < localStorage.length; i++) {
                  const key = localStorage.key(i);
                  if (key?.startsWith('party-')) {
@@ -192,13 +148,16 @@ export default function KhataLedgerPage() {
             
             const calculatedLedgers: Ledger = {};
             
-            partyDisplayNameMap.forEach((displayName, canonicalName) => {
+            partyNames.forEach((partyName) => {
+                 const canonicalName = getCanonicalName(partyName);
                  const activities = partyTypes.get(canonicalName) || new Set();
                  let partyType: PartyType;
+                 
                  const hasSales = activities.has('Sale');
                  const hasPurchases = activities.has('Purchase');
                  const hasBikri = activities.has('Bikri');
-                 if (displayName === 'F.Co (Own Stock)') {
+
+                 if (partyName === 'F.Co (Own Stock)') {
                      partyType = 'fco';
                  } else if (hasBikri && !hasSales && !hasPurchases) {
                      partyType = 'outside';
@@ -212,7 +171,7 @@ export default function KhataLedgerPage() {
                  else {
                      partyType = 'customer';
                  }
-                 calculatedLedgers[displayName] = { transactions: [], partyType: partyType, displayName: displayName };
+                 calculatedLedgers[partyName] = { transactions: [], partyType: partyType };
             });
 
             for (const tx of allTransactions) {
@@ -222,30 +181,25 @@ export default function KhataLedgerPage() {
                 else if (tx._type === 'Advance' || tx._type === 'Repayment' || tx._type === 'Discount') partyName = tx.partyName;
                 else if (tx._type === 'Bikri') partyName = tx.bikriType === 'growerForwarding' ? tx.growerName : tx.market;
 
-                if (!partyName) continue;
+                if (!partyName || !calculatedLedgers[partyName]) continue;
                 
-                const foundKey = Array.from(partyDisplayNameMap.keys()).find(k => getCanonicalName(partyName!) === k);
-                const displayName = foundKey ? partyDisplayNameMap.get(foundKey) : partyName;
-                
-                if (calculatedLedgers[displayName!]) {
-                    let transaction: Transaction | null = null;
-                     if (tx._type === 'Sale') {
-                        transaction = { id: `sale-${tx.sNo}`, date: tx.date, type: 'Sale', docId: tx.id, peti: tx.totals.pattiQty, dabba: tx.totals.dabbaQty, grossSale: tx.totals.grossSale, expenses: tx.totals.totalExpenses, netSale: tx.totals.netSale, notes: `Watak #${tx.watakNo}` };
-                    } else if (tx._type === 'Bikri' && calculatedLedgers[displayName!].partyType === 'supplier') {
-                        transaction = { id: `bikri-${tx.id}`, date: tx.date, type: 'Bikri', docId: tx.id, grossSale: tx.calculation.grossSale, expenses: tx.calculation.totalExpenses, netSale: tx.calculation.netSalePayableToGrower, notes: `Bikri #${tx.bikriNo}` };
-                    } else if (tx._type === 'Purchase') {
-                        transaction = { id: `purchase-${tx.billNo}`, date: tx.date, type: 'Purchase', docId: tx.billNo, remittanceDetails: `Goods purchased`, debitAmount: tx.totals.grandTotal, notes: `Purchase Bill #${tx.billNo}` };
-                    } else if (tx._type === 'Advance') {
-                        transaction = { id: tx.id, date: tx.date, type: 'Advance', docId: tx.id.replace('advance-', ''), remittanceDetails: tx.notes || 'Advance paid', debitAmount: tx.amount };
-                    } else if (tx._type === 'Repayment') {
-                         transaction = { id: tx.id, date: tx.date, type: 'Repayment', docId: tx.id.replace('advance-', ''), remittanceDetails: tx.notes || 'Payment Received', debitAmount: -tx.amount }; // Negative for credit
-                    } else if (tx._type === 'Discount') {
-                         transaction = { id: tx.id, date: tx.date, type: 'Discount', docId: tx.id.replace('advance-',''), remittanceDetails: tx.notes || 'Discount given', debitAmount: tx.amount };
-                    }
+                let transaction: Transaction | null = null;
+                 if (tx._type === 'Sale') {
+                    transaction = { id: `sale-${tx.sNo}`, date: tx.date, type: 'Sale', docId: tx.id, peti: tx.totals.pattiQty, dabba: tx.totals.dabbaQty, grossSale: tx.totals.grossSale, expenses: tx.totals.totalExpenses, netSale: tx.totals.netSale, notes: `Watak #${tx.watakNo}` };
+                } else if (tx._type === 'Bikri' && calculatedLedgers[partyName].partyType === 'supplier') {
+                    transaction = { id: `bikri-${tx.id}`, date: tx.date, type: 'Bikri', docId: tx.id, grossSale: tx.calculation.grossSale, expenses: tx.calculation.totalExpenses, netSale: tx.calculation.netSalePayableToGrower, notes: `Bikri #${tx.bikriNo}` };
+                } else if (tx._type === 'Purchase') {
+                    transaction = { id: `purchase-${tx.billNo}`, date: tx.date, type: 'Purchase', docId: tx.billNo, remittanceDetails: `Goods purchased`, debitAmount: tx.totals.grandTotal, notes: `Purchase Bill #${tx.billNo}` };
+                } else if (tx._type === 'Advance') {
+                    transaction = { id: tx.id, date: tx.date, type: 'Advance', docId: tx.id.replace('advance-', ''), remittanceDetails: tx.notes || 'Advance paid', debitAmount: tx.amount };
+                } else if (tx._type === 'Repayment') {
+                     transaction = { id: tx.id, date: tx.date, type: 'Repayment', docId: tx.id.replace('advance-', ''), remittanceDetails: tx.notes || 'Payment Received', debitAmount: -tx.amount }; // Negative for credit
+                } else if (tx._type === 'Discount') {
+                     transaction = { id: tx.id, date: tx.date, type: 'Discount', docId: tx.id.replace('advance-',''), remittanceDetails: tx.notes || 'Discount given', debitAmount: tx.amount };
+                }
 
-                    if (transaction) {
-                        calculatedLedgers[displayName!].transactions.push(transaction);
-                    }
+                if (transaction) {
+                    calculatedLedgers[partyName].transactions.push(transaction);
                 }
             }
             
