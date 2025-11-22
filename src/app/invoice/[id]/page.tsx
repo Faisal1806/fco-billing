@@ -134,11 +134,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         const pageHeight = doc.internal.pageSize.getHeight();
         const margin = 10;
         
-        // Use the font used in the classic layout
         doc.setFont('helvetica');
-
-        // Draw border (optional, can be removed if not desired)
-        doc.setDrawColor(0); 
 
         // Header
         doc.setFontSize(8);
@@ -277,7 +273,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         }
         
         doc.setFontSize(12);
-        doc.setFont('helvetica', 'normal'); // Assuming Faisal is not a custom font
+        doc.setFont('helvetica', 'normal');
         doc.text('Faisal', pageWidth - margin - 20, pageHeight - 20, { align: 'center' });
     
         doc.setFont('helvetica', 'bold');
@@ -317,8 +313,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 </Button>
              </div>
              <div id="invoice-qr-code" className="p-2 border border-gray-700 bg-gray-900 rounded-md flex flex-col items-center">
-                <QRCode value={pageUrl} size={80} bgColor="#111827" fgColor="#FFFFFF"/>
-                <p className="text-xs font-semibold mt-2 text-gray-400">Scan to View Bill</p>
+                <BusinessCardQR size={80} />
             </div>
         </div>
     )

@@ -34,7 +34,7 @@ export default function BusinessCardQR({ size = 80 }: Props) {
        <QRCode
         value={vCard}
         size={size}
-        bgColor="#ffffff"
+        bgColor="transparent"
         fgColor="#000000"
         level="L"
         includeMargin={false}
