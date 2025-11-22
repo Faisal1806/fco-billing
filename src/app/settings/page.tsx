@@ -1,11 +1,12 @@
 
+
 'use client'
 
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { Paintbrush, Palette, Upload, Type, Rocket, Cog, DownloadCloud, Factory, BellRing } from 'lucide-react';
+import { Paintbrush, Palette, Upload, Rocket, Cog, DownloadCloud, Factory, BellRing } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CompanyInfoForm } from "@/components/profile-form";
 import {
@@ -249,17 +250,22 @@ export default function SettingsPage() {
                                 <Tabs value={invoiceStyle} onValueChange={handleStyleChange} className="w-full mt-2">
                                     <TabsList className="grid w-full grid-cols-3">
                                         <TabsTrigger value="classic">Classic</TabsTrigger>
-                                        <TabsTrigger value="modern">Modern</TabsTrigger>
-                                        <TabsTrigger value="urdu" disabled>Urdu (Soon)</TabsTrigger>
+                                        <TabsTrigger value="modern-dark">Modern Dark</TabsTrigger>
+                                        <TabsTrigger value="modern-light">Modern Light</TabsTrigger>
                                     </TabsList>
                                     <TabsContent value="classic" className="mt-4">
                                         <InvoicePreview title="Classic Style" colors="bg-amber-50 text-black border-green-700">
                                             A traditional, clean look perfect for formal record-keeping.
                                         </InvoicePreview>
                                     </TabsContent>
-                                    <TabsContent value="modern" className="mt-4">
-                                         <InvoicePreview title="Modern Style" colors="bg-gray-800 text-white">
-                                            A sleek, stylish look, great for digital sharing.
+                                    <TabsContent value="modern-dark" className="mt-4">
+                                         <InvoicePreview title="Modern Dark Style" colors="bg-gray-800 text-white border-gray-600">
+                                            A sleek, stylish dark-mode theme, great for digital sharing.
+                                        </InvoicePreview>
+                                    </TabsContent>
+                                     <TabsContent value="modern-light" className="mt-4">
+                                         <InvoicePreview title="Modern Light Style" colors="bg-gray-100 text-black border-gray-300">
+                                            A clean and professional light-mode theme for a contemporary feel.
                                         </InvoicePreview>
                                     </TabsContent>
                                 </Tabs>
@@ -273,7 +279,6 @@ export default function SettingsPage() {
                                         <div>
                                             <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><Palette className="h-5 w-5 text-primary" /> App Theme</h3>
                                             <p className="text-sm text-muted-foreground mb-4">Change the primary color scheme of the application.</p>
-                                            {/* Theme switcher would go here if we were to build it */}
                                             <p className="text-sm text-muted-foreground">Theme switching is handled by the toggle in the sidebar.</p>
                                         </div>
                                     </div>
@@ -351,3 +356,4 @@ export default function SettingsPage() {
         </div>
     );
 }
+
