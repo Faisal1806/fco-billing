@@ -16,7 +16,6 @@ import { PlusCircle, Trash2, FilePenLine, FilePlus, Share, FileText, ChevronsUpD
 import { FaWhatsapp } from 'react-icons/fa';
 import { ScrollArea } from './ui/scroll-area';
 import Lottie from 'lottie-react';
-import type { WatakExtractOutput } from '@/ai/flows/extract-watak-flow';
 import { useApiKey } from '@/hooks/use-api-key';
 import { Badge } from '@/components/ui/badge';
 import { PartySelector } from './party-selector';
@@ -132,9 +131,9 @@ export function BillMakingTab() {
     const scannedDataJSON = localStorage.getItem('scannedWatakData');
     if (scannedDataJSON) {
         try {
-            const scannedData: WatakExtractOutput = JSON.parse(scannedDataJSON);
+            const scannedData = JSON.parse(scannedDataJSON);
             
-            const newRows = scannedData.entries.map(e => ({
+            const newRows = scannedData.entries.map((e: any) => ({
                 type: e.type,
                 qty: e.qty,
                 variety: e.variety,

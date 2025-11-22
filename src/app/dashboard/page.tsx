@@ -15,7 +15,7 @@ import { motion } from 'framer-motion';
 import { sidebarSections } from '@/components/Sidebar';
 import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { VictoryPie, VictoryBar, VictoryChart, VictoryAxis, VictoryTheme } from 'victory';
+import { VictoryPie, VictoryBar, VictoryChart, VictoryAxis, VictoryTheme, VictoryLabel } from 'victory';
 
 
 interface Invoice {
@@ -127,43 +127,43 @@ export default function DashboardPage() {
         if (typeof window === 'undefined') return;
         setIsLoading(true);
 
-        const invoicesMap = new Map<string, Invoice>();
-        const bikrisMap = new Map<string, Bikri>();
-        const receiptsMap = new Map<string, Receipt>();
-        const challansMap = new Map<string, Challan>();
-        const advancesMap = new Map<string, Advance>();
+        const data: { [key: string]: any[] } = {
+            invoices: [],
+            bikris: [],
+            receipts: [],
+            challans: [],
+            advances: [],
+        };
+
+        const prefixes: { [key: string]: keyof typeof data } = {
+            'invoice-': 'invoices',
+            'bikri-': 'bikris',
+            'receipt-': 'receipts',
+            'challan-': 'challans',
+            'advance-': 'advances',
+        };
 
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             if (!key) continue;
 
-            try {
-                if (key.startsWith('invoice-')) {
-                    const invoice = JSON.parse(localStorage.getItem(key)!);
-                    if (invoice.sNo) invoicesMap.set(invoice.sNo, invoice);
-                } else if (key.startsWith('bikri-')) {
-                    const bikri = JSON.parse(localStorage.getItem(key)!);
-                    if (bikri.id) bikrisMap.set(bikri.id, bikri);
-                } else if (key.startsWith('receipt-')) {
-                    const receipt = JSON.parse(localStorage.getItem(key)!);
-                    if (receipt.no) receiptsMap.set(receipt.no, receipt);
-                } else if (key.startsWith('challan-')) {
-                    const challan = JSON.parse(localStorage.getItem(key)!);
-                    if (challan.id) challansMap.set(challan.id, challan);
-                } else if (key.startsWith('advance-')) {
-                    const advance = JSON.parse(localStorage.getItem(key)!);
-                    if (advance.id) advancesMap.set(advance.id, advance);
+            const matchingPrefix = Object.keys(prefixes).find(p => key.startsWith(p));
+            if (matchingPrefix) {
+                try {
+                    const item = JSON.parse(localStorage.getItem(key)!);
+                    const category = prefixes[matchingPrefix];
+                    data[category].push(item);
+                } catch (error) {
+                    console.error(`Error parsing item from localStorage with key: ${key}`, error);
                 }
-            } catch (error) {
-                console.error(`Error parsing item from localStorage with key: ${key}`, error);
             }
         }
         
-        setAllInvoices(Array.from(invoicesMap.values()));
-        setAllBikris(Array.from(bikrisMap.values()));
-        setAllReceipts(Array.from(receiptsMap.values()));
-        setAllChallans(Array.from(challansMap.values()));
-        setAllAdvances(Array.from(advancesMap.values()));
+        setAllInvoices(data.invoices);
+        setAllBikris(data.bikris);
+        setAllReceipts(data.receipts);
+        setAllChallans(data.challans);
+        setAllAdvances(data.advances);
         
         setIsLoading(false);
     }
@@ -375,16 +375,18 @@ export default function DashboardPage() {
   
   const appSections = sidebarSections.flatMap(s => s.items);
   
-  const pieChartData = growerProfits.slice(0, 5).map(g => ({ x: g.name, y: g.profit }));
+  const pieChartData = growerProfits.slice(0, 5).map(g => ({ x: g.name.split(' ')[0], y: g.profit }));
   const otherProfit = growerProfits.slice(5).reduce((acc, g) => acc + g.profit, 0);
   if (otherProfit > 0) {
       pieChartData.push({ x: 'Others', y: otherProfit });
   }
 
   const barChartData = stats?.monthlySalesData.map((sales, i) => ({
-      x: new Date(0, i).toLocaleString('default', { month: 'short' }),
+      x: new Date(2000, i).toLocaleString('default', { month: 'short' }),
       y: sales
-  })).filter(d => d.y > 0);
+  }));
+
+  const pieColorScale = ["#10b981", "#3b82f6", "#f97316", "#8b5cf6", "#ec4899", "#64748b"];
 
   return (
     <div className="space-y-8">
@@ -424,56 +426,74 @@ export default function DashboardPage() {
             </AccordionItem>
         </Accordion>
 
-        <Card className="bg-card/80 backdrop-blur-sm border border-white/10">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Award className="h-5 w-5 text-yellow-400" />Loyalty Program Summary</CardTitle>
-                <CardDescription>A quick overview of your grower rewards program.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-                 <div className="p-4 bg-muted/50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">Total Points Distributed</p>
-                    <p className="text-2xl font-bold">{loyaltyStats?.totalPointsDistributed}</p>
-                </div>
-                 <div className="p-4 bg-muted/50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">Redeemed This Month</p>
-                    <p className="text-2xl font-bold">{loyaltyStats?.redeemedThisMonth}</p>
-                </div>
-                 <div className="p-4 bg-muted/50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">Top Grower</p>
-                    <p className="text-2xl font-bold">{loyaltyStats?.topGrower}</p>
-                </div>
-            </CardContent>
-        </Card>
-        
-        <div className="space-y-4">
-            <h2 className="text-xl font-semibold tracking-wider text-muted-foreground flex items-center gap-2"><BarChart className="h-5 w-5" />ANALYTICS</h2>
-            <div className="grid grid-cols-1 gap-4">
-                 <Card className="bg-card/80 backdrop-blur-sm border border-white/10">
-                    <CardHeader>
-                        <CardTitle>Monthly Sales</CardTitle>
-                        <CardDescription>Net sales growth for the current year.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="pointer-events-none">
-                            {barChartData && barChartData.length > 0 ? (
-                            <VictoryChart
-                                    theme={VictoryTheme.material}
-                                    domainPadding={20}
-                                >
-                                    <VictoryAxis style={{ tickLabels: { fill: 'white' } }} />
-                                    <VictoryAxis dependentAxis style={{ tickLabels: { fill: 'white' } }} tickFormat={(x) => (`₹${x/1000}k`)} />
-                                    <VictoryBar
-                                        data={barChartData}
-                                        style={{ data: { fill: "#34d399" } }}
-                                    />
-                                </VictoryChart>
-                            ) : <p className="text-center text-muted-foreground py-10">No monthly sales data available for chart.</p>}
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card className="lg:col-span-2 bg-card/80 backdrop-blur-sm border border-white/10">
+                <CardHeader>
+                    <CardTitle>Monthly Sales</CardTitle>
+                    <CardDescription>Net sales growth for the current year.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="pointer-events-none h-64">
+                        {barChartData && barChartData.length > 0 ? (
+                        <VictoryChart
+                                theme={VictoryTheme.material}
+                                domainPadding={{x: 20}}
+                                padding={{ top: 20, bottom: 40, left: 60, right: 40 }}
+                            >
+                                <VictoryAxis 
+                                    style={{ 
+                                        tickLabels: { fill: 'hsl(var(--muted-foreground))', fontSize: 10 },
+                                        grid: { stroke: 'hsl(var(--border))', strokeDasharray: '4' } 
+                                    }} 
+                                />
+                                <VictoryAxis 
+                                    dependentAxis 
+                                    style={{ 
+                                        tickLabels: { fill: 'hsl(var(--muted-foreground))', fontSize: 10 },
+                                        grid: { stroke: 'hsl(var(--border))', strokeDasharray: '4' } 
+                                    }}
+                                    tickFormat={(x) => (`₹${x/1000}k`)} 
+                                />
+                                <VictoryBar
+                                    data={barChartData}
+                                    style={{ data: { fill: "#34d399" }, labels: { fill: 'white' } }}
+                                    barRatio={0.8}
+                                    cornerRadius={{ top: 4 }}
+                                />
+                            </VictoryChart>
+                        ) : <div className="flex items-center justify-center h-full text-muted-foreground">No monthly sales data available for chart.</div>}
+                    </div>
+                </CardContent>
+            </Card>
 
+            <Card className="bg-card/80 backdrop-blur-sm border border-white/10">
+                <CardHeader>
+                    <CardTitle>Top Grower Sales</CardTitle>
+                    <CardDescription>Net sales distribution for top 5 growers this year.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="pointer-events-none h-64">
+                        {pieChartData && pieChartData.length > 0 ? (
+                            <VictoryPie
+                                data={pieChartData}
+                                colorScale={pieColorScale}
+                                innerRadius={70}
+                                labelComponent={<VictoryLabel style={{ fill: 'white', fontSize: 10, fontWeight: 'bold' }} />}
+                                style={{
+                                    data: {
+                                        stroke: 'hsl(var(--background))',
+                                        strokeWidth: 2,
+                                    },
+                                    labels: { fill: "white", fontSize: 12, fontWeight: "bold" }
+                                }}
+                            />
+                        ) : <div className="flex items-center justify-center h-full text-muted-foreground">No grower sales data for chart.</div>}
+                    </div>
+                </CardContent>
+            </Card>
+
+        </div>
+        
         <div className="space-y-4">
              <h2 className="text-xl font-semibold tracking-wider text-muted-foreground">THIS YEAR'S SUMMARY</h2>
              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
@@ -515,6 +535,27 @@ export default function DashboardPage() {
                  </Button>
             </div>
         </div>
+        
+        <Card className="bg-card/80 backdrop-blur-sm border border-white/10">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Award className="h-5 w-5 text-yellow-400" />Loyalty Program Summary</CardTitle>
+                <CardDescription>A quick overview of your grower rewards program.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                 <div className="p-4 bg-muted/50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Total Points Distributed</p>
+                    <p className="text-2xl font-bold">{loyaltyStats?.totalPointsDistributed}</p>
+                </div>
+                 <div className="p-4 bg-muted/50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Redeemed This Month</p>
+                    <p className="text-2xl font-bold">{loyaltyStats?.redeemedThisMonth}</p>
+                </div>
+                 <div className="p-4 bg-muted/50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Top Grower</p>
+                    <p className="text-2xl font-bold">{loyaltyStats?.topGrower}</p>
+                </div>
+            </CardContent>
+        </Card>
         
         <Card className="bg-card/80 backdrop-blur-sm border border-white/10">
             <CardHeader>

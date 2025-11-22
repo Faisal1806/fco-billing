@@ -43,33 +43,39 @@ Here are the available data collections and their queryable fields:
     - Fields: bikriNo (string), date (string, YYYY-MM-DD), market (string), growerName (string), bikriType (string, "fcoStock" or "growerForwarding"), calculation.netProfitOrLoss (number), calculation.netSalePayableToGrower (number)
 `;
 
-export async function queryData(input: SmartSearchInput): Promise<SmartSearchOutput> {
-    const smartSearchPrompt = ai.definePrompt(
-        {
-            name: 'smartSearchPrompt',
-            input: { schema: SmartSearchInputSchema },
-            output: { schema: SmartSearchOutputSchema },
-            prompt: `You are an expert at converting natural language queries into structured data filters.
-        The user wants to search their business data. Your task is to determine the correct data collection and construct a set of filters based on their query.
+const smartSearchPrompt = ai.definePrompt(
+    {
+        name: 'smartSearchPrompt',
+        input: { schema: SmartSearchInputSchema },
+        output: { schema: SmartSearchOutputSchema },
+        prompt: `You are an expert at converting natural language queries into structured data filters.
+    The user wants to search their business data. Your task is to determine the correct data collection and construct a set of filters based on their query.
 
-        Today's date is ${new Date().toISOString().split('T')[0]}.
+    Today's date is ${new Date().toISOString().split('T')[0]}.
 
-        ${collectionsSchema}
+    ${collectionsSchema}
 
-        - When filtering by date, convert relative terms like "today", "last week", "this month" into specific YYYY-MM-DD dates or date ranges.
-        - If a user asks for "unpaid" or "paid" wataks, there is no status field. You should return an error message explaining that this feature is not yet available.
-        - If you cannot determine the collection or filters, set the 'error' field with a helpful message. Do not guess.
-        - For queries like "show me sales", default to the 'invoices' collection.
-        - For queries about profit or loss from outside sales, use the 'bikris' collection.
-        - For "top N" or "bottom N" queries, add a 'limit' and 'sort' property to the output. For example, "top 5 sales" should be collection: 'invoices', sort: { field: 'totals.netSale', direction: 'desc' }, limit: 5.
-        - The 'sort' field should have 'field' and 'direction' ('asc' or 'desc').
-        - Do not invent fields. Only use the fields listed in the schemas.
+    - When filtering by date, convert relative terms like "today", "last week", "this month" into specific YYYY-MM-DD dates or date ranges.
+    - If a user asks for "unpaid" or "paid" wataks, there is no status field. You should return an error message explaining that this feature is not yet available.
+    - If you cannot determine the collection or filters, set the 'error' field with a helpful message. Do not guess.
+    - For queries like "show me sales", default to the 'invoices' collection.
+    - For queries about profit or loss from outside sales, use the 'bikris' collection.
+    - For "top N" or "bottom N" queries, add a 'limit' and 'sort' property to the output. For example, "top 5 sales" should be collection: 'invoices', sort: { field: 'totals.netSale', direction: 'desc' }, limit: 5.
+    - The 'sort' field should have 'field' and 'direction' ('asc' or 'desc').
+    - Do not invent fields. Only use the fields listed in the schemas.
 
-        User Query: "{{query}}"`,
-        }
-    );
+    User Query: "{{query}}"`,
+    }
+);
 
-  try {
+const smartSearchFlow = ai.defineFlow(
+  {
+    name: 'smartSearchFlow',
+    inputSchema: SmartSearchInputSchema,
+    outputSchema: SmartSearchOutputSchema,
+  },
+  async (input) => {
+    try {
       const { output } = await smartSearchPrompt(input);
 
       if (!output) {
@@ -80,4 +86,10 @@ export async function queryData(input: SmartSearchInput): Promise<SmartSearchOut
       console.error(e);
       return { collection: 'invoices', filters: [], error: 'An unexpected error occurred while processing your query.' };
     }
+  }
+);
+
+
+export async function queryData(input: SmartSearchInput): Promise<SmartSearchOutput> {
+  return await smartSearchFlow(input);
 }

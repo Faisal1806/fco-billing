@@ -1,3 +1,4 @@
+
 {
   "name": "fco-billing",
   "version": "1.0.0",
@@ -8,7 +9,7 @@
     "start": "next start"
   },
   "dependencies": {
-    "@genkit-ai/googleai": "0.4.5",
+    "@genkit-ai/google-genai": "^1.21.0",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
@@ -38,7 +39,7 @@
     "cmdk": "^1.0.0",
     "firebase": "^12.3.0",
     "framer-motion": "^11.2.12",
-    "genkit": "0.4.5",
+    "genkit": "^1.21.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.3",
     "jspdf-autotable": "^5.0.2",
