@@ -37,7 +37,7 @@ export function getRealtimeDb(): Database {
 }
 
 export const getClientMessaging = () => {
-    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator && "PushManager" in window) {
         if (!messaging) {
             messaging = getMessaging(app);
         }
