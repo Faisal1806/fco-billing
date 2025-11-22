@@ -135,6 +135,7 @@ export default function SettingsPage() {
                 'Manual_Fertilizer_Rates': [],
                 'Outside_Sales (Bikri)': [],
                 'Activity_Log': [],
+                'Parties': [],
             };
 
             const keyPrefixToSheetMap: { [key: string]: keyof typeof allData } = {
@@ -151,22 +152,24 @@ export default function SettingsPage() {
                 'manual-fertilizer-rates-': 'Manual_Fertilizer_Rates',
                 'bikri-': 'Outside_Sales (Bikri)',
                 'activityLogs': 'Activity_Log',
+                'party-': 'Parties',
             };
             
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (!key) continue;
 
-                // Special case for activity log which doesn't have a prefix
                 if (key === 'activityLogs') {
-                    allData['Activity_Log'] = JSON.parse(localStorage.getItem(key)!);
+                    const logs = localStorage.getItem(key);
+                    if (logs) allData['Activity_Log'] = JSON.parse(logs);
                     continue;
                 }
 
                 const matchingPrefix = Object.keys(keyPrefixToSheetMap).find(prefix => key.startsWith(prefix));
                 if (matchingPrefix) {
                     const sheetName = keyPrefixToSheetMap[matchingPrefix];
-                    allData[sheetName].push(JSON.parse(localStorage.getItem(key)!));
+                    const item = localStorage.getItem(key);
+                    if (item) allData[sheetName].push(JSON.parse(item));
                 }
             }
 
@@ -174,7 +177,6 @@ export default function SettingsPage() {
 
             for (const sheetName in allData) {
                 if (allData[sheetName].length > 0) {
-                    // Flatten nested objects like 'totals' and 'entries' for better readability
                     const flattenedData = allData[sheetName].map((item: any) => {
                        const flatItem: {[key: string]: any} = {};
                        for(const prop in item){
@@ -200,7 +202,7 @@ export default function SettingsPage() {
                 return;
             }
 
-            XLSX.writeFile(wb, `SwiftSale-Backup-${new Date().toISOString().split('T')[0]}.xlsx`);
+            XLSX.writeFile(wb, `FCO-Backup-${new Date().toISOString().split('T')[0]}.xlsx`);
 
             toast({ title: 'Backup Successful', description: 'Your data has been exported to an Excel file.' });
 
