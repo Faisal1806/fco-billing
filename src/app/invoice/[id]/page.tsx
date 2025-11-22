@@ -131,7 +131,6 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         });
     
         const pageWidth = doc.internal.pageSize.getWidth();
-        const pageHeight = doc.internal.pageSize.getHeight();
         const margin = 10;
         
         doc.setFont('helvetica');
@@ -263,6 +262,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         doc.text(`₹${billData.totals.netSale.toFixed(2)}`, pageWidth - margin, currentY, { align: 'right' });
     
         // Footer
+        const pageHeight = doc.internal.pageSize.getHeight();
         const qrCanvas = document.querySelector('#invoice-qr-code canvas');
         if (qrCanvas) {
             const qrImage = (qrCanvas as HTMLCanvasElement).toDataURL('image/png');

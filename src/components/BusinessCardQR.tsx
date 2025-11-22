@@ -30,7 +30,7 @@ interface Props {
 
 export default function BusinessCardQR({ size = 80 }: Props) {
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-1">
        <QRCode
         value={vCard}
         size={size}
@@ -39,7 +39,7 @@ export default function BusinessCardQR({ size = 80 }: Props) {
         level="L"
         includeMargin={false}
       />
-      <p className="text-xs text-center font-semibold">Scan for Details & UPI</p>
+      <p className="text-[8px] text-center font-semibold">Scan for Details & UPI</p>
     </div>
   );
 }
