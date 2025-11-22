@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Loader2, Bot, User } from 'lucide-react';
-import { useApiKey } from '@/hooks/use-api-key';
 import { useToast } from '@/hooks/use-toast';
 import { queryData } from '@/ai/flows/smart-search-flow';
 import { SmartSearchOutput } from '@/ai/schemas/smart-search-schemas';
@@ -24,7 +23,6 @@ const getNestedValue = (obj: any, path: string) => {
 };
 
 export default function SmartSearchPage() {
-  const { apiKey, isApiKeySet } = useApiKey();
   const { toast } = useToast();
   const [query, setQuery] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -59,21 +57,13 @@ export default function SmartSearchPage() {
 
   const handleSearch = async () => {
     if (!query.trim()) return;
-    if (!isApiKeySet) {
-      toast({
-        variant: 'destructive',
-        title: 'API Key Required',
-        description: 'Please set your Gemini API key in the Sales tab to use Smart Search.',
-      });
-      return;
-    }
 
     setIsLoading(true);
     const userMessage: Message = { role: 'user', content: query };
     setMessages(prev => [...prev, userMessage]);
     
     try {
-      const result = await queryData({ query, apiKey });
+      const result = await queryData({ query });
       
       let assistantMessage: Message;
       if (result.error) {
@@ -240,5 +230,3 @@ export default function SmartSearchPage() {
     </Card>
   );
 }
-
-    

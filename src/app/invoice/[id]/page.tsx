@@ -263,27 +263,36 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     
         // Footer
         const pageHeight = doc.internal.pageSize.getHeight();
-        const qrCanvas = document.querySelector('#invoice-qr-code canvas');
-        if (qrCanvas) {
-            const qrImage = (qrCanvas as HTMLCanvasElement).toDataURL('image/png');
-            doc.addImage(qrImage, 'PNG', margin, pageHeight - 35, 20, 20);
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(6);
-            doc.text('Scan for Details & UPI', margin + 10, pageHeight - 12, { align: 'center'});
-        }
         
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'normal');
-        doc.text('Faisal', pageWidth - margin - 20, pageHeight - 20, { align: 'center' });
-    
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(6);
-        doc.text('Sign. Of Manager', pageWidth - margin - 20, pageHeight - 15, { align: 'center'});
-        doc.setLineWidth(0.2);
-        doc.line(pageWidth - margin - 40, pageHeight-16, pageWidth - margin, pageHeight-16);
-    
-    
-        doc.save(`Invoice-${billData.sNo}_${billData.customerName}.pdf`);
+        const qrCanvas = document.createElement('canvas');
+        QRCode.render(
+            pageUrl,
+            qrCanvas,
+            {
+                size: 20,
+                bgColor: "#ffffff",
+                fgColor: "#000000",
+                level: "L",
+            },
+            () => {
+                doc.addImage(qrCanvas.toDataURL('image/png'), 'PNG', margin, pageHeight - 35, 20, 20);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(6);
+                doc.text('Scan for Details & UPI', margin + 10, pageHeight - 12, { align: 'center'});
+
+                doc.setFontSize(12);
+                doc.setFont('helvetica', 'normal');
+                doc.text('Faisal', pageWidth - margin - 20, pageHeight - 20, { align: 'center' });
+            
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(6);
+                doc.text('Sign. Of Manager', pageWidth - margin - 20, pageHeight - 15, { align: 'center'});
+                doc.setLineWidth(0.2);
+                doc.line(pageWidth - margin - 40, pageHeight-16, pageWidth - margin, pageHeight-16);
+
+                doc.save(`Invoice-${billData.sNo}_${billData.customerName}.pdf`);
+            }
+        );
     };
 
 
@@ -312,8 +321,9 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                     Save to Device
                 </Button>
              </div>
-             <div id="invoice-qr-code" className="p-2 border border-gray-700 bg-gray-900 rounded-md flex flex-col items-center">
-                <BusinessCardQR size={80} />
+             <div className="p-2 border border-gray-700 bg-gray-900 rounded-md flex flex-col items-center">
+                <QRCode value={pageUrl} size={80} bgColor="transparent" fgColor="#e5e7eb" />
+                <p className="text-xs font-semibold text-gray-400 mt-1">Scan to View Bill</p>
             </div>
         </div>
     )
@@ -599,7 +609,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             <footer className="text-center pt-2 border-t border-dashed border-black text-[10px]">
                 <p>Thank you for your business!</p>
                 <div className="flex justify-center pt-2">
-                    <BusinessCardQR size={60} />
+                    <QRCode value={pageUrl} size={60} />
                 </div>
             </footer>
         </div>

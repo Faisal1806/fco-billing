@@ -9,7 +9,6 @@ import { z } from 'zod';
 
 export const PesticideCategoryInputSchema = z.object({
   name: z.string().describe('The name of the pesticide or fertilizer product.'),
-  apiKey: z.string().optional().describe('The Gemini API Key'),
 });
 export type PesticideCategoryInput = z.infer<typeof PesticideCategoryInputSchema>;
 

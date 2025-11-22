@@ -21,7 +21,6 @@ const SortSchema = z.object({
 
 export const SmartSearchInputSchema = z.object({
   query: z.string().describe('The user\'s natural language search query.'),
-  apiKey: z.string().optional().describe('The Gemini API Key'),
 });
 export type SmartSearchInput = z.infer<typeof SmartSearchInputSchema>;
 

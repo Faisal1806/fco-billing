@@ -91,5 +91,5 @@ const smartSearchFlow = ai.defineFlow(
 
 
 export async function queryData(input: SmartSearchInput): Promise<SmartSearchOutput> {
-  return await smartSearchFlow(input);
+  return smartSearchFlow(input);
 }
