@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -79,6 +80,10 @@ export default function OutsideLiveRateList() {
                            <Calendar className="h-4 w-4" /> A guide to rates in major national markets. Last updated: {lastUpdated}
                         </CardDescription>
                     </div>
+                     <Button variant="secondary" onClick={handleShare} className="gap-2">
+                        <FaWhatsapp className="h-4 w-4 text-green-500" />
+                        Share Outside Rates
+                    </Button>
                 </div>
             </CardHeader>
             <CardContent>
@@ -109,12 +114,6 @@ export default function OutsideLiveRateList() {
                                 ))}
                             </TableBody>
                         </Table>
-                         <div className="mt-4 flex justify-end">
-                            <Button variant="secondary" onClick={handleShare} className="gap-2">
-                                <FaWhatsapp className="h-4 w-4 text-green-500" />
-                                Share Outside Rates
-                            </Button>
-                        </div>
                     </>
                 ) : (
                      <div className="text-center text-muted-foreground mt-6 py-12 border-2 border-dashed rounded-lg">

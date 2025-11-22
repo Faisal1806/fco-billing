@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -140,6 +141,10 @@ export default function AutomaticRateList({ sourceType, title }: AutomaticRateLi
                            Showing a complete list of all rates recorded for the entire season.
                         </CardDescription>
                     </div>
+                     <Button variant="secondary" onClick={handleShare} className="gap-2">
+                        <FaWhatsapp className="h-4 w-4 text-green-500" />
+                        Share Full List
+                    </Button>
                 </div>
             </CardHeader>
             <CardContent>
@@ -168,12 +173,6 @@ export default function AutomaticRateList({ sourceType, title }: AutomaticRateLi
                                 ))}
                             </TableBody>
                         </Table>
-                         <div className="mt-4 flex justify-end">
-                            <Button variant="secondary" onClick={handleShare} className="gap-2">
-                                <FaWhatsapp className="h-4 w-4 text-green-500" />
-                                Share Full List
-                            </Button>
-                        </div>
                     </>
                 ) : (
                      <div className="text-center text-muted-foreground mt-6 py-12 border-2 border-dashed rounded-lg">
