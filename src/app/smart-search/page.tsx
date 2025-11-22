@@ -71,8 +71,7 @@ export default function SmartSearchPage() {
     setIsLoading(true);
     const userMessage: Message = { role: 'user', content: query };
     setMessages(prev => [...prev, userMessage]);
-    setQuery('');
-
+    
     try {
       const result = await queryData({ query, apiKey });
       
@@ -128,6 +127,7 @@ export default function SmartSearchPage() {
         description: (error as Error).message || 'Could not process your request.',
       });
     } finally {
+      setQuery('');
       setIsLoading(false);
     }
   };
@@ -147,19 +147,19 @@ export default function SmartSearchPage() {
             <div>
               {msg.results && msg.results.length > 0 ? (
                 <>
-                <p className="font-semibold mb-2">Found {msg.results.length} results for "{query}":</p>
-                <div className="overflow-x-auto">
+                <p className="font-semibold mb-2">Found {msg.results.length} results:</p>
+                <div className="overflow-x-auto rounded-lg border">
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                {Object.keys(msg.results[0]).map(key => <TableHead key={key}>{key}</TableHead>)}
+                                {Object.keys(msg.results[0]).map(key => <TableHead key={key} className="whitespace-nowrap">{key}</TableHead>)}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {msg.results.map((row, i) => (
                                 <TableRow key={i}>
                                     {Object.values(row).map((val: any, j) => (
-                                        <TableCell key={j} className="whitespace-nowrap">
+                                        <TableCell key={j} className="whitespace-nowrap text-xs">
                                             {typeof val === 'object' && val !== null ? JSON.stringify(val) : String(val)}
                                         </TableCell>
                                     ))}
@@ -170,7 +170,7 @@ export default function SmartSearchPage() {
                 </div>
                 </>
               ) : msg.results && msg.results.length === 0 ? (
-                 <p>I couldn't find any results matching your query.</p>
+                 <p>I couldn't find any results matching your query in the '{msg.content.collection}' collection.</p>
               ) : (
                  <pre className="mt-2 text-xs bg-black/20 p-2 rounded-md overflow-x-auto">
                     {JSON.stringify(msg.content, null, 2)}
@@ -205,6 +205,16 @@ export default function SmartSearchPage() {
         ) : (
           <div className="space-y-6">
             {messages.map(renderMessage)}
+             {isLoading && (
+              <div className="flex items-start gap-4">
+                <div className="p-2 bg-primary/10 rounded-full shrink-0">
+                  <Loader2 className="h-6 w-6 text-primary animate-spin" />
+                </div>
+                <div className="max-w-3xl w-full p-4 rounded-xl bg-muted">
+                  <p>Thinking...</p>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
@@ -230,3 +240,5 @@ export default function SmartSearchPage() {
     </Card>
   );
 }
+
+    
