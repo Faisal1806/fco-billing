@@ -206,7 +206,7 @@ export default function DashboardPage() {
         const nonForwardedEntries = sale.entries?.filter(e => !e.isForwarded) || [];
 
         if (sale.date === todayStr) {
-            totalSaleValueToday += netSale; // Net sale is already calculated correctly
+            totalSaleValueToday += netSale;
             nonForwardedEntries.forEach(entry => {
                 if (entry.type === 'Patti') pattiToday += entry.qty;
                 if (entry.type === 'Dabba') dabbaToday += entry.qty;
@@ -232,30 +232,41 @@ export default function DashboardPage() {
     
     allBikris.forEach(bikri => {
         const bikriDate = new Date(bikri.date);
+        if (bikriDate.getFullYear() !== currentYear) return;
+
         const grossSale = bikri.calculation.grossSale || 0;
         const totalExpenses = bikri.calculation.totalExpenses || 0;
-        const bikriNetSale = grossSale - totalExpenses; // Net sale is always Gross - Expenses for a Bikri
         
-        if (bikriDate.getFullYear() === currentYear) {
-            const saleMonth = bikriDate.getMonth();
-            yearTotalExpenses += totalExpenses;
-
-            if (bikri.date === todayStr) {
-                totalSaleValueToday += bikriNetSale;
-                pattiToday += bikri.saleEntries?.filter(e => e.type === 'Patti').reduce((acc, e) => acc + e.qty, 0) || 0;
-                dabbaToday += bikri.saleEntries?.filter(e => e.type === 'Dabba').reduce((acc, e) => acc + e.qty, 0) || 0;
-            }
-            
-            if (saleMonth === currentMonth) {
-                monthlyTotalSales += bikriNetSale;
-            }
-
-            monthlySalesData[saleMonth] += bikriNetSale;
-            
-            // This was the bug: Gross Sales from Bikris were being added to the main gross sales.
-            // yearGrossSales += grossSale;
+        let bikriNetSale = 0;
+        if (bikri.bikriType === 'growerForwarding') {
+            bikriNetSale = bikri.calculation.netSalePayableToGrower || 0;
+            // The profit for F.Co is the commission, which is part of expenses
+            // For simplicity, we add commission to net sales from F.Co's perspective
+            yearNetSales += bikri.calculation.commissionAmount || 0;
+        } else { // fcoStock
+            bikriNetSale = bikri.calculation.netProfitOrLoss || 0;
             yearNetSales += bikriNetSale;
         }
+        
+        yearTotalExpenses += totalExpenses;
+        yearGrossSales += grossSale; // Add bikri gross sales to total gross
+
+        if (bikri.date === todayStr) {
+            totalSaleValueToday += bikriNetSale;
+            pattiToday += bikri.saleEntries?.filter((e:any) => e.type === 'Patti').reduce((acc:number, e:any) => acc + e.qty, 0) || 0;
+            dabbaToday += bikri.saleEntries?.filter((e:any) => e.type === 'Dabba').reduce((acc:number, e:any) => acc + e.qty, 0) || 0;
+        }
+        
+        const saleMonth = bikriDate.getMonth();
+        if (saleMonth === currentMonth) {
+            monthlyTotalSales += bikriNetSale;
+        }
+        monthlySalesData[saleMonth] += bikriNetSale;
+
+        const pattiSent = bikri.saleEntries?.filter((e:any) => e.type === 'Patti').reduce((acc:number, e:any) => acc + e.qty, 0) || 0;
+        const dabbaSent = bikri.saleEntries?.filter((e:any) => e.type === 'Dabba').reduce((acc:number, e:any) => acc + e.qty, 0) || 0;
+        yearPattiSentOutside += pattiSent;
+        yearDabbaSentOutside += dabbaSent;
     });
 
     allReceipts.forEach(receipt => {
@@ -268,9 +279,13 @@ export default function DashboardPage() {
         }
     });
     
+    // Note: This logic for sent outside might be double counting if challans are also used for bikris.
+    // Assuming for now they are separate or bikris are the primary record for outside sales qty.
+    // If challan is just a delivery note for a bikri, we should adjust.
     allChallans.forEach(challan => {
         const challanDate = new Date(challan.date);
-        if (challanDate.getFullYear() === currentYear) {
+        const isLinkedToBikri = allBikris.some(b => b.challanNo === challan.challanNo);
+        if (challanDate.getFullYear() === currentYear && !isLinkedToBikri) {
             yearPattiSentOutside += Number(challan.totalPetti) || 0;
             yearDabbaSentOutside += Number(challan.totalDabba) || 0;
         }
@@ -434,7 +449,7 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="pointer-events-none h-64">
-                        {barChartData && barChartData.length > 0 ? (
+                        {barChartData && barChartData.some(d => d.y > 0) ? (
                         <VictoryChart
                                 theme={VictoryTheme.material}
                                 domainPadding={{x: 20}}
