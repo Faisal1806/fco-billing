@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Trash2, Banknote, Loader2 } from 'lucide-react';
+import { PlusCircle, Trash2, Banknote, Loader2, Gift } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { PartySelector } from '@/components/party-selector';
@@ -35,7 +35,7 @@ type AdvanceEntry = {
     id: string;
     date: string;
     partyName: string;
-    type: 'Advance Given' | 'Repayment Received';
+    type: 'Advance Given' | 'Repayment Received' | 'Discount';
     amount: number;
     notes?: string;
 };
@@ -149,12 +149,21 @@ export default function AdvancesPage() {
         return entries.reduce((acc, curr) => {
             if (curr.type === 'Advance Given') {
                 return acc + curr.amount;
-            } else if (curr.type === 'Repayment Received') {
+            } else if (curr.type === 'Repayment Received' || curr.type === 'Discount') {
                 return acc - curr.amount;
             }
             return acc;
         }, 0);
     }, [entries]);
+    
+    const getBadgeVariant = (type: AdvanceEntry['type']) => {
+        switch (type) {
+            case 'Advance Given': return 'destructive';
+            case 'Repayment Received': return 'default';
+            case 'Discount': return 'secondary';
+            default: return 'outline';
+        }
+    }
 
   return (
     <div className="space-y-6">
@@ -174,11 +183,12 @@ export default function AdvancesPage() {
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="type">Transaction Type</Label>
-                    <Select value={formState.type} onValueChange={(val: 'Advance Given' | 'Repayment Received') => handleInputChange(val, 'type')}>
+                    <Select value={formState.type} onValueChange={(val: 'Advance Given' | 'Repayment Received' | 'Discount') => handleInputChange(val, 'type')}>
                         <SelectTrigger><SelectValue/></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="Advance Given">Advance Given (Debit)</SelectItem>
                             <SelectItem value="Repayment Received">Repayment Received (Credit)</SelectItem>
+                            <SelectItem value="Discount">Loyalty Discount (Credit)</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -226,7 +236,8 @@ export default function AdvancesPage() {
                             <TableCell>{new Date(entry.date).toLocaleDateString('en-GB')}</TableCell>
                             <TableCell className="font-medium">{entry.partyName}</TableCell>
                             <TableCell>
-                                <Badge variant={entry.type === 'Advance Given' ? 'destructive' : 'default'}>
+                                <Badge variant={getBadgeVariant(entry.type)}>
+                                    {entry.type === 'Discount' ? <Gift className="h-3 w-3 mr-1" /> : null}
                                     {entry.type}
                                 </Badge>
                             </TableCell>

@@ -223,7 +223,11 @@ export default function KhataLedgerPage() {
             if (tx.netSale !== undefined) {
                 creditRows.push(tx);
             } else if (tx.debitAmount !== undefined) {
-                debitRows.push(tx);
+                if (tx.type === 'Repayment') {
+                    creditRows.push({ ...tx, netSale: tx.debitAmount * -1 }); // Convert repayment to credit
+                } else {
+                    debitRows.push(tx);
+                }
             }
         });
         
@@ -374,7 +378,7 @@ export default function KhataLedgerPage() {
                                     {statementData.creditRows.map((tx, i) => (
                                         <TableRow key={`credit-${i}`} className="h-6">
                                             <TableCell className="p-1 text-xs">{tx.date ? new Date(tx.date).toLocaleDateString('en-GB') : ''}</TableCell>
-                                            <TableCell className="p-1 text-xs">{tx.notes || ''}</TableCell>
+                                            <TableCell className="p-1 text-xs">{tx.notes || tx.remittanceDetails || ''}</TableCell>
                                             <TableCell className="p-1 text-xs">{tx.peti || ''}</TableCell>
                                             <TableCell className="p-1 text-xs">{tx.dabba || ''}</TableCell>
                                             <TableCell className="p-1 text-xs text-right font-mono">{tx.grossSale?.toFixed(0) || ''}</TableCell>

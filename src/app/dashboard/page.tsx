@@ -342,7 +342,7 @@ export default function DashboardPage() {
         const currentYear = new Date().getFullYear();
 
         growerProfits.forEach(grower => {
-            totalPointsDistributed += Math.floor(grower.profit / 100);
+            totalPointsDistributed += Math.floor(grower.profit * 0.01); // 1% of net sales
         });
 
         allAdvances.forEach(advance => {
@@ -357,7 +357,7 @@ export default function DashboardPage() {
         return {
             totalPointsDistributed: totalPointsDistributed.toLocaleString(),
             redeemedThisMonth: `₹${redeemedThisMonth.toLocaleString()}`,
-            topGrower: topGrower ? `${topGrower.name} (${Math.floor(topGrower.profit / 100).toLocaleString()} pts)` : 'N/A',
+            topGrower: topGrower ? `${topGrower.name} (${Math.floor(topGrower.profit * 0.01).toLocaleString()} pts)` : 'N/A',
         };
     }, [isLoading, growerProfits, allAdvances]);
 
