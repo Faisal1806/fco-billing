@@ -5,12 +5,9 @@ import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { Paintbrush, Palette, CheckCircle, Upload, Type, Move, QrCode, SlidersHorizontal, List, Truck, User, Phone, Box, TreePine, Banknote, Percent, Package, Pencil, Building, Snowflake, Weight, Signature, Lock, MessageSquare, Hash, FileText, DownloadCloud, Rocket, Award, Star, Settings } from 'lucide-react';
+import { Paintbrush, Palette, Upload, Type, Rocket, Cog, DownloadCloud, Factory, BellRing } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
 import { CompanyInfoForm } from "@/components/profile-form";
-import { Factory, BellRing, CloudUpload } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,22 +23,12 @@ import { getClientMessaging } from '@/lib/firebase';
 import { saveDocument } from '@/lib/actions';
 import { getToken } from 'firebase/messaging';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import * as XLSX from 'xlsx';
-import { Switch } from '@/components/ui/switch';
 
-
-const InvoicePreview = ({ title, colors, logoPosition, qrPosition, font, footer, features, children }: {
+const InvoicePreview = ({ title, colors, children }: {
     title: string,
     colors: string,
-    logoPosition: string,
-    qrPosition: string,
-    font: string,
-    footer: string,
-    features?: string[],
     children: React.ReactNode,
 }) => (
     <Card className="w-full h-full flex flex-col">
@@ -51,37 +38,19 @@ const InvoicePreview = ({ title, colors, logoPosition, qrPosition, font, footer,
         </CardHeader>
         <CardContent className="flex-grow">
             <div className={`relative w-full h-48 rounded-md border-2 border-dashed p-2 flex flex-col ${colors}`}>
-                <div className={`absolute ${logoPosition}`}>🍎</div>
-                <div className={`absolute ${qrPosition}`}>🔲</div>
-                <div className={`flex-grow flex items-center justify-center text-xs ${font}`}>
-                    <p>...bill content...</p>
+                 <div className="text-center font-bold text-lg">INVOICE</div>
+                 <div className="flex-grow flex items-center justify-center text-xs">
+                    <p>...content...</p>
                 </div>
-                <div className="text-center text-[8px] p-1 bg-black/10 rounded-b-md">{footer}</div>
+                <div className="text-center text-[8px] p-1 bg-black/10 rounded-b-md">Footer Text</div>
             </div>
         </CardContent>
-        <CardFooter className="flex-wrap gap-2">
-            {features?.map(f => <Badge key={f} variant="secondary">{f}</Badge>)}
-        </CardFooter>
     </Card>
-);
-
-const CustomFieldSuggestion = ({ icon, title, example, children } : { icon: React.ElementType, title: string, example: string, children: React.ReactNode }) => (
-    <div className="flex items-start gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors">
-        <div className="p-2 bg-primary/10 rounded-md">
-            <icon className="h-5 w-5 text-primary" />
-        </div>
-        <div>
-            <h4 className="font-semibold">{title}</h4>
-            <p className="text-sm text-muted-foreground">{children}</p>
-            <p className="text-xs font-mono bg-muted px-2 py-1 rounded-md mt-1 inline-block">e.g., {example}</p>
-        </div>
-    </div>
 );
 
 
 export default function SettingsPage() {
     const { toast } = useToast();
-    const [isSyncing, setIsSyncing] = React.useState(false);
     const [invoiceStyle, setInvoiceStyle] = React.useState('classic');
 
     React.useEffect(() => {
@@ -246,13 +215,6 @@ export default function SettingsPage() {
             toast({ variant: 'destructive', title: 'Notification Error', description: `An error occurred: ${(error as Error).message}` });
         }
     };
-
-    const ColorPill = ({ gradient, name }: { gradient: string, name: string}) => (
-        <div className="flex items-center gap-2">
-            <div className={`w-10 h-6 rounded-full ${gradient}`}></div>
-            <span className="font-medium">{name}</span>
-        </div>
-    );
     
     return (
         <div className="space-y-6">
@@ -277,126 +239,53 @@ export default function SettingsPage() {
              <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-3"><Paintbrush className="h-6 w-6" /> Appearance &amp; Customization</CardTitle>
-                    <CardDescription>This section will allow you to change invoice styles, colors, fonts, and layouts for all your documents (Bills, Wataks, Challans, Receipts).</CardDescription>
+                    <CardDescription>Customize the look and feel of your documents and application.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Accordion type="multiple" defaultValue={['styles', 'fields']} className="w-full">
+                    <Accordion type="single" collapsible defaultValue="styles" className="w-full">
                         <AccordionItem value="styles">
                             <AccordionTrigger className="text-lg font-semibold">Invoice & Bill Styles</AccordionTrigger>
                             <AccordionContent>
                                 <Tabs value={invoiceStyle} onValueChange={handleStyleChange} className="w-full mt-2">
                                     <TabsList className="grid w-full grid-cols-3">
-                                        <TabsTrigger value="classic">Classic Style</TabsTrigger>
-                                        <TabsTrigger value="modern">Modern Style</TabsTrigger>
-                                        <TabsTrigger value="urdu">Urdu-English Mix</TabsTrigger>
+                                        <TabsTrigger value="classic">Classic</TabsTrigger>
+                                        <TabsTrigger value="modern">Modern</TabsTrigger>
+                                        <TabsTrigger value="urdu" disabled>Urdu (Soon)</TabsTrigger>
                                     </TabsList>
                                     <TabsContent value="classic" className="mt-4">
-                                        <InvoicePreview title="Classic Style (Professional + Clean)" colors="bg-white text-black" logoPosition="top-2 left-1/2 -translate-x-1/2" qrPosition="top-2 right-2" font="font-serif" footer="Thank you for your business – F.Co" features={["Professional & Clean", "Red Headers", "Traditional Look"]}>
-                                            Looks like a traditional Sopore Mandi bill. Ideal for formal record-keeping.
+                                        <InvoicePreview title="Classic Style" colors="bg-amber-50 text-black border-green-700">
+                                            A traditional, clean look perfect for formal record-keeping.
                                         </InvoicePreview>
                                     </TabsContent>
                                     <TabsContent value="modern" className="mt-4">
-                                        <InvoicePreview title="Modern Style (Textured + Stylish)" colors="bg-gradient-to-br from-red-500 to-green-500 text-white" logoPosition="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-10 text-5xl" qrPosition="bottom-10 right-2" font="font-sans" footer="Your Satisfaction is Our Success – Subject to Sopore Jurisdiction Only" features={["Textured & Stylish", "Icons for items", "Great for Sharing"]}>
-                                            Stylish and modern, perfect for sharing on WhatsApp or email. Uses gradients and icons for a fresh look.
-                                        </InvoicePreview>
-                                    </TabsContent>
-                                    <TabsContent value="urdu" className="mt-4">
-                                        <InvoicePreview title="Urdu-English Mix (Dual Language Print)" colors="bg-amber-50 text-black border-green-700" logoPosition="top-2 left-2" qrPosition="top-2 right-2" font="font-urdu" footer="F.Co – Fruit Merchant & Commission Agent | Sopore Mandi" features={["Bilingual Fields", "Nastaliq Font", "Beige Paper Look"]}>
-                                            A bilingual design perfect for both English and Urdu-speaking customers, with elegant Nastaliq font for headings.
+                                         <InvoicePreview title="Modern Style" colors="bg-gray-800 text-white">
+                                            A sleek, stylish look, great for digital sharing.
                                         </InvoicePreview>
                                     </TabsContent>
                                 </Tabs>
                             </AccordionContent>
                         </AccordionItem>
-                        
                         <AccordionItem value="branding">
-                             <AccordionTrigger className="text-lg font-semibold">Color Theme & Branding</AccordionTrigger>
+                             <AccordionTrigger className="text-lg font-semibold">Branding</AccordionTrigger>
                              <AccordionContent className="pt-4 space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><Palette className="h-5 w-5 text-primary" /> Color Gradients</h3>
-                                        <p className="text-sm text-muted-foreground mb-4">Each document type gets a unique theme so you can instantly recognize it.</p>
-                                        <div className="space-y-3">
-                                            <ColorPill gradient="bg-gradient-to-r from-red-500 to-green-500" name="Bills" />
-                                            <ColorPill gradient="bg-gradient-to-r from-blue-500 to-purple-500" name="Wataks" />
-                                            <ColorPill gradient="bg-gradient-to-r from-orange-500 to-yellow-500" name="Challans" />
-                                            <ColorPill gradient="bg-gradient-to-r from-gray-600 to-gray-400" name="Receipts" />
+                                     <div className="space-y-4">
+                                        <div>
+                                            <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><Palette className="h-5 w-5 text-primary" /> App Theme</h3>
+                                            <p className="text-sm text-muted-foreground mb-4">Change the primary color scheme of the application.</p>
+                                            {/* Theme switcher would go here if we were to build it */}
+                                            <p className="text-sm text-muted-foreground">Theme switching is handled by the toggle in the sidebar.</p>
                                         </div>
                                     </div>
                                     <div className="space-y-4">
                                         <div>
                                             <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><Upload className="h-5 w-5 text-primary" /> Company Logo</h3>
-                                            <p className="text-sm text-muted-foreground mb-2">Upload your company logo. Appears on bills and headers.</p>
-                                            <Input type="file" />
-                                        </div>
-                                         <div>
-                                            <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><Type className="h-5 w-5 text-primary" /> Font Style</h3>
-                                            <p className="text-sm text-muted-foreground mb-2">Select the font style for your documents.</p>
-                                            <Select defaultValue="sans">
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="sans">Sans-serif (Modern)</SelectItem>
-                                                    <SelectItem value="serif">Serif (Classic)</SelectItem>
-                                                    <SelectItem value="urdu">Urdu-English Mix</SelectItem>
-                                                </SelectContent>
-                                            </Select>
+                                            <p className="text-sm text-muted-foreground mb-2">Upload your company logo. Appears on bills and headers. (Coming Soon)</p>
+                                            <Input type="file" disabled />
                                         </div>
                                     </div>
                                 </div>
                              </AccordionContent>
-                        </AccordionItem>
-
-                        <AccordionItem value="fields">
-                            <AccordionTrigger className="text-lg font-semibold">Header, Footer &amp; Custom Fields</AccordionTrigger>
-                            <AccordionContent className="pt-4 space-y-6">
-                                <div className="space-y-4">
-                                     <div className="space-y-2">
-                                        <Label htmlFor="footerText">Footer Text</Label>
-                                        <Textarea id="footerText" placeholder="e.g., Your Satisfaction is Our Success..." defaultValue="Your Satisfaction is Our Success – Subject to Sopore Jurisdiction Only" />
-                                        <p className="text-xs text-muted-foreground">This text will appear at the bottom of your documents.</p>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <Input type="checkbox" id="show-qr" defaultChecked />
-                                        <Label htmlFor="show-qr" className="cursor-pointer">Show QR Code in Footer</Label>
-                                    </div>
-                                </div>
-                                <Separator />
-                                 <div>
-                                    <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><Pencil className="h-5 w-5 text-primary" /> Suggested Custom Fields</h3>
-                                    <p className="text-sm text-muted-foreground mb-4">Every grower, customer, or truck has different details. These fields will appear automatically in print, PDF, or WhatsApp export.</p>
-                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                                        <CustomFieldSuggestion icon={Truck} title="Vehicle No." example="JK05X 1234">For tracking transport and logistics.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={User} title="Broker Name" example="Abdul Rashid Shah">To record the agent involved in a sale.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={User} title="Driver Name" example="Mohammad Yousuf">For challans and transport records.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Phone} title="Contact No." example="+91 9797002164">Add a secondary contact number.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Box} title="Load Type" example="Full Truck / Pickup">Specify the size of the consignment.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={TreePine} title="Grower's Village" example="Bomai, Sopore">For better tracking of produce origin.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Banknote} title="Payment Mode" example="Cash / UPI / Credit">Record how a transaction was paid.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Percent} title="Commission %" example="10%">Adjust commission for specific growers.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Package} title="Packing Type" example="5 Layer Box">Detail the specific packaging used.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Pencil} title="Delivery Remarks" example="Handle with care">Add special instructions for delivery.</CustomFieldSuggestion>
-                                    </div>
-                                 </div>
-                                <Separator />
-                                 <div>
-                                    <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><SlidersHorizontal className="h-5 w-5 text-primary" /> Extra Optional Custom Fields</h3>
-                                    <p className="text-sm text-muted-foreground mb-4">Enable these for more advanced scenarios like GST billing, cold storage, or transport management. You can toggle them ON/OFF per template.</p>
-                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                                        <CustomFieldSuggestion icon={FileText} title="GST / Tax No." example="01ABCDE1234F1Z5">For customers outside J&K or for future compliance.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Building} title="Consignee Name" example="To M/S XYZ Traders, Delhi">Party name at the destination market.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Truck} title="Transport Agency" example="ABC Transport Pvt Ltd">The name of the transport company used.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Lock} title="Seal/Invoice No." example="SEAL-5921">Transport company's unique seal or invoice number.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Snowflake} title="Cold Store No." example="C-14, Chamber 5">Track produce stored in local cold storage facilities.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Banknote} title="Loading/Unloading Charges" example="500.00">Option to show these charges separately on the bill.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Weight} title="Weight Slip No." example="T-889-A">Reference number from mandi weighing slips (Taar/Net).</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={MessageSquare} title="Payment Remarks" example="Advance ₹20,000 received">Add notes about advance payments or khata status.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Signature} title="Digital Signature Space" example="Enable a blank space">Add space for digital or scanned signatures.</CustomFieldSuggestion>
-                                        <CustomFieldSuggestion icon={Hash} title="UPI Payment Reference" example="UPI Ref: 4165...">Optional field to show UPI transaction ID on bills.</CustomFieldSuggestion>
-                                    </div>
-                                 </div>
-                            </AccordionContent>
                         </AccordionItem>
                     </Accordion>
                 </CardContent>
@@ -404,155 +293,61 @@ export default function SettingsPage() {
 
             <CompanyInfoForm />
 
-             <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-3"><Settings className="h-6 w-6" /> Loyalty Program Settings</CardTitle>
-                    <CardDescription>Configure how your customer loyalty program works.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-8">
-                    <div>
-                        <h4 className="font-semibold text-lg mb-2">Tier-Based Earning Rules</h4>
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-4 p-3 border rounded-lg">
-                                <div className="flex items-center gap-2">
-                                    <Badge className="text-lg">🥉</Badge>
-                                    <Label className="font-bold">Bronze Tier</Label>
-                                </div>
-                                <Input defaultValue="50000" placeholder="Sales up to" />
-                                <div className="flex items-center gap-2">
-                                    <Input defaultValue="1" placeholder="Reward %" />
-                                    <span className="text-muted-foreground">%</span>
-                                </div>
-                                <p className="text-xs text-muted-foreground md:col-span-4">For sales from ₹0 up to this amount.</p>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-4 p-3 border rounded-lg">
-                                <div className="flex items-center gap-2">
-                                    <Badge className="text-lg">🥈</Badge>
-                                    <Label className="font-bold">Silver Tier</Label>
-                                </div>
-                                <Input defaultValue="150000" placeholder="Sales up to" />
-                                <div className="flex items-center gap-2">
-                                    <Input defaultValue="1.5" placeholder="Reward %" />
-                                    <span className="text-muted-foreground">%</span>
-                                </div>
-                                <p className="text-xs text-muted-foreground md:col-span-4">For sales between Bronze tier and this amount.</p>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-4 p-3 border rounded-lg">
-                                <div className="flex items-center gap-2">
-                                    <Badge className="text-lg">🥇</Badge>
-                                    <Label className="font-bold">Gold Tier</Label>
-                                </div>
-                                <Input disabled placeholder="Sales over Silver" />
-                                <div className="flex items-center gap-2">
-                                    <Input defaultValue="2" placeholder="Reward %" />
-                                    <span className="text-muted-foreground">%</span>
-                                </div>
-                                <p className="text-xs text-muted-foreground md:col-span-4">For all sales above the Silver tier limit.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <Separator />
-
-                     <div>
-                        <h4 className="font-semibold text-lg mb-2">Redemption Rules</h4>
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="pointValue">Point Value</Label>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-sm">1 Point = ₹</span>
-                                    <Input id="pointValue" type="number" defaultValue="1" className="w-24" />
-                                </div>
-                                <p className="text-xs text-muted-foreground">The cash value of a single loyalty point.</p>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="minRedeem">Minimum Points to Redeem</Label>
-                                <Input id="minRedeem" type="number" defaultValue="500" />
-                                 <p className="text-xs text-muted-foreground">Customer must have at least this many points to redeem.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <Separator />
-                    
-                    <div>
-                        <h4 className="font-semibold text-lg mb-2">Notifications</h4>
-                         <div className="flex items-center space-x-2">
-                            <Switch id="auto-notifications" disabled />
-                            <Label htmlFor="auto-notifications">Enable Auto-Notifications (Coming Soon)</Label>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">Automatically send a WhatsApp message like "You've earned 50 points today!"</p>
-                    </div>
-
-                </CardContent>
-                 <CardFooter>
-                    <Button>Save Loyalty Settings</Button>
-                </CardFooter>
-            </Card>
-
             <Card>
                 <CardHeader>
-                    <CardTitle>Data Portability & Backup</CardTitle>
-                    <CardDescription>
-                        Export all your application data into a single Excel file for backup or use in other applications.
-                    </CardDescription>
+                    <CardTitle className="flex items-center gap-3"><Cog className="h-6 w-6" /> General Settings</CardTitle>
                 </CardHeader>
                 <CardContent>
-                     <Button onClick={handleBackupAllData} className="gap-2" disabled={isSyncing}>
-                        <DownloadCloud className="h-4 w-4" />
-                        Backup All Data to Excel
-                    </Button>
+                    <Tabs defaultValue="data">
+                        <TabsList className="grid w-full grid-cols-3">
+                            <TabsTrigger value="data">Data &amp; Backup</TabsTrigger>
+                            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+                            <TabsTrigger value="reset">Factory Reset</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="data" className="pt-6">
+                             <h3 className="font-semibold text-lg mb-2">Data Portability & Backup</h3>
+                            <p className="text-sm text-muted-foreground mb-4">Export all your application data into a single Excel file for backup or use in other applications.</p>
+                            <Button onClick={handleBackupAllData} className="gap-2">
+                                <DownloadCloud className="h-4 w-4" />
+                                Backup All Data to Excel
+                            </Button>
+                        </TabsContent>
+                         <TabsContent value="notifications" className="pt-6">
+                            <h3 className="font-semibold text-lg mb-2">Push Notifications</h3>
+                            <p className="text-sm text-muted-foreground mb-4">Enable push notifications to receive real-time updates from the app, such as low stock alerts or large sale notifications.</p>
+                            <Button onClick={handleEnableNotifications} className="gap-2">
+                                <BellRing className="h-4 w-4" />
+                                Enable Notifications
+                            </Button>
+                        </TabsContent>
+                        <TabsContent value="reset" className="pt-6">
+                            <h3 className="font-semibold text-lg text-destructive mb-2">Factory Reset</h3>
+                            <p className="text-sm text-muted-foreground mb-4">This will permanently delete all your data from this device's local storage. This action cannot be undone and should be used with extreme caution.</p>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" className="gap-2">
+                                        <Factory className="h-4 w-4" />
+                                        Perform Factory Reset
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This action cannot be undone. This will permanently delete all your application data from your browser's local storage.
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleFactoryReset}>Continue</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </TabsContent>
+                    </Tabs>
                 </CardContent>
-                 <CardFooter>
-                    <p className="text-xs text-muted-foreground">A restore feature will be added in a future update.</p>
-                </CardFooter>
             </Card>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Notifications</CardTitle>
-                    <CardDescription>
-                        Enable push notifications to receive real-time updates about your business.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Button onClick={handleEnableNotifications} className="gap-2">
-                        <BellRing className="h-4 w-4" />
-                        Enable Notifications
-                    </Button>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Factory Reset</CardTitle>
-                    <CardDescription>
-                        This will permanently delete all your data from this device's local storage. This action cannot be undone.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive" className="gap-2">
-                            <Factory className="h-4 w-4" />
-                            Perform Factory Reset
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete all your application data from your browser's local storage.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleFactoryReset}>Continue</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                </CardContent>
-            </Card>
         </div>
     );
 }
