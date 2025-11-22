@@ -88,7 +88,7 @@ export default function EditableRateList({ storageKeyPrefix, title, defaultRates
         }
         setIsCategorizing(rateId);
         try {
-            const result = await categorizePesticide({ name: variety, apiKey });
+            const result = await categorizePesticide({ name: variety });
             handleUpdate(rateId, 'category', result.category);
             toast({ title: 'Category Identified', description: `Set category for ${variety} to "${result.category}".`});
         } catch (e) {
