@@ -69,7 +69,7 @@ export const sidebarSections = [
       items: [
         { name: "Fruit Rates", href: "/rates", icon: TrendingUp },
         { name: "Fertilizers", href: "/fertilizers", icon: FlaskConical },
-        { name: "Accessories", href: "/accessories", icon: Box },
+        { name: "Supplies Ledger", href: "/accessories", icon: Box },
       ]
     },
      {
