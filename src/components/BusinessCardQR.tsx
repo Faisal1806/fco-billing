@@ -8,6 +8,8 @@ import QRCode from 'qrcode.react';
 const vCard = `BEGIN:VCARD
 VERSION:3.0
 FN:Firdous Ahmad & Company
+N:Ahmad;Faisal;;;
+TITLE:Manager
 TEL;TYPE=CELL:7006136330
 TEL;TYPE=CELL:9797002164
 TEL;TYPE=CELL:9906740921
