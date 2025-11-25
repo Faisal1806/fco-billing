@@ -10,6 +10,7 @@ VERSION:3.0
 FN:Firdous Ahmad & Company
 TEL;TYPE=CELL:7006136330
 TEL;TYPE=CELL:9797002164
+TEL;TYPE=CELL:9906740921
 EMAIL:lone07936@gmail.com
 ORG:Firdous Ahmad & Company
 ADR;TYPE=WORK:;;Shed No. 13, Fud No. 12-A Fruit Mandi;Sopore;Kashmir;193201;India
