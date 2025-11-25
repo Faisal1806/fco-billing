@@ -33,6 +33,8 @@ export default function BusinessCardQR({ size = 80 }: Props) {
         fgColor="#000000"
         level="M"
         includeMargin={false}
+        renderAs="canvas"
+        aria-label="QR code"
       />
       <p className="text-[8px] text-center font-semibold">Scan to Save Contact</p>
     </div>

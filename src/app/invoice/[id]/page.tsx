@@ -132,13 +132,16 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             const activeLayout = printStyle === 'a4' ? invoiceElement.querySelector('.print-area-a4') : invoiceElement.querySelector('.print-area-thermal');
             if (!activeLayout) return;
 
+            // Find all QR code canvas elements within the layout
+            const qrCanvases = activeLayout.querySelectorAll<HTMLCanvasElement>('canvas[aria-label="QR code"]');
+            
             const isThermal = printStyle === 'thermal';
             const format = isThermal ? [80, 297] : 'a5';
             const orientation = 'portrait';
-             const backgroundColor = invoiceStyle === 'modern-dark' ? '#1f2937' : (printStyle === 'thermal' || invoiceStyle === 'modern-light' ? '#ffffff' : '#FDFEE2');
+            const backgroundColor = invoiceStyle === 'modern-dark' ? '#1f2937' : (printStyle === 'thermal' || invoiceStyle === 'modern-light' ? '#ffffff' : '#FDFEE2');
 
             html2canvas.default(activeLayout as HTMLElement, {
-                scale: 2,
+                scale: 3, // Increase scale for better overall quality
                 useCORS: true,
                 backgroundColor: backgroundColor,
                 onclone: (document) => {
@@ -160,6 +163,31 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
                 
                 pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+                // Re-draw high-quality QR codes over the screenshot
+                qrCanvases.forEach(qrCanvas => {
+                    const qrRect = qrCanvas.getBoundingClientRect();
+                    const layoutRect = activeLayout.getBoundingClientRect();
+
+                    const x = ((qrRect.left - layoutRect.left) / layoutRect.width) * pdfWidth;
+                    const y = ((qrRect.top - layoutRect.top) / layoutRect.height) * pdfHeight;
+                    const width = (qrRect.width / layoutRect.width) * pdfWidth;
+                    const height = (qrRect.height / layoutRect.height) * pdfHeight;
+                    
+                    // Use a higher-resolution version of the QR code for the PDF
+                    const highResCanvas = document.createElement('canvas');
+                    const qrInstance = new (QRCode as any)({ // Use 'any' to bypass potential type issues with constructor
+                        value: qrCanvas.ariaValueText,
+                        size: 512, // High resolution
+                        level: 'M',
+                        includeMargin: false,
+                        renderAs: 'canvas',
+                    });
+                    const highResDataURL = qrInstance._canvas.current.toDataURL('image/png');
+                    
+                    pdf.addImage(highResDataURL, 'PNG', x, y, width, height);
+                });
+                
                 pdf.save(`Invoice-${billData.sNo}_${billData.customerName}.pdf`);
             });
         });
@@ -284,4 +312,3 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         </div>
     );
 }
-
