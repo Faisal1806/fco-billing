@@ -216,8 +216,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 Save to Device
             </Button>
              {!isOnlineView && (
-                <div className="p-2 border bg-muted rounded-md flex flex-col items-center">
-                    <QRCode value={`${pageUrl}?view=online`} size={80} bgColor="transparent" fgColor="hsl(var(--foreground))" />
+                <div className="p-4 border bg-muted rounded-md flex flex-col items-center gap-2">
+                    <QRCode value={`${pageUrl}?view=online`} size={128} bgColor="transparent" fgColor="hsl(var(--foreground))" />
                     <p className="text-xs font-semibold text-muted-foreground mt-1">Scan to View Bill</p>
                 </div>
             )}
