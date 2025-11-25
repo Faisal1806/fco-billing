@@ -1,5 +1,6 @@
 import QRCode from 'qrcode.react';
 import { Separator } from '@/components/ui/separator';
+import BusinessCardQR from '../BusinessCardQR';
 
 export const ThermalLayout = ({ billData, pageUrl }: { billData: any, pageUrl: string }) => {
     const { sNo, date, date2, customerName, watakNo, entries, totals, freight } = billData;
@@ -51,8 +52,12 @@ export const ThermalLayout = ({ billData, pageUrl }: { billData: any, pageUrl: s
             </div>
             <footer className="text-center pt-2 border-t border-dashed border-black text-[10px]">
                 <p>Thank you for your business!</p>
-                <div className="flex justify-center pt-2">
-                    <QRCode value={pageUrl} size={60} />
+                 <div className="grid grid-cols-2 gap-4 mt-2">
+                    <BusinessCardQR size={60} />
+                    <div className="flex flex-col items-center justify-center">
+                        <QRCode value={pageUrl} size={60} />
+                        <p className="text-[8px] font-semibold mt-1">Scan to View Bill</p>
+                    </div>
                 </div>
             </footer>
         </div>

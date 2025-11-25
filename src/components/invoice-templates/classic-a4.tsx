@@ -1,5 +1,6 @@
 import { Logo } from "@/components/logo";
 import BusinessCardQR from "@/components/BusinessCardQR";
+import QRCode from 'qrcode.react';
 
 export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl: string }) => {
     const { sNo, date, date2, customerName, watakNo, khata, entries, totals, freight } = billData;
@@ -76,6 +77,13 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
                     <div className="grid grid-cols-2 gap-x-4">
                         <div className="space-y-0.5 pr-4">
                             <p><strong>Total Quantity:</strong> {totals.totalQty} (Patti: {totals.pattiQty}, Dabba: {totals.dabbaQty})</p>
+                             <div className="grid grid-cols-2 gap-4 mt-2">
+                                <BusinessCardQR size={40} />
+                                <div className="flex flex-col items-center justify-center">
+                                    <QRCode value={pageUrl} size={40} bgColor="transparent" fgColor="#000000" />
+                                    <p className="text-[8px] font-semibold mt-1">Scan to View Bill</p>
+                                </div>
+                            </div>
                         </div>
                         <div className="space-y-0.5 border-l-2 border-green-700 pl-4 text-[10px]">
                             <div className="flex justify-between"><span>Gross Sale:</span> <span className="font-semibold">₹{totals.grossSale.toFixed(2)}</span></div>
@@ -88,8 +96,7 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
                             <div className="flex justify-between font-bold text-base border-t border-gray-400"><span>Net Sale:</span> <span>₹{totals.netSale.toFixed(2)}</span></div>
                         </div>
                     </div>
-                    <div className="flex justify-between items-end mt-1">
-                        <BusinessCardQR size={40} />
+                    <div className="flex justify-end items-end mt-1">
                         <div className="text-center">
                             <p className="font-signature text-2xl text-gray-700">Faisal</p>
                             <p className="font-bold -mt-2 text-[10px]">Sign. of Manager</p>

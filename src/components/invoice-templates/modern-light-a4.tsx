@@ -1,6 +1,7 @@
 import { Logo } from "@/components/logo";
 import BusinessCardQR from "@/components/BusinessCardQR";
 import { Separator } from "@/components/ui/separator";
+import QRCode from 'qrcode.react';
 
 export const ModernLightA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl: string }) => {
     const { sNo, date, date2, customerName, watakNo, khata, entries, totals, freight } = billData;
@@ -101,7 +102,13 @@ export const ModernLightA4Layout = ({ billData, pageUrl }: { billData: any, page
                 </main>
 
                 <footer className="flex justify-between items-end mt-auto pt-4 border-t border-gray-200 text-xs">
-                    <BusinessCardQR size={64} />
+                     <div className="grid grid-cols-2 gap-2">
+                        <BusinessCardQR size={64} />
+                        <div className="flex flex-col items-center justify-center">
+                            <QRCode value={pageUrl} size={64} bgColor="#ffffff" fgColor="#000000" />
+                            <p className="text-[8px] font-semibold mt-1 text-gray-500">Scan to View Bill</p>
+                        </div>
+                    </div>
                     <div className="text-right text-gray-500">
                         <p className="font-signature text-3xl text-gray-800">Faisal</p>
                         <p className="font-bold -mt-2">Sign. of Manager</p>

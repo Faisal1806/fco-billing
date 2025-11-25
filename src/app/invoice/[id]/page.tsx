@@ -15,6 +15,8 @@ import { ClassicA4Layout } from "@/components/invoice-templates/classic-a4";
 import { ModernDarkA4Layout } from "@/components/invoice-templates/modern-dark-a4";
 import { ThermalLayout } from "@/components/invoice-templates/thermal";
 import { ModernLightA4Layout } from "@/components/invoice-templates/modern-light-a4";
+import { useSearchParams } from 'next/navigation';
+import html2canvas from 'html2canvas';
 
 interface BillData {
     id: string;
@@ -58,6 +60,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     const [pageUrl, setPageUrl] = useState('');
     const [printStyle, setPrintStyle] = useState<'a4' | 'thermal'>('a4');
     const [invoiceStyle, setInvoiceStyle] = useState('classic');
+    const searchParams = useSearchParams();
+    const isOnlineView = searchParams.get('view') === 'online';
 
 
     useEffect(() => {
@@ -129,83 +133,38 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         const invoiceElement = printRef.current;
         if (!invoiceElement || !billData) return;
 
-        import('html2canvas').then(html2canvas => {
-            const activeLayout = printStyle === 'a4' ? invoiceElement.querySelector('.print-area-a4') : invoiceElement.querySelector('.print-area-thermal');
-            if (!activeLayout) return;
+        const activeLayout = printStyle === 'a4' ? invoiceElement.querySelector('.print-area-a4 > div') : invoiceElement.querySelector('.print-area-thermal');
+        if (!activeLayout) return;
 
-            const isThermal = printStyle === 'thermal';
-            const format = isThermal ? [80, 297] : 'a5';
-            const orientation = 'portrait';
-            const backgroundColor = invoiceStyle === 'modern-dark' ? '#1f2937' : (printStyle === 'thermal' || invoiceStyle === 'modern-light' ? '#ffffff' : '#FDFEE2');
+        const isThermal = printStyle === 'thermal';
+        const format = isThermal ? [80, 297] : 'a5';
+        const orientation = 'portrait';
+        const backgroundColor = invoiceStyle === 'modern-dark' ? '#1f2937' : (printStyle === 'thermal' || invoiceStyle === 'modern-light' ? '#ffffff' : '#FDFEE2');
 
-            html2canvas.default(activeLayout as HTMLElement, {
-                scale: 3, // Increase scale for better overall quality
-                useCORS: true,
-                backgroundColor: backgroundColor,
-                onclone: (document) => {
-                    const clonedBody = document.body;
-                    if (invoiceStyle === 'modern-dark') {
-                        clonedBody.style.color = '#e5e7eb';
-                    } else {
-                        clonedBody.style.color = '#111827';
-                    }
+        html2canvas(activeLayout as HTMLElement, {
+            scale: 3,
+            useCORS: true,
+            backgroundColor: backgroundColor,
+            onclone: (document) => {
+                const clonedBody = document.body;
+                if (invoiceStyle === 'modern-dark') {
+                    clonedBody.style.color = '#e5e7eb';
+                } else {
+                    clonedBody.style.color = '#111827';
                 }
-            }).then(canvas => {
-                const pdf = new jsPDF({
-                    orientation,
-                    unit: 'mm',
-                    format,
-                });
-                
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-                
-                pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
-
-                // Re-draw high-quality QR codes over the screenshot
-                const qrCanvases = activeLayout.querySelectorAll<HTMLCanvasElement>('canvas[aria-label="QR code"]');
-                qrCanvases.forEach(qrCanvas => {
-                    const qrRect = qrCanvas.getBoundingClientRect();
-                    const layoutRect = activeLayout.getBoundingClientRect();
-
-                    const x = ((qrRect.left - layoutRect.left) / layoutRect.width) * pdfWidth;
-                    const y = ((qrRect.top - layoutRect.top) / layoutRect.height) * pdfHeight;
-                    const width = (qrRect.width / layoutRect.width) * pdfWidth;
-                    const height = (qrRect.height / layoutRect.height) * pdfHeight;
-                    
-                    const highResCanvas = document.createElement('canvas');
-                    highResCanvas.width = 512;
-                    highResCanvas.height = 512;
-                    
-                    // Use the library to draw to our hidden canvas
-                    // This is a bit of a hack, but `qrcode.react` doesn't expose a direct `toDataURL` method on the instance
-                    const tempDiv = document.createElement('div');
-                    tempDiv.style.position = 'absolute';
-                    tempDiv.style.left = '-9999px';
-                    
-                    const qrComponent = React.createElement(QRCode, {
-                        value: qrCanvas.ariaValueText || '',
-                        size: 512,
-                        level: 'M',
-                        includeMargin: false,
-                        renderAs: 'canvas',
-                    });
-
-                    // Temporarily render to get the canvas data
-                    const ReactDOM = require('react-dom');
-                    document.body.appendChild(tempDiv);
-                    const qrInstance = ReactDOM.render(qrComponent, tempDiv);
-
-                    const highResDataURL = (qrInstance as any)._canvas.current.toDataURL('image/png');
-                    
-                    ReactDOM.unmountComponentAtNode(tempDiv);
-                    document.body.removeChild(tempDiv);
-                    
-                    pdf.addImage(highResDataURL, 'PNG', x, y, width, height);
-                });
-                
-                pdf.save(`Invoice-${billData.sNo}_${billData.customerName}.pdf`);
+            }
+        }).then(canvas => {
+            const pdf = new jsPDF({
+                orientation,
+                unit: 'mm',
+                format,
             });
+            
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            
+            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save(`Invoice-${billData.sNo}_${billData.customerName}.pdf`);
         });
     };
 
@@ -213,32 +172,38 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
     const Controls = () => (
         <div className="flex flex-col gap-4 print:hidden p-4 bg-card rounded-lg border">
-            <div className="flex items-center gap-2">
-                 <Button onClick={() => setPrintStyle('a4')} variant={printStyle === 'a4' ? 'default' : 'outline'} size="sm" className="flex-1 gap-2">
-                    <FileText className="h-4 w-4" /> A5
-                </Button>
-                <Button onClick={() => setPrintStyle('thermal')} variant={printStyle === 'thermal' ? 'default' : 'outline'} size="sm" className="flex-1 gap-2">
-                    <Receipt className="h-4 w-4" /> Thermal
-                </Button>
-            </div>
-             <div className="flex flex-col gap-2">
-                <Button onClick={handleShare} variant="outline" size="sm" className="gap-2 bg-green-500/10 border-green-500/30 text-green-300 hover:bg-green-500/20 hover:text-green-200">
-                    <FaWhatsapp className="h-4 w-4" />
-                    Share on WhatsApp
-                </Button>
-                <Button onClick={() => window.print()} variant="outline" size="sm" className="gap-2">
-                    <Printer className="h-4 w-4" />
-                    Print
-                </Button>
-                <Button onClick={handleDownloadPdf} size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700 text-white">
-                    <Download className="h-4 w-4" />
-                    Save to Device
-                </Button>
-             </div>
-             <div className="p-2 border bg-muted rounded-md flex flex-col items-center">
-                <QRCode value={pageUrl} size={80} bgColor="transparent" fgColor="hsl(var(--foreground))" />
-                <p className="text-xs font-semibold text-muted-foreground mt-1">Scan to View Bill</p>
-            </div>
+             {!isOnlineView && (
+                <>
+                    <div className="flex items-center gap-2">
+                        <Button onClick={() => setPrintStyle('a4')} variant={printStyle === 'a4' ? 'default' : 'outline'} size="sm" className="flex-1 gap-2">
+                            <FileText className="h-4 w-4" /> A5
+                        </Button>
+                        <Button onClick={() => setPrintStyle('thermal')} variant={printStyle === 'thermal' ? 'default' : 'outline'} size="sm" className="flex-1 gap-2">
+                            <Receipt className="h-4 w-4" /> Thermal
+                        </Button>
+                    </div>
+                     <div className="flex flex-col gap-2">
+                        <Button onClick={handleShare} variant="outline" size="sm" className="gap-2 bg-green-500/10 border-green-500/30 text-green-300 hover:bg-green-500/20 hover:text-green-200">
+                            <FaWhatsapp className="h-4 w-4" />
+                            Share on WhatsApp
+                        </Button>
+                        <Button onClick={() => window.print()} variant="outline" size="sm" className="gap-2">
+                            <Printer className="h-4 w-4" />
+                            Print
+                        </Button>
+                    </div>
+                </>
+             )}
+            <Button onClick={handleDownloadPdf} size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700 text-white">
+                <Download className="h-4 w-4" />
+                Save to Device
+            </Button>
+             {!isOnlineView && (
+                <div className="p-2 border bg-muted rounded-md flex flex-col items-center">
+                    <QRCode value={`${pageUrl}?view=online`} size={80} bgColor="transparent" fgColor="hsl(var(--foreground))" />
+                    <p className="text-xs font-semibold text-muted-foreground mt-1">Scan to View Bill</p>
+                </div>
+            )}
         </div>
     )
 
@@ -267,7 +232,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     }
     
     const renderContent = () => {
-        const props = { billData, pageUrl };
+        const props = { billData, pageUrl: `${pageUrl.split('?')[0]}?view=online` };
         switch(invoiceStyle) {
             case 'modern-dark': return <ModernDarkA4Layout {...props} />;
             case 'modern-light': return <ModernLightA4Layout {...props} />;
@@ -321,7 +286,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                         {renderContent()}
                     </div>
                      <div className="print-area-thermal">
-                        <ThermalLayout billData={billData} pageUrl={pageUrl} />
+                        <ThermalLayout billData={billData} pageUrl={`${pageUrl.split('?')[0]}?view=online`} />
                     </div>
                 </div>
             </div>
