@@ -99,7 +99,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 }
             } else {
                 // Fetch from localStorage for regular view
-                const localData = localStorage.getItem(`invoice-${params.id}`);
+                const localData = localStorage.getItem(params.id);
                 if (localData) {
                     try {
                         data = JSON.parse(localData) as BillData;
@@ -217,7 +217,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             </Button>
              {!isOnlineView && billData && (
                 <div className="p-4 border bg-muted rounded-md flex flex-col items-center gap-2">
-                    <QRCode value={`${window.location.origin}/invoice/${billData.sNo}?view=online`} size={128} bgColor="transparent" fgColor="hsl(var(--foreground))" />
+                    <QRCode value={`${window.location.origin}/invoice/${billData.id}?view=online`} size={128} bgColor="transparent" fgColor="hsl(var(--foreground))" />
                     <p className="text-xs font-semibold text-muted-foreground mt-1">Scan to View Bill</p>
                 </div>
             )}
@@ -249,7 +249,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     }
     
     const renderContent = () => {
-        const props = { billData, pageUrl: `${window.location.origin}/invoice/${billData.sNo}?view=online` };
+        const props = { billData, pageUrl: `${window.location.origin}/invoice/${billData.id}?view=online` };
         switch(invoiceStyle) {
             case 'modern-dark': return <ModernDarkA4Layout {...props} />;
             case 'modern-light': return <ModernLightA4Layout {...props} />;
@@ -303,7 +303,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                         {renderContent()}
                     </div>
                      <div className="print-area-thermal">
-                        <ThermalLayout billData={billData} pageUrl={`${window.location.origin}/invoice/${billData.sNo}?view=online`} />
+                        <ThermalLayout billData={billData} pageUrl={`${window.location.origin}/invoice/${billData.id}?view=online`} />
                     </div>
                 </div>
             </div>
