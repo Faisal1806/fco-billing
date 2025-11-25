@@ -132,9 +132,6 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             const activeLayout = printStyle === 'a4' ? invoiceElement.querySelector('.print-area-a4') : invoiceElement.querySelector('.print-area-thermal');
             if (!activeLayout) return;
 
-            // Find all QR code canvas elements within the layout
-            const qrCanvases = activeLayout.querySelectorAll<HTMLCanvasElement>('canvas[aria-label="QR code"]');
-            
             const isThermal = printStyle === 'thermal';
             const format = isThermal ? [80, 297] : 'a5';
             const orientation = 'portrait';
@@ -165,6 +162,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
 
                 // Re-draw high-quality QR codes over the screenshot
+                const qrCanvases = activeLayout.querySelectorAll<HTMLCanvasElement>('canvas[aria-label="QR code"]');
                 qrCanvases.forEach(qrCanvas => {
                     const qrRect = qrCanvas.getBoundingClientRect();
                     const layoutRect = activeLayout.getBoundingClientRect();
@@ -174,16 +172,33 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                     const width = (qrRect.width / layoutRect.width) * pdfWidth;
                     const height = (qrRect.height / layoutRect.height) * pdfHeight;
                     
-                    // Use a higher-resolution version of the QR code for the PDF
                     const highResCanvas = document.createElement('canvas');
-                    const qrInstance = new (QRCode as any)({ // Use 'any' to bypass potential type issues with constructor
-                        value: qrCanvas.ariaValueText,
-                        size: 512, // High resolution
+                    highResCanvas.width = 512;
+                    highResCanvas.height = 512;
+                    
+                    // Use the library to draw to our hidden canvas
+                    // This is a bit of a hack, but `qrcode.react` doesn't expose a direct `toDataURL` method on the instance
+                    const tempDiv = document.createElement('div');
+                    tempDiv.style.position = 'absolute';
+                    tempDiv.style.left = '-9999px';
+                    
+                    const qrComponent = React.createElement(QRCode, {
+                        value: qrCanvas.ariaValueText || '',
+                        size: 512,
                         level: 'M',
                         includeMargin: false,
                         renderAs: 'canvas',
                     });
-                    const highResDataURL = qrInstance._canvas.current.toDataURL('image/png');
+
+                    // Temporarily render to get the canvas data
+                    const ReactDOM = require('react-dom');
+                    document.body.appendChild(tempDiv);
+                    const qrInstance = ReactDOM.render(qrComponent, tempDiv);
+
+                    const highResDataURL = (qrInstance as any)._canvas.current.toDataURL('image/png');
+                    
+                    ReactDOM.unmountComponentAtNode(tempDiv);
+                    document.body.removeChild(tempDiv);
                     
                     pdf.addImage(highResDataURL, 'PNG', x, y, width, height);
                 });
