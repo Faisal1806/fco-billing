@@ -2,6 +2,7 @@
 
 'use client'
 
+import * as React from 'react';
 import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Printer, Download, FileText, Receipt } from "lucide-react";
