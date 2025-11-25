@@ -24,20 +24,6 @@ const nextConfig = {
       },
     ],
   },
-   webpack: (config, { isServer }) => {
-    config.module.rules.push({
-      test: /\.(gltf)$/,
-      use: {
-        loader: 'file-loader',
-        options: {
-          publicPath: '/_next/static/files',
-          outputPath: 'static/files/',
-        },
-      },
-    });
-
-    return config;
-  },
 };
 
 module.exports = nextConfig;

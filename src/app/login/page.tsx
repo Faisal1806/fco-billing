@@ -1,11 +1,10 @@
 'use client'
 
-import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Float, MeshDistortMaterial } from '@react-three/drei'
-import { motion } from 'framer-motion'
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/logo';
+import { Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function FCo3DHome() {
   const router = useRouter();
@@ -19,7 +18,7 @@ export default function FCo3DHome() {
             // If not admin, redirect to the actual login page for customers or other roles
             router.push('/portal/login');
         }
-    }, 4000); // 4-second delay for the splash screen
+    }, 2500); // 2.5-second delay for the splash screen
 
     return () => clearTimeout(timer); // Cleanup timer on component unmount
   }, [router]);
@@ -40,22 +39,8 @@ export default function FCo3DHome() {
         <p className="text-gray-400 text-lg">Billing System</p>
       </motion.div>
 
-      <div className="absolute inset-0 z-0">
-        <Canvas camera={{ position: [0, 0, 5] }}>
-          <ambientLight intensity={0.5} />
-          <directionalLight position={[5, 5, 5]} intensity={1} />
-          <Float speed={2} floatIntensity={2}>
-            <mesh>
-              <sphereGeometry args={[1.5, 32, 32]} />
-              <MeshDistortMaterial
-                color="hsl(var(--primary))"
-                distort={0.4}
-                speed={2}
-              />
-            </mesh>
-          </Float>
-          <OrbitControls enableZoom={false} enablePan={false} />
-        </Canvas>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-0">
+          <Loader2 className="h-48 w-48 animate-spin text-primary/10" />
       </div>
 
       <motion.p

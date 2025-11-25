@@ -4,9 +4,17 @@
 import React from 'react';
 import QRCode from 'qrcode.react';
 
-const upiId = "firdousahmad.70061@oksbi";
-const companyName = "Firdous Ahmad & Company";
-const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(companyName)}`;
+// vCard (Virtual Contact Card) data
+const vCard = `BEGIN:VCARD
+VERSION:3.0
+FN:Firdous Ahmad & Company
+TEL;TYPE=CELL:7006136330
+TEL;TYPE=CELL:9797002164
+EMAIL:lone07936@gmail.com
+ORG:Firdous Ahmad & Company
+ADR;TYPE=WORK:;;Shed No. 13, Fud No. 12-A Fruit Mandi;Sopore;Kashmir;193201;India
+END:VCARD`;
+
 
 interface Props {
   size?: number;
@@ -16,14 +24,14 @@ export default function BusinessCardQR({ size = 80 }: Props) {
   return (
     <div className="flex flex-col items-center gap-1">
        <QRCode
-        value={upiUrl}
+        value={vCard}
         size={size}
         bgColor="transparent"
         fgColor="#000000"
-        level="L"
+        level="M"
         includeMargin={false}
       />
-      <p className="text-[8px] text-center font-semibold">Scan to Pay via UPI</p>
+      <p className="text-[8px] text-center font-semibold">Scan to Save Contact</p>
     </div>
   );
 }
