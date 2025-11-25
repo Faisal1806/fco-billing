@@ -99,7 +99,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 }
             } else {
                 // Fetch from localStorage for regular view
-                const localData = localStorage.getItem(params.id);
+                const localData = localStorage.getItem(`invoice-${params.id}`);
                 if (localData) {
                     try {
                         data = JSON.parse(localData) as BillData;
