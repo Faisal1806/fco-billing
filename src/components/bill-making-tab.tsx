@@ -310,6 +310,7 @@ export function BillMakingTab() {
       linkedReceiptNo: selectedReceiptNo,
     };
     
+    // Save to local storage first for immediate access
     localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
     
     try {
@@ -373,24 +374,24 @@ export function BillMakingTab() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const handleDeleteWatak = async (sNo: string) => {
+    const handleDeleteWatak = async (sNoToDelete: string) => {
         if(userRole !== 'admin') {
             toast({ variant: "destructive", title: "Permission Denied" });
             return;
         }
-        if(!window.confirm(`Are you sure you want to delete Invoice #${sNo}? This cannot be undone.`)) return;
+        if(!window.confirm(`Are you sure you want to delete Invoice #${sNoToDelete}? This cannot be undone.`)) return;
 
-        localStorage.removeItem(`invoice-${sNo}`);
+        localStorage.removeItem(`invoice-${sNoToDelete}`);
         
         try {
-            await deleteDocument('invoices', sNo);
-            toast({ title: "Invoice Deleted", description: `Invoice #${sNo} has been deleted from local and cloud storage.`});
+            await deleteDocument('invoices', sNoToDelete);
+            toast({ title: "Invoice Deleted", description: `Invoice #${sNoToDelete} has been deleted from local and cloud storage.`});
         } catch (error) {
-            toast({ variant: "destructive", title: "Cloud Delete Failed", description: `Invoice #${sNo} was removed locally but failed to delete from the cloud.`});
+            toast({ variant: "destructive", title: "Cloud Delete Failed", description: `Invoice #${sNoToDelete} was removed locally but failed to delete from the cloud.`});
         }
         
         fetchBillsAndReceipts();
-        if(sNo === sNo) { // if the deleted invoice is the one being edited
+        if(sNo === sNoToDelete) { // if the deleted invoice is the one being edited
             resetForm();
         }
     };

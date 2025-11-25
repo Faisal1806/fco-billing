@@ -215,9 +215,9 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 <Download className="h-4 w-4" />
                 Save to Device
             </Button>
-             {!isOnlineView && (
+             {!isOnlineView && billData && (
                 <div className="p-4 border bg-muted rounded-md flex flex-col items-center gap-2">
-                    <QRCode value={`${pageUrl}?view=online`} size={128} bgColor="transparent" fgColor="hsl(var(--foreground))" />
+                    <QRCode value={`${window.location.origin}/invoice/${billData.sNo}?view=online`} size={128} bgColor="transparent" fgColor="hsl(var(--foreground))" />
                     <p className="text-xs font-semibold text-muted-foreground mt-1">Scan to View Bill</p>
                 </div>
             )}
@@ -249,7 +249,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     }
     
     const renderContent = () => {
-        const props = { billData, pageUrl: `${pageUrl.split('?')[0]}?view=online` };
+        const props = { billData, pageUrl: `${window.location.origin}/invoice/${billData.sNo}?view=online` };
         switch(invoiceStyle) {
             case 'modern-dark': return <ModernDarkA4Layout {...props} />;
             case 'modern-light': return <ModernLightA4Layout {...props} />;
@@ -303,7 +303,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                         {renderContent()}
                     </div>
                      <div className="print-area-thermal">
-                        <ThermalLayout billData={billData} pageUrl={`${pageUrl.split('?')[0]}?view=online`} />
+                        <ThermalLayout billData={billData} pageUrl={`${window.location.origin}/invoice/${billData.sNo}?view=online`} />
                     </div>
                 </div>
             </div>
