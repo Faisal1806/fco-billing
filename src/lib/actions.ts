@@ -2,7 +2,7 @@
 'use server';
 
 import { getClientDb } from './firebase';
-import { collection, getDocs, doc, setDoc, deleteDoc, query, where } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
 
 // Hardcoded user ID for the single-tenant app structure.
 const userId = 'default-user';
@@ -33,6 +33,24 @@ export async function deleteDocument(collectionName: string, id: string) {
         return { success: false, error: (error as Error).message };
     }
 }
+
+// Generic function to get a single document from a user's collection
+export async function getDocument(collectionName: string, id: string): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+        const db = getClientDb();
+        const docPath = `users/${userId}/${collectionName}/${id}`;
+        const docSnap = await getDoc(doc(db, docPath));
+        if (docSnap.exists()) {
+            return { success: true, data: { id: docSnap.id, ...docSnap.data() } };
+        } else {
+            return { success: false, error: "Document not found." };
+        }
+    } catch (error) {
+        console.error("Error fetching document:", error);
+        return { success: false, error: (error as Error).message };
+    }
+}
+
 
 // Generic function to get documents from a user's collection
 export async function getDocuments(collectionName: string): Promise<{ success: boolean; data?: any[]; error?: string }> {

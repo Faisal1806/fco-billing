@@ -102,12 +102,8 @@ export const ModernDarkA4Layout = ({ billData, pageUrl }: { billData: any, pageU
                 </main>
 
                 <footer className="flex justify-between items-end mt-auto pt-4 border-t border-gray-700 text-xs">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1">
                         <BusinessCardQR size={64} />
-                        <div className="flex flex-col items-center justify-center">
-                            <QRCode value={pageUrl} size={64} bgColor="#1f2937" fgColor="#e5e7eb" />
-                            <p className="text-[8px] font-semibold mt-1 text-gray-400">Scan to View Bill</p>
-                        </div>
                     </div>
                     <div className="text-right text-gray-400">
                         <p className="font-signature text-3xl text-gray-200">Faisal</p>

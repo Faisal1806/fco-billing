@@ -17,6 +17,7 @@ import { ThermalLayout } from "@/components/invoice-templates/thermal";
 import { ModernLightA4Layout } from "@/components/invoice-templates/modern-light-a4";
 import { useSearchParams } from 'next/navigation';
 import html2canvas from 'html2canvas';
+import { getDocument } from '@/lib/actions';
 
 interface BillData {
     id: string;
@@ -83,24 +84,40 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             setLoading(true);
 
             let data: BillData | null = null;
-            const localData = localStorage.getItem(`invoice-${params.id}`);
-            
-            if (localData) {
-                try {
-                    data = JSON.parse(localData) as BillData;
-                } catch (e) {
-                    console.error("Failed to parse invoice data", e);
-                    toast({
+
+            if (isOnlineView) {
+                // Fetch from server if it's an online view
+                const result = await getDocument('invoices', params.id);
+                if (result.success && result.data) {
+                    data = result.data as BillData;
+                } else {
+                     toast({
                         variant: "destructive",
-                        title: "Error Loading Invoice",
-                        description: "The saved invoice data appears to be corrupted."
+                        title: "Invoice Not Found",
+                        description: "The invoice you are looking for does not exist or has been deleted."
                     });
+                }
+            } else {
+                // Fetch from localStorage for regular view
+                const localData = localStorage.getItem(`invoice-${params.id}`);
+                if (localData) {
+                    try {
+                        data = JSON.parse(localData) as BillData;
+                    } catch (e) {
+                        console.error("Failed to parse invoice data", e);
+                        toast({
+                            variant: "destructive",
+                            title: "Error Loading Invoice",
+                            description: "The saved invoice data appears to be corrupted."
+                        });
+                    }
                 }
             }
 
+
             if (data) {
                 setBillData(data);
-            } else {
+            } else if (!isOnlineView) { // Only show local not found error if not online
                 toast({
                     variant: "destructive",
                     title: "Invoice Not Found",
@@ -111,7 +128,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             setLoading(false);
         };
         fetchBill();
-    }, [params.id, toast]);
+    }, [params.id, toast, isOnlineView]);
 
 
     const handleShare = () => {

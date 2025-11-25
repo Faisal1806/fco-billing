@@ -77,12 +77,8 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
                     <div className="grid grid-cols-2 gap-x-4">
                         <div className="space-y-0.5 pr-4">
                             <p><strong>Total Quantity:</strong> {totals.totalQty} (Patti: {totals.pattiQty}, Dabba: {totals.dabbaQty})</p>
-                             <div className="grid grid-cols-2 gap-4 mt-2">
+                             <div className="mt-2">
                                 <BusinessCardQR size={40} />
-                                <div className="flex flex-col items-center justify-center">
-                                    <QRCode value={pageUrl} size={40} bgColor="transparent" fgColor="#000000" />
-                                    <p className="text-[8px] font-semibold mt-1">Scan to View Bill</p>
-                                </div>
                             </div>
                         </div>
                         <div className="space-y-0.5 border-l-2 border-green-700 pl-4 text-[10px]">
@@ -91,7 +87,6 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
                             <div className="flex justify-between"><span>Labour:</span> <span>- ₹{totals.labour.toFixed(2)}</span></div>
                             <div className="flex justify-between"><span>Association:</span> <span>- ₹{totals.association.toFixed(2)}</span></div>
                             <div className="flex justify-between"><span>Security:</span> <span>- ₹{totals.security.toFixed(2)}</span></div>
-                            <div className="flex justify-between"><span>Commission:</span> <span>- ₹{totals.commissionAmount.toFixed(2)}</span></div>
                             <div className="flex justify-between font-bold border-t border-gray-400"><span>Total Exp:</span> <span>- ₹{totals.totalExpenses.toFixed(2)}</span></div>
                             <div className="flex justify-between font-bold text-base border-t border-gray-400"><span>Net Sale:</span> <span>₹{totals.netSale.toFixed(2)}</span></div>
                         </div>
