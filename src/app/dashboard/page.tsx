@@ -274,7 +274,7 @@ export default function DashboardPage() {
 
     allReceipts.forEach(receipt => {
         const receiptDate = new Date(receipt.date);
-        if (receiptDate.getFullYear() === currentYear && receipt.entries) {
+        if (receiptDate.getFullYear() === currentYear && Array.isArray(receipt.entries)) {
             receipt.entries.forEach(entry => {
                 yearPattiReceived += Number(entry.peti) || 0;
                 yearDabbaReceived += Number(entry.daba) || 0;
@@ -284,7 +284,6 @@ export default function DashboardPage() {
     
     // Note: This logic for sent outside might be double counting if challans are also used for bikris.
     // Assuming for now they are separate or bikris are the primary record for outside sales qty.
-    // If challan is just a delivery note for a bikri, we should adjust.
     allChallans.forEach(challan => {
         const challanDate = new Date(challan.date);
         const isLinkedToBikri = allBikris.some(b => b.challanNo === challan.challanNo);
