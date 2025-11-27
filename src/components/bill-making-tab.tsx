@@ -179,14 +179,16 @@ export function BillMakingTab() {
         setDate(selectedReceipt.date);
         
         const newRows: Row[] = [];
-        selectedReceipt.entries.forEach((entry: any) => {
-            if (entry.peti > 0) {
-                newRows.push({ type: 'Patti', variety: entry.kind, qty: entry.peti, rate: 0, isForwarded: false });
-            }
-            if (entry.daba > 0) {
-                newRows.push({ type: 'Dabba', variety: entry.kind, qty: entry.daba, rate: 0, isForwarded: false });
-            }
-        });
+        if (Array.isArray(selectedReceipt.entries)) {
+          selectedReceipt.entries.forEach((entry: any) => {
+              if (entry.peti > 0) {
+                  newRows.push({ type: 'Patti', variety: entry.kind, qty: entry.peti, rate: 0, isForwarded: false });
+              }
+              if (entry.daba > 0) {
+                  newRows.push({ type: 'Dabba', variety: entry.kind, qty: entry.daba, rate: 0, isForwarded: false });
+              }
+          });
+        }
 
         if(newRows.length > 0) {
             setRows(newRows);
@@ -361,13 +363,14 @@ export function BillMakingTab() {
         setDate(watak.date);
         setDate2(watak.date2 || '');
         setFreight(watak.freight || 0);
-        const loadedRows = watak.entries.map((e: any) => ({
+        
+        const loadedRows = Array.isArray(watak.entries) ? watak.entries.map((e: any) => ({
             type: e.type,
             qty: e.qty,
             variety: e.variety,
             rate: e.rate,
             isForwarded: e.isForwarded || false,
-        }));
+        })) : [];
 
         setRows(loadedRows.length > 0 ? loadedRows : initialRows);
         setSelectedReceiptNo(watak.linkedReceiptNo || '');

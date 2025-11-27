@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -120,7 +121,8 @@ export function ReceiptMakingTab() {
                 freightPaid: scannedData.freightPaid || 0,
                 wattakReadyOn: scannedData.wattakReadyOn || '',
             });
-            setEntries(scannedData.entries && scannedData.entries.length > 0 ? scannedData.entries : initialEntries);
+            const loadedEntries = scannedData.entries && Array.isArray(scannedData.entries) ? scannedData.entries : [];
+            setEntries(loadedEntries.length > 0 ? loadedEntries : initialEntries);
             toast({
                 title: "Data Populated from Scan",
                 description: "Review the extracted data and save the receipt."
@@ -405,9 +407,7 @@ export function ReceiptMakingTab() {
                                 </div>
                             </div>
                         ))}
-                         {savedReceipts.length === 0 && (
-                           <p className="text-sm text-muted-foreground text-center">No recent receipts found.</p>
-                         )}
+                         {savedReceipts.length === 0 && <p className="text-sm text-muted-foreground text-center">No recent receipts found.</p>}
                     </div>
                 </ScrollArea>
             </CardContent>
