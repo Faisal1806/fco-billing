@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -562,7 +563,7 @@ export function BillMakingTab() {
                                 onCheckedChange={(checked) => updateRow(i, { isForwarded: !!checked })}
                                 disabled={formDisabled}
                             />
-                        </TableCell>
+                         </TableCell>
                         <TableCell>
                             <Input
                             type="number"
@@ -681,7 +682,7 @@ export function BillMakingTab() {
                                     <p className="font-semibold">Invoice #{watak.sNo} {watak.watakNo && `(Watak #${watak.watakNo})`}</p>
                                     <p className="text-sm text-muted-foreground">{watak.customerName}</p>
                                     <p className="text-xs text-muted-foreground">{new Date(watak.date).toLocaleDateString()}</p>
-                                    <p className="font-mono mt-1">Net Sale: ₹{watak.totals.netSale.toFixed(2)}</p>
+                                    <p className="font-mono mt-1">Net Sale: ₹{watak.totals ? watak.totals.netSale.toFixed(2) : '0.00'}</p>
                                 </div>
                                 <div className="flex items-center">
                                     <Button variant="ghost" size="icon" onClick={() => loadWatakForEdit(watak)}>
@@ -705,5 +706,7 @@ export function BillMakingTab() {
     </>
   );
 }
+
+    
 
     
