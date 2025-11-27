@@ -199,6 +199,7 @@ export default function DashboardPage() {
 
 
     allInvoices.forEach(sale => {
+        if (!sale.totals) return; // Fix: Check if totals object exists
         const saleDate = new Date(sale.date);
         const saleYear = saleDate.getFullYear();
         const saleMonth = saleDate.getMonth();
@@ -333,6 +334,7 @@ export default function DashboardPage() {
 
     // Process local invoices
     allInvoices.forEach(sale => {
+        if (!sale.totals) return;
         const saleYear = new Date(sale.date).getFullYear();
         if (saleYear === currentYear) {
             addProfit(sale.customerName, sale.totals.netSale);
