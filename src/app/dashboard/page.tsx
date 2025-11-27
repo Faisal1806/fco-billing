@@ -235,6 +235,7 @@ export default function DashboardPage() {
     });
     
     allBikris.forEach(bikri => {
+        if (!bikri.calculation) return;
         const bikriDate = new Date(bikri.date);
         if (bikriDate.getFullYear() !== currentYear) return;
 
@@ -286,8 +287,9 @@ export default function DashboardPage() {
     // Note: This logic for sent outside might be double counting if challans are also used for bikris.
     // Assuming for now they are separate or bikris are the primary record for outside sales qty.
     allChallans.forEach(challan => {
+        if (!challan.id) return;
         const challanDate = new Date(challan.date);
-        const isLinkedToBikri = allBikris.some(b => b.challanNo === challan.challanNo);
+        const isLinkedToBikri = allBikris.some(b => b.challanId === challan.id);
         if (challanDate.getFullYear() === currentYear && !isLinkedToBikri) {
             yearPattiSentOutside += Number(challan.totalPetti) || 0;
             yearDabbaSentOutside += Number(challan.totalDabba) || 0;
@@ -343,6 +345,7 @@ export default function DashboardPage() {
 
     // Process outside sales (bikris)
     allBikris.forEach(bikri => {
+        if (!bikri.calculation) return;
         const bikriYear = new Date(bikri.date).getFullYear();
         if (bikriYear === currentYear && bikri.bikriType === 'growerForwarding' && bikri.growerName) {
             addProfit(bikri.growerName, bikri.calculation.netSalePayableToGrower || 0);

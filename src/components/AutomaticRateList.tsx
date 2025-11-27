@@ -59,9 +59,10 @@ export default function AutomaticRateList({ sourceType, title }: AutomaticRateLi
                 try {
                     if (sourceType === 'fruit' && key.startsWith('invoice-')) {
                         const watak: WatakEntry = JSON.parse(localStorage.getItem(key)!);
+                        if (!watak.entries || !Array.isArray(watak.entries)) continue;
                         watak.entries.forEach(entry => {
                             const rate = entry.rate;
-                            const type = (entry as any).type || (entry.peti > 0 ? 'Patti' : 'Dabba');
+                            const type = entry.type;
                             const variety = entry.variety;
 
                             if (variety && rate > 0) {
@@ -74,6 +75,7 @@ export default function AutomaticRateList({ sourceType, title }: AutomaticRateLi
                         });
                     } else if (sourceType === 'fertilizer' && key.startsWith('pesticide-invoice-')) {
                         const bill: PesticideBillData = JSON.parse(localStorage.getItem(key)!);
+                        if (!bill.entries || !Array.isArray(bill.entries)) continue;
                         bill.entries.forEach(entry => {
                             const name = entry.particulars;
                             const rate = entry.rate;
@@ -86,6 +88,7 @@ export default function AutomaticRateList({ sourceType, title }: AutomaticRateLi
                         });
                     } else if (sourceType === 'outside' && key.startsWith('bikri-')) {
                         const bikri: BikriData = JSON.parse(localStorage.getItem(key)!);
+                        if (!bikri.saleEntries || !Array.isArray(bikri.saleEntries)) continue;
                         (bikri.saleEntries || []).forEach(entry => {
                              if (entry.variety && entry.rate > 0) {
                                 // Group by Market -> Variety -> Type
