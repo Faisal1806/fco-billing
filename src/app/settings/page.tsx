@@ -25,6 +25,7 @@ import { getToken } from 'firebase/messaging';
 import { Input } from '@/components/ui/input';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import * as XLSX from 'xlsx';
+import { Label } from '@/components/ui/label';
 
 const InvoicePreview = ({ title, colors, children }: {
     title: string,
@@ -393,5 +394,3 @@ export default function SettingsPage() {
         </div>
     );
 }
-
-    
