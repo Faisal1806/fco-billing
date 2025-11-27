@@ -1,12 +1,11 @@
 
-
 'use client'
 
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { Paintbrush, Palette, Upload, Rocket, Cog, DownloadCloud, Factory, BellRing } from 'lucide-react';
+import { Paintbrush, Palette, Upload, Rocket, Cog, DownloadCloud, Factory, BellRing, UploadCloud } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CompanyInfoForm } from "@/components/profile-form";
 import {
@@ -92,46 +91,35 @@ export default function SettingsPage() {
 
         try {
             const allData: { [key: string]: any[] } = {
-                'Wataks (Invoices)': [],
-                'Purchases': [],
-                'Receipts': [],
-                'Challans': [],
-                'Pesticide_Invoices': [],
-                'Products': [],
-                'Accessory_Ledger': [],
-                'Expenses': [],
-                'Advances': [],
-                'Cold_Storage': [],
-                'Manual_Fertilizer_Rates': [],
-                'Outside_Sales (Bikri)': [],
-                'Activity_Log': [],
-                'Parties': [],
+                'Wataks (Invoices)': [], 'Purchases': [], 'Receipts': [], 'Challans': [],
+                'Pesticide_Invoices': [], 'Products': [], 'Accessory_Ledger': [], 'Expenses': [],
+                'Advances': [], 'Cold_Storage': [], 'Manual_Fertilizer_Rates': [], 'Outside_Sales (Bikri)': [],
+                'Activity_Log': [], 'Parties': [], 'Company_Info': [], 'Settings': []
             };
 
             const keyPrefixToSheetMap: { [key: string]: keyof typeof allData } = {
-                'invoice-': 'Wataks (Invoices)',
-                'purchase-': 'Purchases',
-                'receipt-': 'Receipts',
-                'challan-': 'Challans',
-                'pesticide-invoice-': 'Pesticide_Invoices',
-                'product-': 'Products',
-                'accessory-ledger-': 'Accessory_Ledger',
-                'expense-': 'Expenses',
-                'advance-': 'Advances',
-                'cs-': 'Cold_Storage',
-                'manual-fertilizer-rates-': 'Manual_Fertilizer_Rates',
-                'bikri-': 'Outside_Sales (Bikri)',
-                'activityLogs': 'Activity_Log',
-                'party-': 'Parties',
+                'invoice-': 'Wataks (Invoices)', 'purchase-': 'Purchases', 'receipt-': 'Receipts', 'challan-': 'Challans',
+                'pesticide-invoice-': 'Pesticide_Invoices', 'product-': 'Products', 'accessory-ledger-': 'Accessory_Ledger',
+                'expense-': 'Expenses', 'advance-': 'Advances', 'cs-': 'Cold_Storage', 'manual-fertilizer-rates-': 'Manual_Fertilizer_Rates',
+                'bikri-': 'Outside_Sales (Bikri)', 'activityLogs': 'Activity_Log', 'party-': 'Parties', 'companyInfo': 'Company_Info',
+                'invoiceStyle': 'Settings'
             };
             
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (!key) continue;
 
-                if (key === 'activityLogs') {
-                    const logs = localStorage.getItem(key);
-                    if (logs) allData['Activity_Log'] = JSON.parse(logs);
+                if (key === 'activityLogs' || key === 'companyInfo' || key === 'invoiceStyle') {
+                    const data = localStorage.getItem(key);
+                    if (data) {
+                        try {
+                           const sheetName = keyPrefixToSheetMap[key];
+                           const parsed = JSON.parse(data);
+                           allData[sheetName].push(Array.isArray(parsed) ? parsed[0] : parsed);
+                        } catch {
+                           allData[keyPrefixToSheetMap[key]].push({ value: data });
+                        }
+                    }
                     continue;
                 }
 
@@ -147,22 +135,7 @@ export default function SettingsPage() {
 
             for (const sheetName in allData) {
                 if (allData[sheetName].length > 0) {
-                    const flattenedData = allData[sheetName].map((item: any) => {
-                       const flatItem: {[key: string]: any} = {};
-                       for(const prop in item){
-                           if(typeof item[prop] === 'object' && item[prop] !== null && !Array.isArray(item[prop])){
-                               for(const nestedProp in item[prop]){
-                                   flatItem[`${prop}_${nestedProp}`] = item[prop][nestedProp];
-                               }
-                           } else if(Array.isArray(item[prop])){
-                               flatItem[prop] = JSON.stringify(item[prop]);
-                           } else {
-                               flatItem[prop] = item[prop];
-                           }
-                       }
-                       return flatItem;
-                    });
-                    const ws = XLSX.utils.json_to_sheet(flattenedData);
+                    const ws = XLSX.utils.json_to_sheet(allData[sheetName]);
                     XLSX.utils.book_append_sheet(wb, ws, sheetName.replace(/_/g, ' '));
                 }
             }
@@ -181,6 +154,60 @@ export default function SettingsPage() {
             toast({ variant: 'destructive', title: 'Backup Failed', description: 'An unexpected error occurred during backup.' });
         }
     };
+    
+     const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = e.target?.result;
+                const workbook = XLSX.read(data, { type: 'binary' });
+
+                const sheetToPrefixMap: { [key: string]: string } = {
+                    'Wataks (Invoices)': 'invoice-', 'Purchases': 'purchase-', 'Receipts': 'receipt-', 'Challans': 'challan-',
+                    'Pesticide Invoices': 'pesticide-invoice-', 'Products': 'product-', 'Accessory Ledger': 'accessory-ledger-',
+                    'Expenses': 'expense-', 'Advances': 'advance-', 'Cold Storage': 'cs-', 'Manual Fertilizer Rates': 'manual-fertilizer-rates-',
+                    'Outside Sales (Bikri)': 'bikri-', 'Activity Log': 'activityLogs', 'Parties': 'party-', 'Company Info': 'companyInfo',
+                    'Settings': 'invoiceStyle'
+                };
+                
+                // Clear existing data before import
+                localStorage.clear();
+
+                workbook.SheetNames.forEach(sheetName => {
+                    const prefix = sheetToPrefixMap[sheetName];
+                    if (prefix) {
+                        const ws = workbook.Sheets[sheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(ws);
+                        
+                        if (prefix === 'activityLogs') {
+                            localStorage.setItem(prefix, JSON.stringify(jsonData));
+                        } else if (prefix === 'companyInfo' || prefix === 'invoiceStyle') {
+                            localStorage.setItem(prefix, JSON.stringify(jsonData[0]));
+                         } else {
+                            jsonData.forEach((item: any) => {
+                                const id = item.id || item.sNo || item.billNo || item.no || `${prefix}${Date.now()}${Math.random()}`;
+                                const storageKey = item.id ? id : `${prefix}${id}`;
+                                localStorage.setItem(storageKey, JSON.stringify(item));
+                            });
+                        }
+                    }
+                });
+
+                toast({ title: "Import Successful", description: "All data has been restored from the backup file." });
+                // Force a reload to ensure all components re-fetch the new data
+                setTimeout(() => window.location.reload(), 1000);
+
+            } catch (error) {
+                console.error("Import failed:", error);
+                toast({ variant: 'destructive', title: 'Import Failed', description: 'The backup file seems to be corrupted or in the wrong format.' });
+            }
+        };
+        reader.readAsBinaryString(file);
+    };
+
 
 
     const handleEnableNotifications = async () => {
@@ -234,7 +261,7 @@ export default function SettingsPage() {
                 </CardContent>
                  <CardFooter>
                     <p className="text-xs text-muted-foreground">This will open a new tab to guide you through the final authentication and deployment steps.</p>
-                </CardFooter>
+                 </CardFooter>
             </Card>
 
              <Card>
@@ -305,17 +332,27 @@ export default function SettingsPage() {
                 <CardContent>
                     <Tabs defaultValue="data">
                         <TabsList className="grid w-full grid-cols-3">
-                            <TabsTrigger value="data">Data &amp; Backup</TabsTrigger>
+                            <TabsTrigger value="data">Data Sync &amp; Backup</TabsTrigger>
                             <TabsTrigger value="notifications">Notifications</TabsTrigger>
                             <TabsTrigger value="reset">Factory Reset</TabsTrigger>
                         </TabsList>
                         <TabsContent value="data" className="pt-6">
                              <h3 className="font-semibold text-lg mb-2">Data Portability & Backup</h3>
-                            <p className="text-sm text-muted-foreground mb-4">Export all your application data into a single Excel file for backup or use in other applications.</p>
-                            <Button onClick={handleBackupAllData} className="gap-2">
-                                <DownloadCloud className="h-4 w-4" />
-                                Backup All Data to Excel
-                            </Button>
+                            <p className="text-sm text-muted-foreground mb-4">Export all your application data into a single Excel file for backup or use in other applications. You can then import this file on another device.</p>
+                            <div className="flex flex-wrap gap-4">
+                                <Button onClick={handleBackupAllData} className="gap-2">
+                                    <DownloadCloud className="h-4 w-4" />
+                                    Backup All Data to Excel
+                                </Button>
+                                 <div className="flex items-center gap-2">
+                                    <Label htmlFor="import-file" className="cursor-pointer">
+                                        <Button asChild>
+                                            <span className="gap-2"><UploadCloud className="h-4 w-4" /> Import Data from Backup</span>
+                                        </Button>
+                                    </Label>
+                                    <Input id="import-file" type="file" className="hidden" accept=".xlsx" onChange={handleImportData}/>
+                                </div>
+                            </div>
                         </TabsContent>
                          <TabsContent value="notifications" className="pt-6">
                             <h3 className="font-semibold text-lg mb-2">Push Notifications</h3>
@@ -357,3 +394,4 @@ export default function SettingsPage() {
     );
 }
 
+    
