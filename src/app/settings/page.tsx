@@ -168,9 +168,13 @@ export default function SettingsPage() {
 
                 const sheetToPrefixMap: { [key: string]: string } = {
                     'Wataks (Invoices)': 'invoice-', 'Purchases': 'purchase-', 'Receipts': 'receipt-', 'Challans': 'challan-',
-                    'Pesticide Invoices': 'pesticide-invoice-', 'Products': 'product-', 'Accessory Ledger': 'accessory-ledger-',
-                    'Expenses': 'expense-', 'Advances': 'advance-', 'Cold Storage': 'cs-', 'Manual Fertilizer Rates': 'manual-fertilizer-rates-',
-                    'Outside Sales (Bikri)': 'bikri-', 'Activity Log': 'activityLogs', 'Parties': 'party-', 'Company Info': 'companyInfo',
+                    'Pesticide Invoices': 'pesticide-invoice-', 'Pesticide_Invoices': 'pesticide-invoice-', 'Products': 'product-', 
+                    'Accessory Ledger': 'accessory-ledger-', 'Accessory_Ledger': 'accessory-ledger-', 'Expenses': 'expense-', 
+                    'Advances': 'advance-', 'Cold Storage': 'cs-', 'Cold_Storage': 'cs-',
+                    'Manual Fertilizer Rates': 'manual-fertilizer-rates-', 'Manual_Fertilizer_Rates': 'manual-fertilizer-rates-',
+                    'Outside Sales (Bikri)': 'bikri-', 'Outside_Sales (Bikri)': 'bikri-',
+                    'Activity Log': 'activityLogs', 'Activity_Log': 'activityLogs',
+                    'Parties': 'party-', 'Company Info': 'companyInfo', 'Company_Info': 'companyInfo',
                     'Settings': 'invoiceStyle'
                 };
                 
@@ -183,15 +187,17 @@ export default function SettingsPage() {
                         const ws = workbook.Sheets[sheetName];
                         const jsonData = XLSX.utils.sheet_to_json(ws);
                         
-                        if (prefix === 'activityLogs') {
-                            localStorage.setItem(prefix, JSON.stringify(jsonData));
-                        } else if (prefix === 'companyInfo' || prefix === 'invoiceStyle') {
-                            localStorage.setItem(prefix, JSON.stringify(jsonData[0]));
-                         } else {
+                        if (prefix === 'activityLogs' || prefix === 'companyInfo' || prefix === 'invoiceStyle') {
+                             if (jsonData.length > 0) {
+                                // For single-item data, store the object itself, not an array.
+                                const dataToStore = (prefix === 'invoiceStyle' && jsonData[0] as any)?.value ? (jsonData[0] as any).value : jsonData[0];
+                                localStorage.setItem(prefix, JSON.stringify(dataToStore));
+                            }
+                        } else {
                             jsonData.forEach((item: any) => {
                                 const id = item.id || item.sNo || item.billNo || item.no || `${prefix}${Date.now()}${Math.random()}`;
-                                const storageKey = item.id ? id : `${prefix}${id}`;
-                                localStorage.setItem(storageKey, JSON.stringify(item));
+                                const storageKey = item.id && !item.id.toString().startsWith(prefix) ? `${prefix}${id}` : id;
+                                localStorage.setItem(storageKey.startsWith(prefix) ? storageKey : `${prefix}${storageKey}`, JSON.stringify(item));
                             });
                         }
                     }

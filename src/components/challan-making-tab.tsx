@@ -218,7 +218,7 @@ export function ChallanMakingTab() {
       tollTax: challan.tollTax,
       payOnlyFreight: challan.payOnlyFreight,
     });
-    setEntries(challan.entries.length > 0 ? challan.entries : initialEntries);
+    setEntries(challan.entries && challan.entries.length > 0 ? challan.entries : initialEntries);
     setIsEditing(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
