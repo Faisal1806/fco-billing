@@ -204,15 +204,16 @@ export function BillMakingTab() {
 
   // --- Calculations (ALL from your spec) ---
   const totals = useMemo(() => {
-    const totalQty = rows.reduce((s, r) => s + (Number(r.qty) || 0), 0);
-    const pattiQty = rows
+    const validRows = rows.filter(r => r.qty > 0 && r.variety);
+    const totalQty = validRows.reduce((s, r) => s + (Number(r.qty) || 0), 0);
+    const pattiQty = validRows
       .filter(r => r.type === 'Patti')
       .reduce((s, r) => s + (Number(r.qty) || 0), 0);
-    const dabbaQty = rows
+    const dabbaQty = validRows
       .filter(r => r.type === 'Dabba')
       .reduce((s, r) => s + (Number(r.qty) || 0), 0);
 
-    const rowGross = rows.map(r => (r.isForwarded ? 0 : (Number(r.qty) || 0) * (Number(r.rate) || 0)));
+    const rowGross = validRows.map(r => (r.isForwarded ? 0 : (Number(r.qty) || 0) * (Number(r.rate) || 0)));
     const totalGrossSale = rowGross.reduce((s, v) => s + v, 0);
 
     // Expenses by formula
