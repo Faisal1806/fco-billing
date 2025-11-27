@@ -57,16 +57,19 @@ interface Bikri {
         totalExpenses: number;
         netProfitOrLoss?: number;
         netSalePayableToGrower?: number;
+        commissionAmount?: number;
     };
     saleEntries: {
         type: 'Patti' | 'Dabba';
         qty: number;
     }[];
+    challanNo?: string;
 }
 
 interface Challan {
     id: string;
     date: string;
+    challanNo?: string;
     totalPetti: number;
     totalDabba: number;
 }
@@ -271,11 +274,11 @@ export default function DashboardPage() {
 
     allReceipts.forEach(receipt => {
         const receiptDate = new Date(receipt.date);
-        if(receiptDate.getFullYear() === currentYear) {
+        if (receiptDate.getFullYear() === currentYear && receipt.entries) {
             receipt.entries.forEach(entry => {
                 yearPattiReceived += Number(entry.peti) || 0;
                 yearDabbaReceived += Number(entry.daba) || 0;
-            })
+            });
         }
     });
     
