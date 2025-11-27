@@ -89,6 +89,7 @@ export function ReceiptMakingTab() {
     freightPaid: 0,
     wattakReadyOn: '',
   };
+
   const initialEntries: ReceiptEntry[] = [
     { khata: '', kind: '', peti: 0, daba: 0, freight: '' },
   ];
@@ -119,7 +120,7 @@ export function ReceiptMakingTab() {
                 freightPaid: scannedData.freightPaid || 0,
                 wattakReadyOn: scannedData.wattakReadyOn || '',
             });
-            setEntries(scannedData.entries.length > 0 ? scannedData.entries : initialEntries);
+            setEntries(scannedData.entries && scannedData.entries.length > 0 ? scannedData.entries : initialEntries);
             toast({
                 title: "Data Populated from Scan",
                 description: "Review the extracted data and save the receipt."
@@ -241,7 +242,7 @@ export function ReceiptMakingTab() {
       freightPaid: receipt.freightPaid,
       wattakReadyOn: receipt.wattakReadyOn,
     });
-    setEntries(receipt.entries.length > 0 ? receipt.entries : initialEntries);
+    setEntries(receipt.entries && receipt.entries.length > 0 ? receipt.entries : initialEntries);
     setIsEditing(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
