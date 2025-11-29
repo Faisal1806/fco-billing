@@ -116,7 +116,8 @@ export default function SettingsPage() {
                         try {
                            const sheetName = keyPrefixToSheetMap[key];
                            const parsed = JSON.parse(data);
-                           allData[sheetName].push({ key, value: parsed });
+                           // Store as a stringified object to handle nested objects during export
+                           allData[sheetName].push({ key, value: JSON.stringify(parsed) });
                         } catch {
                            allData[keyPrefixToSheetMap[key]].push({ key, value: data });
                         }
@@ -128,7 +129,17 @@ export default function SettingsPage() {
                 if (matchingPrefix) {
                     const sheetName = keyPrefixToSheetMap[matchingPrefix];
                     const item = localStorage.getItem(key);
-                    if (item) allData[sheetName].push(JSON.parse(item));
+                    if (item) {
+                        const parsedItem = JSON.parse(item);
+                        const flattenedItem = { ...parsedItem };
+                        // Stringify nested objects and arrays for easier Excel export/import
+                        for (const prop in flattenedItem) {
+                            if (typeof flattenedItem[prop] === 'object' && flattenedItem[prop] !== null) {
+                                flattenedItem[prop] = JSON.stringify(flattenedItem[prop]);
+                            }
+                        }
+                        allData[sheetName].push(flattenedItem);
+                    }
                 }
             }
 
@@ -156,7 +167,7 @@ export default function SettingsPage() {
         }
     };
     
-     const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
 
@@ -185,25 +196,46 @@ export default function SettingsPage() {
                     const prefix = sheetToPrefixMap[sheetName];
                     if (prefix) {
                         const ws = workbook.Sheets[sheetName];
-                        const jsonData = XLSX.utils.sheet_to_json(ws);
+                        const jsonData: any[] = XLSX.utils.sheet_to_json(ws);
                         
+                        // Function to parse stringified JSON
+                        const parseIfJson = (value: any) => {
+                            if (typeof value === 'string') {
+                                try {
+                                    // Basic check to see if it looks like JSON
+                                    if ((value.startsWith('{') && value.endsWith('}')) || (value.startsWith('[') && value.endsWith(']'))) {
+                                        return JSON.parse(value);
+                                    }
+                                } catch (e) {
+                                    // Not valid JSON, return original string
+                                }
+                            }
+                            return value;
+                        };
+
                         if (prefix === 'settings') {
                              jsonData.forEach((item: any) => {
                                 if (item.key && item.value) {
-                                    const valueToStore = typeof item.value === 'string' ? item.value : JSON.stringify(item.value);
-                                    localStorage.setItem(item.key, valueToStore);
+                                    const valueToStore = parseIfJson(item.value);
+                                    localStorage.setItem(item.key, typeof valueToStore === 'string' ? valueToStore : JSON.stringify(valueToStore));
                                 }
                             });
                         } else if (prefix === 'activityLogs' || prefix === 'companyInfo') {
                              if (jsonData.length > 0) {
-                                const dataToStore = (jsonData[0] as any).value || jsonData[0];
+                                const dataToStore = parseIfJson((jsonData[0] as any).value) || jsonData;
                                 localStorage.setItem(prefix, JSON.stringify(dataToStore));
                             }
                         } else {
                             jsonData.forEach((item: any) => {
-                                const id = item.id || item.sNo || item.billNo || item.no || `${prefix}${Date.now()}${Math.random()}`;
-                                const storageKey = item.id && !String(item.id).startsWith(prefix) ? `${prefix}${id}` : id;
-                                localStorage.setItem(String(storageKey).startsWith(prefix) ? String(storageKey) : `${prefix}${storageKey}`, JSON.stringify(item));
+                                // Reconstruct nested objects
+                                const reconstructedItem: {[key:string]: any} = {};
+                                for (const key in item) {
+                                    reconstructedItem[key] = parseIfJson(item[key]);
+                                }
+
+                                const id = reconstructedItem.id || reconstructedItem.sNo || reconstructedItem.billNo || reconstructedItem.no || `${prefix}${Date.now()}${Math.random()}`;
+                                const storageKey = String(id).startsWith(prefix) ? String(id) : `${prefix}${id}`;
+                                localStorage.setItem(storageKey, JSON.stringify(reconstructedItem));
                             });
                         }
                     }
@@ -363,7 +395,7 @@ export default function SettingsPage() {
                                             <span className="gap-2"><UploadCloud className="h-4 w-4" /> Import Data from Backup</span>
                                         </Button>
                                     </Label>
-                                    <Input id="import-file" type="file" className="hidden" accept=".xlsx" onChange={handleImportData}/>
+                                    <Input id="import-file" type="file" className="hidden" accept=".xlsx,.xls" onChange={handleImportData}/>
                                 </div>
                             </div>
                         </TabsContent>
