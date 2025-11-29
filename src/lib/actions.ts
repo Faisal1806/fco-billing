@@ -2,7 +2,7 @@
 'use server';
 
 import { getClientDb } from './firebase';
-import { collection, getDocs, doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, deleteDoc, getDoc, where, query } from 'firebase/firestore';
 
 // Hardcoded user ID for the single-tenant app structure.
 const userId = 'default-user';
@@ -14,7 +14,7 @@ export async function saveDocument(collectionName: string, id: string, data: any
     // The path is now correctly structured as users/{userId}/{collectionName}/{id}
     const docPath = `users/${userId}/${collectionName}/${id}`;
     await setDoc(doc(db, docPath), data, { merge: true });
-    return { success: true };
+    return { success: true, id };
   } catch (error) {
     console.error(`Error saving document to ${collectionName}:`, error);
     return { success: false, error: (error as Error).message };
@@ -43,6 +43,11 @@ export async function getDocument(collectionName: string, id: string): Promise<{
         if (docSnap.exists()) {
             return { success: true, data: { id: docSnap.id, ...docSnap.data() } };
         } else {
+            // Also check legacy path
+            const legacyDocSnap = await getDoc(doc(db, collectionName, id));
+            if (legacyDocSnap.exists()) {
+              return { success: true, data: { id: legacyDocSnap.id, ...legacyDocSnap.data() } };
+            }
             return { success: false, error: "Document not found." };
         }
     } catch (error) {
@@ -59,7 +64,14 @@ export async function getDocuments(collectionName: string): Promise<{ success: b
         const collectionPath = `users/${userId}/${collectionName}`;
         const querySnapshot = await getDocs(collection(db, collectionPath));
         const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        return { success: true, data };
+
+        // For backward compatibility, also fetch from root collection
+        const legacyQuerySnapshot = await getDocs(collection(db, collectionName));
+        const legacyData = legacyQuerySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const combined = [...data, ...legacyData];
+        const uniqueData = Array.from(new Map(combined.map(item => [item.id, item])).values());
+        
+        return { success: true, data: uniqueData };
     } catch (error) {
         console.error("Error fetching documents:", error);
         return { success: false, error: (error as Error).message };

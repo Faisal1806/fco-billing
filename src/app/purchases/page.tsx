@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Separator } from '@/components/ui/separator';
 import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, FileText, Search } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { saveDocument, deleteDocument } from '@/lib/actions';
+import { saveDocument, deleteDocument, getDocuments } from '@/lib/actions';
 import { Badge } from '@/components/ui/badge';
 import { PartySelector } from '@/components/party-selector';
 
@@ -53,23 +53,24 @@ export default function PurchasesPage() {
     }
   }, []);
 
-  const fetchPurchases = () => {
+  const fetchPurchases = useCallback(async () => {
     setIsLoading(true);
-    const purchases = [];
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('purchase-')) {
-            const purchase = JSON.parse(localStorage.getItem(key)!);
-            purchases.push(purchase);
-        }
+    const { success, data, error } = await getDocuments('purchases');
+    if (success && data) {
+        setSavedPurchases(data.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    } else {
+        toast({
+            variant: 'destructive',
+            title: 'Error fetching purchases',
+            description: error,
+        });
     }
-    setSavedPurchases(purchases.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     setIsLoading(false);
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchPurchases();
-  }, []);
+  }, [fetchPurchases]);
   
   const yearlyCount = useMemo(() => {
     if(!savedPurchases) return 0;
@@ -154,26 +155,25 @@ export default function PurchasesPage() {
       },
     };
     
-    localStorage.setItem(`purchase-${purchaseId}`, JSON.stringify(purchaseData));
+    const { success, error } = await saveDocument('purchases', purchaseId, purchaseData);
 
-    try {
-        await saveDocument('purchases', purchaseId, purchaseData);
-        toast({
-          title: isEditing ? 'Purchase Updated & Synced' : 'Purchase Saved & Synced',
-          description: `The purchase bill has been successfully saved to the cloud.`,
-        });
-    } catch (error) {
-        console.error("Error saving purchase to cloud:", error);
-        toast({
-            variant: 'destructive',
-            title: 'Cloud Sync Failed',
-            description: 'Could not save the purchase bill to the cloud. It is saved locally.',
-        });
-    } finally {
-        fetchPurchases(); // Re-fetch to update list
-        setIsEditing(true); // Stay in editing mode for the current bill
-        setIsSubmitting(false);
+    if (success) {
+      toast({
+        title: isEditing ? 'Purchase Updated' : 'Purchase Saved',
+        description: `The purchase bill has been successfully saved.`,
+        isSuccess: true,
+      });
+      fetchPurchases(); // Re-fetch to update list
+      setIsEditing(true); // Stay in editing mode for the current bill
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Save Failed',
+        description: error,
+      });
     }
+
+    setIsSubmitting(false);
   };
 
   const viewPurchase = () => {
@@ -207,26 +207,23 @@ export default function PurchasesPage() {
             return;
         }
         
-        localStorage.removeItem(`purchase-${billId}`);
-
-        try {
-            await deleteDocument('purchases', billId);
+        const { success, error } = await deleteDocument('purchases', billId);
+        
+        if (success) {
             toast({
                 title: "Purchase Deleted",
-                description: `Purchase Bill #${billId} has been successfully deleted from local and cloud storage.`
+                description: `Purchase Bill #${billId} has been successfully deleted.`
             })
-        } catch (error) {
-            console.error("Error deleting purchase from cloud:", error);
-            toast({
-                variant: "destructive",
-                title: "Cloud Delete Failed",
-                description: "Could not delete purchase from the cloud, but it was removed locally."
-            })
-        } finally {
             fetchPurchases(); // Re-fetch to update list
             if (billNo === billId) {
                 resetForm();
             }
+        } else {
+             toast({
+                variant: "destructive",
+                title: "Delete Failed",
+                description: error
+            })
         }
     }
 
@@ -444,4 +441,5 @@ export default function PurchasesPage() {
     </div>
   );
 }
+
 

@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { useEffect, useState, useRef } from "react";
@@ -14,6 +15,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode.react';
 import BusinessCardQR from "@/components/BusinessCardQR";
+import { getDocument } from "@/lib/actions";
 
 interface PurchaseData {
     billNo: string;
@@ -54,26 +56,22 @@ export default function PurchaseBillPage({ params }: { params: { id:string } }) 
     }, []);
 
     useEffect(() => {
-        const fetchBill = () => {
+        const fetchBill = async () => {
             if (!params.id) {
                 setLoading(false);
                 return;
             };
             setLoading(true);
 
-            let data: PurchaseData | null = null;
-            const localData = localStorage.getItem(`purchase-${params.id}`);
-            if(localData) {
-                data = JSON.parse(localData);
-            }
+            const { success, data, error } = await getDocument('purchases', params.id);
 
-            if (data) {
-                setBillData(data);
+            if (success && data) {
+                setBillData(data as PurchaseData);
             } else {
                  toast({
                     variant: "destructive",
                     title: "Not Found",
-                    description: "The requested purchase bill was not found on this device."
+                    description: error || "The requested purchase bill was not found."
                 });
             }
             setLoading(false);
