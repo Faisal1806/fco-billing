@@ -16,6 +16,13 @@ import { sidebarSections } from '@/components/Sidebar';
 import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { VictoryPie, VictoryBar, VictoryChart, VictoryAxis, VictoryTheme, VictoryLabel } from 'victory';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 
 interface Invoice {
@@ -411,6 +418,17 @@ export default function DashboardPage() {
 
   const pieColorScale = ["#10b981", "#3b82f6", "#f97316", "#8b5cf6", "#ec4899", "#64748b"];
 
+  const ChartModalContent = ({ title, children }: { title: string, children: React.ReactNode }) => (
+    <DialogContent className="max-w-3xl h-[60vh] flex flex-col">
+        <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+        <div className="flex-grow h-full">
+            {children}
+        </div>
+    </DialogContent>
+);
+
   return (
     <div className="space-y-8">
         <motion.div 
@@ -450,71 +468,123 @@ export default function DashboardPage() {
         </Accordion>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2 bg-card/80 backdrop-blur-sm border border-white/10">
-                <CardHeader>
-                    <CardTitle>Monthly Sales</CardTitle>
-                    <CardDescription>Net sales growth for the current year.</CardDescription>
-                </CardHeader>
-                <CardContent className="cursor-pointer" onClick={() => router.push('/watak-register')}>
-                    <div className="h-64">
-                        {barChartData && barChartData.some(d => d.y > 0) ? (
-                        <VictoryChart
-                                theme={VictoryTheme.material}
-                                domainPadding={{x: 20}}
-                                padding={{ top: 20, bottom: 40, left: 60, right: 40 }}
-                            >
-                                <VictoryAxis 
-                                    style={{ 
-                                        tickLabels: { fill: 'hsl(var(--muted-foreground))', fontSize: 10 },
-                                        grid: { stroke: 'hsl(var(--border))', strokeDasharray: '4' } 
-                                    }} 
-                                />
-                                <VictoryAxis 
-                                    dependentAxis 
-                                    style={{ 
-                                        tickLabels: { fill: 'hsl(var(--muted-foreground))', fontSize: 10 },
-                                        grid: { stroke: 'hsl(var(--border))', strokeDasharray: '4' } 
-                                    }}
-                                    tickFormat={(x) => (`₹${x/1000}k`)} 
-                                />
-                                <VictoryBar
-                                    data={barChartData}
-                                    style={{ data: { fill: "#34d399" }, labels: { fill: 'white' } }}
-                                    barRatio={0.8}
-                                    cornerRadius={{ top: 4 }}
-                                />
-                            </VictoryChart>
-                        ) : <div className="flex items-center justify-center h-full text-muted-foreground">No monthly sales data available for chart.</div>}
-                    </div>
-                </CardContent>
-            </Card>
+            <Dialog>
+                <DialogTrigger asChild>
+                    <Card className="lg:col-span-2 bg-card/80 backdrop-blur-sm border border-white/10 cursor-pointer">
+                        <CardHeader>
+                            <CardTitle>Monthly Sales</CardTitle>
+                            <CardDescription>Net sales growth for the current year. Click to enlarge.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="h-64">
+                                {barChartData && barChartData.some(d => d.y > 0) ? (
+                                <VictoryChart
+                                        theme={VictoryTheme.material}
+                                        domainPadding={{x: 20}}
+                                        padding={{ top: 20, bottom: 40, left: 60, right: 40 }}
+                                    >
+                                        <VictoryAxis 
+                                            style={{ 
+                                                tickLabels: { fill: 'hsl(var(--muted-foreground))', fontSize: 10 },
+                                                grid: { stroke: 'hsl(var(--border))', strokeDasharray: '4' } 
+                                            }} 
+                                        />
+                                        <VictoryAxis 
+                                            dependentAxis 
+                                            style={{ 
+                                                tickLabels: { fill: 'hsl(var(--muted-foreground))', fontSize: 10 },
+                                                grid: { stroke: 'hsl(var(--border))', strokeDasharray: '4' } 
+                                            }}
+                                            tickFormat={(x) => (`₹${x/1000}k`)} 
+                                        />
+                                        <VictoryBar
+                                            data={barChartData}
+                                            style={{ data: { fill: "#34d399" }, labels: { fill: 'white' } }}
+                                            barRatio={0.8}
+                                            cornerRadius={{ top: 4 }}
+                                        />
+                                    </VictoryChart>
+                                ) : <div className="flex items-center justify-center h-full text-muted-foreground">No monthly sales data available for chart.</div>}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </DialogTrigger>
+                <ChartModalContent title="Monthly Sales Chart">
+                     <VictoryChart
+                        theme={VictoryTheme.material}
+                        domainPadding={{x: 30}}
+                        height={400}
+                        padding={{ top: 40, bottom: 60, left: 80, right: 50 }}
+                    >
+                        <VictoryAxis 
+                            style={{ 
+                                tickLabels: { fill: 'hsl(var(--muted-foreground))', fontSize: 12 },
+                                grid: { stroke: 'hsl(var(--border))', strokeDasharray: '4' } 
+                            }} 
+                        />
+                        <VictoryAxis 
+                            dependentAxis 
+                            style={{ 
+                                tickLabels: { fill: 'hsl(var(--muted-foreground))', fontSize: 12 },
+                                grid: { stroke: 'hsl(var(--border))', strokeDasharray: '4' } 
+                            }}
+                            tickFormat={(x) => (`₹${(x/1000).toFixed(0)}k`)} 
+                        />
+                        <VictoryBar
+                            data={barChartData}
+                            style={{ data: { fill: "#34d399" }, labels: { fill: 'white' } }}
+                            barRatio={0.8}
+                            cornerRadius={{ top: 6 }}
+                        />
+                    </VictoryChart>
+                </ChartModalContent>
+            </Dialog>
 
-            <Card className="bg-card/80 backdrop-blur-sm border border-white/10">
-                <CardHeader>
-                    <CardTitle>Top Grower Sales</CardTitle>
-                    <CardDescription>Net sales distribution for top 5 growers this year.</CardDescription>
-                </CardHeader>
-                <CardContent className="cursor-pointer" onClick={() => router.push('/parties')}>
-                    <div className="h-64">
-                        {pieChartData && pieChartData.length > 0 ? (
-                            <VictoryPie
-                                data={pieChartData}
-                                colorScale={pieColorScale}
-                                innerRadius={70}
-                                labelComponent={<VictoryLabel style={{ fill: 'white', fontSize: 10, fontWeight: 'bold' }} />}
-                                style={{
-                                    data: {
-                                        stroke: 'hsl(var(--background))',
-                                        strokeWidth: 2,
-                                    },
-                                    labels: { fill: "white", fontSize: 12, fontWeight: "bold" }
-                                }}
-                            />
-                        ) : <div className="flex items-center justify-center h-full text-muted-foreground">No grower sales data for chart.</div>}
-                    </div>
-                </CardContent>
-            </Card>
-
+            <Dialog>
+                 <DialogTrigger asChild>
+                    <Card className="bg-card/80 backdrop-blur-sm border border-white/10 cursor-pointer">
+                        <CardHeader>
+                            <CardTitle>Top Grower Sales</CardTitle>
+                            <CardDescription>Net sales distribution for top 5 growers this year. Click to enlarge.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="h-64">
+                                {pieChartData && pieChartData.length > 0 ? (
+                                    <VictoryPie
+                                        data={pieChartData}
+                                        colorScale={pieColorScale}
+                                        innerRadius={70}
+                                        labelComponent={<VictoryLabel style={{ fill: 'white', fontSize: 10, fontWeight: 'bold' }} />}
+                                        style={{
+                                            data: {
+                                                stroke: 'hsl(var(--background))',
+                                                strokeWidth: 2,
+                                            },
+                                            labels: { fill: "white", fontSize: 12, fontWeight: "bold" }
+                                        }}
+                                    />
+                                ) : <div className="flex items-center justify-center h-full text-muted-foreground">No grower sales data for chart.</div>}
+                            </div>
+                        </CardContent>
+                    </Card>
+                 </DialogTrigger>
+                 <ChartModalContent title="Top Grower Sales Distribution">
+                      <VictoryPie
+                            data={pieChartData}
+                            colorScale={pieColorScale}
+                            innerRadius={100}
+                            padAngle={2}
+                            labelComponent={<VictoryLabel style={{ fill: 'white', fontSize: 14, fontWeight: 'bold' }} />}
+                            style={{
+                                data: {
+                                    stroke: 'hsl(var(--background))',
+                                    strokeWidth: 3,
+                                },
+                                labels: { fill: "white", fontSize: 16, fontWeight: "bold" }
+                            }}
+                        />
+                 </ChartModalContent>
+            </Dialog>
         </div>
         
         <div className="space-y-4">
