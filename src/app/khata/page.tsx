@@ -19,7 +19,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, FileDown, User, Users, Plus, ChevronDown, Leaf, Printer, ShoppingCart, Banknote, Building, Globe, Gift, ArrowDown, ArrowUp, Minus, Equals } from 'lucide-react';
+import { Loader2, FileDown, User, Users, Plus, ChevronDown, Leaf, Printer, ShoppingCart, Banknote, Building, Globe, Gift, ArrowDown, ArrowUp, Minus, Equals, Send } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +30,9 @@ import { useRouter } from 'next/navigation';
 import './print.css';
 import Lottie from 'lottie-react';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
+import { getDocuments, sendPushNotification } from '@/lib/actions';
+
 
 type TransactionType = 'Sale' | 'Purchase' | 'Advance' | 'Repayment' | 'Bikri' | 'Discount';
 
@@ -68,11 +71,23 @@ const getCanonicalName = (name: string): string => {
 
 export default function KhataLedgerPage() {
     const router = useRouter();
+    const { toast } = useToast();
     const [ledgers, setLedgers] = React.useState<Ledger>({});
     const [allParties, setAllParties] = React.useState<string[]>([]);
     const [selectedParty, setSelectedParty] = React.useState<string | null>(null);
     const [isLoading, setIsLoading] = React.useState(true);
     const [loaderAnimation, setLoaderAnimation] = React.useState(null);
+    const [fcmTokens, setFcmTokens] = React.useState<string[]>([]);
+
+    React.useEffect(() => {
+        const fetchTokens = async () => {
+            const { success, data } = await getDocuments('fcm-tokens');
+            if (success && data) {
+                setFcmTokens(data.map(t => t.token));
+            }
+        };
+        fetchTokens();
+    }, []);
     
     React.useEffect(() => {
         function fetchLedgerData() {
@@ -276,6 +291,37 @@ export default function KhataLedgerPage() {
         window.print();
     }
 
+    const handleSendReminder = async () => {
+        if (!selectedParty || statementData.balance <= 0) {
+            toast({
+                variant: 'destructive',
+                title: 'No Due Amount',
+                description: 'This grower does not have a pending payment.',
+            });
+            return;
+        }
+
+        if (fcmTokens.length === 0) {
+            toast({
+                variant: 'destructive',
+                title: 'Notifications Not Enabled',
+                description: 'Please enable notifications in settings to send reminders.',
+            });
+            return;
+        }
+
+        try {
+            await sendPushNotification({
+                title: 'Payment Reminder',
+                body: `Payment Due: ${selectedParty} still owes ₹${statementData.balance.toFixed(2)}`,
+                tokens: fcmTokens,
+            });
+            toast({ title: 'Reminder Sent!', description: `A push notification has been sent regarding the due payment.` });
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Failed to Send Reminder' });
+        }
+    };
+
     const AddNewFab = () => (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -308,9 +354,14 @@ export default function KhataLedgerPage() {
                     </div>
                      <div className="flex items-center gap-2">
                          {selectedParty && (
+                            <>
+                            <Button onClick={handleSendReminder} variant="outline" size="sm" className="gap-1" disabled={statementData.balance <= 0}>
+                                <Send className="h-3.5 w-3.5" /> Send Reminder
+                            </Button>
                             <Button onClick={handlePrint} variant="outline" size="sm" className="gap-1">
                                 <Printer className="h-3.5 w-3.5" /> Print
                             </Button>
+                            </>
                         )}
                     </div>
                 </div>

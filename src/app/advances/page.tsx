@@ -27,7 +27,7 @@ import { PlusCircle, Trash2, Banknote, Loader2, Gift } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { PartySelector } from '@/components/party-selector';
-import { saveDocument, deleteDocument } from '@/lib/actions';
+import { saveDocument, deleteDocument, sendPushNotification, getDocuments } from '@/lib/actions';
 
 const STORAGE_PREFIX = 'advance-';
 
@@ -54,11 +54,19 @@ export default function AdvancesPage() {
     const [formState, setFormState] = useState(emptyFormState);
     const [isLoading, setIsLoading] = useState(true);
     const [userRole, setUserRole] = useState<string | null>(null);
+    const [fcmTokens, setFcmTokens] = useState<string[]>([]);
 
      useEffect(() => {
         if (typeof window !== 'undefined') {
             setUserRole(localStorage.getItem('userRole'));
         }
+        const fetchTokens = async () => {
+            const { success, data } = await getDocuments('fcm-tokens');
+            if (success && data) {
+                setFcmTokens(data.map(t => t.token));
+            }
+        };
+        fetchTokens();
     }, []);
 
     const fetchEntries = () => {
@@ -114,6 +122,15 @@ export default function AdvancesPage() {
                 title: 'Transaction Saved',
                 description: 'The transaction has been recorded locally and synced to the cloud.',
             });
+
+            if (newEntry.type === 'Repayment Received' && fcmTokens.length > 0) {
+                await sendPushNotification({
+                    title: 'Payment Received',
+                    body: `₹${newEntry.amount.toLocaleString()} received from ${newEntry.partyName} – Thank You!`,
+                    tokens: fcmTokens,
+                });
+            }
+
         } catch (error) {
              toast({
                 variant: 'destructive',
