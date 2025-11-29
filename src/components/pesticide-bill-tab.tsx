@@ -193,7 +193,7 @@ export function PesticideBillTab() {
         date: bill.date,
         customerName: bill.customerName,
     });
-    setEntries(bill.entries.length > 0 ? bill.entries : initialEntries);
+    setEntries(bill.entries && bill.entries.length > 0 ? bill.entries : initialEntries);
     setIsEditing(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
