@@ -72,12 +72,17 @@ export default function SettingsPage() {
     
     const handleFactoryReset = () => {
         try {
+            const adminRole = localStorage.getItem('userRole');
             localStorage.clear();
+            if (adminRole) {
+                localStorage.setItem('userRole', adminRole);
+            }
             toast({
                 title: "Factory Reset Successful",
                 description: "All application data has been cleared.",
             })
-            window.location.reload();
+            // A short delay before reload can help ensure the toast is visible
+            setTimeout(() => window.location.reload(), 1000);
         } catch (error) {
             toast({
                 variant: "destructive",
@@ -103,24 +108,19 @@ export default function SettingsPage() {
                 'pesticide-invoice-': 'Pesticide_Invoices', 'product-': 'Products', 'accessory-ledger-': 'Accessory_Ledger',
                 'expense-': 'Expenses', 'advance-': 'Advances', 'cs-': 'Cold_Storage', 'manual-fertilizer-rates-': 'Manual_Fertilizer_Rates',
                 'bikri-': 'Outside_Sales (Bikri)', 'activityLogs': 'Activity_Log', 'party-': 'Parties', 'companyInfo': 'Company_Info',
-                'invoiceStyle': 'Settings', 'userRole': 'Settings'
+                'invoiceStyle': 'Settings', 'userRole': 'Settings', 'gemini_api_key': 'Settings'
             };
             
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (!key) continue;
 
-                if (key === 'activityLogs' || key === 'companyInfo' || key === 'invoiceStyle' || key === 'userRole') {
+                if (['activityLogs', 'companyInfo', 'invoiceStyle', 'userRole', 'gemini_api_key'].includes(key)) {
                     const data = localStorage.getItem(key);
-                    if (data) {
-                        try {
-                           const sheetName = keyPrefixToSheetMap[key];
-                           const parsed = JSON.parse(data);
-                           // Store as a stringified object to handle nested objects during export
-                           allData[sheetName].push({ key, value: JSON.stringify(parsed) });
-                        } catch {
-                           allData[keyPrefixToSheetMap[key]].push({ key, value: data });
-                        }
+                     if (data) {
+                        const sheetName = keyPrefixToSheetMap[key];
+                        // Don't parse here, just store the raw value or stringified JSON
+                        allData[sheetName].push({ key, value: data });
                     }
                     continue;
                 }
@@ -130,15 +130,19 @@ export default function SettingsPage() {
                     const sheetName = keyPrefixToSheetMap[matchingPrefix];
                     const item = localStorage.getItem(key);
                     if (item) {
-                        const parsedItem = JSON.parse(item);
-                        const flattenedItem = { ...parsedItem };
-                        // Stringify nested objects and arrays for easier Excel export/import
-                        for (const prop in flattenedItem) {
-                            if (typeof flattenedItem[prop] === 'object' && flattenedItem[prop] !== null) {
-                                flattenedItem[prop] = JSON.stringify(flattenedItem[prop]);
+                        try {
+                            const parsedItem = JSON.parse(item);
+                            const flattenedItem: {[key: string]: any} = { ...parsedItem };
+                            // Stringify nested objects and arrays for easier Excel export/import
+                            for (const prop in flattenedItem) {
+                                if (typeof flattenedItem[prop] === 'object' && flattenedItem[prop] !== null) {
+                                    flattenedItem[prop] = JSON.stringify(flattenedItem[prop]);
+                                }
                             }
+                            allData[sheetName].push(flattenedItem);
+                        } catch (e) {
+                            console.warn(`Could not process key ${key} for backup. It might be invalid JSON.`, e);
                         }
-                        allData[sheetName].push(flattenedItem);
                     }
                 }
             }
@@ -170,13 +174,13 @@ export default function SettingsPage() {
     const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
-
+    
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
                 const data = e.target?.result;
                 const workbook = XLSX.read(data, { type: 'binary' });
-
+    
                 const sheetToPrefixMap: { [key: string]: string } = {
                     'Wataks (Invoices)': 'invoice-', 'Purchases': 'purchase-', 'Receipts': 'receipt-', 'Challans': 'challan-',
                     'Pesticide Invoices': 'pesticide-invoice-', 'Pesticide_Invoices': 'pesticide-invoice-', 'Products': 'product-', 
@@ -186,65 +190,75 @@ export default function SettingsPage() {
                     'Outside Sales (Bikri)': 'bikri-', 'Outside_Sales (Bikri)': 'bikri-',
                     'Activity Log': 'activityLogs', 'Activity_Log': 'activityLogs',
                     'Parties': 'party-', 'Company Info': 'companyInfo', 'Company_Info': 'companyInfo',
-                    'Settings': 'settings' // Generic settings key
+                    'Settings': 'settings' // Special key for multiple settings
                 };
-                
+    
+                const knownObjectKeys = ['entries', 'totals', 'calculation', 'outwardHistory'];
+    
+                const parseIfJson = (value: any) => {
+                    if (typeof value !== 'string') return value;
+                    try {
+                        // Check if the string looks like a JSON object or array
+                        if ((value.startsWith('{') && value.endsWith('}')) || (value.startsWith('[') && value.endsWith(']'))) {
+                            return JSON.parse(value);
+                        }
+                    } catch (e) {
+                        // Not valid JSON, return original string
+                    }
+                    return value;
+                };
+    
                 // Clear existing data before import
+                const adminRole = localStorage.getItem('userRole'); // Preserve admin role
                 localStorage.clear();
-
+                 if (adminRole) {
+                    localStorage.setItem('userRole', adminRole);
+                }
+    
                 workbook.SheetNames.forEach(sheetName => {
-                    const prefix = sheetToPrefixMap[sheetName];
-                    if (prefix) {
+                    const prefixOrKey = sheetToPrefixMap[sheetName] || sheetToPrefixMap[sheetName.replace(/ /g, '_')];
+                    if (prefixOrKey) {
                         const ws = workbook.Sheets[sheetName];
                         const jsonData: any[] = XLSX.utils.sheet_to_json(ws);
-                        
-                        // Function to parse stringified JSON
-                        const parseIfJson = (value: any) => {
-                            if (typeof value === 'string') {
-                                try {
-                                    // Basic check to see if it looks like JSON
-                                    if ((value.startsWith('{') && value.endsWith('}')) || (value.startsWith('[') && value.endsWith(']'))) {
-                                        return JSON.parse(value);
-                                    }
-                                } catch (e) {
-                                    // Not valid JSON, return original string
-                                }
-                            }
-                            return value;
-                        };
-
-                        if (prefix === 'settings') {
+    
+                        if (prefixOrKey === 'settings') {
                              jsonData.forEach((item: any) => {
-                                if (item.key && item.value) {
-                                    const valueToStore = parseIfJson(item.value);
-                                    localStorage.setItem(item.key, typeof valueToStore === 'string' ? valueToStore : JSON.stringify(valueToStore));
+                                if (item.key && item.value !== undefined) {
+                                    localStorage.setItem(item.key, item.value);
                                 }
                             });
-                        } else if (prefix === 'activityLogs' || prefix === 'companyInfo') {
-                             if (jsonData.length > 0) {
-                                const dataToStore = parseIfJson((jsonData[0] as any).value) || jsonData;
-                                localStorage.setItem(prefix, JSON.stringify(dataToStore));
+                        } else if (prefixOrKey === 'activityLogs' || prefixOrKey === 'companyInfo') {
+                             if (jsonData.length > 0 && jsonData[0].value !== undefined) {
+                                // These are stored as a single stringified array/object
+                                localStorage.setItem(prefixOrKey, jsonData[0].value);
                             }
                         } else {
+                            // This handles all list-based data (invoices, products, etc.)
                             jsonData.forEach((item: any) => {
-                                // Reconstruct nested objects
                                 const reconstructedItem: {[key:string]: any} = {};
                                 for (const key in item) {
-                                    reconstructedItem[key] = parseIfJson(item[key]);
+                                    if (knownObjectKeys.includes(key)) {
+                                        reconstructedItem[key] = parseIfJson(item[key]);
+                                    } else {
+                                        reconstructedItem[key] = item[key];
+                                    }
                                 }
-
-                                const id = reconstructedItem.id || reconstructedItem.sNo || reconstructedItem.billNo || reconstructedItem.no || `${prefix}${Date.now()}${Math.random()}`;
-                                const storageKey = String(id).startsWith(prefix) ? String(id) : `${prefix}${id}`;
+    
+                                // Determine the unique ID for the item
+                                const id = reconstructedItem.id || reconstructedItem.sNo || reconstructedItem.billNo || reconstructedItem.no || `${prefixOrKey}${Date.now()}${Math.random()}`;
+                                const storageKey = String(id).startsWith(prefixOrKey) ? String(id) : `${prefixOrKey}${id}`;
+                                
                                 localStorage.setItem(storageKey, JSON.stringify(reconstructedItem));
                             });
                         }
+                    } else {
+                        console.warn(`No mapping found for sheet: ${sheetName}`);
                     }
                 });
-
+    
                 toast({ title: "Import Successful", description: "All data has been restored from the backup file. The app will now reload." });
-                // Force a reload to ensure all components re-fetch the new data
                 setTimeout(() => window.location.reload(), 2000);
-
+    
             } catch (error) {
                 console.error("Import failed:", error);
                 toast({ variant: 'destructive', title: 'Import Failed', description: 'The backup file seems to be corrupted or in the wrong format.' });
@@ -438,3 +452,5 @@ export default function SettingsPage() {
         </div>
     );
 }
+
+    
