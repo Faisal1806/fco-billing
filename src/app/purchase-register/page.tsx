@@ -128,12 +128,15 @@ export default function PurchaseRegisterPage() {
     }
     if(!window.confirm(`Are you sure you want to delete Purchase Bill #${billNo}? This cannot be undone.`)) return;
 
+    localStorage.removeItem(`purchase-${billNo}`); // Optimistic UI update
     const { success, error } = await deleteDocument('purchases', billNo);
 
     if (success) {
       fetchPurchases();
       toast({ title: "Purchase Bill Deleted", description: `Bill #${billNo} has been deleted.`});
     } else {
+      // If server delete fails, re-fetch to restore UI state or handle error
+      fetchPurchases();
       toast({ variant: 'destructive', title: 'Delete Failed', description: error });
     }
   }
