@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useEffect, useState } from 'react';
@@ -41,20 +42,15 @@ export default function FCo3DHome() {
   };
 
   useEffect(() => {
-    // Automatically redirect to the dashboard after a delay
-    const timer = setTimeout(() => {
-        if (typeof window !== 'undefined' && localStorage.getItem('userRole') === 'admin') {
-            router.push('/dashboard');
-        } else {
-            // If not admin, and no password prompt is shown, redirect to customer portal
-            if (!showPassword) {
-                 router.push('/portal/login');
-            }
-        }
-    }, 3000); // 3-second delay for the splash screen
-
-    return () => clearTimeout(timer);
-  }, [router, showPassword]);
+    // Automatically redirect to the dashboard if already logged in as admin
+    if (typeof window !== 'undefined' && localStorage.getItem('userRole') === 'admin') {
+      const timer = setTimeout(() => {
+        router.push('/dashboard');
+      }, 1000); // 1-second delay for a smoother transition
+      return () => clearTimeout(timer);
+    }
+    // No automatic redirect to customer portal. The page will wait for user interaction.
+  }, [router]);
 
   return (
     <div className="h-screen w-full bg-gradient-to-br from-black via-gray-900 to-primary/30 flex flex-col items-center justify-center overflow-hidden">
