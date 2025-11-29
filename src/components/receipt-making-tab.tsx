@@ -244,7 +244,7 @@ export function ReceiptMakingTab() {
       freightPaid: receipt.freightPaid,
       wattakReadyOn: receipt.wattakReadyOn,
     });
-    setEntries(receipt.entries && receipt.entries.length > 0 ? receipt.entries : initialEntries);
+    setEntries(receipt.entries && Array.isArray(receipt.entries) && receipt.entries.length > 0 ? receipt.entries : initialEntries);
     setIsEditing(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
