@@ -103,22 +103,22 @@ export default function SettingsPage() {
                 'pesticide-invoice-': 'Pesticide_Invoices', 'product-': 'Products', 'accessory-ledger-': 'Accessory_Ledger',
                 'expense-': 'Expenses', 'advance-': 'Advances', 'cs-': 'Cold_Storage', 'manual-fertilizer-rates-': 'Manual_Fertilizer_Rates',
                 'bikri-': 'Outside_Sales (Bikri)', 'activityLogs': 'Activity_Log', 'party-': 'Parties', 'companyInfo': 'Company_Info',
-                'invoiceStyle': 'Settings'
+                'invoiceStyle': 'Settings', 'userRole': 'Settings'
             };
             
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (!key) continue;
 
-                if (key === 'activityLogs' || key === 'companyInfo' || key === 'invoiceStyle') {
+                if (key === 'activityLogs' || key === 'companyInfo' || key === 'invoiceStyle' || key === 'userRole') {
                     const data = localStorage.getItem(key);
                     if (data) {
                         try {
                            const sheetName = keyPrefixToSheetMap[key];
                            const parsed = JSON.parse(data);
-                           allData[sheetName].push(Array.isArray(parsed) ? parsed[0] : parsed);
+                           allData[sheetName].push({ key, value: parsed });
                         } catch {
-                           allData[keyPrefixToSheetMap[key]].push({ value: data });
+                           allData[keyPrefixToSheetMap[key]].push({ key, value: data });
                         }
                     }
                     continue;
@@ -175,7 +175,7 @@ export default function SettingsPage() {
                     'Outside Sales (Bikri)': 'bikri-', 'Outside_Sales (Bikri)': 'bikri-',
                     'Activity Log': 'activityLogs', 'Activity_Log': 'activityLogs',
                     'Parties': 'party-', 'Company Info': 'companyInfo', 'Company_Info': 'companyInfo',
-                    'Settings': 'invoiceStyle'
+                    'Settings': 'settings' // Generic settings key
                 };
                 
                 // Clear existing data before import
@@ -187,25 +187,31 @@ export default function SettingsPage() {
                         const ws = workbook.Sheets[sheetName];
                         const jsonData = XLSX.utils.sheet_to_json(ws);
                         
-                        if (prefix === 'activityLogs' || prefix === 'companyInfo' || prefix === 'invoiceStyle') {
+                        if (prefix === 'settings') {
+                             jsonData.forEach((item: any) => {
+                                if (item.key && item.value) {
+                                    const valueToStore = typeof item.value === 'string' ? item.value : JSON.stringify(item.value);
+                                    localStorage.setItem(item.key, valueToStore);
+                                }
+                            });
+                        } else if (prefix === 'activityLogs' || prefix === 'companyInfo') {
                              if (jsonData.length > 0) {
-                                // For single-item data, store the object itself, not an array.
-                                const dataToStore = (prefix === 'invoiceStyle' && jsonData[0] as any)?.value ? (jsonData[0] as any).value : jsonData[0];
+                                const dataToStore = (jsonData[0] as any).value || jsonData[0];
                                 localStorage.setItem(prefix, JSON.stringify(dataToStore));
                             }
                         } else {
                             jsonData.forEach((item: any) => {
                                 const id = item.id || item.sNo || item.billNo || item.no || `${prefix}${Date.now()}${Math.random()}`;
-                                const storageKey = item.id && !item.id.toString().startsWith(prefix) ? `${prefix}${id}` : id;
-                                localStorage.setItem(storageKey.startsWith(prefix) ? storageKey : `${prefix}${storageKey}`, JSON.stringify(item));
+                                const storageKey = item.id && !String(item.id).startsWith(prefix) ? `${prefix}${id}` : id;
+                                localStorage.setItem(String(storageKey).startsWith(prefix) ? String(storageKey) : `${prefix}${storageKey}`, JSON.stringify(item));
                             });
                         }
                     }
                 });
 
-                toast({ title: "Import Successful", description: "All data has been restored from the backup file." });
+                toast({ title: "Import Successful", description: "All data has been restored from the backup file. The app will now reload." });
                 // Force a reload to ensure all components re-fetch the new data
-                setTimeout(() => window.location.reload(), 1000);
+                setTimeout(() => window.location.reload(), 2000);
 
             } catch (error) {
                 console.error("Import failed:", error);
