@@ -15,7 +15,7 @@ export const ModernLightA4Layout = ({ billData, pageUrl }: { billData: any, page
                 <header className="bg-gradient-to-r from-green-500 to-teal-500 text-white p-4 rounded-xl shadow-lg">
                     <div className="flex justify-between items-center">
                         <div className="text-left text-sm font-bold flex items-center gap-2">
-                           <Logo className="h-8 w-8"/> F.Co App
+                           <Logo className="h-8 w-8"/> F.Co
                         </div>
                         <div className="text-center">
                             <h2 className="text-xl font-bold tracking-wider">FIRDOUS AHMAD & COMPANY</h2>
@@ -23,7 +23,7 @@ export const ModernLightA4Layout = ({ billData, pageUrl }: { billData: any, page
                             <p className="text-[8px] opacity-90">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
                         </div>
                         <div className="text-right text-sm font-bold flex items-center gap-2">
-                           F.Co App <Logo className="h-8 w-8"/>
+                           F.Co <Logo className="h-8 w-8"/>
                         </div>
                     </div>
                 </header>

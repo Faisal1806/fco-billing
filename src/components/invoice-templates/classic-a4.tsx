@@ -15,7 +15,7 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
             <div className="relative z-10 flex flex-col flex-grow">
                 <header className="text-center border-b-2 border-green-700 pb-1">
                     <div className="flex justify-between items-start">
-                        <div className="text-left text-xs font-bold"><p>🍎 F.Co App</p></div>
+                        <div className="text-left text-xs font-bold"><p>🍎 F.Co</p></div>
                         <div className="flex-grow">
                             <div className="text-[8px] leading-tight">
                                 <p className="font-bold">Prop: Firdous Ahmad Lone (Nadihal)</p>
@@ -25,7 +25,7 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
                             <p className="text-[10px] font-semibold">Fruit Merchants & Commission Agents</p>
                             <p className="text-[8px]">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
                         </div>
-                        <div className="text-right text-xs font-bold"><p>🍎 F.Co App</p></div>
+                        <div className="text-right text-xs font-bold"><p>🍎 F.Co</p></div>
                     </div>
                 </header>
                 <section className="flex justify-between items-end my-1 text-sm">
