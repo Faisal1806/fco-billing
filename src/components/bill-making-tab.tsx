@@ -23,7 +23,7 @@ import { PartySelector } from './party-selector';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
 import { cn } from '@/lib/utils';
-import { saveDocument, deleteDocument } from '@/lib/actions';
+import { saveDocument, deleteDocument, sendPushNotification, getDocuments } from '@/lib/actions';
 import { Checkbox } from './ui/checkbox';
 
 
@@ -63,6 +63,7 @@ export function BillMakingTab() {
   const [savedWataks, setSavedWataks] = useState<any[]>([]);
   const [userRole, setUserRole] = React.useState<string | null>(null);
   const [searchTerm, setSearchTerm] = React.useState('');
+  const [fcmTokens, setFcmTokens] = useState<string[]>([]);
 
 
   // Voice Input State
@@ -121,6 +122,14 @@ export function BillMakingTab() {
     if (typeof window !== 'undefined') {
         setUserRole(localStorage.getItem('userRole'));
     }
+
+    const fetchTokens = async () => {
+        const { success, data } = await getDocuments('fcm-tokens');
+        if (success && data) {
+            setFcmTokens(data.map(t => t.token));
+        }
+    };
+    fetchTokens();
 
     fetch('/animations/forms/fco_loader.json')
         .then(res => res.json())
@@ -324,6 +333,33 @@ export function BillMakingTab() {
             description: 'The invoice has been successfully saved to the cloud.',
             isSuccess: true,
         });
+
+        // Send notifications
+        if (fcmTokens.length > 0) {
+            if (isEditing) {
+                await sendPushNotification({
+                    title: 'Bill Updated',
+                    body: `Your Bill #${sNo} has been Updated – Check Details Again`,
+                    tokens: fcmTokens, // Assuming we notify all users for simplicity
+                    url: `/invoice/${sNo}`
+                });
+            } else {
+                // Admin notification
+                await sendPushNotification({
+                    title: 'New Bill Created',
+                    body: `New Bill Created for ${ms} – Watak No. ${watakNo || sNo}`,
+                    tokens: fcmTokens, // A real app would differentiate admin/customer tokens
+                });
+                // Customer notification
+                 await sendPushNotification({
+                    title: 'Your F.Co Bill is Ready',
+                    body: 'Tap to View/Download',
+                    tokens: fcmTokens, // A real app would target the specific customer
+                    url: `/invoice/${sNo}`
+                });
+            }
+        }
+
     } catch(error) {
         console.error("Error saving to cloud", error);
         toast({
@@ -342,6 +378,14 @@ export function BillMakingTab() {
     if (!isEditing || !sNo) {
         toast({ variant: 'destructive', title: 'Cannot View', description: 'Please save the invoice first to generate a printable version.'});
         return;
+    }
+     // Notify admin on print
+    if (fcmTokens.length > 0) {
+        sendPushNotification({
+            title: 'Bill Printed',
+            body: `Bill #${sNo} Successfully Printed`,
+            tokens: fcmTokens,
+        });
     }
     router.push(`/invoice/${sNo}`);
   };
@@ -710,7 +754,3 @@ export function BillMakingTab() {
     </>
   );
 }
-
-    
-
-    

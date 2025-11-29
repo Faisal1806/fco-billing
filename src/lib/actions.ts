@@ -7,6 +7,40 @@ import { collection, getDocs, doc, setDoc, deleteDoc, getDoc, where, query } fro
 // Hardcoded user ID for the single-tenant app structure.
 const userId = 'default-user';
 
+/**
+ * Sends push notifications to specified FCM tokens.
+ * NOTE: This is a simplified, client-relayed implementation for demonstration.
+ * In a production environment, this should be handled by a secure server
+ * with the Firebase Admin SDK.
+ */
+export async function sendPushNotification(notification: {
+    title: string;
+    body: string;
+    tokens: string[];
+    url?: string;
+}) {
+    // This is a placeholder for server-side push notification logic.
+    // The actual sending will be triggered via a client-side effect that
+    // reads from a 'notificationsToSend' collection, as we cannot use the Admin SDK here.
+    console.log("Queueing notification:", notification);
+    
+    if (notification.tokens.length === 0) {
+        console.log("No tokens to send notification to.");
+        return { success: true, message: "No tokens provided." };
+    }
+
+    try {
+        const db = getClientDb();
+        const notificationJobsRef = collection(db, `users/${userId}/notificationJobs`);
+        await setDoc(doc(notificationJobsRef), notification);
+        return { success: true };
+    } catch (error) {
+        console.error("Error queueing notification job:", error);
+        return { success: false, error: (error as Error).message };
+    }
+}
+
+
 // Generic function to save a document under the user's collections
 export async function saveDocument(collectionName: string, id: string, data: any) {
   try {
