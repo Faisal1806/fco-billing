@@ -5,7 +5,7 @@ import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { Paintbrush, Palette, Upload, Rocket, Cog, DownloadCloud, Factory, BellRing, UploadCloud } from 'lucide-react';
+import { Paintbrush, Palette, Upload, Rocket, Cog, DownloadCloud, Factory, BellRing, UploadCloud, FileDown } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CompanyInfoForm } from "@/components/profile-form";
 import {
@@ -95,12 +95,16 @@ export default function SettingsPage() {
     const handleBackupDataJson = () => {
         toast({ title: 'Generating Backup', description: 'Please wait...' });
         try {
-            const backupData: { [key: string]: string } = {};
+            const backupData: { [key: string]: any } = {};
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key) {
-                    // We directly store the raw string value from localStorage
-                    backupData[key] = localStorage.getItem(key)!;
+                    try {
+                        // Attempt to parse JSON, if it fails, store as string
+                        backupData[key] = JSON.parse(localStorage.getItem(key)!);
+                    } catch {
+                        backupData[key] = localStorage.getItem(key)!;
+                    }
                 }
             }
 
@@ -120,6 +124,72 @@ export default function SettingsPage() {
             toast({ variant: 'destructive', title: 'Backup Failed', description: 'Could not generate JSON backup.' });
         }
     };
+    
+    const handleBackupDataExcel = () => {
+        toast({ title: 'Generating Excel Backup', description: 'Please wait...' });
+        try {
+            const data: { [key: string]: any[] } = {
+                'Invoices': [], 'Purchases': [], 'Receipts': [], 'Challans': [], 'Pesticide_Invoices': [],
+                'Parties': [], 'Products': [], 'Advances': [], 'Cold_Storage': [], 'Bikris': [], 'Accessories': []
+            };
+
+            const keyMap: { [key: string]: string } = {
+                'invoice-': 'Invoices', 'purchase-': 'Purchases', 'receipt-': 'Receipts', 'challan-': 'Challans',
+                'pesticide-invoice-': 'Pesticide_Invoices', 'party-': 'Parties', 'product-': 'Products',
+                'advance-': 'Advances', 'cs-': 'Cold_Storage', 'bikri-': 'Bikris', 'accessory-ledger-': 'Accessories'
+            };
+
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key) {
+                    for (const prefix in keyMap) {
+                        if (key.startsWith(prefix)) {
+                            try {
+                                data[keyMap[prefix]].push(JSON.parse(localStorage.getItem(key)!));
+                            } catch {}
+                            break;
+                        }
+                    }
+                }
+            }
+
+            const wb = XLSX.utils.book_new();
+
+            for (const sheetName in data) {
+                if (data[sheetName].length > 0) {
+                    // Flatten nested objects like 'totals' and 'entries'
+                    const flatData = data[sheetName].map(item => {
+                        const flatItem: {[key:string]: any} = {};
+                        for (const prop in item) {
+                            if (typeof item[prop] === 'object' && item[prop] !== null) {
+                                if (Array.isArray(item[prop])) {
+                                    flatItem[prop] = JSON.stringify(item[prop]);
+                                } else {
+                                    for (const subProp in item[prop]) {
+                                        flatItem[`${prop}.${subProp}`] = item[prop][subProp];
+                                    }
+                                }
+                            } else {
+                                flatItem[prop] = item[prop];
+                            }
+                        }
+                        return flatItem;
+                    });
+                    const ws = XLSX.utils.json_to_sheet(flatData);
+                    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+                }
+            }
+
+            XLSX.writeFile(wb, `FCO-Excel-Backup-${new Date().toISOString().split('T')[0]}.xlsx`);
+
+            toast({ title: 'Excel Backup Successful', description: 'Your data has been saved to an Excel file.' });
+
+        } catch (error) {
+            console.error("Excel Backup failed:", error);
+            toast({ variant: 'destructive', title: 'Excel Backup Failed', description: 'Could not generate Excel file.' });
+        }
+    };
+
 
     const handleImportDataJson = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -143,8 +213,10 @@ export default function SettingsPage() {
 
                 for (const key in backupData) {
                     if (Object.prototype.hasOwnProperty.call(backupData, key)) {
-                        // The value from the JSON file is already a string (as it was stored)
-                        localStorage.setItem(key, backupData[key]);
+                         const value = typeof backupData[key] === 'object' 
+                            ? JSON.stringify(backupData[key]) 
+                            : backupData[key];
+                        localStorage.setItem(key, value);
                     }
                 }
 
@@ -288,7 +360,7 @@ export default function SettingsPage() {
                         </TabsList>
                         <TabsContent value="data" className="pt-6">
                              <h3 className="font-semibold text-lg mb-2">Data Portability & Backup</h3>
-                            <p className="text-sm text-muted-foreground mb-4">Export all your application data into a single JSON file for backup or to transfer to another device. You can then import this file on the other device.</p>
+                            <p className="text-sm text-muted-foreground mb-4">Use the JSON option to transfer data between devices. Use the Excel option for archival records.</p>
                             <div className="flex flex-wrap gap-4">
                                 <Button onClick={handleBackupDataJson} className="gap-2">
                                     <DownloadCloud className="h-4 w-4" />
@@ -302,6 +374,10 @@ export default function SettingsPage() {
                                     </Label>
                                     <Input id="import-file-json" type="file" className="hidden" accept=".json" onChange={handleImportDataJson}/>
                                 </div>
+                                <Button onClick={handleBackupDataExcel} variant="outline" className="gap-2">
+                                    <FileDown className="h-4 w-4" />
+                                    Backup to Excel
+                                </Button>
                             </div>
                         </TabsContent>
                          <TabsContent value="notifications" className="pt-6">
@@ -343,5 +419,3 @@ export default function SettingsPage() {
         </div>
     );
 }
-
-    
