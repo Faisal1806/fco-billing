@@ -228,6 +228,16 @@ export default function KhataLedgerPage() {
 
     const selectedLedger = selectedParty ? ledgers[selectedParty] : null;
 
+    React.useEffect(() => {
+        if (selectedParty && fcmTokens.length > 0) {
+            sendPushNotification({
+                title: 'Khata Updated',
+                body: `Khata for ${selectedParty} updated – View Ledger`,
+                tokens: fcmTokens,
+            });
+        }
+    }, [selectedParty, fcmTokens]);
+
     const statementData = React.useMemo(() => {
         if (!selectedLedger) return { creditRows: [], debitRows: [], creditTotals: {}, debitTotals: {}, balance: 0 };
         
