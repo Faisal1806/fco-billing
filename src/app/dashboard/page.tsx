@@ -63,7 +63,7 @@ interface Bikri {
         type: 'Patti' | 'Dabba';
         qty: number;
     }[];
-    challanNo?: string;
+    challanId?: string;
 }
 
 interface Challan {
@@ -275,8 +275,9 @@ export default function DashboardPage() {
     });
 
     allReceipts.forEach(receipt => {
+        if (!receipt.entries || !Array.isArray(receipt.entries)) return;
         const receiptDate = new Date(receipt.date);
-        if (receiptDate.getFullYear() === currentYear && Array.isArray(receipt.entries)) {
+        if (receiptDate.getFullYear() === currentYear) {
             receipt.entries.forEach(entry => {
                 yearPattiReceived += Number(entry.peti) || 0;
                 yearDabbaReceived += Number(entry.daba) || 0;
@@ -454,8 +455,8 @@ export default function DashboardPage() {
                     <CardTitle>Monthly Sales</CardTitle>
                     <CardDescription>Net sales growth for the current year.</CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <div className="pointer-events-none h-64">
+                <CardContent className="cursor-pointer" onClick={() => router.push('/watak-register')}>
+                    <div className="h-64">
                         {barChartData && barChartData.some(d => d.y > 0) ? (
                         <VictoryChart
                                 theme={VictoryTheme.material}
@@ -493,8 +494,8 @@ export default function DashboardPage() {
                     <CardTitle>Top Grower Sales</CardTitle>
                     <CardDescription>Net sales distribution for top 5 growers this year.</CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <div className="pointer-events-none h-64">
+                <CardContent className="cursor-pointer" onClick={() => router.push('/parties')}>
+                    <div className="h-64">
                         {pieChartData && pieChartData.length > 0 ? (
                             <VictoryPie
                                 data={pieChartData}
