@@ -23,7 +23,7 @@ import { Award, DollarSign, Gift, Loader2, Star, TrendingUp, History } from 'luc
 import { PartySelector } from '@/components/party-selector';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { saveDocument } from '@/lib/actions';
+import { saveDocument, sendPushNotification, getDocuments } from '@/lib/actions';
 import { Input } from '@/components/ui/input';
 
 type TransactionType = 'Sale' | 'Bikri' | 'Discount';
@@ -48,6 +48,17 @@ export default function LoyaltyPage() {
     const [selectedParty, setSelectedParty] = useState<string | null>(null);
     const [redemptionAmount, setRedemptionAmount] = useState(0);
     const { toast } = useToast();
+    const [fcmTokens, setFcmTokens] = React.useState<string[]>([]);
+
+    useEffect(() => {
+        const fetchTokens = async () => {
+            const { success, data } = await getDocuments('fcm-tokens');
+            if (success && data) {
+                setFcmTokens(data.map(t => t.token));
+            }
+        };
+        fetchTokens();
+    }, []);
 
     const fetchLoyaltyData = () => {
         setIsLoading(true);
@@ -187,6 +198,15 @@ export default function LoyaltyPage() {
         try {
             await saveDocument('advances', discountTransaction.id, discountTransaction);
             localStorage.setItem(discountTransaction.id, JSON.stringify(discountTransaction));
+            
+            if (fcmTokens.length > 0) {
+                 await sendPushNotification({
+                    title: 'Loyalty Points Redeemed',
+                    body: `${redemptionAmount} points redeemed for ${selectedPartyData.name} as a ₹${redemptionAmount} discount.`,
+                    tokens: fcmTokens,
+                });
+            }
+
             toast({ title: 'Points Redeemed!', description: `${redemptionAmount} points have been applied as a discount.` });
             fetchLoyaltyData(); // Re-fetch to update stats
             setRedemptionAmount(0);
