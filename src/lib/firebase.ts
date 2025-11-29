@@ -44,7 +44,7 @@ export const getClientMessaging = () => {
         return messaging;
     }
     return null;
-}
+};
 
 
 export { app };

@@ -246,7 +246,7 @@ export default function SettingsPage() {
         try {
             const permission = await Notification.requestPermission();
             if (permission === 'granted') {
-                const fcmToken = await getToken(messaging, { vapidKey: 'BDrkE0XgA5wWlPz9sUeS_gZ4-N9xY6kIuX0eY3oD2hM0c4b1Z7n8R6J4k9sQ1xZ5m4w3j6p9yIuQ8c4jGkY7M' }); 
+                const fcmToken = await getToken(messaging);
                 
                 if (fcmToken) {
                     await saveDocument('fcm-tokens', fcmToken, { token: fcmToken, enabledAt: new Date().toISOString() });
