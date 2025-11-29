@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
 import { Paintbrush, Palette, Upload, Rocket, Cog, DownloadCloud, Factory, BellRing, UploadCloud } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -92,181 +92,72 @@ export default function SettingsPage() {
         }
     }
 
-    const handleBackupAllData = () => {
-        toast({ title: 'Generating Backup', description: 'Please wait while we gather all your data.' });
-
+    const handleBackupDataJson = () => {
+        toast({ title: 'Generating Backup', description: 'Please wait...' });
         try {
-            const allData: { [key: string]: any[] } = {
-                'Wataks (Invoices)': [], 'Purchases': [], 'Receipts': [], 'Challans': [],
-                'Pesticide_Invoices': [], 'Products': [], 'Accessory_Ledger': [], 'Expenses': [],
-                'Advances': [], 'Cold_Storage': [], 'Manual_Fertilizer_Rates': [], 'Outside_Sales (Bikri)': [],
-                'Activity_Log': [], 'Parties': [], 'Company_Info': [], 'Settings': []
-            };
-
-            const keyPrefixToSheetMap: { [key: string]: keyof typeof allData } = {
-                'invoice-': 'Wataks (Invoices)', 'purchase-': 'Purchases', 'receipt-': 'Receipts', 'challan-': 'Challans',
-                'pesticide-invoice-': 'Pesticide_Invoices', 'product-': 'Products', 'accessory-ledger-': 'Accessory_Ledger',
-                'expense-': 'Expenses', 'advance-': 'Advances', 'cs-': 'Cold_Storage', 'manual-fertilizer-rates-': 'Manual_Fertilizer_Rates',
-                'bikri-': 'Outside_Sales (Bikri)', 'activityLogs': 'Activity_Log', 'party-': 'Parties', 'companyInfo': 'Company_Info',
-                'invoiceStyle': 'Settings', 'userRole': 'Settings', 'gemini_api_key': 'Settings'
-            };
-            
+            const backupData: { [key: string]: string } = {};
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
-                if (!key) continue;
-
-                if (['activityLogs', 'companyInfo', 'invoiceStyle', 'userRole', 'gemini_api_key'].includes(key)) {
-                    const data = localStorage.getItem(key);
-                     if (data) {
-                        const sheetName = keyPrefixToSheetMap[key];
-                        // Don't parse here, just store the raw value or stringified JSON
-                        allData[sheetName].push({ key, value: data });
-                    }
-                    continue;
-                }
-
-                const matchingPrefix = Object.keys(keyPrefixToSheetMap).find(prefix => key.startsWith(prefix));
-                if (matchingPrefix) {
-                    const sheetName = keyPrefixToSheetMap[matchingPrefix];
-                    const item = localStorage.getItem(key);
-                    if (item) {
-                        try {
-                            const parsedItem = JSON.parse(item);
-                            const flattenedItem: {[key: string]: any} = { ...parsedItem };
-                            // Stringify nested objects and arrays for easier Excel export/import
-                            for (const prop in flattenedItem) {
-                                if (typeof flattenedItem[prop] === 'object' && flattenedItem[prop] !== null) {
-                                    flattenedItem[prop] = JSON.stringify(flattenedItem[prop]);
-                                }
-                            }
-                            allData[sheetName].push(flattenedItem);
-                        } catch (e) {
-                            console.warn(`Could not process key ${key} for backup. It might be invalid JSON.`, e);
-                        }
-                    }
+                if (key) {
+                    // We directly store the raw string value from localStorage
+                    backupData[key] = localStorage.getItem(key)!;
                 }
             }
 
-            const wb = XLSX.utils.book_new();
-
-            for (const sheetName in allData) {
-                if (allData[sheetName].length > 0) {
-                    const ws = XLSX.utils.json_to_sheet(allData[sheetName]);
-                    XLSX.utils.book_append_sheet(wb, ws, sheetName.replace(/_/g, ' '));
-                }
-            }
-
-            if (wb.SheetNames.length === 0) {
-                toast({ variant: 'destructive', title: 'No Data Found', description: 'There is no data to back up.' });
-                return;
-            }
-
-            XLSX.writeFile(wb, `FCO-Backup-${new Date().toISOString().split('T')[0]}.xlsx`);
-
-            toast({ title: 'Backup Successful', description: 'Your data has been exported to an Excel file.' });
-
+            const jsonString = JSON.stringify(backupData, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `FCO-Backup-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            toast({ title: 'Backup Successful', description: 'Your data has been saved to a JSON file.' });
         } catch (error) {
-            console.error("Backup failed:", error);
-            toast({ variant: 'destructive', title: 'Backup Failed', description: 'An unexpected error occurred during backup.' });
+            console.error("JSON Backup failed:", error);
+            toast({ variant: 'destructive', title: 'Backup Failed', description: 'Could not generate JSON backup.' });
         }
     };
-    
-    const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
+
+    const handleImportDataJson = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
-    
+
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
-                const data = e.target?.result;
-                const workbook = XLSX.read(data, { type: 'binary' });
-    
-                const sheetToPrefixMap: { [key: string]: string } = {
-                    'Wataks (Invoices)': 'invoice-', 'Purchases': 'purchase-', 'Receipts': 'receipt-', 'Challans': 'challan-',
-                    'Pesticide Invoices': 'pesticide-invoice-', 'Pesticide_Invoices': 'pesticide-invoice-', 'Products': 'product-', 
-                    'Accessory Ledger': 'accessory-ledger-', 'Accessory_Ledger': 'accessory-ledger-', 'Expenses': 'expense-', 
-                    'Advances': 'advance-', 'Cold Storage': 'cs-', 'Cold_Storage': 'cs-',
-                    'Manual Fertilizer Rates': 'manual-fertilizer-rates-', 'Manual_Fertilizer_Rates': 'manual-fertilizer-rates-',
-                    'Outside Sales (Bikri)': 'bikri-', 'Outside_Sales (Bikri)': 'bikri-',
-                    'Activity Log': 'activityLogs', 'Activity_Log': 'activityLogs',
-                    'Parties': 'party-', 'Company Info': 'companyInfo', 'Company_Info': 'companyInfo',
-                    'Settings': 'settings' // Special key for multiple settings
-                };
-    
-                const knownObjectKeys = ['entries', 'totals', 'calculation', 'outwardHistory'];
-    
-                const parseIfJson = (value: any) => {
-                    if (typeof value !== 'string') return value;
-                    try {
-                        // Check if the string looks like a JSON object or array
-                        if ((value.startsWith('{') && value.endsWith('}')) || (value.startsWith('[') && value.endsWith(']'))) {
-                            return JSON.parse(value);
-                        }
-                    } catch (e) {
-                        // Not valid JSON, return original string
-                    }
-                    return value;
-                };
-    
-                // Clear existing data before import
-                const adminRole = localStorage.getItem('userRole'); // Preserve admin role
+                const jsonString = e.target?.result as string;
+                const backupData = JSON.parse(jsonString);
+
+                if (typeof backupData !== 'object' || backupData === null) {
+                    throw new Error("Invalid backup file format.");
+                }
+                
+                const adminRole = localStorage.getItem('userRole');
                 localStorage.clear();
-                 if (adminRole) {
+                if (adminRole) {
                     localStorage.setItem('userRole', adminRole);
                 }
-    
-                workbook.SheetNames.forEach(sheetName => {
-                    const prefixOrKey = sheetToPrefixMap[sheetName] || sheetToPrefixMap[sheetName.replace(/ /g, '_')];
-                    if (prefixOrKey) {
-                        const ws = workbook.Sheets[sheetName];
-                        const jsonData: any[] = XLSX.utils.sheet_to_json(ws);
-    
-                        if (prefixOrKey === 'settings') {
-                             jsonData.forEach((item: any) => {
-                                if (item.key && item.value !== undefined) {
-                                    localStorage.setItem(item.key, item.value);
-                                }
-                            });
-                        } else if (prefixOrKey === 'activityLogs' || prefixOrKey === 'companyInfo') {
-                             if (jsonData.length > 0 && jsonData[0].value !== undefined) {
-                                // These are stored as a single stringified array/object
-                                localStorage.setItem(prefixOrKey, jsonData[0].value);
-                            }
-                        } else {
-                            // This handles all list-based data (invoices, products, etc.)
-                            jsonData.forEach((item: any) => {
-                                const reconstructedItem: {[key:string]: any} = {};
-                                for (const key in item) {
-                                    if (knownObjectKeys.includes(key)) {
-                                        reconstructedItem[key] = parseIfJson(item[key]);
-                                    } else {
-                                        reconstructedItem[key] = item[key];
-                                    }
-                                }
-    
-                                // Determine the unique ID for the item
-                                const id = reconstructedItem.id || reconstructedItem.sNo || reconstructedItem.billNo || reconstructedItem.no || `${prefixOrKey}${Date.now()}${Math.random()}`;
-                                const storageKey = String(id).startsWith(prefixOrKey) ? String(id) : `${prefixOrKey}${id}`;
-                                
-                                localStorage.setItem(storageKey, JSON.stringify(reconstructedItem));
-                            });
-                        }
-                    } else {
-                        console.warn(`No mapping found for sheet: ${sheetName}`);
+
+                for (const key in backupData) {
+                    if (Object.prototype.hasOwnProperty.call(backupData, key)) {
+                        // The value from the JSON file is already a string (as it was stored)
+                        localStorage.setItem(key, backupData[key]);
                     }
-                });
-    
-                toast({ title: "Import Successful", description: "All data has been restored from the backup file. The app will now reload." });
+                }
+
+                toast({ title: "Import Successful", description: "All data has been restored. The app will now reload." });
                 setTimeout(() => window.location.reload(), 2000);
-    
+
             } catch (error) {
-                console.error("Import failed:", error);
-                toast({ variant: 'destructive', title: 'Import Failed', description: 'The backup file seems to be corrupted or in the wrong format.' });
+                console.error("JSON Import failed:", error);
+                toast({ variant: 'destructive', title: 'Import Failed', description: 'The backup file seems to be corrupted or invalid.' });
             }
         };
-        reader.readAsBinaryString(file);
+        reader.readAsText(file);
     };
-
 
 
     const handleEnableNotifications = async () => {
@@ -397,19 +288,19 @@ export default function SettingsPage() {
                         </TabsList>
                         <TabsContent value="data" className="pt-6">
                              <h3 className="font-semibold text-lg mb-2">Data Portability & Backup</h3>
-                            <p className="text-sm text-muted-foreground mb-4">Export all your application data into a single Excel file for backup or use in other applications. You can then import this file on another device.</p>
+                            <p className="text-sm text-muted-foreground mb-4">Export all your application data into a single JSON file for backup or to transfer to another device. You can then import this file on the other device.</p>
                             <div className="flex flex-wrap gap-4">
-                                <Button onClick={handleBackupAllData} className="gap-2">
+                                <Button onClick={handleBackupDataJson} className="gap-2">
                                     <DownloadCloud className="h-4 w-4" />
-                                    Backup All Data to Excel
+                                    Download JSON Backup
                                 </Button>
                                  <div className="flex items-center gap-2">
-                                    <Label htmlFor="import-file" className="cursor-pointer">
+                                    <Label htmlFor="import-file-json" className="cursor-pointer">
                                         <Button asChild>
-                                            <span className="gap-2"><UploadCloud className="h-4 w-4" /> Import Data from Backup</span>
+                                            <span className="gap-2"><UploadCloud className="h-4 w-4" /> Import from JSON</span>
                                         </Button>
                                     </Label>
-                                    <Input id="import-file" type="file" className="hidden" accept=".xlsx,.xls" onChange={handleImportData}/>
+                                    <Input id="import-file-json" type="file" className="hidden" accept=".json" onChange={handleImportDataJson}/>
                                 </div>
                             </div>
                         </TabsContent>
