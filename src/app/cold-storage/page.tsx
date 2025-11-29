@@ -33,7 +33,7 @@ import {
 import { PlusCircle, ArrowUpRightFromSquare, Snowflake, Loader2, Trash2, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { saveDocument, deleteDocument } from '@/lib/actions';
+import { saveDocument, deleteDocument, sendPushNotification, getDocuments } from '@/lib/actions';
 
 const STORAGE_PREFIX = 'cs-';
 
@@ -68,11 +68,19 @@ export default function ColdStoragePage() {
   const [outwardQty, setOutwardQty] = useState<number>(0);
   const [outwardNotes, setOutwardNotes] = useState('');
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [fcmTokens, setFcmTokens] = useState<string[]>([]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
         setUserRole(localStorage.getItem('userRole'));
     }
+     const fetchTokens = async () => {
+        const { success, data } = await getDocuments('fcm-tokens');
+        if (success && data) {
+            setFcmTokens(data.map(t => t.token));
+        }
+    };
+    fetchTokens();
   }, []);
 
   const fetchStock = () => {
@@ -125,6 +133,13 @@ export default function ColdStoragePage() {
     try {
         await saveDocument('cold-storage', id, newStockItem);
         toast({ title: 'Stock Added', description: `${qtyNum} units of ${item} have been logged and synced.` });
+         if (fcmTokens.length > 0) {
+            await sendPushNotification({
+                title: 'Stock Inward',
+                body: `${qtyNum} units of ${item} for ${grower} added to cold storage.`,
+                tokens: fcmTokens,
+            });
+        }
     } catch (error) {
         toast({ variant: 'destructive', title: 'Sync Failed', description: 'Saved locally, but failed to sync to cloud.' });
     }
@@ -161,6 +176,13 @@ export default function ColdStoragePage() {
     try {
         await saveDocument('cold-storage', updatedStock.id, updatedStock);
         toast({title: 'Stock Released', description: `${outwardQty} units of ${updatedStock.item} have been released and synced.`});
+        if (fcmTokens.length > 0) {
+            await sendPushNotification({
+                title: 'Stock Outward',
+                body: `${outwardQty} units of ${updatedStock.item} released. New balance: ${updatedStock.currentQty}`,
+                tokens: fcmTokens,
+            });
+        }
     } catch (error) {
         toast({variant: 'destructive', title: 'Sync Failed', description: 'Updated locally, but failed to sync to cloud.'});
     }
@@ -327,3 +349,5 @@ export default function ColdStoragePage() {
 
     </>
   );
+
+    

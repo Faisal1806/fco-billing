@@ -37,7 +37,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { saveDocument, deleteDocument } from '@/lib/actions';
+import { saveDocument, deleteDocument, sendPushNotification, getDocuments } from '@/lib/actions';
 
 
 interface Product {
@@ -82,12 +82,20 @@ export default function ProductsPage() {
   // Filter and search state
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [fcmTokens, setFcmTokens] = useState<string[]>([]);
 
   useEffect(() => {
     setIsClient(true);
     if (typeof window !== 'undefined') {
         setUserRole(localStorage.getItem('userRole'));
     }
+    const fetchTokens = async () => {
+        const { success, data } = await getDocuments('fcm-tokens');
+        if (success && data) {
+            setFcmTokens(data.map(t => t.token));
+        }
+    };
+    fetchTokens();
   }, []);
 
   const fetchProducts = () => {
@@ -163,6 +171,8 @@ export default function ProductsPage() {
 
     const id = 'id' in formState ? formState.id : `product-${Date.now()}`;
     const newProduct: Product = { id, ...formState } as Product;
+    const oldProduct = 'id' in formState ? products.find(p => p.id === formState.id) : null;
+
 
     localStorage.setItem(id, JSON.stringify(newProduct));
     
@@ -172,6 +182,16 @@ export default function ProductsPage() {
           title: 'id' in formState ? 'Product Updated' : 'Product Added',
           description: `${formState.name} has been saved and synced.`,
         });
+
+        // Check for low stock alert
+        if (oldProduct && newProduct.stock < (oldProduct.reorderLevel || 0) && fcmTokens.length > 0) {
+            await sendPushNotification({
+                title: 'Low Stock Alert',
+                body: `Stock for ${newProduct.name} is now at ${newProduct.stock}, below the reorder level of ${oldProduct.reorderLevel}.`,
+                tokens: fcmTokens,
+            });
+        }
+
     } catch (error) {
         toast({ variant: 'destructive', title: 'Sync Failed', description: 'Saved locally, but failed to sync to cloud.' });
     }
@@ -462,3 +482,5 @@ export default function ProductsPage() {
     </Card>
   );
 }
+
+    
