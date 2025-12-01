@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { IndianRupee, TrendingUp, Calendar, FileText, ShoppingBasket, BookOpen, Loader2, Package, Box, ClipboardList, Globe, PlusCircle, User, Truck, Receipt, PieChart, BarChart, Award, ChevronDown } from 'lucide-react';
+import { IndianRupee, TrendingUp, Calendar, FileText, ShoppingBasket, BookOpen, Loader2, Package, Box, ClipboardList, Globe, PlusCircle, User, Truck, Receipt, PieChart, BarChart, Award, ChevronDown, ListChecks } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -20,7 +20,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription
+  DialogDescription,
+  DialogTrigger
 } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -432,10 +433,10 @@ export default function DashboardPage() {
   
   const appSections = sidebarSections.flatMap(s => s.items);
   
-  const pieChartData = growerProfits.topGrowers.map(g => ({ x: g.name.split(' ')[0], y: g.profit }));
+  const pieChartData = growerProfits.topGrowers.map(g => ({ x: g.name.split(' ')[0], y: g.profit, label: `${g.name.split(' ')[0]}\n₹${(g.profit / 1000).toFixed(1)}k` }));
   const otherProfit = growerProfits.otherGrowers.reduce((acc, g) => acc + g.profit, 0);
   if (otherProfit > 0) {
-      pieChartData.push({ x: 'Others', y: otherProfit, name: 'Others' });
+      pieChartData.push({ x: 'Others', y: otherProfit, label: `Others\n₹${(otherProfit / 1000).toFixed(1)}k` });
   }
 
   const barChartData = stats?.monthlySalesData.map((sales, i) => ({
@@ -460,7 +461,7 @@ export default function DashboardPage() {
             {children}
         </div>
     </DialogContent>
-);
+  );
 
   return (
     <div className="space-y-8">
@@ -590,6 +591,96 @@ export default function DashboardPage() {
                             cornerRadius={{ top: 6 }}
                         />
                     </VictoryChart>
+                </ChartModalContent>
+            </Dialog>
+
+             <Dialog>
+                <DialogTrigger asChild>
+                    <Card className="bg-card/80 backdrop-blur-sm border border-white/10 cursor-pointer">
+                        <CardHeader>
+                            <CardTitle>Top Grower Sales</CardTitle>
+                            <CardDescription>Net sales distribution among top growers this year. Click to enlarge.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="h-64">
+                                {pieChartData.length > 0 ? (
+                                    <VictoryPie
+                                        data={pieChartData}
+                                        colorScale={pieColorScale}
+                                        labelRadius={({ innerRadius }) => (innerRadius || 0) + 40 }
+                                        radius={({ datum }) => 100 + (datum.y / Math.max(...pieChartData.map(d => d.y))) * 20}
+                                        style={{
+                                            data: {
+                                                fillOpacity: 0.8,
+                                                stroke: "hsl(var(--card))",
+                                                strokeWidth: 2,
+                                            },
+                                            labels: {
+                                                fill: "hsl(var(--card-foreground))",
+                                                fontSize: 8,
+                                                fontWeight: "bold"
+                                            }
+                                        }}
+                                        events={[{
+                                            target: "data",
+                                            eventHandlers: {
+                                                onClick: () => {
+                                                    return [{
+                                                        target: "data",
+                                                        mutation: ({ datum, ...props }) => {
+                                                            if (datum.x === "Others") {
+                                                                setIsOthersDrilldownOpen(true);
+                                                                return null;
+                                                            }
+                                                            return null;
+                                                        }
+                                                    }];
+                                                }
+                                            }
+                                        }]}
+                                    />
+                                ) : <div className="flex items-center justify-center h-full text-muted-foreground">No sales data for growers.</div>}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </DialogTrigger>
+                <Dialog open={isOthersDrilldownOpen} onOpenChange={setIsOthersDrilldownOpen}>
+                    <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
+                        <DialogHeader>
+                            <DialogTitle>Sales from "Other" Growers</DialogTitle>
+                            <DialogDescription>A breakdown of net sales from growers not in the top 20.</DialogDescription>
+                        </DialogHeader>
+                        <ScrollArea className="max-h-96">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Grower</TableHead>
+                                        <TableHead className="text-right">Net Sales</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {growerProfits.otherGrowers.map((grower) => (
+                                        <TableRow key={grower.name}>
+                                            <TableCell className="font-medium">{grower.name}</TableCell>
+                                            <TableCell className="text-right font-mono">₹{grower.profit.toLocaleString('en-IN', {minimumFractionDigits: 2})}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </ScrollArea>
+                    </DialogContent>
+                </Dialog>
+                <ChartModalContent title="Top Grower Sales Distribution">
+                    <VictoryPie
+                        data={pieChartData}
+                        colorScale={pieColorScale}
+                        labelRadius={({ innerRadius }) => (innerRadius || 0) + 70 }
+                        radius={({ datum }) => 150 + (datum.y / Math.max(...pieChartData.map(d => d.y))) * 30}
+                        style={{
+                            data: { fillOpacity: 0.9, stroke: "hsl(var(--card))", strokeWidth: 3 },
+                            labels: { fill: "hsl(var(--card-foreground))", fontSize: 12, fontWeight: "bold" }
+                        }}
+                    />
                 </ChartModalContent>
             </Dialog>
         </div>
