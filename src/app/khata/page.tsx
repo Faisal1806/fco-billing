@@ -513,12 +513,18 @@ export default function KhataLedgerPage() {
                                         <p className="flex items-center gap-1"><ArrowUp className="h-5 w-5 text-red-500" /> ₹{statementData.debitTotals.debitAmount.toFixed(2)}</p>
                                     </div>
                                     <Equals className="h-6 w-6 text-muted-foreground" />
-                                    <div className="text-center">
+                                     <div className="text-center">
                                         <p className="text-sm text-muted-foreground">Final Balance</p>
-                                        <p className={`${statementData.balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                            ₹{Math.abs(statementData.balance).toFixed(2)}
-                                            <span className="text-xs ml-1">({statementData.balance >= 0 ? 'Payable' : 'Receivable'})</span>
-                                        </p>
+                                        {statementData.balance === 0 ? (
+                                            <p className="text-yellow-500">
+                                                ₹0.00 <span className="text-xs ml-1">(Settled)</span>
+                                            </p>
+                                        ) : (
+                                            <p className={`${statementData.balance > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                                ₹{Math.abs(statementData.balance).toFixed(2)}
+                                                <span className="text-xs ml-1">({statementData.balance > 0 ? 'Receivable' : 'Payable'})</span>
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             </CardFooter>
