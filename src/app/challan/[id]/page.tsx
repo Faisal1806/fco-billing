@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { useEffect, useState, useRef } from "react";
@@ -13,6 +14,8 @@ import { Logo } from "@/components/logo";
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode.react';
+import { useSearchParams } from "next/navigation";
+import { getDocument } from "@/lib/actions";
 
 
 interface ChallanData {
@@ -50,6 +53,8 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
     const [pageUrl, setPageUrl] = useState('');
     const [printStyle, setPrintStyle] = useState<'a4' | 'thermal'>('a4');
     const [invoiceStyle, setInvoiceStyle] = useState('classic');
+    const searchParams = useSearchParams();
+    const isPublicView = searchParams.get('source') === 'qr';
 
 
     useEffect(() => {
@@ -60,7 +65,7 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
                 setInvoiceStyle(savedStyle);
             }
         }
-        const fetchChallan = () => {
+        const fetchChallan = async () => {
              if (!params.id) {
                 setLoading(false);
                 return;
@@ -69,14 +74,25 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
 
             let data: ChallanData | null = null;
             const decodedId = decodeURIComponent(params.id);
-            const storedChallan = localStorage.getItem(`challan-${decodedId}`);
-            if (storedChallan) {
-                data = JSON.parse(storedChallan);
+            const docId = `challan-${decodedId}`;
+
+            if (isPublicView) {
+                const { success, data: firestoreData, error } = await getDocument('challans', decodedId);
+                if (success && firestoreData) {
+                    data = firestoreData as ChallanData;
+                } else {
+                    toast({ variant: "destructive", title: "Not Found", description: error });
+                }
+            } else {
+                const storedChallan = localStorage.getItem(docId);
+                if (storedChallan) {
+                    data = JSON.parse(storedChallan);
+                }
             }
             
             if (data) {
                 setChallanData(data);
-            } else {
+            } else if (!isPublicView) {
                 toast({
                     variant: "destructive",
                     title: "Delivery Note Not Found",
@@ -87,11 +103,11 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
             setLoading(false);
         };
         fetchChallan();
-    }, [params.id, toast]);
+    }, [params.id, toast, isPublicView]);
 
     const handleShare = () => {
         if (challanData) {
-            const message = `Check out this Delivery Note (#${challanData.challanNo}) for ${challanData.toMs}: ${window.location.href}`;
+            const message = `Check out this Delivery Note (#${challanData.challanNo}) for ${challanData.toMs}: ${window.location.href.split('?')[0]}?source=qr`;
             const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
             window.open(whatsappUrl, '_blank');
         } else {
@@ -153,7 +169,7 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
                 </Button>
              </div>
               <div className="p-2 border rounded-md flex flex-col items-center">
-                <QRCode value={pageUrl} size={60} />
+                <QRCode value={`${window.location.href.split('?')[0]}?source=qr`} size={60} />
                 <p className="text-xs font-semibold mt-1">Scan to View</p>
             </div>
         </div>
@@ -348,24 +364,34 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
                         height: 100%;
                     }
                     .print-area-a4 {
-                        display: ${printStyle === 'a4' ? 'block' : 'none'} !important;
+                        display: ${printStyle === 'a4' ? 'flex !important' : 'none !important'};
                     }
                      .print-area-thermal {
-                        display: ${printStyle === 'thermal' ? 'block' : 'none'} !important;
+                        display: ${printStyle === 'thermal' ? 'block !important' : 'none !important'};
                     }
-
-                    @page {
-                        size: ${printStyle === 'a4' ? 'A5 portrait' : '80mm 297mm'};
-                        margin: 0;
+                    .A5-page {
+                         @page {
+                            size: A5 portrait;
+                            margin: 0;
+                        }
                     }
                 }
             `}</style>
             
-            <div className="print:hidden w-full max-w-xs space-y-4">
-                <Controls />
-            </div>
+            {!isPublicView ? (
+                <div className="print:hidden w-full max-w-xs space-y-4 sticky top-4 self-start">
+                    <Controls />
+                </div>
+             ) : (
+                 <div className="print:hidden w-full max-w-xs space-y-4 sticky top-4 self-start">
+                    <Button onClick={handleDownloadPdf} size="lg" className="w-full gap-2 bg-blue-600 hover:bg-blue-700 text-white h-12 text-base">
+                        <Download className="h-5 w-5" />
+                        Save to Device
+                    </Button>
+                </div>
+            )}
 
-            <div className="print-container">
+            <div className="print-container A5-page">
                 <div ref={printRef}>
                     <div className="print-area-a4">
                         {renderContent()}

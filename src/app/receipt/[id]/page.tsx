@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { useEffect, useState, useRef } from "react";
@@ -13,6 +14,8 @@ import { Logo } from "@/components/logo";
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode.react';
+import { useSearchParams } from "next/navigation";
+import { getDocument } from "@/lib/actions";
 
 interface ReceiptData {
     no: string;
@@ -40,6 +43,8 @@ export default function PaymentPage({ params }: { params: { id: string } }) {
     const [pageUrl, setPageUrl] = useState('');
     const [printStyle, setPrintStyle] = useState<'a4' | 'thermal'>('a4');
     const [invoiceStyle, setInvoiceStyle] = useState('classic');
+    const searchParams = useSearchParams();
+    const isPublicView = searchParams.get('source') === 'qr';
 
 
     useEffect(() => {
@@ -50,7 +55,7 @@ export default function PaymentPage({ params }: { params: { id: string } }) {
                 setInvoiceStyle(savedStyle);
             }
         }
-        const fetchReceipt = () => {
+        const fetchReceipt = async () => {
             if (!params.id) {
                 setLoading(false);
                 return;
@@ -58,34 +63,45 @@ export default function PaymentPage({ params }: { params: { id: string } }) {
             setLoading(true);
 
             let data: ReceiptData | null = null;
-            const storedReceipt = localStorage.getItem(`receipt-${params.id}`);
-            if (storedReceipt) {
-                data = JSON.parse(storedReceipt);
+            const docId = `receipt-${params.id}`;
+            
+            if (isPublicView) {
+                const { success, data: firestoreData, error } = await getDocument('receipts', params.id);
+                if (success && firestoreData) {
+                    data = firestoreData as ReceiptData;
+                } else {
+                    toast({ variant: "destructive", title: "Not Found", description: error });
+                }
+            } else {
+                const storedReceipt = localStorage.getItem(docId);
+                if (storedReceipt) {
+                    data = JSON.parse(storedReceipt);
+                }
             }
             
             if (data) {
                 setReceiptData(data);
-            } else {
+            } else if (!isPublicView) {
                  toast({
                     variant: "destructive",
-                    title: "Payment Not Found",
-                    description: "The requested payment was not found on this device."
+                    title: "Receipt Not Found",
+                    description: "The requested receipt was not found on this device."
                 });
             }
             
             setLoading(false);
         };
         fetchReceipt();
-    }, [params.id, toast]);
+    }, [params.id, toast, isPublicView]);
 
 
     const handleShare = () => {
         if (receiptData) {
-            const message = `Check out this Payment (#${receiptData.no}) for ${receiptData.customerName}: ${window.location.href}`;
+            const message = `Check out this Goods Receipt (#${receiptData.no}) for ${receiptData.customerName}: ${window.location.href.split('?')[0]}?source=qr`;
             const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
             window.open(whatsappUrl, '_blank');
         } else {
-            toast({ variant: "destructive", title: "Share Failed", description: "Could not share the payment." });
+            toast({ variant: "destructive", title: "Share Failed", description: "Could not share the receipt." });
         }
     };
 
@@ -115,7 +131,7 @@ export default function PaymentPage({ params }: { params: { id: string } }) {
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
         
         pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save(`Payment-${receiptData.no}.pdf`);
+        pdf.save(`Receipt-${receiptData.no}.pdf`);
     };
 
     const Controls = () => (
@@ -143,7 +159,7 @@ export default function PaymentPage({ params }: { params: { id: string } }) {
                 </Button>
             </div>
              <div className="p-2 border rounded-md flex flex-col items-center">
-                <QRCode value={pageUrl} size={60} />
+                <QRCode value={`${window.location.href.split('?')[0]}?source=qr`} size={60} />
                 <p className="text-xs font-semibold mt-1">Scan to View</p>
             </div>
         </div>
@@ -164,8 +180,8 @@ export default function PaymentPage({ params }: { params: { id: string } }) {
         return (
             <div className="bg-background min-h-screen flex items-center justify-center p-4">
                 <div className="text-center p-8 border rounded-lg shadow-md bg-white">
-                    <h2 className="text-xl font-bold">Payment Not Found</h2>
-                    <p className="text-muted-foreground">The payment you are looking for does not exist.</p>
+                    <h2 className="text-xl font-bold">Receipt Not Found</h2>
+                    <p className="text-muted-foreground">The receipt you are looking for does not exist.</p>
                 </div>
             </div>
         );
@@ -329,9 +345,18 @@ export default function PaymentPage({ params }: { params: { id: string } }) {
                 }
             `}</style>
             
-             <div className="print:hidden w-full max-w-xs space-y-4">
-                <Controls />
-            </div>
+             {!isPublicView ? (
+                <div className="print:hidden w-full max-w-xs space-y-4">
+                    <Controls />
+                </div>
+             ) : (
+                 <div className="print:hidden w-full max-w-xs space-y-4">
+                    <Button onClick={handleDownloadPdf} size="lg" className="w-full gap-2 bg-blue-600 hover:bg-blue-700 text-white h-12 text-base">
+                        <Download className="h-5 w-5" />
+                        Save to Device
+                    </Button>
+                </div>
+            )}
 
             <div className="print-container">
                 <div ref={printRef}>

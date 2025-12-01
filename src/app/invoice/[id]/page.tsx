@@ -9,13 +9,14 @@ import { Printer, Download, FileText, Receipt } from "lucide-react";
 import { FaWhatsapp } from 'react-icons/fa';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode.react';
 import { ClassicA4Layout } from "@/components/invoice-templates/classic-a4";
 import { ModernDarkA4Layout } from "@/components/invoice-templates/modern-dark-a4";
 import { ThermalLayout } from "@/components/invoice-templates/thermal";
 import { ModernLightA4Layout } from "@/components/invoice-templates/modern-light-a4";
 import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import { getDocument } from '@/lib/actions';
 
 interface BillData {
     id: string;
@@ -83,17 +84,32 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             let data: BillData | null = null;
             const documentId = `invoice-${params.id}`;
 
-            const localData = localStorage.getItem(documentId);
-            if (localData) {
-                try {
-                    data = JSON.parse(localData) as BillData;
-                } catch (e) {
-                    console.error("Failed to parse invoice data", e);
+            if (isPublicView) {
+                // For public QR views, always fetch from the cloud
+                const { success, data: firestoreData, error } = await getDocument('invoices', params.id);
+                if (success && firestoreData) {
+                    data = firestoreData as BillData;
+                } else {
                     toast({
                         variant: "destructive",
-                        title: "Error Loading Invoice",
-                        description: "The saved invoice data appears to be corrupted."
+                        title: "Invoice Not Found",
+                        description: error || "The invoice may not have been synced to the cloud."
                     });
+                }
+            } else {
+                // For internal views, prioritize local storage for speed
+                const localData = localStorage.getItem(documentId);
+                if (localData) {
+                    try {
+                        data = JSON.parse(localData) as BillData;
+                    } catch (e) {
+                        console.error("Failed to parse invoice data", e);
+                        toast({
+                            variant: "destructive",
+                            title: "Error Loading Invoice",
+                            description: "The saved invoice data appears to be corrupted."
+                        });
+                    }
                 }
             }
 
@@ -103,7 +119,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 if(typeof window !== 'undefined'){
                   setPageUrl(`${window.location.origin}/invoice/${params.id}?source=qr`);
                 }
-            } else {
+            } else if (!isPublicView) { // Only show local not found error if not a public view
                 toast({
                     variant: "destructive",
                     title: "Invoice Not Found",
@@ -114,7 +130,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             setLoading(false);
         };
         fetchBill();
-    }, [params.id, toast]);
+    }, [params.id, toast, isPublicView]);
 
 
     const handleShare = () => {
