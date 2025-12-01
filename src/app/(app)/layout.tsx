@@ -15,18 +15,21 @@ export default function AppLayout({
   const [animationData, setAnimationData] = useState(null);
 
   useEffect(() => {
+    // This animation file is assumed to be in the public directory.
+    // If it's not present, the background will be a solid gradient.
     fetch('/animations/extras/fco_particle_glow.json')
       .then(res => res.json())
-      .then(data => setAnimationData(data));
+      .then(data => setAnimationData(data))
+      .catch(() => console.log("Background animation not found, using fallback."));
   }, []);
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden">
+    <div className="relative min-h-screen w-full overflow-hidden bg-gradient-to-br from-black via-gray-900 to-primary/30">
         <div className="fixed inset-0 z-0">
              {animationData && <Lottie 
                 animationData={animationData}
                 loop={true}
-                className="absolute inset-0 w-full h-full object-cover"
+                className="absolute inset-0 w-full h-full object-cover opacity-50"
              />}
              <div className="absolute inset-0 bg-background/90"></div>
         </div>

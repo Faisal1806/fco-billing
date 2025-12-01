@@ -183,7 +183,7 @@ export default function AdvancesPage() {
 
   return (
     <div className="space-y-6">
-        <Card className="bg-card/80 backdrop-blur-sm border border-white/10 rounded-2xl shadow-2xl">
+        <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Banknote className="h-6 w-6 text-primary"/> Add New Advance or Repayment</CardTitle>
                 <CardDescription>Record money given to growers/farmers as an advance or log any repayments received from them.</CardDescription>
@@ -224,7 +224,7 @@ export default function AdvancesPage() {
             </CardFooter>
     </Card>
 
-    <Card className="bg-card/80 backdrop-blur-sm border border-white/10 rounded-2xl shadow-2xl">
+    <Card>
       <CardHeader>
         <CardTitle>Advance & Loan History</CardTitle>
         <CardDescription>A complete record of all advances given and repayments received.</CardDescription>

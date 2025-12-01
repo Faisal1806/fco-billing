@@ -71,15 +71,15 @@
     .neon-glow-container:hover .neon-glow-icon {
         color: #fff;
         text-shadow:
-            0 0 7px #29d99c,
-            0 0 10px #29d99c,
-            0 0 21px #29d99c,
+            0 0 7px #34d399,
+            0 0 10px #34d399,
+            0 0 21px #34d399,
             0 0 42px #0fa,
             0 0 82px #0fa,
             0 0 92px #0fa;
     }
     .neon-glow-icon {
-        color: #29d99c;
+        color: #34d399;
         transition: all 0.3s ease-in-out;
     }
 }

@@ -98,16 +98,18 @@ export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
     const { name, href, icon: Icon } = item;
     const isActive = pathname === href;
     const linkContent = (
-       <Link
-        href={href}
-        className={cn(
-          "flex items-center gap-3 rounded-lg px-3 py-2 text-primary-foreground/70 transition-all hover:text-primary-foreground hover:bg-white/10",
-          isActive && "bg-white/20 text-primary-foreground"
-        )}
-      >
-        <Icon className="h-4 w-4" />
-        {name}
-      </Link>
+       <div className="neon-glow-container">
+         <Link
+          href={href}
+          className={cn(
+            "flex items-center gap-3 rounded-lg px-3 py-2 text-primary-foreground/70 transition-all hover:text-primary-foreground hover:bg-white/10",
+            isActive && "bg-white/20 text-primary-foreground"
+          )}
+        >
+          <Icon className={cn("h-4 w-4", isActive ? "text-green-300 neon-glow-icon" : "")} />
+          {name}
+        </Link>
+      </div>
     );
 
     if (isMobile) {
