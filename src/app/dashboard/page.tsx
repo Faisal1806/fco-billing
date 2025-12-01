@@ -92,33 +92,55 @@ interface Advance {
 
 
 const StatCard = ({ title, value, subtitle, icon: Icon }: { title: string, value: string, subtitle: string, icon: React.ElementType }) => (
-    <Card className="bg-card/80 backdrop-blur-sm border border-white/10 shadow-lg p-4">
-         <div className="flex items-start justify-between">
-            <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">{title}</p>
-                <p className="text-2xl font-bold">{value}</p>
-                <p className="text-xs text-muted-foreground">{subtitle}</p>
+     <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+    >
+        <Card className="bg-card/80 backdrop-blur-sm border border-white/10 shadow-lg p-4 h-full">
+             <div className="flex items-start justify-between">
+                <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">{title}</p>
+                    <p className="text-2xl font-bold">{value}</p>
+                    <p className="text-xs text-muted-foreground">{subtitle}</p>
+                </div>
+                <div className="p-2 bg-primary/10 rounded-full">
+                    <Icon className="h-5 w-5 text-primary-foreground/80" />
+                </div>
             </div>
-            <div className="p-2 bg-primary/10 rounded-full">
-                <Icon className="h-5 w-5 text-primary-foreground/80" />
-            </div>
-        </div>
-    </Card>
+        </Card>
+    </motion.div>
 );
 
 const AppSectionCard = ({ item }: { item: { name: string; href: string; icon: React.ElementType } }) => {
     const router = useRouter();
     const { name, href, icon: Icon } = item;
     
+    // Mapping user-friendly names to specific icons
+    const iconMap: { [key: string]: React.ElementType } = {
+        'Watak Register': FileText, // 3D clipboard
+        'Sales': ShoppingCart, // Represents Bills
+        'Khata Ledger': BookOpen, // Represents 3D Money Bag
+        'Products': Package, // Represents Stock / 3D box
+        'Loyalty Points': Award, // Spinning gold coin
+        'Purchases': ShoppingBasket, // Represents Reports
+        'Outside Sales': Globe, // Represents Reports
+    };
+
+    const DisplayIcon = iconMap[name] || Icon;
+
     return (
         <motion.div
-            whileHover={{ scale: 1.05, y: -5 }}
+            whileHover={{ scale: 1.08, y: -5, transition: { type: 'spring', stiffness: 300 } }}
             whileTap={{ scale: 0.95 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
             className="cursor-pointer group bg-card/50 backdrop-blur-sm border border-white/10 rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-white/10 transition-colors"
             onClick={() => router.push(href)}
         >
             <div className="neon-glow-container">
-                <Icon className="h-7 w-7 text-green-400 neon-glow-icon" />
+                <DisplayIcon className="h-7 w-7 text-green-400 neon-glow-icon" />
             </div>
             <span className="text-xs font-medium text-center text-muted-foreground group-hover:text-primary-foreground transition-colors">{name}</span>
         </motion.div>
@@ -486,22 +508,40 @@ export default function DashboardPage() {
             </div>
         </motion.div>
         
-         <Accordion type="single" collapsible defaultValue="item-1" className="w-full">
-            <AccordionItem value="item-1">
-                <AccordionTrigger>
-                    <h2 className="text-xl font-semibold tracking-wider text-muted-foreground">APP SECTIONS</h2>
-                </AccordionTrigger>
-                <AccordionContent>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-4 pt-4">
-                        {appSections.map((item) => (
-                            <AppSectionCard key={item.name} item={item} />
-                        ))}
-                    </div>
-                </AccordionContent>
-            </AccordionItem>
-        </Accordion>
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+        >
+            <Accordion type="single" collapsible defaultValue="item-1" className="w-full">
+                <AccordionItem value="item-1">
+                    <AccordionTrigger>
+                        <h2 className="text-xl font-semibold tracking-wider text-muted-foreground">APP SECTIONS</h2>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-4 pt-4">
+                            {appSections.map((item, index) => (
+                                <motion.div
+                                    key={item.name}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.5, delay: 0.1 + index * 0.05 }}
+                                >
+                                    <AppSectionCard item={item} />
+                                </motion.div>
+                            ))}
+                        </div>
+                    </AccordionContent>
+                </AccordionItem>
+            </Accordion>
+        </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <motion.div
+             initial={{ opacity: 0, y: 20 }}
+             animate={{ opacity: 1, y: 0 }}
+             transition={{ duration: 0.5, delay: 0.2 }}
+             className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+        >
             <Dialog>
                 <DialogTrigger asChild>
                     <Card className="lg:col-span-2 bg-card/80 backdrop-blur-sm border border-white/10 cursor-pointer">
@@ -683,9 +723,14 @@ export default function DashboardPage() {
                     />
                 </ChartModalContent>
             </Dialog>
-        </div>
+        </motion.div>
         
-        <div className="space-y-4">
+        <motion.div
+             initial={{ opacity: 0, y: 20 }}
+             animate={{ opacity: 1, y: 0 }}
+             transition={{ duration: 0.5, delay: 0.3 }}
+             className="space-y-4"
+        >
              <h2 className="text-xl font-semibold tracking-wider text-muted-foreground">THIS YEAR'S SUMMARY</h2>
              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
                 <StatCard title="Today's Sales (Net)" value={`₹${Math.round(stats?.totalSaleValueToday ?? 0).toLocaleString('en-IN')}`} subtitle={`From ${stats?.pattiToday} Patti / ${stats?.dabbaToday} Dabba`} icon={TrendingUp} />
@@ -707,90 +752,117 @@ export default function DashboardPage() {
                 <StatCard title="Total Dabba Sent Outside" value={stats?.yearDabbaSentOutside.toLocaleString('en-IN') ?? '0'} subtitle="This year via Challan" icon={Truck} />
                 <StatCard title="Total Nugs Sent Outside" value={stats?.yearNugsSentOutside.toLocaleString('en-IN') ?? '0'} subtitle="Patti + Dabba this year" icon={Globe} />
              </div>
-        </div>
+        </motion.div>
 
-        <div className="space-y-4">
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="space-y-4"
+        >
              <h2 className="text-xl font-semibold tracking-wider text-muted-foreground">QUICK ACTIONS</h2>
              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                 <Button onClick={() => router.push('/sales')} className="h-20 text-lg bg-primary/80 hover:bg-primary border border-primary-foreground/20">
-                     <PlusCircle className="mr-2 h-6 w-6" /> Sales Entry
-                 </Button>
-                 <Button onClick={() => router.push('/watak-register')} className="h-20 text-lg bg-primary/80 hover:bg-primary border border-primary-foreground/20">
-                     <FileText className="mr-2 h-6 w-6" /> Watak Register
-                 </Button>
-                 <Button onClick={() => router.push('/purchases')} className="h-20 text-lg bg-primary/80 hover:bg-primary border border-primary-foreground/20">
-                    <ShoppingBasket className="mr-2 h-6 w-6" /> Purchases
-                 </Button>
-                 <Button onClick={() => router.push('/khata')} className="h-20 text-lg bg-primary/80 hover:bg-primary border border-primary-foreground/20">
-                    <BookOpen className="mr-2 h-6 w-6" /> Khata Ledger
-                 </Button>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
+                    <Button onClick={() => router.push('/sales')} className="h-20 text-lg w-full bg-primary/80 hover:bg-primary border border-primary-foreground/20">
+                        <PlusCircle className="mr-2 h-6 w-6" /> Sales Entry
+                    </Button>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
+                    <Button onClick={() => router.push('/watak-register')} className="h-20 text-lg w-full bg-primary/80 hover:bg-primary border border-primary-foreground/20">
+                        <FileText className="mr-2 h-6 w-6" /> Watak Register
+                    </Button>
+                </motion.div>
+                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
+                    <Button onClick={() => router.push('/purchases')} className="h-20 text-lg w-full bg-primary/80 hover:bg-primary border border-primary-foreground/20">
+                        <ShoppingBasket className="mr-2 h-6 w-6" /> Purchases
+                    </Button>
+                </motion.div>
+                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
+                    <Button onClick={() => router.push('/khata')} className="h-20 text-lg w-full bg-primary/80 hover:bg-primary border border-primary-foreground/20">
+                        <BookOpen className="mr-2 h-6 w-6" /> Khata Ledger
+                    </Button>
+                 </motion.div>
             </div>
-        </div>
+        </motion.div>
         
-        <Card className="bg-card/80 backdrop-blur-sm border border-white/10">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Award className="h-5 w-5 text-yellow-400" />Loyalty Program Summary</CardTitle>
-                <CardDescription>A quick overview of your grower rewards program.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-                 <div className="p-4 bg-muted/50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">Total Points Distributed</p>
-                    <p className="text-2xl font-bold">{loyaltyStats?.totalPointsDistributed}</p>
-                </div>
-                 <div className="p-4 bg-muted/50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">Redeemed This Month</p>
-                    <p className="text-2xl font-bold">{loyaltyStats?.redeemedThisMonth}</p>
-                </div>
-                 <div className="p-4 bg-muted/50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">Top Grower</p>
-                    <p className="text-2xl font-bold">{loyaltyStats?.topGrower}</p>
-                </div>
-            </CardContent>
-        </Card>
+        <motion.div
+             initial={{ opacity: 0, y: 20 }}
+             animate={{ opacity: 1, y: 0 }}
+             transition={{ duration: 0.5, delay: 0.5 }}
+        >
+            <Card className="bg-card/80 backdrop-blur-sm border border-white/10">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Award className="h-5 w-5 text-yellow-400" />Loyalty Program Summary</CardTitle>
+                    <CardDescription>A quick overview of your grower rewards program.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                     <div className="p-4 bg-muted/50 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Total Points Distributed</p>
+                        <p className="text-2xl font-bold">{loyaltyStats?.totalPointsDistributed}</p>
+                    </div>
+                     <div className="p-4 bg-muted/50 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Redeemed This Month</p>
+                        <p className="text-2xl font-bold">{loyaltyStats?.redeemedThisMonth}</p>
+                    </div>
+                     <div className="p-4 bg-muted/50 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Top Grower</p>
+                        <p className="text-2xl font-bold">{loyaltyStats?.topGrower}</p>
+                    </div>
+                </CardContent>
+            </Card>
+        </motion.div>
         
-        <Card className="bg-card/80 backdrop-blur-sm border border-white/10">
-            <CardHeader>
-                <CardTitle>All Growers by Net Sales</CardTitle>
-                <CardDescription>This session's growers ranked by their total net sales.</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-                <ScrollArea className="h-96">
-                    {[...growerProfits.topGrowers, ...growerProfits.otherGrowers].length > 0 ? (
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="border-white/10">
-                                    <TableHead>Grower</TableHead>
-                                    <TableHead className="text-right">Net Sales</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {[...growerProfits.topGrowers, ...growerProfits.otherGrowers].map((grower, index) => (
-                                    <TableRow key={grower.name} className="border-white/10">
-                                        <TableCell>
-                                            <div className="flex items-center gap-3">
-                                                <span className={cn("flex items-center justify-center h-8 w-8 rounded-full text-white font-bold", 
-                                                    index === 0 && "bg-yellow-500",
-                                                    index === 1 && "bg-gray-400",
-                                                    index === 2 && "bg-orange-700",
-                                                    index > 2 && "bg-gray-600"
-                                                )}>{index + 1}</span>
-                                                <div>
-                                                <span className="font-medium text-base">{grower.name}</span>
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-right font-mono text-lg text-green-400">₹{grower.profit.toLocaleString('en-IN', {minimumFractionDigits: 2})}</TableCell>
+        <motion.div
+             initial={{ opacity: 0, y: 20 }}
+             animate={{ opacity: 1, y: 0 }}
+             transition={{ duration: 0.5, delay: 0.6 }}
+        >
+            <Card className="bg-card/80 backdrop-blur-sm border border-white/10">
+                <CardHeader>
+                    <CardTitle>All Growers by Net Sales</CardTitle>
+                    <CardDescription>This session's growers ranked by their total net sales.</CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                    <ScrollArea className="h-96">
+                        {[...growerProfits.topGrowers, ...growerProfits.otherGrowers].length > 0 ? (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="border-white/10">
+                                        <TableHead>Grower</TableHead>
+                                        <TableHead className="text-right">Net Sales</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    ) : (
-                        <p className="text-sm text-muted-foreground text-center py-8">No sales data recorded this year.</p>
-                    )}
-                </ScrollArea>
-            </CardContent>
-        </Card>
+                                </TableHeader>
+                                <TableBody>
+                                    {[...growerProfits.topGrowers, ...growerProfits.otherGrowers].map((grower, index) => (
+                                        <TableRow key={grower.name} className="border-white/10">
+                                            <TableCell>
+                                                <div className="flex items-center gap-3">
+                                                    <span className={cn("flex items-center justify-center h-8 w-8 rounded-full text-white font-bold", 
+                                                        index === 0 && "bg-yellow-500",
+                                                        index === 1 && "bg-gray-400",
+                                                        index === 2 && "bg-orange-700",
+                                                        index > 2 && "bg-gray-600"
+                                                    )}>{index + 1}</span>
+                                                    <div>
+                                                    <span className="font-medium text-base">{grower.name}</span>
+                                                    </div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-right font-mono text-lg text-green-400">₹{grower.profit.toLocaleString('en-IN', {minimumFractionDigits: 2})}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        ) : (
+                            <p className="text-sm text-muted-foreground text-center py-8">No sales data recorded this year.</p>
+                        )}
+                    </ScrollArea>
+                </CardContent>
+            </Card>
+        </motion.div>
 
     </div>
   );
 }
+
+    
