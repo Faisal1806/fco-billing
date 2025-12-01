@@ -133,7 +133,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
     const handleShare = () => {
         if (billData) {
-            const message = `Check out this Invoice (#${billData.sNo}) for ${billData.customerName}: ${window.location.href}`;
+            const message = `Check out this Invoice (#${billData.sNo}) for ${billData.customerName}: ${window.location.origin}/invoice/${billData.id}?view=online`;
             const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
             window.open(whatsappUrl, '_blank');
         } else {

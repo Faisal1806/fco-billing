@@ -2,6 +2,7 @@
 import type { Metadata } from 'next';
 import '../globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
+import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
   title: 'Print View - F.Co',
@@ -16,14 +17,16 @@ export default function PrintableLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-         <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
+        <FirebaseClientProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
+          >
             {children}
-        </ThemeProvider>
+          </ThemeProvider>
+        </FirebaseClientProvider>
       </body>
     </html>
   );
