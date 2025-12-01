@@ -78,10 +78,19 @@ export async function getDocument(collectionName: string, id: string): Promise<{
             return { success: true, data: { id: docSnap.id, ...docSnap.data() } };
         } else {
             // Also check legacy path
-            const legacyDocSnap = await getDoc(doc(db, collectionName, id));
+            const legacyId = collectionName === 'purchases' ? `purchase-${id}` : id;
+            const legacyDocSnap = await getDoc(doc(db, collectionName, legacyId));
             if (legacyDocSnap.exists()) {
               return { success: true, data: { id: legacyDocSnap.id, ...legacyDocSnap.data() } };
             }
+            // Check local storage for older data formats
+            if (typeof window !== 'undefined') {
+                const localData = localStorage.getItem(`purchase-${id}`);
+                if (localData) {
+                    return { success: true, data: JSON.parse(localData) };
+                }
+            }
+
             return { success: false, error: "Document not found." };
         }
     } catch (error) {
@@ -102,8 +111,21 @@ export async function getDocuments(collectionName: string): Promise<{ success: b
         // For backward compatibility, also fetch from root collection
         const legacyQuerySnapshot = await getDocs(collection(db, collectionName));
         const legacyData = legacyQuerySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const combined = [...data, ...legacyData];
-        const uniqueData = Array.from(new Map(combined.map(item => [item.id, item])).values());
+        
+        let localData: any[] = [];
+        if (typeof window !== 'undefined') {
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith(`${collectionName.slice(0, -1)}-`)) {
+                    try {
+                        localData.push(JSON.parse(localStorage.getItem(key)!));
+                    } catch(e) { console.error('Error parsing local data', e); }
+                }
+            }
+        }
+        
+        const combined = [...data, ...legacyData, ...localData];
+        const uniqueData = Array.from(new Map(combined.map(item => [item.id || item.billNo, item])).values());
         
         return { success: true, data: uniqueData };
     } catch (error) {
