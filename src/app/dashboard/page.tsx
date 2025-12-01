@@ -605,11 +605,18 @@ export default function DashboardPage() {
                                         colorScale={pieColorScale}
                                         innerRadius={70}
                                         labelComponent={<VictoryTooltip dy={-10} style={{fill: 'black'}}/>}
+                                        labels={({ datum }) => `${datum.x}: ₹${datum.y.toLocaleString('en-IN')}`}
                                         style={{
                                             data: {
                                                 stroke: 'hsl(var(--background))',
                                                 strokeWidth: 2,
+                                                cursor: 'pointer',
                                             },
+                                            labels: {
+                                                fill: 'hsl(var(--foreground))',
+                                                fontSize: 10,
+                                                padding: 10,
+                                            }
                                         }}
                                         events={[{
                                             target: "data",
