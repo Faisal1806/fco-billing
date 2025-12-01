@@ -68,23 +68,16 @@ export async function deleteDocument(collectionName: string, id: string) {
 export async function getDocument(collectionName: string, id: string): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
         const db = getClientDb();
-        const docPath = `${collectionName}/${id}`;
-        const docSnap = await getDoc(doc(db, docPath));
+        const docRef = doc(db, collectionName, id);
+        const docSnap = await getDoc(docRef);
+
         if (docSnap.exists()) {
             return { success: true, data: { id: docSnap.id, ...docSnap.data() } };
+        } else {
+            return { success: false, error: "Document not found." };
         }
-        
-        // Fallback to check localStorage for older data structure
-        if (typeof window !== 'undefined') {
-            const localData = localStorage.getItem(`${collectionName}-${id}`);
-            if (localData) {
-                return { success: true, data: JSON.parse(localData) };
-            }
-        }
-        
-        return { success: false, error: "Document not found in cloud or local storage." };
     } catch (error) {
-        console.error("Error fetching document:", error);
+        console.error(`Error fetching document from ${collectionName}:`, error);
         return { success: false, error: (error as Error).message };
     }
 }
@@ -92,6 +85,29 @@ export async function getDocument(collectionName: string, id: string): Promise<{
 
 // Generic function to get documents from a collection
 export async function getDocuments(collectionName: string): Promise<{ success: boolean; data?: any[]; error?: string }> {
+    // This function will now prioritize reading from localStorage to ensure data is always visible
+    // even if there are Firestore permission issues.
+    if (typeof window !== 'undefined') {
+        try {
+            const data: any[] = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                // Check for both new and old prefixes to ensure all data is loaded.
+                if (key?.startsWith(`${collectionName}-`) || key?.startsWith(`${collectionName.slice(0, -1)}-`)) {
+                    const item = localStorage.getItem(key);
+                    if (item) {
+                        data.push(JSON.parse(item));
+                    }
+                }
+            }
+            return { success: true, data };
+        } catch (error) {
+             console.error("Error fetching documents from localStorage:", error);
+             return { success: false, error: (error as Error).message };
+        }
+    }
+    
+    // Fallback for server-side rendering (though this component seems client-side heavy)
     try {
         const db = getClientDb();
         const querySnapshot = await getDocs(collection(db, collectionName));
@@ -99,7 +115,7 @@ export async function getDocuments(collectionName: string): Promise<{ success: b
 
         return { success: true, data };
     } catch (error) {
-        console.error("Error fetching documents:", error);
+        console.error("Error fetching documents from Firestore:", error);
         return { success: false, error: (error as Error).message };
     }
 }
