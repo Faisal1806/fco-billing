@@ -20,7 +20,8 @@ export function Toaster() {
   useEffect(() => {
     fetch('/animations/cloud/fco_success.json')
       .then(res => res.json())
-      .then(data => setSuccessAnimation(data));
+      .then(data => setSuccessAnimation(data))
+      .catch(() => console.error("Could not load success animation."));
   }, []);
 
   return (
@@ -28,7 +29,7 @@ export function Toaster() {
       {toasts.map(function ({ id, title, description, action, isSuccess, ...props }) {
         if (isSuccess && successAnimation) {
           return (
-            <Toast key={id} {...props} className="fixed inset-0 bg-black/80 flex items-center justify-center border-none p-0 w-screen h-screen">
+            <Toast key={id} {...props} className="fixed inset-0 bg-black/80 flex items-center justify-center border-none p-0 w-screen h-screen z-[200]">
               {successAnimation && <Lottie
                 animationData={successAnimation}
                 loop={false}
