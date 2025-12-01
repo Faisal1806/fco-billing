@@ -3,6 +3,7 @@
 
 import * as React from 'react';
 import { useEffect, useState, useRef } from "react";
+import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Printer, Download, FileText, Receipt } from "lucide-react";
 import { FaWhatsapp } from 'react-icons/fa';
@@ -58,6 +59,9 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     const [pageUrl, setPageUrl] = useState('');
     const [printStyle, setPrintStyle] = useState<'a4' | 'thermal'>('a4');
     const [invoiceStyle, setInvoiceStyle] = useState('classic');
+    const searchParams = useSearchParams();
+    const isPublicView = searchParams.get('source') === 'qr';
+
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -96,9 +100,9 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
             if (data) {
                 setBillData(data);
-                // Set the page URL for the QR code
-                const portalUrl = `${window.location.origin}/portal/login?customer=${encodeURIComponent(data.customerName)}`;
-                setPageUrl(portalUrl);
+                if(typeof window !== 'undefined'){
+                  setPageUrl(`${window.location.origin}/invoice/${params.id}?source=qr`);
+                }
             } else {
                 toast({
                     variant: "destructive",
@@ -196,7 +200,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
              {billData && (
                 <div className="p-4 border bg-muted rounded-md flex flex-col items-center gap-2">
                     <QRCode value={pageUrl} size={128} bgColor="transparent" fgColor="hsl(var(--foreground))" />
-                    <p className="text-xs font-semibold text-muted-foreground mt-1">Scan to View Full Ledger</p>
+                    <p className="text-xs font-semibold text-muted-foreground mt-1">Scan to View Bill</p>
                 </div>
             )}
         </div>
@@ -271,9 +275,18 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 }
             `}</style>
             
-            <div className="print:hidden w-full max-w-[250px] space-y-4 sticky top-4 self-start">
-                <Controls />
-            </div>
+            {!isPublicView ? (
+                <div className="print:hidden w-full max-w-[250px] space-y-4 sticky top-4 self-start">
+                    <Controls />
+                </div>
+            ) : (
+                 <div className="print:hidden w-full max-w-[250px] space-y-4 sticky top-4 self-start">
+                    <Button onClick={handleDownloadPdf} size="lg" className="w-full gap-2 bg-blue-600 hover:bg-blue-700 text-white h-12 text-base">
+                        <Download className="h-5 w-5" />
+                        Save to Device
+                    </Button>
+                </div>
+            )}
 
             <div className="print-container A5-page">
                 <div ref={printRef}>
