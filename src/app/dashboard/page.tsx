@@ -773,22 +773,22 @@ export default function DashboardPage() {
         >
              <h2 className="text-xl font-semibold tracking-wider text-muted-foreground">QUICK ACTIONS</h2>
              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
+                <motion.div whileHover={{ scale: 1.05, transition: { type: "spring", stiffness: 400, damping: 10 } }} whileTap={{ scale: 0.95 }}>
                     <Button onClick={() => router.push('/sales')} className="h-20 text-lg w-full bg-primary/80 hover:bg-primary border border-primary-foreground/20">
                         <PlusCircle className="mr-2 h-6 w-6" /> Sales Entry
                     </Button>
                 </motion.div>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
+                <motion.div whileHover={{ scale: 1.05, transition: { type: "spring", stiffness: 400, damping: 10 } }} whileTap={{ scale: 0.95 }}>
                     <Button onClick={() => router.push('/watak-register')} className="h-20 text-lg w-full bg-primary/80 hover:bg-primary border border-primary-foreground/20">
                         <FileText className="mr-2 h-6 w-6" /> Watak Register
                     </Button>
                 </motion.div>
-                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
+                 <motion.div whileHover={{ scale: 1.05, transition: { type: "spring", stiffness: 400, damping: 10 } }} whileTap={{ scale: 0.95 }}>
                     <Button onClick={() => router.push('/purchases')} className="h-20 text-lg w-full bg-primary/80 hover:bg-primary border border-primary-foreground/20">
                         <ShoppingBasket className="mr-2 h-6 w-6" /> Purchases
                     </Button>
                 </motion.div>
-                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
+                 <motion.div whileHover={{ scale: 1.05, transition: { type: "spring", stiffness: 400, damping: 10 } }} whileTap={{ scale: 0.95 }}>
                     <Button onClick={() => router.push('/khata')} className="h-20 text-lg w-full bg-primary/80 hover:bg-primary border border-primary-foreground/20">
                         <BookOpen className="mr-2 h-6 w-6" /> Khata Ledger
                     </Button>
