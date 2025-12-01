@@ -36,10 +36,10 @@ export default function CustomerLoginPage() {
     let ledgerExists = false;
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key && (key.startsWith('invoice-') || key.startsWith('purchase-'))) {
+        if (key && (key.startsWith('invoice-') || key.startsWith('purchase-') || key.startsWith('party-'))) {
             try {
                 const doc = JSON.parse(localStorage.getItem(key)!);
-                const party = doc.customerName || doc.growerName;
+                const party = doc.customerName || doc.growerName || doc.name;
                 if (party && party.toLowerCase() === trimmedName.toLowerCase()) {
                     ledgerExists = true;
                     break;

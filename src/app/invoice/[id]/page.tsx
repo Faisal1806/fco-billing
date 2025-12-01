@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import * as React from 'react';
@@ -15,9 +14,7 @@ import { ClassicA4Layout } from "@/components/invoice-templates/classic-a4";
 import { ModernDarkA4Layout } from "@/components/invoice-templates/modern-dark-a4";
 import { ThermalLayout } from "@/components/invoice-templates/thermal";
 import { ModernLightA4Layout } from "@/components/invoice-templates/modern-light-a4";
-import { useSearchParams } from 'next/navigation';
 import html2canvas from 'html2canvas';
-import { getDocument } from '@/lib/actions';
 
 interface BillData {
     id: string;
@@ -61,13 +58,9 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     const [pageUrl, setPageUrl] = useState('');
     const [printStyle, setPrintStyle] = useState<'a4' | 'thermal'>('a4');
     const [invoiceStyle, setInvoiceStyle] = useState('classic');
-    const searchParams = useSearchParams();
-    const isOnlineView = searchParams.get('view') === 'online';
-
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            setPageUrl(window.location.href);
             const savedStyle = localStorage.getItem('invoiceStyle');
             if (savedStyle) {
                 setInvoiceStyle(savedStyle);
@@ -84,41 +77,29 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             setLoading(true);
 
             let data: BillData | null = null;
-            const documentId = isOnlineView ? params.id : `invoice-${params.id}`;
+            const documentId = `invoice-${params.id}`;
 
-            if (isOnlineView) {
-                // Fetch from server if it's an online view
-                const result = await getDocument('invoices', documentId);
-                if (result.success && result.data) {
-                    data = result.data as BillData;
-                } else {
-                     toast({
+            const localData = localStorage.getItem(documentId);
+            if (localData) {
+                try {
+                    data = JSON.parse(localData) as BillData;
+                } catch (e) {
+                    console.error("Failed to parse invoice data", e);
+                    toast({
                         variant: "destructive",
-                        title: "Invoice Not Found",
-                        description: "The invoice you are looking for does not exist or has been deleted."
+                        title: "Error Loading Invoice",
+                        description: "The saved invoice data appears to be corrupted."
                     });
-                }
-            } else {
-                // Fetch from localStorage for regular view
-                const localData = localStorage.getItem(documentId);
-                if (localData) {
-                    try {
-                        data = JSON.parse(localData) as BillData;
-                    } catch (e) {
-                        console.error("Failed to parse invoice data", e);
-                        toast({
-                            variant: "destructive",
-                            title: "Error Loading Invoice",
-                            description: "The saved invoice data appears to be corrupted."
-                        });
-                    }
                 }
             }
 
 
             if (data) {
                 setBillData(data);
-            } else if (!isOnlineView) { // Only show local not found error if not online
+                // Set the page URL for the QR code
+                const portalUrl = `${window.location.origin}/portal/login?customer=${encodeURIComponent(data.customerName)}`;
+                setPageUrl(portalUrl);
+            } else {
                 toast({
                     variant: "destructive",
                     title: "Invoice Not Found",
@@ -129,12 +110,12 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             setLoading(false);
         };
         fetchBill();
-    }, [params.id, toast, isOnlineView]);
+    }, [params.id, toast]);
 
 
     const handleShare = () => {
         if (billData) {
-            const message = `Check out this Invoice (#${billData.sNo}) for ${billData.customerName}: ${window.location.origin}/invoice/${billData.id}?view=online`;
+            const message = `Check out this Invoice (#${billData.sNo}) for ${billData.customerName}: ${pageUrl}`;
             const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
             window.open(whatsappUrl, '_blank');
         } else {
@@ -190,36 +171,32 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
     const Controls = () => (
         <div className="flex flex-col gap-4 print:hidden p-4 bg-card rounded-lg border">
-             {!isOnlineView && (
-                <>
-                    <div className="flex items-center gap-2">
-                        <Button onClick={() => setPrintStyle('a4')} variant={printStyle === 'a4' ? 'default' : 'outline'} size="sm" className="flex-1 gap-2">
-                            <FileText className="h-4 w-4" /> A5
-                        </Button>
-                        <Button onClick={() => setPrintStyle('thermal')} variant={printStyle === 'thermal' ? 'default' : 'outline'} size="sm" className="flex-1 gap-2">
-                            <Receipt className="h-4 w-4" /> Thermal
-                        </Button>
-                    </div>
-                     <div className="flex flex-col gap-2">
-                        <Button onClick={handleShare} variant="outline" size="sm" className="gap-2 bg-green-500/10 border-green-500/30 text-green-300 hover:bg-green-500/20 hover:text-green-200">
-                            <FaWhatsapp className="h-4 w-4" />
-                            Share on WhatsApp
-                        </Button>
-                        <Button onClick={() => window.print()} variant="outline" size="sm" className="gap-2">
-                            <Printer className="h-4 w-4" />
-                            Print
-                        </Button>
-                    </div>
-                </>
-             )}
+            <div className="flex items-center gap-2">
+                <Button onClick={() => setPrintStyle('a4')} variant={printStyle === 'a4' ? 'default' : 'outline'} size="sm" className="flex-1 gap-2">
+                    <FileText className="h-4 w-4" /> A5
+                </Button>
+                <Button onClick={() => setPrintStyle('thermal')} variant={printStyle === 'thermal' ? 'default' : 'outline'} size="sm" className="flex-1 gap-2">
+                    <Receipt className="h-4 w-4" /> Thermal
+                </Button>
+            </div>
+             <div className="flex flex-col gap-2">
+                <Button onClick={handleShare} variant="outline" size="sm" className="gap-2 bg-green-500/10 border-green-500/30 text-green-300 hover:bg-green-500/20 hover:text-green-200">
+                    <FaWhatsapp className="h-4 w-4" />
+                    Share on WhatsApp
+                </Button>
+                <Button onClick={() => window.print()} variant="outline" size="sm" className="gap-2">
+                    <Printer className="h-4 w-4" />
+                    Print
+                </Button>
+            </div>
             <Button onClick={handleDownloadPdf} size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700 text-white">
                 <Download className="h-4 w-4" />
                 Save to Device
             </Button>
-             {!isOnlineView && billData && (
+             {billData && (
                 <div className="p-4 border bg-muted rounded-md flex flex-col items-center gap-2">
-                    <QRCode value={`${window.location.origin}/invoice/${billData.id}?view=online`} size={128} bgColor="transparent" fgColor="hsl(var(--foreground))" />
-                    <p className="text-xs font-semibold text-muted-foreground mt-1">Scan to View Bill</p>
+                    <QRCode value={pageUrl} size={128} bgColor="transparent" fgColor="hsl(var(--foreground))" />
+                    <p className="text-xs font-semibold text-muted-foreground mt-1">Scan to View Full Ledger</p>
                 </div>
             )}
         </div>
@@ -250,7 +227,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     }
     
     const renderContent = () => {
-        const props = { billData, pageUrl: `${window.location.origin}/invoice/${billData.id}?view=online` };
+        const props = { billData, pageUrl: pageUrl };
         switch(invoiceStyle) {
             case 'modern-dark': return <ModernDarkA4Layout {...props} />;
             case 'modern-light': return <ModernLightA4Layout {...props} />;
@@ -304,7 +281,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                         {renderContent()}
                     </div>
                      <div className="print-area-thermal">
-                        <ThermalLayout billData={billData} pageUrl={`${window.location.origin}/invoice/${billData.id}?view=online`} />
+                        <ThermalLayout billData={billData} pageUrl={pageUrl} />
                     </div>
                 </div>
             </div>
