@@ -84,10 +84,11 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             setLoading(true);
 
             let data: BillData | null = null;
+            const documentId = isOnlineView ? params.id : `invoice-${params.id}`;
 
             if (isOnlineView) {
                 // Fetch from server if it's an online view
-                const result = await getDocument('invoices', params.id);
+                const result = await getDocument('invoices', documentId);
                 if (result.success && result.data) {
                     data = result.data as BillData;
                 } else {
@@ -99,7 +100,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 }
             } else {
                 // Fetch from localStorage for regular view
-                const localData = localStorage.getItem(`invoice-${params.id}`);
+                const localData = localStorage.getItem(documentId);
                 if (localData) {
                     try {
                         data = JSON.parse(localData) as BillData;

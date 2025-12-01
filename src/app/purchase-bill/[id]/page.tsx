@@ -18,6 +18,7 @@ import BusinessCardQR from "@/components/BusinessCardQR";
 import { getDocument } from "@/lib/actions";
 
 interface PurchaseData {
+    id: string;
     billNo: string;
     date: string;
     growerName: string;
@@ -63,7 +64,7 @@ export default function PurchaseBillPage({ params }: { params: { id:string } }) 
             };
             setLoading(true);
 
-            const { success, data, error } = await getDocument('purchases', params.id);
+            const { success, data, error } = await getDocument('purchases', `purchase-${params.id}`);
 
             if (success && data) {
                 setBillData(data as PurchaseData);

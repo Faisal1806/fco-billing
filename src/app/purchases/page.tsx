@@ -63,7 +63,7 @@ export default function PurchasesPage() {
                 try {
                     const purchase = JSON.parse(localStorage.getItem(key)!);
                     // Ensure the document has an id for keying, using billNo as fallback
-                    if (!purchase.id) purchase.id = purchase.billNo;
+                    if (!purchase.id) purchase.id = `purchase-${purchase.billNo}`;
                     loadedPurchases.push(purchase);
                 } catch(e) { console.error("Failed to parse purchase:", e)}
             }
@@ -165,7 +165,7 @@ export default function PurchasesPage() {
     localStorage.setItem(purchaseId, JSON.stringify(purchaseData));
 
     try {
-        await saveDocument('purchases', billNo, purchaseData);
+        await saveDocument('purchases', purchaseId, purchaseData);
     } catch (error) {
         console.error("Cloud sync failed:", error)
     }
@@ -210,7 +210,8 @@ export default function PurchasesPage() {
             return;
         }
         
-        localStorage.removeItem(`purchase-${billId}`);
+        const docId = `purchase-${billId}`;
+        localStorage.removeItem(docId);
         fetchPurchases();
         toast({
             title: "Purchase Deleted",
@@ -223,7 +224,7 @@ export default function PurchasesPage() {
 
         // Attempt to delete from cloud but don't block UI
         try {
-          await deleteDocument('purchases', billId);
+          await deleteDocument('purchases', docId);
         } catch (error) {
             console.error("Cloud delete failed:", error);
         }
