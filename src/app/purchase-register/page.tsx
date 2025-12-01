@@ -35,7 +35,7 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { FaWhatsapp } from 'react-icons/fa';
 import { Badge } from '@/components/ui/badge';
-import { getDocuments, deleteDocument } from '@/lib/actions';
+import { deleteDocument } from '@/lib/actions';
 
 export interface PurchaseEntry {
     billNo: string;
@@ -69,22 +69,25 @@ export default function PurchaseRegisterPage() {
   }, []);
 
 
-  const fetchPurchases = React.useCallback(async () => {
+  const fetchPurchases = React.useCallback(() => {
     setIsLoading(true);
-    const { success, data, error } = await getDocuments('purchases');
-    if (success && data) {
-        setPurchases(data);
-        const uniqueCustomers = ['All Customers', ...new Set(data.map(p => p.growerName))];
+    if (typeof window !== 'undefined') {
+        const loadedPurchases = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('purchase-')) {
+                try {
+                    const purchase = JSON.parse(localStorage.getItem(key)!);
+                    loadedPurchases.push(purchase);
+                } catch(e) { console.error("Failed to parse purchase:", e)}
+            }
+        }
+        setPurchases(loadedPurchases);
+        const uniqueCustomers = ['All Customers', ...new Set(loadedPurchases.map(p => p.growerName))];
         setCustomers(uniqueCustomers);
-    } else {
-        toast({
-            variant: 'destructive',
-            title: 'Error fetching purchases',
-            description: error,
-        });
     }
     setIsLoading(false);
-  }, [toast]);
+  }, []);
 
   React.useEffect(() => {
     fetchPurchases();
@@ -129,15 +132,14 @@ export default function PurchaseRegisterPage() {
     if(!window.confirm(`Are you sure you want to delete Purchase Bill #${billNo}? This cannot be undone.`)) return;
 
     localStorage.removeItem(`purchase-${billNo}`); // Optimistic UI update
-    const { success, error } = await deleteDocument('purchases', billNo);
+    fetchPurchases();
+    toast({ title: "Purchase Bill Deleted", description: `Bill #${billNo} has been deleted locally.`});
 
-    if (success) {
-      fetchPurchases();
-      toast({ title: "Purchase Bill Deleted", description: `Bill #${billNo} has been deleted.`});
-    } else {
-      // If server delete fails, re-fetch to restore UI state or handle error
-      fetchPurchases();
-      toast({ variant: 'destructive', title: 'Delete Failed', description: error });
+    // Also attempt to delete from cloud, but don't block UI on it
+    try {
+        await deleteDocument('purchases', billNo);
+    } catch (e) {
+        console.error("Cloud delete failed but local was successful", e);
     }
   }
 
