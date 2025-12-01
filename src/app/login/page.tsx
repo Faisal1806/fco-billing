@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, ShieldCheck, KeyRound } from 'lucide-react';
+import { ShieldCheck, KeyRound } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -16,13 +16,20 @@ export default function FCo3DHome() {
   const [logoClicks, setLogoClicks] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState('');
-  const [animationData, setAnimationData] = useState(null);
+  const [logoAnimationData, setLogoAnimationData] = useState(null);
+  const [bgAnimationData, setBgAnimationData] = useState(null);
 
   useEffect(() => {
     fetch('/animations/logo/fco_logo_3d_rotate.json')
       .then(res => res.json())
-      .then(data => setAnimationData(data))
+      .then(data => setLogoAnimationData(data))
       .catch(() => console.error("Could not load 3D logo animation."));
+    
+    fetch('/animations/extras/fco_particle_glow.json')
+      .then(res => res.json())
+      .then(data => setBgAnimationData(data))
+      .catch(() => console.error("Could not load background animation."));
+
   }, []);
 
 
@@ -42,8 +49,15 @@ export default function FCo3DHome() {
         if (typeof window !== 'undefined') {
             localStorage.setItem('userRole', 'admin');
         }
-        toast({ title: "Admin Access Granted", description: "Welcome back!", isSuccess: true });
-        router.push('/dashboard');
+        toast({ 
+            title: "Admin Access Granted", 
+            description: "Welcome back!", 
+            isSuccess: true 
+        });
+        // The success toast has a 2.8s animation, so we delay navigation
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 2800);
     } else {
         toast({ variant: 'destructive', title: "Incorrect Password" });
         setPassword('');
@@ -60,7 +74,15 @@ export default function FCo3DHome() {
   }, [router]);
 
   return (
-    <div className="h-screen w-full bg-gradient-to-br from-black via-gray-900 to-primary/30 flex flex-col items-center justify-center overflow-hidden">
+    <div className="h-screen w-full bg-gradient-to-br from-black via-gray-900 to-primary/30 flex flex-col items-center justify-center overflow-hidden relative">
+        <div className="absolute inset-0 z-0">
+             {bgAnimationData && <Lottie 
+                animationData={bgAnimationData}
+                loop={true}
+                className="absolute inset-0 w-full h-full object-cover opacity-50"
+             />}
+             <div className="absolute inset-0 bg-background/90"></div>
+        </div>
       
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
@@ -69,10 +91,10 @@ export default function FCo3DHome() {
         className="z-10 flex flex-col items-center"
       >
         <div onClick={handleLogoClick} className="cursor-pointer" title="Admin Access">
-           {animationData ? (
-             <Lottie animationData={animationData} loop={true} style={{ width: 200, height: 200 }} />
+           {logoAnimationData ? (
+             <Lottie animationData={logoAnimationData} loop={true} style={{ width: 200, height: 200 }} />
            ) : (
-             <Loader2 className="h-32 w-32 animate-spin" />
+             <div className="h-[200px] w-[200px]" />
            )}
         </div>
         <h1 className="text-white text-5xl font-extrabold tracking-widest text-center mt-2">
