@@ -2,13 +2,12 @@
 'use server';
 
 import { getClientDb } from './firebase';
-import { collection, getDocs, doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, deleteDoc, getDoc, addDoc } from 'firebase/firestore';
 
 /**
  * Sends push notifications to specified FCM tokens.
- * NOTE: This is a simplified, client-relayed implementation for demonstration.
- * In a production environment, this should be handled by a secure server
- * with the Firebase Admin SDK.
+ * This function now correctly queues a job in Firestore which a separate service
+ * (not part of this codebase) would listen to for sending notifications via FCM.
  */
 export async function sendPushNotification(notification: {
     title: string;
@@ -16,21 +15,21 @@ export async function sendPushNotification(notification: {
     tokens: string[];
     url?: string;
 }) {
-    // This is a placeholder for server-side push notification logic.
-    // The actual sending will be triggered via a client-side effect that
-    // reads from a 'notificationsToSend' collection, as we cannot use the Admin SDK here.
-    console.log("Queueing notification:", notification);
-    
     if (notification.tokens.length === 0) {
-        console.log("No tokens to send notification to.");
+        console.log("No FCM tokens found. Skipping notification.");
         return { success: true, message: "No tokens provided." };
     }
 
     try {
         const db = getClientDb();
-        const notificationJobsRef = collection(db, `notificationJobs`);
-        await setDoc(doc(notificationJobsRef), notification);
-        return { success: true };
+        // Use addDoc for auto-generated IDs in a collection
+        const notificationJobsRef = collection(db, 'notificationJobs');
+        await addDoc(notificationJobsRef, {
+            ...notification,
+            createdAt: new Date().toISOString(),
+            status: 'pending',
+        });
+        return { success: true, message: "Notification job queued successfully." };
     } catch (error) {
         console.error("Error queueing notification job:", error);
         return { success: false, error: (error as Error).message };
