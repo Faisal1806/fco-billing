@@ -346,8 +346,6 @@ export default function ColdStoragePage() {
             </DialogFooter>
         </DialogContent>
      </Dialog>
-
     </>
   );
-
-    
+}
