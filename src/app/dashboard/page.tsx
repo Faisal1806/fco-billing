@@ -544,63 +544,67 @@ export default function DashboardPage() {
         >
             <Dialog>
                 <DialogTrigger asChild>
-                    <Card className="lg:col-span-2 bg-card/80 backdrop-blur-sm border border-white/10 cursor-pointer">
-                        <CardHeader>
-                            <div className="flex justify-between items-center">
-                                <div>
-                                    <CardTitle>Monthly Sales</CardTitle>
-                                    <CardDescription>Net sales growth for {salesChartYear}. Click to enlarge.</CardDescription>
+                    <motion.div
+                        whileHover={{ scale: 1.02, transition: { type: 'spring', stiffness: 300 } }}
+                        className="lg:col-span-2"
+                    >
+                        <Card className="bg-card/80 backdrop-blur-sm border border-white/10 cursor-pointer h-full">
+                            <CardHeader>
+                                <div className="flex justify-between items-center">
+                                    <CardTitle className="flex items-center gap-2"><BarChart className="h-5 w-5 text-primary"/>Monthly Sales</CardTitle>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="outline">
+                                                {salesChartYear} <ChevronDown className="ml-2 h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent>
+                                            {availableYears.map(year => (
+                                                <DropdownMenuItem key={year} onSelect={() => setSalesChartYear(year)}>
+                                                    {year}
+                                                </DropdownMenuItem>
+                                            ))}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </div>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="outline">
-                                            {salesChartYear} <ChevronDown className="ml-2 h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent>
-                                        {availableYears.map(year => (
-                                            <DropdownMenuItem key={year} onSelect={() => setSalesChartYear(year)}>
-                                                {year}
-                                            </DropdownMenuItem>
-                                        ))}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="h-64">
-                                {barChartData && barChartData.some(d => d.y > 0) ? (
-                                <VictoryChart
-                                    theme={VictoryTheme.material}
-                                    domainPadding={{x: 20}}
-                                    padding={{ top: 20, bottom: 40, left: 60, right: 40 }}
-                                >
-                                    <VictoryAxis 
-                                        style={{ 
-                                            tickLabels: { fill: 'hsl(var(--muted-foreground))', fontSize: 10 },
-                                            grid: { stroke: 'hsl(var(--border))', strokeDasharray: '4' } 
-                                        }} 
-                                    />
-                                    <VictoryAxis 
-                                        dependentAxis 
-                                        style={{ 
-                                            tickLabels: { fill: 'hsl(var(--muted-foreground))', fontSize: 10 },
-                                            grid: { stroke: 'hsl(var(--border))', strokeDasharray: '4' } 
-                                        }}
-                                        tickFormat={(x) => (`₹${x/1000}k`)} 
-                                    />
-                                    <VictoryBar
-                                        data={barChartData}
-                                        labelComponent={<VictoryTooltip style={{fill: 'black'}}/>}
-                                        style={{ data: { fill: "#34d399" }, labels: { fill: 'white' } }}
-                                        barRatio={0.8}
-                                        cornerRadius={{ top: 4 }}
-                                    />
-                                </VictoryChart>
-                                ) : <div className="flex items-center justify-center h-full text-muted-foreground">No monthly sales data available for {salesChartYear}.</div>}
-                            </div>
-                        </CardContent>
-                    </Card>
+                                <CardDescription>Net sales growth for {salesChartYear}. Click to enlarge.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="h-64">
+                                    {barChartData && barChartData.some(d => d.y > 0) ? (
+                                    <VictoryChart
+                                        theme={VictoryTheme.material}
+                                        domainPadding={{x: 20}}
+                                        padding={{ top: 20, bottom: 40, left: 60, right: 40 }}
+                                        animate={{ duration: 500 }}
+                                    >
+                                        <VictoryAxis 
+                                            style={{ 
+                                                tickLabels: { fill: 'hsl(var(--muted-foreground))', fontSize: 10 },
+                                                grid: { stroke: 'hsl(var(--border))', strokeDasharray: '4' } 
+                                            }} 
+                                        />
+                                        <VictoryAxis 
+                                            dependentAxis 
+                                            style={{ 
+                                                tickLabels: { fill: 'hsl(var(--muted-foreground))', fontSize: 10 },
+                                                grid: { stroke: 'hsl(var(--border))', strokeDasharray: '4' } 
+                                            }}
+                                            tickFormat={(x) => (`₹${x/1000}k`)} 
+                                        />
+                                        <VictoryBar
+                                            data={barChartData}
+                                            labelComponent={<VictoryTooltip style={{fill: 'black'}}/>}
+                                            style={{ data: { fill: "#34d399" }, labels: { fill: 'white' } }}
+                                            barRatio={0.8}
+                                            cornerRadius={{ top: 4 }}
+                                        />
+                                    </VictoryChart>
+                                    ) : <div className="flex items-center justify-center h-full text-muted-foreground">No monthly sales data available for {salesChartYear}.</div>}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
                 </DialogTrigger>
                 <ChartModalContent title={`Monthly Sales for ${salesChartYear}`}>
                      <VictoryChart
@@ -608,6 +612,7 @@ export default function DashboardPage() {
                         domainPadding={{x: 30}}
                         height={400}
                         padding={{ top: 40, bottom: 60, left: 80, right: 50 }}
+                        animate={{ duration: 500 }}
                     >
                         <VictoryAxis 
                             style={{ 
@@ -636,53 +641,58 @@ export default function DashboardPage() {
 
              <Dialog>
                 <DialogTrigger asChild>
-                    <Card className="bg-card/80 backdrop-blur-sm border border-white/10 cursor-pointer">
-                        <CardHeader>
-                            <CardTitle>Top Grower Sales</CardTitle>
-                            <CardDescription>Net sales distribution among top growers this year. Click to enlarge.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="h-64">
-                                {pieChartData.length > 0 ? (
-                                    <VictoryPie
-                                        data={pieChartData}
-                                        colorScale={pieColorScale}
-                                        labelRadius={({ innerRadius }) => (innerRadius || 0) + 40 }
-                                        radius={({ datum }) => 100 + (datum.y / Math.max(...pieChartData.map(d => d.y))) * 20}
-                                        style={{
-                                            data: {
-                                                fillOpacity: 0.8,
-                                                stroke: "hsl(var(--card))",
-                                                strokeWidth: 2,
-                                            },
-                                            labels: {
-                                                fill: "hsl(var(--card-foreground))",
-                                                fontSize: 8,
-                                                fontWeight: "bold"
-                                            }
-                                        }}
-                                        events={[{
-                                            target: "data",
-                                            eventHandlers: {
-                                                onClick: () => {
-                                                    return [{
-                                                        target: "data",
-                                                        mutation: ({ datum, ...props }) => {
-                                                            if (datum.x === "Others") {
-                                                                setIsOthersDrilldownOpen(true);
+                    <motion.div
+                        whileHover={{ scale: 1.02, transition: { type: 'spring', stiffness: 300 } }}
+                    >
+                        <Card className="bg-card/80 backdrop-blur-sm border border-white/10 cursor-pointer h-full">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2"><PieChart className="h-5 w-5 text-primary"/>Top Grower Sales</CardTitle>
+                                <CardDescription>Net sales distribution among top growers this year. Click to enlarge or drill-down on 'Others'.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="h-64">
+                                    {pieChartData.length > 0 ? (
+                                        <VictoryPie
+                                            data={pieChartData}
+                                            colorScale={pieColorScale}
+                                            labelRadius={({ innerRadius }) => (innerRadius || 0) + 40 }
+                                            radius={({ datum }) => 100 + (datum.y / Math.max(...pieChartData.map(d => d.y))) * 20}
+                                            style={{
+                                                data: {
+                                                    fillOpacity: 0.8,
+                                                    stroke: "hsl(var(--card))",
+                                                    strokeWidth: 2,
+                                                },
+                                                labels: {
+                                                    fill: "hsl(var(--card-foreground))",
+                                                    fontSize: 8,
+                                                    fontWeight: "bold"
+                                                }
+                                            }}
+                                            animate={{ duration: 500 }}
+                                            events={[{
+                                                target: "data",
+                                                eventHandlers: {
+                                                    onClick: () => {
+                                                        return [{
+                                                            target: "data",
+                                                            mutation: ({ datum, ...props }) => {
+                                                                if (datum.x === "Others") {
+                                                                    setIsOthersDrilldownOpen(true);
+                                                                    return null;
+                                                                }
                                                                 return null;
                                                             }
-                                                            return null;
-                                                        }
-                                                    }];
+                                                        }];
+                                                    }
                                                 }
-                                            }
-                                        }]}
-                                    />
-                                ) : <div className="flex items-center justify-center h-full text-muted-foreground">No sales data for growers.</div>}
-                            </div>
-                        </CardContent>
-                    </Card>
+                                            }]}
+                                        />
+                                    ) : <div className="flex items-center justify-center h-full text-muted-foreground">No sales data for growers.</div>}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
                 </DialogTrigger>
                 <Dialog open={isOthersDrilldownOpen} onOpenChange={setIsOthersDrilldownOpen}>
                     <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
@@ -720,6 +730,7 @@ export default function DashboardPage() {
                             data: { fillOpacity: 0.9, stroke: "hsl(var(--card))", strokeWidth: 3 },
                             labels: { fill: "hsl(var(--card-foreground))", fontSize: 12, fontWeight: "bold" }
                         }}
+                        animate={{ duration: 500 }}
                     />
                 </ChartModalContent>
             </Dialog>
@@ -864,5 +875,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
