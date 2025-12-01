@@ -255,7 +255,7 @@ export default function LoyaltyPage() {
                                     const rankIcon = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
                                     return (
                                         <TableRow key={grower.name}>
-                                            <TableCell className="font-bold">{rankIcon}</TableCell>
+                                            <TableCell className="font-bold text-lg">{rankIcon}</TableCell>
                                             <TableCell>{grower.name}</TableCell>
                                             <TableCell className="text-right font-mono text-green-500">{grower.points}</TableCell>
                                             <TableCell className="text-right font-mono">₹{grower.netSales.toLocaleString('en-IN')}</TableCell>
@@ -286,7 +286,9 @@ export default function LoyaltyPage() {
                                     </div>
                                     <div className="p-4 bg-muted/50 rounded-lg">
                                         <p className="text-sm text-muted-foreground">Available Points (₹)</p>
-                                        <p className="text-2xl font-bold text-yellow-400">{selectedPartyPoints.toLocaleString('en-IN')}</p>
+                                        <p className="text-2xl font-bold text-yellow-400 flex items-center gap-2">
+                                            <Star className="h-6 w-6"/> {selectedPartyPoints.toLocaleString('en-IN')}
+                                        </p>
                                     </div>
                                 </div>
 
@@ -295,7 +297,9 @@ export default function LoyaltyPage() {
                                         <Label className="font-semibold">Redeem Points</Label>
                                          <div className="flex items-center gap-2">
                                             <Input type="number" className="w-40" placeholder="Points to redeem" value={redemptionAmount || ''} onChange={e => setRedemptionAmount(Number(e.target.value))} max={selectedPartyPoints} />
-                                            <Button onClick={handleRedeem} className='bg-green-600 hover:bg-green-700' disabled={redemptionAmount <= 0 || redemptionAmount > selectedPartyPoints}>Redeem</Button>
+                                            <Button onClick={handleRedeem} className='bg-green-600 hover:bg-green-700 gap-2' disabled={redemptionAmount <= 0 || redemptionAmount > selectedPartyPoints}>
+                                                <Gift className="h-4 w-4"/> Redeem
+                                            </Button>
                                         </div>
                                         <p className="text-xs text-muted-foreground">Minimum 500 points to redeem. This creates a "Discount" transaction, reducing their dues.</p>
                                     </CardFooter>
