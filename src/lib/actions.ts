@@ -4,9 +4,6 @@
 import { getClientDb } from './firebase';
 import { collection, getDocs, doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
 
-// Hardcoded user ID for the single-tenant app structure.
-const userId = 'default-user';
-
 /**
  * Sends push notifications to specified FCM tokens.
  * NOTE: This is a simplified, client-relayed implementation for demonstration.
@@ -31,7 +28,7 @@ export async function sendPushNotification(notification: {
 
     try {
         const db = getClientDb();
-        const notificationJobsRef = collection(db, `users/${userId}/notificationJobs`);
+        const notificationJobsRef = collection(db, `notificationJobs`);
         await setDoc(doc(notificationJobsRef), notification);
         return { success: true };
     } catch (error) {
@@ -41,12 +38,11 @@ export async function sendPushNotification(notification: {
 }
 
 
-// Generic function to save a document under the user's collections
+// Generic function to save a document
 export async function saveDocument(collectionName: string, id: string, data: any) {
   try {
     const db = getClientDb();
-    // The path is now correctly structured as users/{userId}/{collectionName}/{id}
-    const docPath = `users/${userId}/${collectionName}/${id}`;
+    const docPath = `${collectionName}/${id}`;
     await setDoc(doc(db, docPath), data, { merge: true });
     return { success: true, id };
   } catch (error) {
@@ -55,11 +51,11 @@ export async function saveDocument(collectionName: string, id: string, data: any
   }
 }
 
-// Generic function to delete a document from the user's collections
+// Generic function to delete a document
 export async function deleteDocument(collectionName: string, id: string) {
     try {
         const db = getClientDb();
-        const docPath = `users/${userId}/${collectionName}/${id}`;
+        const docPath = `${collectionName}/${id}`;
         await deleteDoc(doc(db, docPath));
         return { success: true };
     } catch (error) {
@@ -68,17 +64,25 @@ export async function deleteDocument(collectionName: string, id: string) {
     }
 }
 
-// Generic function to get a single document from a user's collection
+// Generic function to get a single document from a collection
 export async function getDocument(collectionName: string, id: string): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
         const db = getClientDb();
-        const docPath = `users/${userId}/${collectionName}/${id}`;
+        const docPath = `${collectionName}/${id}`;
         const docSnap = await getDoc(doc(db, docPath));
         if (docSnap.exists()) {
             return { success: true, data: { id: docSnap.id, ...docSnap.data() } };
         }
         
-        return { success: false, error: "Document not found." };
+        // Fallback to check localStorage for older data structure
+        if (typeof window !== 'undefined') {
+            const localData = localStorage.getItem(`${collectionName}-${id}`);
+            if (localData) {
+                return { success: true, data: JSON.parse(localData) };
+            }
+        }
+        
+        return { success: false, error: "Document not found in cloud or local storage." };
     } catch (error) {
         console.error("Error fetching document:", error);
         return { success: false, error: (error as Error).message };
@@ -86,12 +90,11 @@ export async function getDocument(collectionName: string, id: string): Promise<{
 }
 
 
-// Generic function to get documents from a user's collection
+// Generic function to get documents from a collection
 export async function getDocuments(collectionName: string): Promise<{ success: boolean; data?: any[]; error?: string }> {
     try {
         const db = getClientDb();
-        const collectionPath = `users/${userId}/${collectionName}`;
-        const querySnapshot = await getDocs(collection(db, collectionPath));
+        const querySnapshot = await getDocs(collection(db, collectionName));
         const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
         return { success: true, data };
