@@ -329,7 +329,7 @@ export function BillMakingTab() {
     try {
         await saveDocument('invoices', billId, billData);
         toast({
-            title: isEditing ? 'Invoice Updated & Synced' : 'Invoice Saved & Synced',
+            title: isEditing ? 'Invoice Updated' : 'Invoice Saved',
             description: 'The invoice has been successfully saved to the cloud.',
             isSuccess: true,
         });

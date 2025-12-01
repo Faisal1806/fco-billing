@@ -37,6 +37,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { Badge } from '@/components/ui/badge';
+import { motion } from 'framer-motion';
 
 export interface WatakEntry {
     id: string;
@@ -552,17 +553,26 @@ export default function SalesRegisterPage() {
               </div>
           ) : viewMode === 'grid' ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {filteredWataks.map((watak) => {
+                  {filteredWataks.map((watak, index) => {
                       const canonicalName = partyNameMap.get(getCanonicalName(watak.customerName)) || watak.customerName;
                       return (
-                      <div key={watak.id} onClick={() => navigateToBill(watak.sNo)} className="cursor-pointer">
+                      <motion.div 
+                        key={watak.id} 
+                        onClick={() => navigateToBill(watak.sNo)} 
+                        className="cursor-pointer"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                        whileHover={{ scale: 1.05, zIndex: 10 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
                           <DocumentCard type="watak" title={`Invoice #${watak.watakNo || watak.sNo}`}>
                               <p className="text-lg font-semibold">{canonicalName}</p>
                               {watak.customerUrdu && <p className="font-urdu text-xl mt-1">{watak.customerUrdu}</p>}
                               <p className="text-sm mt-2">Date: {new Date(watak.date).toLocaleDateString()}</p>
                               <p className="text-2xl font-bold mt-4">₹{watak.totals.netSale.toFixed(2)}</p>
                           </DocumentCard>
-                      </div>
+                      </motion.div>
                   )})}
               </div>
           ) : (
