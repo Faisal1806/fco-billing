@@ -385,8 +385,8 @@ export default function DashboardPage() {
     const sortedGrowers = Object.values(profitsByGrower).sort((a, b) => b.profit - a.profit);
 
     return {
-        topGrowers: sortedGrowers.slice(0, 5),
-        otherGrowers: sortedGrowers.slice(5)
+        topGrowers: sortedGrowers.slice(0, 20),
+        otherGrowers: sortedGrowers.slice(20)
     };
   }, [allInvoices, allBikris, isLoading]);
 
@@ -445,11 +445,16 @@ export default function DashboardPage() {
       y: sales,
       label: `₹${(sales/1000).toFixed(1)}k`
   }));
+  
+  const otherGrowersBarChartData = growerProfits.otherGrowers.map(g => ({
+    x: g.name,
+    y: g.profit,
+  }));
 
   const pieColorScale = ["#10b981", "#3b82f6", "#f97316", "#8b5cf6", "#ec4899", "#64748b"];
 
   const ChartModalContent = ({ title, children }: { title: string, children: React.ReactNode }) => (
-    <DialogContent className="max-w-3xl h-[60vh] flex flex-col">
+    <DialogContent className="max-w-3xl h-[80vh] flex flex-col">
         <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
@@ -590,7 +595,7 @@ export default function DashboardPage() {
                 </ChartModalContent>
             </Dialog>
 
-            <Dialog open={isOthersDrilldownOpen} onOpenChange={setIsOthersDrilldownOpen}>
+             <Dialog open={isOthersDrilldownOpen} onOpenChange={setIsOthersDrilldownOpen}>
                 <DialogTrigger asChild>
                     <Card className="bg-card/80 backdrop-blur-sm border border-white/10 cursor-pointer">
                         <CardHeader>
@@ -635,32 +640,40 @@ export default function DashboardPage() {
                         </CardContent>
                     </Card>
                 </DialogTrigger>
-                 <DialogContent className="max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Grower Sales: "Others"</DialogTitle>
-                        <DialogDescription>
-                            A breakdown of all growers not in the top 5.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <ScrollArea className="max-h-96">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Grower</TableHead>
-                                    <TableHead className="text-right">Net Sales</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {growerProfits.otherGrowers.map(grower => (
-                                    <TableRow key={grower.name}>
-                                        <TableCell>{grower.name}</TableCell>
-                                        <TableCell className="text-right font-mono">₹{grower.profit.toLocaleString('en-IN')}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </ScrollArea>
-                </DialogContent>
+                <ChartModalContent title={`Grower Sales: "Others" (${growerProfits.otherGrowers.length} growers)`}>
+                     {otherGrowersBarChartData && otherGrowersBarChartData.length > 0 ? (
+                        <VictoryChart
+                            theme={VictoryTheme.material}
+                            domainPadding={{x: 20, y: 20}}
+                            padding={{ top: 20, bottom: 150, left: 60, right: 40 }}
+                            height={400 + growerProfits.otherGrowers.length * 5}
+                            horizontal
+                        >
+                            <VictoryAxis 
+                                dependentAxis
+                                style={{ 
+                                    tickLabels: { fill: 'hsl(var(--muted-foreground))', fontSize: 10 },
+                                    grid: { stroke: 'hsl(var(--border))', strokeDasharray: '4' } 
+                                }} 
+                                tickFormat={(x) => (`₹${(x/1000).toFixed(0)}k`)}
+                            />
+                            <VictoryAxis
+                                style={{ 
+                                    tickLabels: { fill: 'hsl(var(--muted-foreground))', fontSize: 8, angle: -45, textAnchor: 'end', padding: 5 },
+                                }}
+                            />
+                            <VictoryBar
+                                data={otherGrowersBarChartData}
+                                barWidth={12}
+                                labels={({ datum }) => `₹${datum.y.toLocaleString('en-IN')}`}
+                                labelComponent={<VictoryLabel dx={-30} style={{ fill: 'white', fontSize: 8 }} />}
+                                style={{
+                                    data: { fill: "#f97316" }
+                                }}
+                            />
+                        </VictoryChart>
+                     ) : <div className="flex items-center justify-center h-full text-muted-foreground">No other growers to display.</div>}
+                </ChartModalContent>
             </Dialog>
         </div>
         
