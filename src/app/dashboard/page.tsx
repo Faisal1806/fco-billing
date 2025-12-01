@@ -1,3 +1,4 @@
+
 'use client'
 
 import * as React from 'react';
@@ -19,7 +20,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogDescription
 } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -592,87 +592,6 @@ export default function DashboardPage() {
                     </VictoryChart>
                 </ChartModalContent>
             </Dialog>
-
-             <Dialog open={isOthersDrilldownOpen} onOpenChange={setIsOthersDrilldownOpen}>
-                <DialogTrigger asChild>
-                    <Card className="bg-card/80 backdrop-blur-sm border border-white/10 cursor-pointer">
-                        <CardHeader>
-                            <CardTitle>Top Grower Sales</CardTitle>
-                            <CardDescription>Net sales distribution for top growers this year. Click a slice for details.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="h-64">
-                                {pieChartData && pieChartData.length > 0 ? (
-                                    <VictoryPie
-                                        data={pieChartData}
-                                        colorScale={pieColorScale}
-                                        innerRadius={70}
-                                        labelComponent={<VictoryLabel style={{ fill: 'hsl(var(--foreground))', fontSize: 10 }} />}
-                                        labels={({ datum }) => `${datum.x}\n₹${(datum.y / 1000).toFixed(0)}k`}
-                                        style={{
-                                            data: {
-                                                stroke: 'hsl(var(--background))',
-                                                strokeWidth: 2,
-                                                cursor: 'pointer',
-                                            },
-                                        }}
-                                        events={[{
-                                            target: "data",
-                                            eventHandlers: {
-                                                onClick: () => {
-                                                  return [{
-                                                    target: "data",
-                                                    mutation: (props) => {
-                                                      if (props.datum.name === 'Others') {
-                                                        setIsOthersDrilldownOpen(true);
-                                                      }
-                                                      return null;
-                                                    }
-                                                  }];
-                                                }
-                                            }
-                                        }]}
-                                    />
-                                ) : <div className="flex items-center justify-center h-full text-muted-foreground">No grower sales data for chart.</div>}
-                            </div>
-                        </CardContent>
-                    </Card>
-                </DialogTrigger>
-                <ChartModalContent title={`Grower Sales: "Others" (${growerProfits.otherGrowers.length} growers)`}>
-                     {otherGrowersBarChartData && otherGrowersBarChartData.length > 0 ? (
-                        <VictoryChart
-                            theme={VictoryTheme.material}
-                            domainPadding={{x: 20, y: 20}}
-                            padding={{ top: 20, bottom: 150, left: 60, right: 40 }}
-                            height={400 + growerProfits.otherGrowers.length * 5}
-                            horizontal
-                        >
-                            <VictoryAxis 
-                                dependentAxis
-                                style={{ 
-                                    tickLabels: { fill: 'hsl(var(--muted-foreground))', fontSize: 10 },
-                                    grid: { stroke: 'hsl(var(--border))', strokeDasharray: '4' } 
-                                }} 
-                                tickFormat={(x) => (`₹${(x/1000).toFixed(0)}k`)}
-                            />
-                            <VictoryAxis
-                                style={{ 
-                                    tickLabels: { fill: 'hsl(var(--muted-foreground))', fontSize: 8, angle: -45, textAnchor: 'end', padding: 5 },
-                                }}
-                            />
-                            <VictoryBar
-                                data={otherGrowersBarChartData}
-                                barWidth={12}
-                                labels={({ datum }) => `₹${datum.y.toLocaleString('en-IN')}`}
-                                labelComponent={<VictoryLabel dx={-30} style={{ fill: 'white', fontSize: 8 }} />}
-                                style={{
-                                    data: { fill: "#f97316" }
-                                }}
-                            />
-                        </VictoryChart>
-                     ) : <div className="flex items-center justify-center h-full text-muted-foreground">No other growers to display.</div>}
-                </ChartModalContent>
-            </Dialog>
         </div>
         
         <div className="space-y-4">
@@ -740,42 +659,44 @@ export default function DashboardPage() {
         
         <Card className="bg-card/80 backdrop-blur-sm border border-white/10">
             <CardHeader>
-                <CardTitle>All Growers</CardTitle>
-                <CardDescription>This session's growers by net sales.</CardDescription>
+                <CardTitle>All Growers by Net Sales</CardTitle>
+                <CardDescription>This session's growers ranked by their total net sales.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
-                {[...growerProfits.topGrowers, ...growerProfits.otherGrowers].length > 0 ? (
-                    <Table>
-                        <TableHeader>
-                            <TableRow className="border-white/10">
-                                <TableHead>Grower</TableHead>
-                                <TableHead className="text-right">Net Sales</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {[...growerProfits.topGrowers, ...growerProfits.otherGrowers].map((grower, index) => (
-                                <TableRow key={grower.name} className="border-white/10">
-                                    <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <span className={cn("flex items-center justify-center h-8 w-8 rounded-full text-white font-bold", 
-                                                index === 0 && "bg-yellow-500",
-                                                index === 1 && "bg-gray-400",
-                                                index === 2 && "bg-orange-700",
-                                                index > 2 && "bg-gray-600"
-                                            )}>{index + 1}</span>
-                                            <div>
-                                              <span className="font-medium text-base">{grower.name}</span>
-                                            </div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-right font-mono text-lg text-green-400">₹{grower.profit.toLocaleString('en-IN', {minimumFractionDigits: 2})}</TableCell>
+                <ScrollArea className="h-96">
+                    {[...growerProfits.topGrowers, ...growerProfits.otherGrowers].length > 0 ? (
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="border-white/10">
+                                    <TableHead>Grower</TableHead>
+                                    <TableHead className="text-right">Net Sales</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                ) : (
-                     <p className="text-sm text-muted-foreground text-center py-8">No sales data recorded this year.</p>
-                )}
+                            </TableHeader>
+                            <TableBody>
+                                {[...growerProfits.topGrowers, ...growerProfits.otherGrowers].map((grower, index) => (
+                                    <TableRow key={grower.name} className="border-white/10">
+                                        <TableCell>
+                                            <div className="flex items-center gap-3">
+                                                <span className={cn("flex items-center justify-center h-8 w-8 rounded-full text-white font-bold", 
+                                                    index === 0 && "bg-yellow-500",
+                                                    index === 1 && "bg-gray-400",
+                                                    index === 2 && "bg-orange-700",
+                                                    index > 2 && "bg-gray-600"
+                                                )}>{index + 1}</span>
+                                                <div>
+                                                <span className="font-medium text-base">{grower.name}</span>
+                                                </div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="text-right font-mono text-lg text-green-400">₹{grower.profit.toLocaleString('en-IN', {minimumFractionDigits: 2})}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    ) : (
+                        <p className="text-sm text-muted-foreground text-center py-8">No sales data recorded this year.</p>
+                    )}
+                </ScrollArea>
             </CardContent>
         </Card>
 
