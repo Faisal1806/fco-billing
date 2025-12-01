@@ -2,7 +2,7 @@
 'use server';
 
 import { getClientDb } from './firebase';
-import { collection, getDocs, doc, setDoc, deleteDoc, getDoc, where, query } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
 
 // Hardcoded user ID for the single-tenant app structure.
 const userId = 'default-user';
@@ -72,26 +72,10 @@ export async function deleteDocument(collectionName: string, id: string) {
 export async function getDocument(collectionName: string, id: string): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
         const db = getClientDb();
-        // First try the new user-specific path
         const docPath = `users/${userId}/${collectionName}/${id}`;
         const docSnap = await getDoc(doc(db, docPath));
         if (docSnap.exists()) {
             return { success: true, data: { id: docSnap.id, ...docSnap.data() } };
-        }
-
-        // Fallback to legacy path if not found in the new path
-        const legacyId = `${collectionName.slice(0, -1)}-${id}`;
-        const legacyDocSnap = await getDoc(doc(db, collectionName, legacyId));
-         if (legacyDocSnap.exists()) {
-             return { success: true, data: { id: legacyDocSnap.id, ...legacyDocSnap.data() } };
-        }
-
-        // Final fallback to local storage for very old data
-        if (typeof window !== 'undefined') {
-            const localData = localStorage.getItem(`${collectionName.slice(0, -1)}-${id}`);
-            if (localData) {
-                return { success: true, data: JSON.parse(localData) };
-            }
         }
         
         return { success: false, error: "Document not found." };
@@ -110,24 +94,7 @@ export async function getDocuments(collectionName: string): Promise<{ success: b
         const querySnapshot = await getDocs(collection(db, collectionPath));
         const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        let localData: any[] = [];
-        if (typeof window !== 'undefined') {
-            const prefix = `${collectionName.slice(0, -1)}-`;
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && key.startsWith(prefix)) {
-                    try {
-                        localData.push(JSON.parse(localStorage.getItem(key)!));
-                    } catch(e) { console.error('Error parsing local data', e); }
-                }
-            }
-        }
-        
-        // Combine and de-duplicate, giving precedence to cloud data
-        const combinedData = [...data, ...localData];
-        const uniqueData = Array.from(new Map(combinedData.map(item => [item.id || item.billNo, item])).values());
-        
-        return { success: true, data: uniqueData };
+        return { success: true, data };
     } catch (error) {
         console.error("Error fetching documents:", error);
         return { success: false, error: (error as Error).message };
