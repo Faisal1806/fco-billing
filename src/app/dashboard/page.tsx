@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { IndianRupee, TrendingUp, Calendar, FileText, ShoppingBasket, BookOpen, Loader2, Package, Box, ClipboardList, Globe, PlusCircle, User, Truck, Receipt, PieChart, BarChart, Award, ChevronDown, ListChecks } from 'lucide-react';
+import { IndianRupee, TrendingUp, Calendar, FileText, ShoppingBasket, BookOpen, Loader2, Package, Box, ClipboardList, Globe, PlusCircle, User, Truck, Receipt, PieChart, BarChart, Award, ChevronDown, ListChecks, ShoppingCart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
