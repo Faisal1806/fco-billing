@@ -6,7 +6,7 @@ import * as React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { IndianRupee, TrendingUp, Calendar, FileText, ShoppingBasket, BookOpen, Loader2, Package, Box, ClipboardList, Globe, PlusCircle, User, Truck, Receipt, PieChart, BarChart, Award } from 'lucide-react';
+import { IndianRupee, TrendingUp, Calendar, FileText, ShoppingBasket, BookOpen, Loader2, Package, Box, ClipboardList, Globe, PlusCircle, User, Truck, Receipt, PieChart, BarChart, Award, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -15,14 +15,16 @@ import { motion } from 'framer-motion';
 import { sidebarSections } from '@/components/Sidebar';
 import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { VictoryPie, VictoryBar, VictoryChart, VictoryAxis, VictoryTheme, VictoryLabel } from 'victory';
+import { VictoryPie, VictoryBar, VictoryChart, VictoryAxis, VictoryTheme, VictoryLabel, VictoryTooltip } from 'victory';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription
 } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 
 interface Invoice {
@@ -45,7 +47,7 @@ interface Invoice {
 }
 
 interface Receipt {
-    id: string;
+    id:string;
     date: string;
     entries: {
         peti: number;
@@ -132,6 +134,10 @@ export default function DashboardPage() {
   const [allAdvances, setAllAdvances] = useState<Advance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // New state for interactive charts
+  const [salesChartYear, setSalesChartYear] = useState(new Date().getFullYear());
+  const [isOthersDrilldownOpen, setIsOthersDrilldownOpen] = useState(false);
+
   useEffect(() => {
     function fetchData() {
         if (typeof window === 'undefined') return;
@@ -179,13 +185,19 @@ export default function DashboardPage() {
     }
     fetchData();
   }, []);
+  
+  const availableYears = useMemo(() => {
+      const allDates = [...allInvoices.map(i => i.date), ...allBikris.map(b => b.date)];
+      const years = new Set(allDates.map(d => new Date(d).getFullYear()));
+      return Array.from(years).sort((a,b) => b-a);
+  }, [allInvoices, allBikris]);
 
   const stats = useMemo(() => {
     if (isLoading) return null;
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
     const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
+    const currentYear = new Date().getFullYear();
     
     let totalSaleValueToday = 0;
     let pattiToday = 0;
@@ -228,7 +240,6 @@ export default function DashboardPage() {
             if (saleMonth === currentMonth) {
                 monthlyTotalSales += netSale;
             }
-            monthlySalesData[saleMonth] += netSale;
             
             yearGrossSales += grossSale;
             yearTotalExpenses += totalExpenses;
@@ -239,13 +250,17 @@ export default function DashboardPage() {
                 if (entry.type === 'Dabba') yearDabbaSold += entry.qty;
             });
         }
+
+        if (saleYear === salesChartYear) {
+            monthlySalesData[saleMonth] += netSale;
+        }
     });
     
     allBikris.forEach(bikri => {
         if (!bikri.calculation) return;
         const bikriDate = new Date(bikri.date);
-        if (bikriDate.getFullYear() !== currentYear) return;
-
+        const bikriYear = bikriDate.getFullYear();
+        
         const grossSale = bikri.calculation.grossSale || 0;
         const totalExpenses = bikri.calculation.totalExpenses || 0;
         
@@ -254,14 +269,16 @@ export default function DashboardPage() {
             bikriNetSale = bikri.calculation.netSalePayableToGrower || 0;
             // The profit for F.Co is the commission, which is part of expenses
             // For simplicity, we add commission to net sales from F.Co's perspective
-            yearNetSales += bikri.calculation.commissionAmount || 0;
+            if (bikriYear === currentYear) yearNetSales += bikri.calculation.commissionAmount || 0;
         } else { // fcoStock
             bikriNetSale = bikri.calculation.netProfitOrLoss || 0;
-            yearNetSales += bikriNetSale;
+            if (bikriYear === currentYear) yearNetSales += bikriNetSale;
         }
         
-        yearTotalExpenses += totalExpenses;
-        yearGrossSales += grossSale; // Add bikri gross sales to total gross
+        if(bikriYear === currentYear) {
+            yearTotalExpenses += totalExpenses;
+            yearGrossSales += grossSale; // Add bikri gross sales to total gross
+        }
 
         if (bikri.date === todayStr) {
             totalSaleValueToday += bikriNetSale;
@@ -270,15 +287,19 @@ export default function DashboardPage() {
         }
         
         const saleMonth = bikriDate.getMonth();
-        if (saleMonth === currentMonth) {
+        if (bikriYear === currentYear && saleMonth === currentMonth) {
             monthlyTotalSales += bikriNetSale;
         }
-        monthlySalesData[saleMonth] += bikriNetSale;
+        if (bikriYear === salesChartYear) {
+            monthlySalesData[saleMonth] += bikriNetSale;
+        }
 
-        const pattiSent = bikri.saleEntries?.filter((e:any) => e.type === 'Patti').reduce((acc:number, e:any) => acc + e.qty, 0) || 0;
-        const dabbaSent = bikri.saleEntries?.filter((e:any) => e.type === 'Dabba').reduce((acc:number, e:any) => acc + e.qty, 0) || 0;
-        yearPattiSentOutside += pattiSent;
-        yearDabbaSentOutside += dabbaSent;
+        if(bikriYear === currentYear) {
+            const pattiSent = bikri.saleEntries?.filter((e:any) => e.type === 'Patti').reduce((acc:number, e:any) => acc + e.qty, 0) || 0;
+            const dabbaSent = bikri.saleEntries?.filter((e:any) => e.type === 'Dabba').reduce((acc:number, e:any) => acc + e.qty, 0) || 0;
+            yearPattiSentOutside += pattiSent;
+            yearDabbaSentOutside += dabbaSent;
+        }
     });
 
     allReceipts.forEach(receipt => {
@@ -326,10 +347,10 @@ export default function DashboardPage() {
         yearDabbaSentOutside,
         yearNugsSentOutside: yearPattiSentOutside + yearDabbaSentOutside,
     };
-  }, [allInvoices, allBikris, allReceipts, allChallans, isLoading]);
+  }, [allInvoices, allBikris, allReceipts, allChallans, isLoading, salesChartYear]);
   
   const growerProfits = useMemo(() => {
-    if (isLoading) return [];
+    if (isLoading) return { topGrowers: [], otherGrowers: [] };
     
     const profitsByGrower: { [name: string]: { name: string; profit: number } } = {};
     const currentYear = new Date().getFullYear();
@@ -359,8 +380,13 @@ export default function DashboardPage() {
             addProfit(bikri.growerName, bikri.calculation.netSalePayableToGrower || 0);
         }
     });
+    
+    const sortedGrowers = Object.values(profitsByGrower).sort((a, b) => b.profit - a.profit);
 
-    return Object.values(profitsByGrower).sort((a, b) => b.profit - a.profit);
+    return {
+        topGrowers: sortedGrowers.slice(0, 5),
+        otherGrowers: sortedGrowers.slice(5)
+    };
   }, [allInvoices, allBikris, isLoading]);
 
   const loyaltyStats = useMemo(() => {
@@ -370,8 +396,10 @@ export default function DashboardPage() {
         let redeemedThisMonth = 0;
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
+        
+        const allGrowerProfits = [...growerProfits.topGrowers, ...growerProfits.otherGrowers];
 
-        growerProfits.forEach(grower => {
+        allGrowerProfits.forEach(grower => {
             totalPointsDistributed += Math.floor(grower.profit * 0.01); // 1% of net sales
         });
 
@@ -382,7 +410,7 @@ export default function DashboardPage() {
             }
         });
 
-        const topGrower = growerProfits.length > 0 ? growerProfits[0] : null;
+        const topGrower = growerProfits.topGrowers.length > 0 ? growerProfits.topGrowers[0] : null;
 
         return {
             totalPointsDistributed: totalPointsDistributed.toLocaleString(),
@@ -405,15 +433,16 @@ export default function DashboardPage() {
   
   const appSections = sidebarSections.flatMap(s => s.items);
   
-  const pieChartData = growerProfits.slice(0, 5).map(g => ({ x: g.name.split(' ')[0], y: g.profit }));
-  const otherProfit = growerProfits.slice(5).reduce((acc, g) => acc + g.profit, 0);
+  const pieChartData = growerProfits.topGrowers.map(g => ({ x: g.name.split(' ')[0], y: g.profit }));
+  const otherProfit = growerProfits.otherGrowers.reduce((acc, g) => acc + g.profit, 0);
   if (otherProfit > 0) {
-      pieChartData.push({ x: 'Others', y: otherProfit });
+      pieChartData.push({ x: 'Others', y: otherProfit, name: 'Others' });
   }
 
   const barChartData = stats?.monthlySalesData.map((sales, i) => ({
       x: new Date(2000, i).toLocaleString('default', { month: 'short' }),
-      y: sales
+      y: sales,
+      label: `₹${(sales/1000).toFixed(1)}k`
   }));
 
   const pieColorScale = ["#10b981", "#3b82f6", "#f97316", "#8b5cf6", "#ec4899", "#64748b"];
@@ -472,44 +501,63 @@ export default function DashboardPage() {
                 <DialogTrigger asChild>
                     <Card className="lg:col-span-2 bg-card/80 backdrop-blur-sm border border-white/10 cursor-pointer">
                         <CardHeader>
-                            <CardTitle>Monthly Sales</CardTitle>
-                            <CardDescription>Net sales growth for the current year. Click to enlarge.</CardDescription>
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <CardTitle>Monthly Sales</CardTitle>
+                                    <CardDescription>Net sales growth for {salesChartYear}. Click to enlarge.</CardDescription>
+                                </div>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline">
+                                            {salesChartYear} <ChevronDown className="ml-2 h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent>
+                                        {availableYears.map(year => (
+                                            <DropdownMenuItem key={year} onSelect={() => setSalesChartYear(year)}>
+                                                {year}
+                                            </DropdownMenuItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
                         </CardHeader>
                         <CardContent>
                             <div className="h-64">
                                 {barChartData && barChartData.some(d => d.y > 0) ? (
                                 <VictoryChart
-                                        theme={VictoryTheme.material}
-                                        domainPadding={{x: 20}}
-                                        padding={{ top: 20, bottom: 40, left: 60, right: 40 }}
-                                    >
-                                        <VictoryAxis 
-                                            style={{ 
-                                                tickLabels: { fill: 'hsl(var(--muted-foreground))', fontSize: 10 },
-                                                grid: { stroke: 'hsl(var(--border))', strokeDasharray: '4' } 
-                                            }} 
-                                        />
-                                        <VictoryAxis 
-                                            dependentAxis 
-                                            style={{ 
-                                                tickLabels: { fill: 'hsl(var(--muted-foreground))', fontSize: 10 },
-                                                grid: { stroke: 'hsl(var(--border))', strokeDasharray: '4' } 
-                                            }}
-                                            tickFormat={(x) => (`₹${x/1000}k`)} 
-                                        />
-                                        <VictoryBar
-                                            data={barChartData}
-                                            style={{ data: { fill: "#34d399" }, labels: { fill: 'white' } }}
-                                            barRatio={0.8}
-                                            cornerRadius={{ top: 4 }}
-                                        />
-                                    </VictoryChart>
-                                ) : <div className="flex items-center justify-center h-full text-muted-foreground">No monthly sales data available for chart.</div>}
+                                    theme={VictoryTheme.material}
+                                    domainPadding={{x: 20}}
+                                    padding={{ top: 20, bottom: 40, left: 60, right: 40 }}
+                                >
+                                    <VictoryAxis 
+                                        style={{ 
+                                            tickLabels: { fill: 'hsl(var(--muted-foreground))', fontSize: 10 },
+                                            grid: { stroke: 'hsl(var(--border))', strokeDasharray: '4' } 
+                                        }} 
+                                    />
+                                    <VictoryAxis 
+                                        dependentAxis 
+                                        style={{ 
+                                            tickLabels: { fill: 'hsl(var(--muted-foreground))', fontSize: 10 },
+                                            grid: { stroke: 'hsl(var(--border))', strokeDasharray: '4' } 
+                                        }}
+                                        tickFormat={(x) => (`₹${x/1000}k`)} 
+                                    />
+                                    <VictoryBar
+                                        data={barChartData}
+                                        labelComponent={<VictoryTooltip style={{fill: 'black'}}/>}
+                                        style={{ data: { fill: "#34d399" }, labels: { fill: 'white' } }}
+                                        barRatio={0.8}
+                                        cornerRadius={{ top: 4 }}
+                                    />
+                                </VictoryChart>
+                                ) : <div className="flex items-center justify-center h-full text-muted-foreground">No monthly sales data available for {salesChartYear}.</div>}
                             </div>
                         </CardContent>
                     </Card>
                 </DialogTrigger>
-                <ChartModalContent title="Monthly Sales Chart">
+                <ChartModalContent title={`Monthly Sales for ${salesChartYear}`}>
                      <VictoryChart
                         theme={VictoryTheme.material}
                         domainPadding={{x: 30}}
@@ -532,6 +580,7 @@ export default function DashboardPage() {
                         />
                         <VictoryBar
                             data={barChartData}
+                            labelComponent={<VictoryTooltip style={{fill: 'black'}}/>}
                             style={{ data: { fill: "#34d399" }, labels: { fill: 'white' } }}
                             barRatio={0.8}
                             cornerRadius={{ top: 6 }}
@@ -540,12 +589,12 @@ export default function DashboardPage() {
                 </ChartModalContent>
             </Dialog>
 
-            <Dialog>
-                 <DialogTrigger asChild>
+            <Dialog open={isOthersDrilldownOpen} onOpenChange={setIsOthersDrilldownOpen}>
+                <DialogTrigger asChild>
                     <Card className="bg-card/80 backdrop-blur-sm border border-white/10 cursor-pointer">
                         <CardHeader>
                             <CardTitle>Top Grower Sales</CardTitle>
-                            <CardDescription>Net sales distribution for top 5 growers this year. Click to enlarge.</CardDescription>
+                            <CardDescription>Net sales distribution for top growers this year. Click a slice for details.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="h-64">
@@ -554,36 +603,61 @@ export default function DashboardPage() {
                                         data={pieChartData}
                                         colorScale={pieColorScale}
                                         innerRadius={70}
-                                        labelComponent={<VictoryLabel style={{ fill: 'white', fontSize: 10, fontWeight: 'bold' }} />}
+                                        labelComponent={<VictoryTooltip dy={-10} style={{fill: 'black'}}/>}
                                         style={{
                                             data: {
                                                 stroke: 'hsl(var(--background))',
                                                 strokeWidth: 2,
                                             },
-                                            labels: { fill: "white", fontSize: 12, fontWeight: "bold" }
                                         }}
+                                        events={[{
+                                            target: "data",
+                                            eventHandlers: {
+                                                onClick: () => {
+                                                  return [{
+                                                    target: "data",
+                                                    mutation: (props) => {
+                                                      if (props.datum.name === 'Others') {
+                                                        setIsOthersDrilldownOpen(true);
+                                                      }
+                                                      return null;
+                                                    }
+                                                  }];
+                                                }
+                                            }
+                                        }]}
                                     />
                                 ) : <div className="flex items-center justify-center h-full text-muted-foreground">No grower sales data for chart.</div>}
                             </div>
                         </CardContent>
                     </Card>
-                 </DialogTrigger>
-                 <ChartModalContent title="Top Grower Sales Distribution">
-                      <VictoryPie
-                            data={pieChartData}
-                            colorScale={pieColorScale}
-                            innerRadius={100}
-                            padAngle={2}
-                            labelComponent={<VictoryLabel style={{ fill: 'white', fontSize: 14, fontWeight: 'bold' }} />}
-                            style={{
-                                data: {
-                                    stroke: 'hsl(var(--background))',
-                                    strokeWidth: 3,
-                                },
-                                labels: { fill: "white", fontSize: 16, fontWeight: "bold" }
-                            }}
-                        />
-                 </ChartModalContent>
+                </DialogTrigger>
+                 <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Grower Sales: "Others"</DialogTitle>
+                        <DialogDescription>
+                            A breakdown of all growers not in the top 5.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <ScrollArea className="max-h-96">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Grower</TableHead>
+                                    <TableHead className="text-right">Net Sales</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {growerProfits.otherGrowers.map(grower => (
+                                    <TableRow key={grower.name}>
+                                        <TableCell>{grower.name}</TableCell>
+                                        <TableCell className="text-right font-mono">₹{grower.profit.toLocaleString('en-IN')}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </ScrollArea>
+                </DialogContent>
             </Dialog>
         </div>
         
@@ -656,7 +730,7 @@ export default function DashboardPage() {
                 <CardDescription>This session's growers by net sales.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
-                {growerProfits.length > 0 ? (
+                {[...growerProfits.topGrowers, ...growerProfits.otherGrowers].length > 0 ? (
                     <Table>
                         <TableHeader>
                             <TableRow className="border-white/10">
@@ -665,7 +739,7 @@ export default function DashboardPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {growerProfits.map((grower, index) => (
+                            {[...growerProfits.topGrowers, ...growerProfits.otherGrowers].map((grower, index) => (
                                 <TableRow key={grower.name} className="border-white/10">
                                     <TableCell>
                                         <div className="flex items-center gap-3">
