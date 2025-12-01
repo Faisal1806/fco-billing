@@ -1,0 +1,494 @@
+{
+  "entities": {
+    "Product": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Product",
+      "type": "object",
+      "description": "Represents a product in the inventory.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Product entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the product."
+        },
+        "category": {
+          "type": "string",
+          "description": "Category of the product."
+        },
+        "unitType": {
+          "type": "string",
+          "description": "The unit type of the product (e.g., piece, kg, liter)."
+        },
+        "sku": {
+          "type": "string",
+          "description": "Stock Keeping Unit for the product."
+        },
+        "barcode": {
+          "type": "string",
+          "description": "Barcode of the product."
+        },
+        "minStock": {
+          "type": "number",
+          "description": "Minimum stock level for the product."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "category",
+        "unitType",
+        "sku",
+        "barcode",
+        "minStock"
+      ]
+    },
+    "Supplier": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Supplier",
+      "type": "object",
+      "description": "Represents a supplier.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Supplier entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the supplier."
+        },
+        "phone": {
+          "type": "string",
+          "description": "Phone number of the supplier."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the supplier.",
+          "format": "email"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "phone",
+        "email"
+      ]
+    },
+    "Customer": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Customer",
+      "type": "object",
+      "description": "Represents a customer.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Customer entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the customer."
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of customer (e.g., retail, wholesale)."
+        },
+        "contact": {
+          "type": "string",
+          "description": "Contact information for the customer."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "type",
+        "contact"
+      ]
+    },
+    "PurchaseOrder": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PurchaseOrder",
+      "type": "object",
+      "description": "Represents a purchase order.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the PurchaseOrder entity."
+        },
+        "supplierId": {
+          "type": "string",
+          "description": "Reference to Supplier. (Relationship: Supplier 1:N PurchaseOrder)"
+        },
+        "status": {
+          "type": "string",
+          "description": "Status of the purchase order (e.g., pending, completed, cancelled)."
+        }
+      },
+      "required": [
+        "id",
+        "supplierId",
+        "status"
+      ]
+    },
+    "SalesOrder": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "SalesOrder",
+      "type": "object",
+      "description": "Represents a sales order.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the SalesOrder entity."
+        },
+        "customerId": {
+          "type": "string",
+          "description": "Reference to Customer. (Relationship: Customer 1:N SalesOrder)"
+        },
+        "status": {
+          "type": "string",
+          "description": "Status of the sales order (e.g., pending, completed, cancelled)."
+        }
+      },
+      "required": [
+        "id",
+        "customerId",
+        "status"
+      ]
+    },
+    "Payment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Payment",
+      "type": "object",
+      "description": "Represents a payment.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Payment entity."
+        },
+        "orderId": {
+          "type": "string",
+          "description": "Reference to SalesOrder. (Relationship: SalesOrder 1:N Payment)"
+        },
+        "method": {
+          "type": "string",
+          "description": "Payment method (e.g., cash, credit card, bank transfer)."
+        },
+        "amount": {
+          "type": "number",
+          "description": "Payment amount."
+        }
+      },
+      "required": [
+        "id",
+        "orderId",
+        "method",
+        "amount"
+      ]
+    },
+    "Location": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Location",
+      "type": "object",
+      "description": "Represents a location.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Location entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the location."
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of location (e.g., warehouse, store)."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "type"
+      ]
+    },
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "role": {
+          "type": "string",
+          "description": "Role of the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the user.",
+          "format": "email"
+        }
+      },
+      "required": [
+        "id",
+        "role",
+        "email"
+      ]
+    },
+    "OrderItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "OrderItem",
+      "type": "object",
+      "description": "Represents an item within a sales order.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the OrderItem entity."
+        },
+        "salesOrderId": {
+          "type": "string",
+          "description": "Reference to SalesOrder. (Relationship: SalesOrder 1:N OrderItem)"
+        },
+        "productId": {
+          "type": "string",
+          "description": "Reference to Product. (Relationship: Product 1:N OrderItem)"
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Quantity of the product in the order item."
+        },
+        "price": {
+          "type": "number",
+          "description": "Price of the product in the order item."
+        }
+      },
+      "required": [
+        "id",
+        "salesOrderId",
+        "productId",
+        "quantity",
+        "price"
+      ]
+    },
+    "PurchaseOrderItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PurchaseOrderItem",
+      "type": "object",
+      "description": "Represents an item within a purchase order.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the PurchaseOrderItem entity."
+        },
+        "purchaseOrderId": {
+          "type": "string",
+          "description": "Reference to PurchaseOrder. (Relationship: PurchaseOrder 1:N PurchaseOrderItem)"
+        },
+        "productId": {
+          "type": "string",
+          "description": "Reference to Product. (Relationship: Product 1:N PurchaseOrderItem)"
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Quantity of the product in the purchase order item."
+        },
+        "price": {
+          "type": "number",
+          "description": "Price of the product in the purchase order item."
+        }
+      },
+      "required": [
+        "id",
+        "purchaseOrderId",
+        "productId",
+        "quantity",
+        "price"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/products/{productId}",
+        "definition": {
+          "entityName": "Product",
+          "schema": {
+            "$ref": "#/backend/entities/Product"
+          },
+          "description": "Stores product information.  The `productId` is the unique identifier for each product.",
+          "params": [
+            {
+              "name": "productId",
+              "description": "The unique identifier of the product."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/suppliers/{supplierId}",
+        "definition": {
+          "entityName": "Supplier",
+          "schema": {
+            "$ref": "#/backend/entities/Supplier"
+          },
+          "description": "Stores supplier information. The `supplierId` is the unique identifier for each supplier.",
+          "params": [
+            {
+              "name": "supplierId",
+              "description": "The unique identifier of the supplier."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/customers/{customerId}",
+        "definition": {
+          "entityName": "Customer",
+          "schema": {
+            "$ref": "#/backend/entities/Customer"
+          },
+          "description": "Stores customer information. The `customerId` is the unique identifier for each customer.",
+          "params": [
+            {
+              "name": "customerId",
+              "description": "The unique identifier of the customer."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/purchase_orders/{purchaseOrderId}",
+        "definition": {
+          "entityName": "PurchaseOrder",
+          "schema": {
+            "$ref": "#/backend/entities/PurchaseOrder"
+          },
+          "description": "Stores purchase order information. The `purchaseOrderId` is the unique identifier for each purchase order.",
+          "params": [
+            {
+              "name": "purchaseOrderId",
+              "description": "The unique identifier of the purchase order."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/sales_orders/{salesOrderId}",
+        "definition": {
+          "entityName": "SalesOrder",
+          "schema": {
+            "$ref": "#/backend/entities/SalesOrder"
+          },
+          "description": "Stores sales order information. The `salesOrderId` is the unique identifier for each sales order.",
+          "params": [
+            {
+              "name": "salesOrderId",
+              "description": "The unique identifier of the sales order."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/sales_orders/{salesOrderId}/payments/{paymentId}",
+        "definition": {
+          "entityName": "Payment",
+          "schema": {
+            "$ref": "#/backend/entities/Payment"
+          },
+          "description": "Stores payment information for a specific sales order. The `salesOrderId` identifies the order, and `paymentId` is the unique identifier for the payment.",
+          "params": [
+            {
+              "name": "salesOrderId",
+              "description": "The unique identifier of the sales order."
+            },
+            {
+              "name": "paymentId",
+              "description": "The unique identifier of the payment."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/locations/{locationId}",
+        "definition": {
+          "entityName": "Location",
+          "schema": {
+            "$ref": "#/backend/entities/Location"
+          },
+          "description": "Stores location information. The `locationId` is the unique identifier for each location.",
+          "params": [
+            {
+              "name": "locationId",
+              "description": "The unique identifier of the location."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user information. The `userId` is the unique identifier for each user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/sales_orders/{salesOrderId}/order_items/{orderItemId}",
+        "definition": {
+          "entityName": "OrderItem",
+          "schema": {
+            "$ref": "#/backend/entities/OrderItem"
+          },
+          "description": "Stores individual order items within a sales order. The `salesOrderId` identifies the order, and `orderItemId` is the unique identifier for the order item.",
+          "params": [
+            {
+              "name": "salesOrderId",
+              "description": "The unique identifier of the sales order."
+            },
+            {
+              "name": "orderItemId",
+              "description": "The unique identifier of the order item."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/purchase_orders/{purchaseOrderId}/purchase_order_items/{purchaseOrderItemId}",
+        "definition": {
+          "entityName": "PurchaseOrderItem",
+          "schema": {
+            "$ref": "#/backend/entities/PurchaseOrderItem"
+          },
+          "description": "Stores individual purchase order items within a purchase order. The `purchaseOrderId` identifies the purchase order, and `purchaseOrderItemId` is the unique identifier for the purchase order item.",
+          "params": [
+            {
+              "name": "purchaseOrderId",
+              "description": "The unique identifier of the purchase order."
+            },
+            {
+              "name": "purchaseOrderItemId",
+              "description": "The unique identifier of the purchase order item."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to support the F.Co Billing System (SwiftSale) application, focusing on security, scalability, and debuggability.  Authorization Independence is achieved through denormalization. For example, the `members` map of a team is copied to all of its subcollections, removing the need for `get()` calls in the security rules. This enables atomic operations and simplifies debugging. Structural Segregation is enforced by keeping data with different access control needs in separate collections. Access Modeling follows consistent patterns, primarily using path-based ownership for private data and membership maps for collaborative data. \n\nThe structure specifically addresses the user's report of QR code scanning issues related to invoices, bills, and challan receipts. The structure below ensures that associated sales order, payments, etc. are securely retrievable and viewable by authorized users when accessed through a QR code scan. By structuring the data hierarchically and denormalizing relevant authorization information, the system avoids complex rule evaluations and possible failures due to missing permissions or incomplete data.\n\nQAPs (Rules are not Filters) are supported. For instance, listing sales orders for a specific customer can be secured by path-based rules (`/customers/{customerId}/sales_orders/{salesOrderId}`)."
+  }
+}
