@@ -19,7 +19,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, PlusCircle, Share2, Loader2, FilePenLine, Trash2, List, LayoutGrid, Search, FileDown } from 'lucide-react';
+import { ChevronDown, PlusCircle, Loader2, FilePenLine, Trash2, List, LayoutGrid, Search, FileDown } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -82,7 +82,7 @@ export default function PurchaseRegisterPage() {
                 } catch(e) { console.error("Failed to parse purchase:", e)}
             }
         }
-        setPurchases(loadedPurchases);
+        setPurchases(loadedPurchases.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         const uniqueCustomers = ['All Customers', ...new Set(loadedPurchases.map(p => p.growerName))];
         setCustomers(uniqueCustomers);
     }
@@ -131,11 +131,10 @@ export default function PurchaseRegisterPage() {
     }
     if(!window.confirm(`Are you sure you want to delete Purchase Bill #${billNo}? This cannot be undone.`)) return;
 
-    localStorage.removeItem(`purchase-${billNo}`); // Optimistic UI update
+    localStorage.removeItem(`purchase-${billNo}`); 
     fetchPurchases();
     toast({ title: "Purchase Bill Deleted", description: `Bill #${billNo} has been deleted locally.`});
 
-    // Also attempt to delete from cloud, but don't block UI on it
     try {
         await deleteDocument('purchases', billNo);
     } catch (e) {
@@ -342,3 +341,5 @@ export default function PurchaseRegisterPage() {
     </Card>
   );
 }
+
+    

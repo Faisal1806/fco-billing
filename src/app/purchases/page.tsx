@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Separator } from '@/components/ui/separator';
 import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, FileText, Search } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { saveDocument, deleteDocument, getDocuments } from '@/lib/actions';
+import { saveDocument, deleteDocument } from '@/lib/actions';
 import { Badge } from '@/components/ui/badge';
 import { PartySelector } from '@/components/party-selector';
 
@@ -53,20 +53,25 @@ export default function PurchasesPage() {
     }
   }, []);
 
-  const fetchPurchases = useCallback(async () => {
+  const fetchPurchases = useCallback(() => {
     setIsLoading(true);
-    const { success, data, error } = await getDocuments('purchases');
-    if (success && data) {
-        setSavedPurchases(data.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-    } else {
-        toast({
-            variant: 'destructive',
-            title: 'Error fetching purchases',
-            description: error,
-        });
+    if (typeof window !== 'undefined') {
+        const loadedPurchases = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('purchase-')) {
+                try {
+                    const purchase = JSON.parse(localStorage.getItem(key)!);
+                    // Ensure the document has an id for keying, using billNo as fallback
+                    if (!purchase.id) purchase.id = purchase.billNo;
+                    loadedPurchases.push(purchase);
+                } catch(e) { console.error("Failed to parse purchase:", e)}
+            }
+        }
+        setSavedPurchases(loadedPurchases.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     }
     setIsLoading(false);
-  }, [toast]);
+  }, []);
 
   useEffect(() => {
     fetchPurchases();
@@ -141,9 +146,10 @@ export default function PurchasesPage() {
     }
 
     setIsSubmitting(true);
-    const purchaseId = billNo;
+    const purchaseId = `purchase-${billNo}`;
     const finalGrowerName = purchaseFor === 'Own Stock (F.Co)' ? 'F.Co (Own Stock)' : growerName;
     const purchaseData = {
+      id: purchaseId, // Add id field for consistency
       billNo,
       date,
       growerName: finalGrowerName,
@@ -155,24 +161,21 @@ export default function PurchasesPage() {
       },
     };
     
-    const { success, error } = await saveDocument('purchases', purchaseId, purchaseData);
+    // Save to local storage first for immediate access
+    localStorage.setItem(purchaseId, JSON.stringify(purchaseData));
 
-    if (success) {
-      toast({
-        title: isEditing ? 'Purchase Updated' : 'Purchase Saved',
-        description: `The purchase bill has been successfully saved.`,
-        isSuccess: true,
-      });
-      fetchPurchases(); // Re-fetch to update list
-      setIsEditing(true); // Stay in editing mode for the current bill
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'Save Failed',
-        description: error,
-      });
+    try {
+        await saveDocument('purchases', billNo, purchaseData);
+    } catch (error) {
+        console.error("Cloud sync failed:", error)
     }
 
+    toast({
+        title: isEditing ? 'Purchase Updated' : 'Purchase Saved',
+        description: `The purchase bill has been successfully saved.`,
+    });
+    fetchPurchases();
+    setIsEditing(true); 
     setIsSubmitting(false);
   };
 
@@ -207,23 +210,22 @@ export default function PurchasesPage() {
             return;
         }
         
-        const { success, error } = await deleteDocument('purchases', billId);
+        localStorage.removeItem(`purchase-${billId}`);
+        fetchPurchases();
+        toast({
+            title: "Purchase Deleted",
+            description: `Purchase Bill #${billId} has been successfully deleted.`
+        });
         
-        if (success) {
-            toast({
-                title: "Purchase Deleted",
-                description: `Purchase Bill #${billId} has been successfully deleted.`
-            })
-            fetchPurchases(); // Re-fetch to update list
-            if (billNo === billId) {
-                resetForm();
-            }
-        } else {
-             toast({
-                variant: "destructive",
-                title: "Delete Failed",
-                description: error
-            })
+        if (billNo === billId) {
+            resetForm();
+        }
+
+        // Attempt to delete from cloud but don't block UI
+        try {
+          await deleteDocument('purchases', billId);
+        } catch (error) {
+            console.error("Cloud delete failed:", error);
         }
     }
 
@@ -443,3 +445,6 @@ export default function PurchasesPage() {
 }
 
 
+
+
+    
