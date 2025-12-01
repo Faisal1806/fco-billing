@@ -131,13 +131,14 @@ const AppSectionCard = ({ item }: { item: { name: string; href: string; icon: Re
 
     return (
         <motion.div
-            whileHover={{ scale: 1.08, y: -5, transition: { type: 'spring', stiffness: 300 } }}
+            whileHover={{ scale: 1.08, y: -5, rotateY: 10, transition: { type: 'spring', stiffness: 300 } }}
             whileTap={{ scale: 0.95 }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
             className="cursor-pointer group bg-card/50 backdrop-blur-sm border border-white/10 rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-white/10 transition-colors"
             onClick={() => router.push(href)}
+            style={{ perspective: 800 }}
         >
             <div className="neon-glow-container">
                 <DisplayIcon className="h-7 w-7 text-green-400 neon-glow-icon" />

@@ -40,10 +40,10 @@ export default function AppLayout({
           <main className="flex flex-1 flex-col gap-4 p-4 sm:p-6 md:p-8 lg:p-10 pt-4 md:pt-10">
              <motion.div
               key={pathname}
-              initial={{ opacity: 0, scale: 0.9, y: 50 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: -50 }}
-              transition={{ duration: 0.5, type: 'spring' }}
+              initial={{ rotateY: -90, opacity: 0, x: -100 }}
+              animate={{ rotateY: 0, opacity: 1, x: 0 }}
+              exit={{ rotateY: 90, opacity: 0, x: 100 }}
+              transition={{ duration: 0.5, type: 'spring', stiffness: 100, damping: 20 }}
               className="bg-card/50 backdrop-blur-sm border border-white/10 rounded-2xl shadow-2xl"
              >
               {children}

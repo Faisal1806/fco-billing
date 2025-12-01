@@ -173,7 +173,12 @@ const Sidebar = () => {
                 <span className="sr-only">Toggle navigation menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="flex flex-col p-0 bg-transparent border-0 w-[280px]">
+            <SheetContent side="left" className="flex flex-col p-0 bg-transparent border-0 w-[280px] data-[state=open]:duration-500 data-[state=open]:animate-in data-[state=open]:slide-in-from-left"
+            style={{
+                perspective: '1000px',
+                transformStyle: 'preserve-3d',
+              }}
+            >
               <SidebarContent isMobile={true}/>
             </SheetContent>
           </Sheet>
