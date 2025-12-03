@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { PlusCircle, Trash2, Printer, Eye } from 'lucide-react';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 type CreditRow = {
   id: number;
@@ -98,7 +98,7 @@ export default function StatementOfAccountPage() {
     const margin = 10;
 
     // Load custom font for signature
-    doc.addFont('https://fonts.gstatic.com/s/dancingscript/v24/If2RXTr6YS-zF4S-kcSWSVi_szLviuEViw.ttf', 'DancingScript', 'normal');
+    doc.addFont('/fonts/DancingScript-Bold.ttf', 'DancingScript', 'normal');
 
     // Header
     doc.setFontSize(8);
@@ -127,14 +127,19 @@ export default function StatementOfAccountPage() {
     doc.line(margin, margin + 32, pageWidth - margin, margin + 32);
     doc.setFontSize(10);
     doc.text(`S.No: ${sNo}`, margin, margin + 37);
-    doc.text(`M/s: ${partyName}`, pageWidth / 2, margin + 37, { align: 'center' });
+    doc.text(`M/s: ${partyName}`, pageWidth / 2 - 30, margin + 37);
     doc.text(`Date: ${new Date(statementDate).toLocaleDateString('en-GB')}`, pageWidth - margin, margin + 37, { align: 'right' });
     doc.line(margin, margin + 40, pageWidth - margin, margin + 40);
+
+    // --- Tables ---
+    let finalY = margin + 42;
+
+    const halfWidth = (pageWidth - margin * 2) / 2 - 2;
 
     // Credit Table
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text('CREDIT (Jama)', margin, margin + 45);
+    doc.text('CREDIT (Jama)', margin, finalY);
     const creditData = creditRows
         .filter(r => r.netSale > 0 || r.grossSale > 0 || r.peti > 0 || r.daba > 0)
         .map(r => [
@@ -150,22 +155,24 @@ export default function StatementOfAccountPage() {
     autoTable(doc, {
       head: [['Date', 'Watak No.', 'Peti', 'Daba', 'Gross', 'Exp', 'Net']],
       body: creditData,
-      startY: margin + 47,
+      startY: finalY + 2,
       theme: 'grid',
       styles: { fontSize: 8, cellPadding: 1.5, lineColor: '#000' },
       headStyles: { fillColor: '#F3F4F6', textColor: '#000', fontStyle: 'bold' },
       foot: [
           [{ content: 'Total:', colSpan: 2, styles: { halign: 'right' } }, creditTotals.peti, creditTotals.daba, creditTotals.grossSale.toLocaleString('en-IN'), creditTotals.expenses.toLocaleString('en-IN'), creditTotals.netSale.toLocaleString('en-IN')]
       ],
-      footStyles: { fontStyle: 'bold', fillColor: '#E5E7EB' }
+      footStyles: { fontStyle: 'bold', fillColor: '#E5E7EB' },
+      tableWidth: halfWidth,
+      margin: { left: margin }
     });
 
-    let finalY = (doc as any).lastAutoTable.finalY + 5;
+    const creditTableY = (doc as any).lastAutoTable.finalY;
 
     // Debit Table
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text('DEBIT (Kharch)', margin, finalY);
+    doc.text('DEBIT (Kharch)', margin + halfWidth + 4, finalY);
     const debitData = debitRows
         .filter(r => r.amount > 0)
         .map(r => [
@@ -184,36 +191,41 @@ export default function StatementOfAccountPage() {
         foot: [
             [{ content: 'Total:', colSpan: 2, styles: { halign: 'right' } }, totalDebit.toLocaleString('en-IN')]
         ],
-        footStyles: { fontStyle: 'bold', fillColor: '#E5E7EB' }
+        footStyles: { fontStyle: 'bold', fillColor: '#E5E7EB' },
+        tableWidth: halfWidth,
+        margin: { left: margin + halfWidth + 4 }
     });
-
-    finalY = (doc as any).lastAutoTable.finalY + 10;
     
-    // Final Balance
+    const debitTableY = (doc as any).lastAutoTable.finalY;
+
+    // Position summary below the taller of the two tables
+    finalY = Math.max(creditTableY, debitTableY) + 10;
+    
+    // Final Balance Summary
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     
-    const summaryX = pageWidth / 2; // Position for the right-hand side summary
-    doc.text('Total Credit (Jama):', summaryX, finalY, {align: 'left'});
+    const summaryX = pageWidth / 2 + 10;
+    doc.text('Total Credit (Jama):', summaryX, finalY);
     doc.text(`₹${creditTotals.netSale.toLocaleString('en-IN')}`, pageWidth - margin, finalY, { align: 'right' });
     
     finalY += 7;
-    doc.text('Total Debit (Kharch):', summaryX, finalY, {align: 'left'});
+    doc.text('Total Debit (Kharch):', summaryX, finalY);
     doc.text(`₹${totalDebit.toLocaleString('en-IN')}`, pageWidth - margin, finalY, { align: 'right' });
 
     finalY += 2;
     doc.setLineWidth(0.5);
-    doc.line(summaryX, finalY, pageWidth - margin, finalY);
+    doc.line(summaryX - 2, finalY, pageWidth - margin, finalY);
     
-    finalY += 5;
+    finalY += 7;
     doc.setFontSize(14);
     if (finalBalance >= 0) {
         doc.setTextColor('#16A34A'); // Green
-        doc.text('Jama (Profit/Credit):', summaryX, finalY, {align: 'left'});
+        doc.text('Jama (Profit/Credit):', summaryX, finalY);
         doc.text(`₹${finalBalance.toLocaleString('en-IN')}`, pageWidth - margin, finalY, { align: 'right' });
     } else {
         doc.setTextColor('#DC2626'); // Red
-        doc.text('Baqaya (Balance/Due):', summaryX, finalY, {align: 'left'});
+        doc.text('Baqaya (Balance/Due):', summaryX, finalY);
         doc.text(`₹${Math.abs(finalBalance).toLocaleString('en-IN')}`, pageWidth - margin, finalY, { align: 'right' });
     }
     
@@ -325,35 +337,35 @@ export default function StatementOfAccountPage() {
                         </div>
                          <Separator className="my-2 bg-black" />
                          <div className="grid grid-cols-3 gap-1 font-bold text-sm">
-                            <span className="col-span-2 text-right pr-1 font-urdu">کل خرچ:</span>
+                            <span className="col-span-2 text-right pr-1">Total Debit (Kharch):</span>
                             <span className="col-span-1 text-right pr-1">₹{totalDebit.toLocaleString('en-IN')}</span>
                         </div>
                     </div>
                 </div>
 
                 {/* Final Calculation */}
-                 <div className="grid grid-cols-2 gap-4 pt-2">
+                 <div className="grid grid-cols-2 gap-4 pt-4">
                     <div className="space-y-2 text-right pr-4 border-r-2 border-black">
                         <div className="flex justify-end items-center font-bold">
-                            <span className="font-urdu text-lg">کل ولنگ مع:</span>
+                            <span className="text-lg">Total Credit (Jama):</span>
                             <span className="ml-4 text-lg">₹{creditTotals.netSale.toLocaleString('en-IN')}</span>
                         </div>
                     </div>
                      <div className="space-y-2 text-right pr-4">
                         <div className="flex justify-end items-center font-bold">
-                            <span className="font-urdu text-lg">کل خرچ:</span>
+                            <span className="text-lg">Total Debit (Kharch):</span>
                             <span className="ml-4 text-lg">₹{totalDebit.toLocaleString('en-IN')}</span>
                         </div>
                         <Separator className="bg-black" />
                         <div className="flex justify-end items-center font-bold">
                              {finalBalance >= 0 ? (
                                 <>
-                                <span className="font-urdu text-lg text-green-600">جمع (Jama):</span>
+                                <span className="text-lg text-green-600">Jama (Profit/Credit):</span>
                                 <span className="ml-4 text-lg text-green-600">₹{finalBalance.toLocaleString('en-IN')}</span>
                                 </>
                             ) : (
                                 <>
-                                <span className="font-urdu text-lg text-red-600">بقایا (Baqaya):</span>
+                                <span className="text-lg text-red-600">Baqaya (Balance/Due):</span>
                                 <span className="ml-4 text-lg text-red-600">₹{Math.abs(finalBalance).toLocaleString('en-IN')}</span>
                                 </>
                             )}
@@ -378,3 +390,5 @@ export default function StatementOfAccountPage() {
     </div>
   );
 }
+
+    
