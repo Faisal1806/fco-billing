@@ -1,8 +1,9 @@
+
 import { Logo } from "@/components/logo";
 import BusinessCardQR from "@/components/BusinessCardQR";
 import QRCode from 'qrcode.react';
 
-export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl: string }) => {
+export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:string }) => {
     const { sNo, date, date2, customerName, watakNo, khata, entries, totals, freight } = billData;
     const emptyRowsCount = Math.max(0, 12 - entries.length);
     const emptyRows = Array.from({ length: emptyRowsCount });
@@ -15,20 +16,26 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
             <div className="relative z-10 flex flex-col flex-grow">
                 <header className="text-center border-b-2 border-green-700 pb-1">
                     <div className="flex justify-between items-start">
-                        <div className="text-left text-xs font-bold"><p>🍎 F.Co</p></div>
-                        <div className="flex-grow">
+                         <div className="text-left text-xs font-bold flex items-center gap-1">
+                            <p>🍎</p>
+                            <p>F.Co App</p>
+                         </div>
+                         <div className="flex-grow">
                             <div className="text-[8px] leading-tight">
-                                <p className="font-bold">Prop: Firdous Ahmad Lone (Nadihal)</p>
-                                <p>Cell: 7006136330, 9797002164, 9906740921</p>
+                                 <p className="font-bold">Prop: Firdous Ahmad Lone (Nadihal)</p>
+                                 <p>Cell: 7006136330, 9797002164, 9906740921</p>
                             </div>
-                            <h1 className="text-lg font-bold text-green-800">FIRDOUS AHMAD & COMPANY</h1>
+                            <h1 className="text-xl font-bold text-green-800" style={{fontFamily: "'Times New Roman', Times, serif"}}>FIRDOUS AHMAD & COMPANY</h1>
                             <p className="text-[10px] font-semibold">Fruit Merchants & Commission Agents</p>
                             <p className="text-[8px]">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
-                        </div>
-                        <div className="text-right text-xs font-bold"><p>🍎 F.Co</p></div>
+                         </div>
+                         <div className="text-right text-xs font-bold flex items-center gap-1">
+                             <p>F.Co App</p>
+                            <p>🍎</p>
+                         </div>
                     </div>
                 </header>
-                <section className="flex justify-between items-end my-1 text-sm">
+                <section className="flex justify-between items-start my-1 text-sm">
                     <div className="flex-1">
                         <p><strong>M/s:</strong> {customerName}</p>
                         {khata && <p><strong>Khata:</strong> {khata}</p>}
@@ -37,7 +44,7 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
                         <p><strong>Bill No:</strong> {sNo}</p>
                         <p><strong>Date:</strong> {new Date(date).toLocaleDateString('en-GB')}</p>
                         {date2 && <p><strong>Date 2:</strong> {new Date(date2).toLocaleDateString('en-GB')}</p>}
-                        <p><strong>Watak No:</strong> {watakNo}</p>
+                        {watakNo && <p><strong>Watak No:</strong> {watakNo}</p>}
                     </div>
                 </section>
                 <main className="flex-grow">
@@ -77,8 +84,14 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
                     <div className="grid grid-cols-2 gap-x-4">
                         <div className="space-y-0.5 pr-4">
                             <p><strong>Total Quantity:</strong> {totals.totalQty} (Patti: {totals.pattiQty}, Dabba: {totals.dabbaQty})</p>
-                             <div className="mt-2">
+                             <div className="mt-2 flex gap-4">
                                 <BusinessCardQR size={40} />
+                                {pageUrl && (
+                                    <div className="flex flex-col items-center">
+                                        <QRCode value={pageUrl} size={40} renderAs="svg"/>
+                                        <p className="text-[8px] font-semibold">Scan to View</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <div className="space-y-0.5 border-l-2 border-green-700 pl-4 text-[10px]">
