@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -11,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { PlusCircle, Trash2, Printer } from 'lucide-react';
+import { PlusCircle, Trash2, Printer, Eye } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { Logo } from '@/components/logo';
@@ -113,7 +114,7 @@ export default function StatementOfAccountPage() {
                  <div className="text-muted-foreground flex justify-between items-center text-xs">
                     <span>Trade Mark: F.Co.</span>
                     <span className="font-bold text-lg text-foreground">STATEMENT OF ACCOUNT</span>
-                    <span>Mob: 9797002164, 7298998763</span>
+                    <span>Mob: 9797002164, 7006136330, 9906740921</span>
                 </div>
                 <div className="flex items-center justify-center gap-4 py-2">
                     <Logo className="h-16 w-16" />
@@ -223,12 +224,12 @@ export default function StatementOfAccountPage() {
                         <div className="flex justify-end items-center font-bold">
                             {finalBalance >= 0 ? (
                                 <>
-                                <span className="font-urdu text-lg text-green-600">جمع (Jama/Profit):</span>
+                                <span className="font-urdu text-lg text-green-600">(Jama/Profit) جمع:</span>
                                 <span className="ml-4 text-lg text-green-600">₹{finalBalance.toLocaleString('en-IN')}</span>
                                 </>
                             ) : (
                                 <>
-                                <span className="font-urdu text-lg text-red-600">بقایا (Baqaya/Due):</span>
+                                <span className="font-urdu text-lg text-red-600">(Baqaya/Balance) بقایا:</span>
                                 <span className="ml-4 text-lg text-red-600">₹{Math.abs(finalBalance).toLocaleString('en-IN')}</span>
                                 </>
                             )}
@@ -240,11 +241,18 @@ export default function StatementOfAccountPage() {
                 <div className="flex flex-col items-center">
                     <p className="font-bold">Signature</p>
                 </div>
-                <Button className="gap-2 print-hidden" onClick={handlePrint}>
-                    <Printer className="h-4 w-4" /> Print / Save PDF
-                </Button>
+                <div className='flex gap-2 print-hidden'>
+                    <Button className="gap-2" onClick={handlePrint}>
+                        <Eye className="h-4 w-4" /> View
+                    </Button>
+                    <Button className="gap-2" onClick={handlePrint}>
+                        <Printer className="h-4 w-4" /> Print / Save PDF
+                    </Button>
+                </div>
             </CardFooter>
         </Card>
     </div>
   );
 }
+
+    
