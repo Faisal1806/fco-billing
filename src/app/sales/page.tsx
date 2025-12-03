@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -7,6 +8,7 @@ import { BillMakingTab } from '@/components/bill-making-tab';
 import { ReceiptMakingTab } from '@/components/receipt-making-tab';
 import { PesticideBillTab } from '@/components/pesticide-bill-tab';
 import { ChallanMakingTab } from '@/components/challan-making-tab';
+import { StatementMakingTab } from '@/components/statement-making-tab';
 
 export default function SalesPage() {
   const { t } = useLanguage();
@@ -14,11 +16,12 @@ export default function SalesPage() {
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="wataks">Sales Invoices (Watak)</TabsTrigger>
             <TabsTrigger value="receipts">Goods Receipts</TabsTrigger>
             <TabsTrigger value="challan">Delivery Notes</TabsTrigger>
             <TabsTrigger value="pesticide-bill">Pesticide Bill</TabsTrigger>
+            <TabsTrigger value="statement">Statement</TabsTrigger>
         </TabsList>
         <TabsContent value="wataks">
             <BillMakingTab />
@@ -31,6 +34,9 @@ export default function SalesPage() {
         </TabsContent>
         <TabsContent value="pesticide-bill">
             <PesticideBillTab />
+        </TabsContent>
+        <TabsContent value="statement">
+            <StatementMakingTab />
         </TabsContent>
     </Tabs>
   );
