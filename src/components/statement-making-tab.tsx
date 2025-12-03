@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, Trash2, Printer, ArrowDown, ArrowUp, Minus, Equals } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { PartySelector } from './party-selector';
-import { Table, TableBody, TableCell, TableHeader, TableRow } from './ui/table';
+import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table';
 
 type CreditEntry = {
   date: string;
@@ -240,3 +240,5 @@ export function StatementMakingTab() {
     </Card>
   );
 }
+
+    
