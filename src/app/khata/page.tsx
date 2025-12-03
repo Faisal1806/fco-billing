@@ -19,17 +19,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, User, Users, Plus, ChevronDown, Leaf, Printer, ShoppingCart, Banknote, Building, Globe, Gift, ArrowDown, ArrowUp, Minus, Equals, Send } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Loader2, Leaf, Printer, ArrowDown, ArrowUp, Minus, Equals, Plus, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import './print.css';
 import Lottie from 'lottie-react';
 import { useToast } from '@/hooks/use-toast';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 type TransactionType = 'Sale' | 'Purchase' | 'Advance' | 'Repayment' | 'Bikri' | 'Discount';
 
@@ -277,19 +272,6 @@ export default function KhataPage() {
         window.print();
     }
 
-    const handleSendReminder = async () => {
-        if (!selectedParty || statementData.balance <= 0) {
-            toast({
-                variant: 'destructive',
-                title: 'No Due Amount',
-                description: 'This grower does not have a pending payment.',
-            });
-            return;
-        }
-
-        toast({ title: 'Reminder Sent!', description: `A push notification has been sent regarding the due payment.` });
-    };
-
     const AddNewFab = () => (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -322,14 +304,9 @@ export default function KhataPage() {
                     </div>
                      <div className="flex items-center gap-2">
                          {selectedParty && (
-                            <>
-                            <Button onClick={handleSendReminder} variant="outline" size="sm" className="gap-1" disabled={statementData.balance <= 0}>
-                                <Send className="h-3.5 w-3.5" /> Send Reminder
-                            </Button>
                             <Button onClick={handlePrint} variant="outline" size="sm" className="gap-1">
                                 <Printer className="h-3.5 w-3.5" /> Print
                             </Button>
-                            </>
                         )}
                     </div>
                 </div>
@@ -478,9 +455,9 @@ export default function KhataPage() {
                                                 ₹0.00 <span className="text-xs ml-1">(Settled)</span>
                                             </p>
                                         ) : (
-                                            <p className={`${statementData.balance > 0 ? 'text-red-500' : 'text-green-500'}`}>
+                                            <p className={`${statementData.balance < 0 ? 'text-red-500' : 'text-green-500'}`}>
                                                 ₹{Math.abs(statementData.balance).toFixed(2)}
-                                                <span className="text-xs ml-1">({statementData.balance > 0 ? 'Payable' : 'Receivable'})</span>
+                                                <span className="text-xs ml-1">({statementData.balance < 0 ? 'Payable' : 'Receivable'})</span>
                                             </p>
                                         )}
                                     </div>
@@ -501,5 +478,3 @@ export default function KhataPage() {
     </>
   );
 }
-
-    
