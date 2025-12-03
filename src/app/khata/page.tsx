@@ -181,14 +181,14 @@ export default function KhataDirectoryPage() {
     }, [ledgers, searchTerm]);
 
     const handleViewStatement = (partyName: string) => {
-        router.push(`/statement/${encodeURIComponent(partyName)}`);
+        router.push(`/statement`);
     };
 
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Grower Khata Directory</CardTitle>
-                <CardDescription>A list of all growers with their current account balance. Click "View Statement" for a detailed, printable breakdown.</CardDescription>
+                <CardDescription>A list of all growers with their current account balance. Click "View Statement" to open the manual statement generator.</CardDescription>
                 <div className="pt-2">
                     <Input
                         placeholder="Search for a grower..."
