@@ -6,16 +6,12 @@ import {
   CardContent,
   CardFooter,
   CardHeader,
-  CardTitle,
-  CardDescription,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { PlusCircle, Trash2, Printer } from 'lucide-react';
-import { PartySelector } from '@/components/party-selector';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { Logo } from '@/components/logo';
@@ -39,7 +35,6 @@ type DebitRow = {
 };
 
 export default function StatementOfAccountPage() {
-  const { toast } = useToast();
 
   // Header State
   const [sNo, setSNo] = React.useState('');
@@ -61,7 +56,7 @@ export default function StatementOfAccountPage() {
     setCreditRows(prev => [...prev, { id: Date.now(), date: '', watakNo: '', peti: 0, daba: 0, grossSale: 0, expenses: 0, netSale: 0 }]);
   };
   const removeCreditRow = (id: number) => {
-    setCreditRows(prev => prev.filter(row => row.id !== id));
+    setCreditRows(prev => prev.length > 1 ? prev.filter(row => row.id !== id) : prev);
   };
   const handleCreditChange = (id: number, field: keyof Omit<CreditRow, 'id'>, value: string | number) => {
     setCreditRows(prev => prev.map(row => (row.id === id ? { ...row, [field]: value } : row)));
@@ -72,7 +67,7 @@ export default function StatementOfAccountPage() {
     setDebitRows(prev => [...prev, { id: Date.now(), date: '', details: '', amount: 0 }]);
   };
   const removeDebitRow = (id: number) => {
-    setDebitRows(prev => prev.filter(row => row.id !== id));
+    setDebitRows(prev => prev.length > 1 ? prev.filter(row => row.id !== id) : prev);
   };
   const handleDebitChange = (id: number, field: keyof Omit<DebitRow, 'id'>, value: string | number) => {
     setDebitRows(prev => prev.map(row => (row.id === id ? { ...row, [field]: value } : row)));
@@ -101,10 +96,7 @@ export default function StatementOfAccountPage() {
   
   const handlePrint = async () => {
     const statementElement = document.getElementById('statement-print-area');
-    if (!statementElement) {
-        toast({variant: 'destructive', title: 'Error', description: 'Could not find statement content to print.'})
-        return;
-    };
+    if (!statementElement) return;
 
     const canvas = await html2canvas(statementElement, { scale: 2 });
     const pdf = new jsPDF('p', 'mm', 'a4');
@@ -118,11 +110,11 @@ export default function StatementOfAccountPage() {
     <div className="space-y-6">
         <Card className="max-w-6xl mx-auto" id="statement-print-area">
             <CardHeader className="text-center">
-                <CardDescription className="text-muted-foreground flex justify-between items-center">
+                 <div className="text-muted-foreground flex justify-between items-center text-xs">
                     <span>Trade Mark: F.Co.</span>
                     <span className="font-bold text-lg text-foreground">STATEMENT OF ACCOUNT</span>
                     <span>Mob: 9797002164, 7298998763</span>
-                </CardDescription>
+                </div>
                 <div className="flex items-center justify-center gap-4 py-2">
                     <Logo className="h-16 w-16" />
                     <div className="text-center">
@@ -154,7 +146,7 @@ export default function StatementOfAccountPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 border-t-2 border-b-2 border-black py-4">
                     {/* CREDIT Column */}
                     <div className="space-y-1 lg:pr-2 lg:border-r-2 lg:border-black">
-                        <h3 className="text-lg font-bold text-center">CREDIT</h3>
+                        <h3 className="text-lg font-bold text-center">CREDIT (Jama)</h3>
                         <div className="grid grid-cols-7 gap-1 text-[10px] font-bold text-muted-foreground text-center">
                             <span className="col-span-1">Date</span>
                             <span className="col-span-1">Watak No.</span>
@@ -164,7 +156,7 @@ export default function StatementOfAccountPage() {
                             <span className="col-span-1">Expenses</span>
                             <span className="col-span-1">Net Sale</span>
                         </div>
-                        {creditRows.map(row => (
+                        {creditRows.map((row, i) => (
                             <div key={row.id} className="grid grid-cols-7 gap-1 items-center">
                                 <Input className="h-8 text-xs" value={row.date} onChange={e => handleCreditChange(row.id, 'date', e.target.value)} />
                                 <Input className="h-8 text-xs" value={row.watakNo} onChange={e => handleCreditChange(row.id, 'watakNo', e.target.value)} />
@@ -175,34 +167,40 @@ export default function StatementOfAccountPage() {
                                 <Input className="h-8 text-xs" type="number" value={row.netSale || ''} onChange={e => handleCreditChange(row.id, 'netSale', Number(e.target.value))} />
                             </div>
                         ))}
+                         <div className="flex justify-start mt-2 print-hidden">
+                           <Button size="sm" variant="outline" onClick={addCreditRow} className="gap-1"><PlusCircle className="h-4 w-4"/>Add Row</Button>
+                         </div>
                          <Separator className="my-2 bg-black"/>
                          <div className="grid grid-cols-7 gap-1 font-bold text-sm text-center">
                            <span className="col-span-2">Total:</span>
                            <span className="col-span-1">{creditTotals.peti}</span>
                            <span className="col-span-1">{creditTotals.daba}</span>
-                           <span className="col-span-1"></span>
-                           <span className="col-span-1"></span>
+                           <span className="col-span-1 text-right pr-1">₹{creditTotals.grossSale.toLocaleString('en-IN')}</span>
+                           <span className="col-span-1 text-right pr-1">₹{creditTotals.expenses.toLocaleString('en-IN')}</span>
                            <span className="col-span-1 text-right pr-1">₹{creditTotals.netSale.toLocaleString('en-IN')}</span>
                         </div>
                     </div>
                      {/* DEBIT Column */}
                     <div className="space-y-1 lg:pl-2">
-                        <h3 className="text-lg font-bold text-center">DEBIT</h3>
-                         <div className="grid grid-cols-4 gap-1 text-[10px] font-bold text-muted-foreground text-center">
+                        <h3 className="text-lg font-bold text-center">DEBIT (Kharch)</h3>
+                         <div className="grid grid-cols-3 gap-1 text-[10px] font-bold text-muted-foreground text-center">
                             <span className="col-span-1">Date</span>
-                            <span className="col-span-2">Details of Remittance</span>
+                            <span className="col-span-1">Details of Remittance</span>
                             <span className="col-span-1">Amount</span>
                         </div>
-                         {debitRows.map(row => (
-                            <div key={row.id} className="grid grid-cols-4 gap-1 items-center">
+                         {debitRows.map((row, i) => (
+                            <div key={row.id} className="grid grid-cols-3 gap-1 items-center">
                                 <Input className="h-8 text-xs" value={row.date} onChange={e => handleDebitChange(row.id, 'date', e.target.value)} />
                                 <Input className="h-8 text-xs font-urdu" placeholder="تفصیل" value={row.details} onChange={e => handleDebitChange(row.id, 'details', e.target.value)} />
                                 <Input className="h-8 text-xs" type="number" value={row.amount || ''} onChange={e => handleDebitChange(row.id, 'amount', Number(e.target.value))} />
                             </div>
                         ))}
+                        <div className="flex justify-start mt-2 print-hidden">
+                           <Button size="sm" variant="outline" onClick={addDebitRow} className="gap-1"><PlusCircle className="h-4 w-4"/>Add Row</Button>
+                        </div>
                          <Separator className="my-2 bg-black" />
-                         <div className="grid grid-cols-4 gap-1 font-bold text-sm">
-                            <span className="col-span-3 text-right pr-1 font-urdu">کل خرچ:</span>
+                         <div className="grid grid-cols-3 gap-1 font-bold text-sm">
+                            <span className="col-span-2 text-right pr-1 font-urdu">کل خرچ:</span>
                             <span className="col-span-1 text-right pr-1">₹{totalDebit.toLocaleString('en-IN')}</span>
                         </div>
                     </div>
@@ -216,23 +214,29 @@ export default function StatementOfAccountPage() {
                             <span className="ml-4 text-lg">₹{creditTotals.netSale.toLocaleString('en-IN')}</span>
                         </div>
                     </div>
-                    <div className="space-y-2 text-right pr-4">
+                     <div className="space-y-2 text-right pr-4">
                         <div className="flex justify-end items-center font-bold">
                             <span className="font-urdu text-lg">کل خرچ:</span>
                             <span className="ml-4 text-lg">₹{totalDebit.toLocaleString('en-IN')}</span>
                         </div>
                         <Separator className="bg-black" />
-                         <div className="flex justify-end items-center font-bold">
-                            <span className="font-urdu text-lg">بقایا:</span>
-                             <span className={`ml-4 text-lg ${finalBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                ₹{Math.abs(finalBalance).toLocaleString('en-IN')}
-                            </span>
+                        <div className="flex justify-end items-center font-bold">
+                            {finalBalance >= 0 ? (
+                                <>
+                                <span className="font-urdu text-lg text-green-600">جمع (Jama/Profit):</span>
+                                <span className="ml-4 text-lg text-green-600">₹{finalBalance.toLocaleString('en-IN')}</span>
+                                </>
+                            ) : (
+                                <>
+                                <span className="font-urdu text-lg text-red-600">بقایا (Baqaya/Due):</span>
+                                <span className="ml-4 text-lg text-red-600">₹{Math.abs(finalBalance).toLocaleString('en-IN')}</span>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
             </CardContent>
              <CardFooter className="justify-between items-end">
-                <p className="text-xs text-muted-foreground">Kashmir Offset Press Chankhan Sopore # 9797162717</p>
                 <div className="flex flex-col items-center">
                     <p className="font-bold">Signature</p>
                 </div>
