@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -14,8 +15,8 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { PlusCircle, Trash2, Printer, Eye } from 'lucide-react';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-import { Logo } from '@/components/logo';
+import autoTable from 'jspdf-autotable';
+import 'jspdf-autotable';
 
 type CreditRow = {
   id: number;
@@ -95,36 +96,146 @@ export default function StatementOfAccountPage() {
   }, [creditTotals.netSale, totalDebit]);
 
   
-  const handlePrint = async () => {
-    const statementElement = document.getElementById('statement-print-area');
-    if (!statementElement) return;
+  const handlePrint = () => {
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 10;
+    
+    // It's important to load the font that supports the signature characters
+    doc.addFont('https://fonts.gstatic.com/s/dancingscript/v24/If2RXTr6YS-zF4S-kcSWSVi_szLviuEViw.ttf', 'DancingScript', 'normal');
 
-    const canvas = await html2canvas(statementElement, { scale: 2 });
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
-    pdf.save(`Statement-${partyName}-${statementDate}.pdf`);
+
+    // Header
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('🍎 F.Co.', margin, margin);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Mob: 9797002164, 7006136330, 9906740921', pageWidth - margin, margin, { align: 'right' });
+    
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('STATEMENT OF ACCOUNT', pageWidth / 2, margin + 5, { align: 'center' });
+
+    doc.setFontSize(22);
+    doc.setTextColor('#DC2626'); // Red color
+    doc.text('Firdous Ahmad & Company', pageWidth / 2, margin + 15, { align: 'center' });
+
+    doc.setFontSize(10);
+    doc.setTextColor('#000000');
+    doc.setFont('helvetica', 'normal');
+    doc.text('FRUIT MERCHANTS & COMMISSION AGENTS', pageWidth / 2, margin + 20, { align: 'center' });
+    doc.text('Shed No.13, Fud No-12 A Fruit Mandi Apple Town Sopore -193201 (KMR)', pageWidth / 2, margin + 24, { align: 'center' });
+    doc.text('Prop: Firdous Ahmad Lone (Nadihal Rafiabad)', pageWidth / 2, margin + 28, { align: 'center' });
+    
+    // Bill Info
+    doc.setLineWidth(0.5);
+    doc.line(margin, margin + 32, pageWidth - margin, margin + 32);
+    doc.setFontSize(10);
+    doc.text(`S.No: ${sNo}`, margin, margin + 37);
+    doc.text(`M/s: ${partyName}`, pageWidth / 2, margin + 37, { align: 'center' });
+    doc.text(`Date: ${new Date(statementDate).toLocaleDateString('en-GB')}`, pageWidth - margin, margin + 37, { align: 'right' });
+    doc.line(margin, margin + 40, pageWidth - margin, margin + 40);
+
+    // Tables
+    const halfWidth = (pageWidth - margin * 2) / 2;
+    const creditData = creditRows
+        .filter(r => r.netSale > 0 || r.grossSale > 0)
+        .map(r => [r.date ? new Date(r.date).toLocaleDateString('en-GB') : '', r.watakNo, r.peti || '', r.daba || '', r.grossSale || '', r.expenses || '', r.netSale || '']);
+    
+    const debitData = debitRows
+        .filter(r => r.amount > 0)
+        .map(r => [r.date ? new Date(r.date).toLocaleDateString('en-GB') : '', r.details, r.amount || '']);
+
+    autoTable(doc, {
+      head: [['Date', 'Watak No.', 'Peti', 'Daba', 'Gross', 'Exp', 'Net']],
+      body: creditData,
+      startY: margin + 42,
+      tableWidth: halfWidth - 2,
+      margin: { left: margin },
+      styles: { fontSize: 8, cellPadding: 1 },
+      headStyles: { fillColor: '#F3F4F6', textColor: '#000' },
+      foot: [
+          [{ content: 'Total:', colSpan: 2, styles: { halign: 'right' } }, creditTotals.peti, creditTotals.daba, creditTotals.grossSale.toLocaleString(), creditTotals.expenses.toLocaleString(), creditTotals.netSale.toLocaleString()]
+      ],
+      footStyles: { fontStyle: 'bold', fillColor: '#E5E7EB' }
+    });
+
+    const creditTableY = (doc as any).lastAutoTable.finalY;
+
+    autoTable(doc, {
+        head: [['Date', 'Details', 'Amount']],
+        body: debitData,
+        startY: margin + 42,
+        tableWidth: halfWidth - 2,
+        margin: { left: halfWidth + margin + 2 },
+        styles: { fontSize: 8, cellPadding: 1 },
+        headStyles: { fillColor: '#F3F4F6', textColor: '#000' },
+        foot: [
+            [{ content: 'Total:', colSpan: 2, styles: { halign: 'right' } }, totalDebit.toLocaleString()]
+        ],
+        footStyles: { fontStyle: 'bold', fillColor: '#E5E7EB' }
+    });
+
+    const debitTableY = (doc as any).lastAutoTable.finalY;
+    const finalY = Math.max(creditTableY, debitTableY) + 10;
+    
+
+    // Final Balance
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Total Credit (Jama):', margin, finalY);
+    doc.text(`₹${creditTotals.netSale.toLocaleString('en-IN')}`, halfWidth + margin -2, finalY, { align: 'right' });
+
+    doc.text('Total Debit (Kharch):', halfWidth + margin + 2, finalY);
+    doc.text(`₹${totalDebit.toLocaleString('en-IN')}`, pageWidth - margin, finalY, { align: 'right' });
+
+    doc.setLineWidth(0.5);
+    doc.line(halfWidth + margin + 2, finalY + 2, pageWidth - margin, finalY + 2);
+
+    const balanceY = finalY + 7;
+    doc.setFontSize(14);
+    if (finalBalance >= 0) {
+        doc.setTextColor('#16A34A'); // Green
+        doc.text('Jama (Profit/Credit):', halfWidth + margin + 2, balanceY);
+        doc.text(`₹${finalBalance.toLocaleString('en-IN')}`, pageWidth - margin, balanceY, { align: 'right' });
+    } else {
+        doc.setTextColor('#DC2626'); // Red
+        doc.text('Baqaya (Balance/Due):', halfWidth + margin + 2, balanceY);
+        doc.text(`₹${Math.abs(finalBalance).toLocaleString('en-IN')}`, pageWidth - margin, balanceY, { align: 'right' });
+    }
+    
+    // Signature
+    doc.setTextColor('#000000');
+    doc.setFont('DancingScript', 'normal');
+    doc.setFontSize(22);
+    doc.text('Faisal', pageWidth - margin - 35, doc.internal.pageSize.getHeight() - 25);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text('Signature', pageWidth - margin - 30, doc.internal.pageSize.getHeight() - 15);
+
+
+    doc.save(`Statement-${partyName}-${statementDate}.pdf`);
   };
+
 
   return (
     <div className="space-y-6">
-        <Card className="max-w-6xl mx-auto print-hidden">
+        <Card className="max-w-6xl mx-auto">
             <CardHeader className="text-center">
                  <div className="text-muted-foreground flex justify-between items-center text-xs">
-                    <span>Trade Mark: F.Co.</span>
+                    <span>🍎 F.Co.</span>
                     <span className="font-bold text-lg text-foreground">STATEMENT OF ACCOUNT</span>
                     <span>Mob: 9797002164, 7006136330, 9906740921</span>
                 </div>
                 <div className="flex items-center justify-center gap-4 py-2">
-                    <Logo className="h-16 w-16" />
+                    <span className="text-4xl">🍎</span>
                     <div className="text-center">
                         <h1 className="text-3xl font-bold text-red-700">Firdous Ahmad & Company</h1>
                         <p className="font-semibold">FRUIT MERCHANTS & COMMISSION AGENTS</p>
                         <p className="text-sm">Shed No.13, Fud No-12 A Fruit Mandi Apple Town Sopore -193201 (KMR)</p>
                         <p className="text-sm">Prop: Firdous Ahmad Lone (Nadihal Rafiabad)</p>
                     </div>
-                    <Logo className="h-16 w-16" />
+                    <span className="text-4xl">🍎</span>
                 </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -222,14 +333,14 @@ export default function StatementOfAccountPage() {
                         </div>
                         <Separator className="bg-black" />
                         <div className="flex justify-end items-center font-bold">
-                            {finalBalance >= 0 ? (
+                             {finalBalance >= 0 ? (
                                 <>
-                                <span className="font-urdu text-lg text-green-600">جمع (Jama/Profit):</span>
+                                <span className="font-urdu text-lg text-green-600">جمع (Jama):</span>
                                 <span className="ml-4 text-lg text-green-600">₹{finalBalance.toLocaleString('en-IN')}</span>
                                 </>
                             ) : (
                                 <>
-                                <span className="font-urdu text-lg text-red-600">بقایا (Baqaya/Balance):</span>
+                                <span className="font-urdu text-lg text-red-600">بقایا (Baqaya):</span>
                                 <span className="ml-4 text-lg text-red-600">₹{Math.abs(finalBalance).toLocaleString('en-IN')}</span>
                                 </>
                             )}
@@ -251,119 +362,7 @@ export default function StatementOfAccountPage() {
                 </div>
             </CardFooter>
         </Card>
-
-        {/* Hidden Printable Div */}
-        <div className="hidden print:block">
-            <div id="statement-print-area" className="bg-white text-black p-4">
-                 <div className="text-center">
-                     <div className="text-gray-600 flex justify-between items-center text-xs">
-                        <span>Trade Mark: F.Co.</span>
-                        <span className="font-bold text-lg text-black">STATEMENT OF ACCOUNT</span>
-                        <span>Mob: 9797002164, 7006136330, 9906740921</span>
-                    </div>
-                    <div className="flex items-center justify-center gap-4 py-2">
-                        <span className="text-4xl">🍎</span>
-                        <div className="text-center">
-                            <h1 className="text-3xl font-bold text-red-700">Firdous Ahmad & Company</h1>
-                            <p className="font-semibold">FRUIT MERCHANTS & COMMISSION AGENTS</p>
-                            <p className="text-sm">Shed No.13, Fud No-12 A Fruit Mandi Apple Town Sopore -193201 (KMR)</p>
-                            <p className="text-sm">Prop: Firdous Ahmad Lone (Nadihal Rafiabad)</p>
-                        </div>
-                        <span className="text-4xl">🍎</span>
-                    </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4 text-sm my-2">
-                    <span>S.No: {sNo}</span>
-                    <span>M/s: {partyName}</span>
-                    <span className="text-right">Date: {new Date(statementDate).toLocaleDateString('en-GB')}</span>
-                </div>
-                 <div className="grid grid-cols-2 gap-2 border-t-2 border-b-2 border-black py-1 text-xs">
-                     <div className="pr-1 border-r-2 border-black">
-                        <h3 className="text-base font-bold text-center mb-1">CREDIT (Jama)</h3>
-                         <table className="w-full">
-                            <thead>
-                                <tr className="font-bold text-center">
-                                    <td>Date</td><td>Watak No.</td><td>Peti</td><td>Daba</td><td>Gross Sale</td><td>Expenses</td><td>Net Sale</td>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {creditRows.filter(r => r.netSale > 0 || r.grossSale > 0).map(row => (
-                                    <tr key={row.id} className="text-center">
-                                        <td>{row.date ? new Date(row.date).toLocaleDateString('en-GB') : ''}</td><td>{row.watakNo}</td><td>{row.peti||''}</td><td>{row.daba||''}</td><td>{row.grossSale||''}</td><td>{row.expenses||''}</td><td>{row.netSale||''}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                         </table>
-                         <div className="grid grid-cols-7 gap-1 font-bold text-sm text-center mt-2 border-t border-black pt-1">
-                           <span className="col-span-2">Total:</span>
-                           <span>{creditTotals.peti}</span>
-                           <span>{creditTotals.daba}</span>
-                           <span className="text-right pr-1">{creditTotals.grossSale.toLocaleString('en-IN')}</span>
-                           <span className="text-right pr-1">{creditTotals.expenses.toLocaleString('en-IN')}</span>
-                           <span className="text-right pr-1">{creditTotals.netSale.toLocaleString('en-IN')}</span>
-                        </div>
-                    </div>
-                     <div className="pl-1">
-                        <h3 className="text-base font-bold text-center mb-1">DEBIT (Kharch)</h3>
-                         <table className="w-full">
-                             <thead>
-                                <tr className="font-bold text-center">
-                                    <td>Date</td><td className="w-1/2">Details of Remittance</td><td>Amount</td>
-                                </tr>
-                             </thead>
-                             <tbody>
-                                {debitRows.filter(r => r.amount > 0).map(row => (
-                                    <tr key={row.id} className="text-center">
-                                        <td>{row.date ? new Date(row.date).toLocaleDateString('en-GB') : ''}</td><td className="font-urdu">{row.details}</td><td className="text-right pr-1">{row.amount}</td>
-                                    </tr>
-                                ))}
-                             </tbody>
-                         </table>
-                         <div className="grid grid-cols-3 gap-1 font-bold text-sm mt-2 border-t border-black pt-1">
-                            <span className="col-span-2 text-right pr-1 font-urdu">کل خرچ:</span>
-                            <span className="text-right pr-1">{totalDebit.toLocaleString('en-IN')}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 pt-2 text-sm">
-                    <div className="text-right pr-4 border-r-2 border-black">
-                        <div className="flex justify-end items-center font-bold">
-                            <span className="font-urdu text-base">کل ولنگ مع:</span>
-                            <span className="ml-4 text-base">₹{creditTotals.netSale.toLocaleString('en-IN')}</span>
-                        </div>
-                    </div>
-                     <div className="space-y-1 text-right pr-4">
-                        <div className="flex justify-end items-center font-bold">
-                            <span className="font-urdu text-base">کل خرچ:</span>
-                            <span className="ml-4 text-base">₹{totalDebit.toLocaleString('en-IN')}</span>
-                        </div>
-                        <div className="border-t border-black my-1"></div>
-                        <div className="flex justify-end items-center font-bold">
-                             {finalBalance >= 0 ? (
-                                <>
-                                <span className="font-urdu text-base text-green-600">جمع (Jama/Profit):</span>
-                                <span className="ml-4 text-base text-green-600">₹{finalBalance.toLocaleString('en-IN')}</span>
-                                </>
-                            ) : (
-                                <>
-                                <span className="font-urdu text-base text-red-600">بقایا (Baqaya/Balance):</span>
-                                <span className="ml-4 text-base text-red-600">₹{Math.abs(finalBalance).toLocaleString('en-IN')}</span>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                <div className="mt-8 flex justify-end">
-                    <div className="text-center">
-                        <p className="font-bold">Signature</p>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
   );
 }
 
-    
