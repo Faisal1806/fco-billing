@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -15,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
-import { PlusCircle, Trash2, Printer, Download } from 'lucide-react';
+import { PlusCircle, Trash2, Printer } from 'lucide-react';
 import { PartySelector } from '@/components/party-selector';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -136,7 +135,7 @@ export default function StatementOfAccountPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* CREDIT Column */}
                     <div className="space-y-4">
-                        <h3 className="text-lg font-bold text-center text-green-600 border-b-2 pb-2">CREDIT</h3>
+                        <h3 className="text-lg font-bold text-center text-green-600 border-b-2 pb-2">CREDIT (Jama)</h3>
                         <div className="hidden md:grid grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground">
                             <span className="col-span-2">Date</span>
                             <span className="col-span-2">Watak No</span>
@@ -166,7 +165,7 @@ export default function StatementOfAccountPage() {
                     </div>
                      {/* DEBIT Column */}
                     <div className="space-y-4">
-                        <h3 className="text-lg font-bold text-center text-red-600 border-b-2 pb-2">DEBIT</h3>
+                        <h3 className="text-lg font-bold text-center text-red-600 border-b-2 pb-2">DEBIT (Kharch)</h3>
                          <div className="hidden md:grid grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground">
                             <span className="col-span-3">Date</span>
                             <span className="col-span-5">Details of Remittance</span>
@@ -205,8 +204,8 @@ export default function StatementOfAccountPage() {
                      <div className="flex justify-between items-center text-2xl font-bold border-t pt-4 mt-4">
                         <span>Balance (Baqaya):</span>
                          <span className={finalBalance >= 0 ? 'text-green-600' : 'text-red-600'}>
-                           ₹{Math.abs(finalBalance).toLocaleString('en-IN')}
-                           <span className="text-sm ml-2">({finalBalance >= 0 ? 'Balance at F.Co' : 'Due to Grower'})</span>
+                           ₹{Math.abs(finalBalance).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                           <span className="text-sm ml-2">({finalBalance >= 0 ? 'Receivable by F.Co' : 'Payable to Grower'})</span>
                         </span>
                     </div>
                 </div>
