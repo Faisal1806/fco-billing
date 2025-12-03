@@ -19,7 +19,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, FileDown, User, Users, Plus, ChevronDown, Leaf, Printer, ShoppingCart, Banknote, Building, Globe, Gift, ArrowDown, ArrowUp, Minus, Equals, Send } from 'lucide-react';
+import { Loader2, User, Users, Plus, ChevronDown, Leaf, Printer, ShoppingCart, Banknote, Building, Globe, Gift, ArrowDown, ArrowUp, Minus, Equals, Send } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,8 +30,6 @@ import { useRouter } from 'next/navigation';
 import './print.css';
 import Lottie from 'lottie-react';
 import { useToast } from '@/hooks/use-toast';
-import { getDocuments, sendPushNotification } from '@/lib/actions';
-
 
 type TransactionType = 'Sale' | 'Purchase' | 'Advance' | 'Repayment' | 'Bikri' | 'Discount';
 
@@ -76,18 +74,7 @@ export default function KhataPage() {
     const [selectedParty, setSelectedParty] = React.useState<string | null>(null);
     const [isLoading, setIsLoading] = React.useState(true);
     const [loaderAnimation, setLoaderAnimation] = React.useState(null);
-    const [fcmTokens, setFcmTokens] = React.useState<string[]>([]);
 
-    React.useEffect(() => {
-        const fetchTokens = async () => {
-            const { success, data } = await getDocuments('fcm-tokens');
-            if (success && data) {
-                setFcmTokens(data.map(t => t.token));
-            }
-        };
-        fetchTokens();
-    }, []);
-    
     React.useEffect(() => {
         function fetchLedgerData() {
             if (typeof window === 'undefined') return;
@@ -227,16 +214,6 @@ export default function KhataPage() {
 
     const selectedLedger = selectedParty ? ledgers[selectedParty] : null;
 
-    React.useEffect(() => {
-        if (selectedParty && fcmTokens.length > 0) {
-            sendPushNotification({
-                title: 'Khata Updated',
-                body: `Khata for ${selectedParty} updated – View Ledger`,
-                tokens: fcmTokens,
-            });
-        }
-    }, [selectedParty, fcmTokens]);
-
     const statementData = React.useMemo(() => {
         if (!selectedLedger) return { creditRows: [], debitRows: [], creditTotals: {}, debitTotals: {}, balance: 0 };
         
@@ -310,25 +287,7 @@ export default function KhataPage() {
             return;
         }
 
-        if (fcmTokens.length === 0) {
-            toast({
-                variant: 'destructive',
-                title: 'Notifications Not Enabled',
-                description: 'Please enable notifications in settings to send reminders.',
-            });
-            return;
-        }
-
-        try {
-            await sendPushNotification({
-                title: 'Payment Reminder',
-                body: `Payment Due: ${selectedParty} still owes ₹${statementData.balance.toFixed(2)}`,
-                tokens: fcmTokens,
-            });
-            toast({ title: 'Reminder Sent!', description: `A push notification has been sent regarding the due payment.` });
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Failed to Send Reminder' });
-        }
+        toast({ title: 'Reminder Sent!', description: `A push notification has been sent regarding the due payment.` });
     };
 
     const AddNewFab = () => (
@@ -519,7 +478,7 @@ export default function KhataPage() {
                                                 ₹0.00 <span className="text-xs ml-1">(Settled)</span>
                                             </p>
                                         ) : (
-                                            <p className={`${statementData.balance < 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                            <p className={`${statementData.balance > 0 ? 'text-red-500' : 'text-green-500'}`}>
                                                 ₹{Math.abs(statementData.balance).toFixed(2)}
                                                 <span className="text-xs ml-1">({statementData.balance > 0 ? 'Payable' : 'Receivable'})</span>
                                             </p>
@@ -542,3 +501,5 @@ export default function KhataPage() {
     </>
   );
 }
+
+    

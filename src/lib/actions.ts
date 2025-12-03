@@ -3,7 +3,6 @@
 
 import { getClientDb } from './firebase';
 import { collection, getDocs, doc, setDoc, deleteDoc, getDoc, addDoc } from 'firebase/firestore';
-import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 
 /**
  * Sends push notifications to specified FCM tokens.
@@ -42,8 +41,8 @@ export async function sendPushNotification(notification: {
 export async function saveDocument(collectionName: string, id: string, data: any) {
   try {
     const db = getClientDb();
-    const docPath = `${collectionName}/${id}`;
-    setDocumentNonBlocking(doc(db, docPath), data, { merge: true });
+    const docRef = doc(db, collectionName, id);
+    await setDoc(docRef, data, { merge: true });
     return { success: true, id };
   } catch (error) {
     console.error(`Error saving document to ${collectionName}:`, error);
@@ -55,8 +54,7 @@ export async function saveDocument(collectionName: string, id: string, data: any
 export async function deleteDocument(collectionName: string, id: string) {
     try {
         const db = getClientDb();
-        const docPath = `${collectionName}/${id}`;
-        deleteDocumentNonBlocking(doc(db, docPath));
+        await deleteDoc(doc(db, collectionName, id));
         return { success: true };
     } catch (error) {
         console.error("Error deleting document:", error);
@@ -119,3 +117,5 @@ export async function getDocuments(collectionName: string): Promise<{ success: b
         return { success: false, error: (error as Error).message };
     }
 }
+
+    
