@@ -253,7 +253,7 @@ export default function StatementOfAccountPage() {
         </Card>
 
         {/* Hidden Printable Div */}
-        <div className="hidden">
+        <div className="hidden print:block">
             <div id="statement-print-area" className="bg-white text-black p-4">
                  <div className="text-center">
                      <div className="text-gray-600 flex justify-between items-center text-xs">
@@ -262,14 +262,14 @@ export default function StatementOfAccountPage() {
                         <span>Mob: 9797002164, 7006136330, 9906740921</span>
                     </div>
                     <div className="flex items-center justify-center gap-4 py-2">
-                        <Logo className="h-16 w-16" />
+                        <span className="text-4xl">🍎</span>
                         <div className="text-center">
                             <h1 className="text-3xl font-bold text-red-700">Firdous Ahmad & Company</h1>
                             <p className="font-semibold">FRUIT MERCHANTS & COMMISSION AGENTS</p>
                             <p className="text-sm">Shed No.13, Fud No-12 A Fruit Mandi Apple Town Sopore -193201 (KMR)</p>
                             <p className="text-sm">Prop: Firdous Ahmad Lone (Nadihal Rafiabad)</p>
                         </div>
-                        <Logo className="h-16 w-16" />
+                        <span className="text-4xl">🍎</span>
                     </div>
                 </div>
                 <div className="grid grid-cols-3 gap-4 text-sm my-2">
@@ -287,9 +287,9 @@ export default function StatementOfAccountPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {creditRows.filter(r => r.netSale > 0).map(row => (
-                                    <tr key={row.id}>
-                                        <td>{row.date}</td><td>{row.watakNo}</td><td>{row.peti}</td><td>{row.daba}</td><td>{row.grossSale}</td><td>{row.expenses}</td><td>{row.netSale}</td>
+                                {creditRows.filter(r => r.netSale > 0 || r.grossSale > 0).map(row => (
+                                    <tr key={row.id} className="text-center">
+                                        <td>{row.date ? new Date(row.date).toLocaleDateString('en-GB') : ''}</td><td>{row.watakNo}</td><td>{row.peti||''}</td><td>{row.daba||''}</td><td>{row.grossSale||''}</td><td>{row.expenses||''}</td><td>{row.netSale||''}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -313,8 +313,8 @@ export default function StatementOfAccountPage() {
                              </thead>
                              <tbody>
                                 {debitRows.filter(r => r.amount > 0).map(row => (
-                                    <tr key={row.id}>
-                                        <td>{row.date}</td><td className="font-urdu">{row.details}</td><td className="text-right pr-1">{row.amount}</td>
+                                    <tr key={row.id} className="text-center">
+                                        <td>{row.date ? new Date(row.date).toLocaleDateString('en-GB') : ''}</td><td className="font-urdu">{row.details}</td><td className="text-right pr-1">{row.amount}</td>
                                     </tr>
                                 ))}
                              </tbody>
@@ -365,3 +365,5 @@ export default function StatementOfAccountPage() {
     </div>
   );
 }
+
+    
