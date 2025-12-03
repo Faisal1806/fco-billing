@@ -29,7 +29,6 @@ import {
 import { useRouter } from 'next/navigation';
 import './print.css';
 import Lottie from 'lottie-react';
-import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { getDocuments, sendPushNotification } from '@/lib/actions';
 
@@ -359,7 +358,7 @@ export default function KhataPage() {
             <CardHeader className="print-hidden">
                 <div className="flex justify-between items-start">
                     <div>
-                        <CardTitle>Khata Ledger</CardTitle>
+                        <CardTitle>Khata Ledger (Statement of Account)</CardTitle>
                         <CardDescription>A complete credit/debit statement for each grower.</CardDescription>
                     </div>
                      <div className="flex items-center gap-2">
@@ -520,9 +519,9 @@ export default function KhataPage() {
                                                 ₹0.00 <span className="text-xs ml-1">(Settled)</span>
                                             </p>
                                         ) : (
-                                            <p className={`${statementData.balance > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                            <p className={`${statementData.balance < 0 ? 'text-green-500' : 'text-red-500'}`}>
                                                 ₹{Math.abs(statementData.balance).toFixed(2)}
-                                                <span className="text-xs ml-1">({statementData.balance > 0 ? 'Receivable' : 'Payable'})</span>
+                                                <span className="text-xs ml-1">({statementData.balance > 0 ? 'Payable' : 'Receivable'})</span>
                                             </p>
                                         )}
                                     </div>
