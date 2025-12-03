@@ -18,6 +18,7 @@ import { PlusCircle, Trash2, Printer } from 'lucide-react';
 import { PartySelector } from '@/components/party-selector';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { Logo } from '@/components/logo';
 
 type CreditRow = {
   id: number;
@@ -25,6 +26,8 @@ type CreditRow = {
   watakNo: string;
   peti: number;
   daba: number;
+  grossSale: number;
+  expenses: number;
   netSale: number;
 };
 
@@ -39,22 +42,23 @@ export default function StatementOfAccountPage() {
   const { toast } = useToast();
 
   // Header State
+  const [sNo, setSNo] = React.useState('');
   const [partyName, setPartyName] = React.useState('');
   const [statementDate, setStatementDate] = React.useState(new Date().toISOString().split('T')[0]);
   
   // Credit (Sales) State
-  const [creditRows, setCreditRows] = React.useState<CreditRow[]>([
-    { id: 1, date: '', watakNo: '', peti: 0, daba: 0, netSale: 0 }
-  ]);
+  const [creditRows, setCreditRows] = React.useState<CreditRow[]>(
+    Array.from({ length: 12 }, (_, i) => ({ id: i, date: '', watakNo: '', peti: 0, daba: 0, grossSale: 0, expenses: 0, netSale: 0 }))
+  );
 
   // Debit (Remittance) State
-  const [debitRows, setDebitRows] = React.useState<DebitRow[]>([
-    { id: 1, date: '', details: '', amount: 0 }
-  ]);
+  const [debitRows, setDebitRows] = React.useState<DebitRow[]>(
+     Array.from({ length: 12 }, (_, i) => ({ id: i, date: '', details: '', amount: 0 }))
+  );
   
   // --- Credit Functions ---
   const addCreditRow = () => {
-    setCreditRows(prev => [...prev, { id: Date.now(), date: '', watakNo: '', peti: 0, daba: 0, netSale: 0 }]);
+    setCreditRows(prev => [...prev, { id: Date.now(), date: '', watakNo: '', peti: 0, daba: 0, grossSale: 0, expenses: 0, netSale: 0 }]);
   };
   const removeCreditRow = (id: number) => {
     setCreditRows(prev => prev.filter(row => row.id !== id));
@@ -79,9 +83,11 @@ export default function StatementOfAccountPage() {
     return creditRows.reduce((acc, row) => {
         acc.peti += Number(row.peti) || 0;
         acc.daba += Number(row.daba) || 0;
+        acc.grossSale += Number(row.grossSale) || 0;
+        acc.expenses += Number(row.expenses) || 0;
         acc.netSale += Number(row.netSale) || 0;
         return acc;
-    }, { peti: 0, daba: 0, netSale: 0});
+    }, { peti: 0, daba: 0, grossSale: 0, expenses: 0, netSale: 0 });
   }, [creditRows]);
 
   const totalDebit = React.useMemo(() => {
@@ -112,19 +118,32 @@ export default function StatementOfAccountPage() {
     <div className="space-y-6">
         <Card className="max-w-6xl mx-auto" id="statement-print-area">
             <CardHeader className="text-center">
-                <CardTitle className="text-2xl">STATEMENT OF ACCOUNT</CardTitle>
-                <CardDescription>
-                    <p className="font-bold text-lg">Firdous Ahmad & Company</p>
-                    <p>FRUIT MERCHANTS & COMMISSION AGENTS</p>
-                    <p className="text-xs">Shed No.13, Fud No-12 A Fruit Mandi Apple Town Sopore -193201 (KMR)</p>
+                <CardDescription className="text-muted-foreground flex justify-between items-center">
+                    <span>Trade Mark: F.Co.</span>
+                    <span className="font-bold text-lg text-foreground">STATEMENT OF ACCOUNT</span>
+                    <span>Mob: 9797002164, 7298998763</span>
                 </CardDescription>
+                <div className="flex items-center justify-center gap-4 py-2">
+                    <Logo className="h-16 w-16" />
+                    <div className="text-center">
+                        <h1 className="text-3xl font-bold text-red-700">Firdous Ahmad & Company</h1>
+                        <p className="font-semibold">FRUIT MERCHANTS & COMMISSION AGENTS</p>
+                        <p className="text-sm">Shed No.13, Fud No-12 A Fruit Mandi Apple Town Sopore -193201 (KMR)</p>
+                        <p className="text-sm">Prop: Firdous Ahmad Lone (Nadihal Rafiabad)</p>
+                    </div>
+                    <Logo className="h-16 w-16" />
+                </div>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4">
                 {/* Header Details */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border p-4 rounded-lg">
+                <div className="grid grid-cols-3 gap-4 items-end">
                     <div className="space-y-2">
-                        <Label htmlFor="partyName">M/s (Customer Name)</Label>
-                        <PartySelector value={partyName} onChange={setPartyName} filter="all" />
+                        <Label htmlFor="sNo">S.No:</Label>
+                        <Input id="sNo" value={sNo} onChange={(e) => setSNo(e.target.value)} />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="partyName">M/s</Label>
+                        <Input id="partyName" value={partyName} onChange={(e) => setPartyName(e.target.value)} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="statementDate">Date</Label>
@@ -132,87 +151,92 @@ export default function StatementOfAccountPage() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 border-t-2 border-b-2 border-black py-4">
                     {/* CREDIT Column */}
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-bold text-center text-green-600 border-b-2 pb-2">CREDIT (Jama)</h3>
-                        <div className="hidden md:grid grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground">
-                            <span className="col-span-2">Date</span>
-                            <span className="col-span-2">Watak No</span>
-                            <span className="col-span-2">Peti</span>
-                            <span className="col-span-2">Daba</span>
-                            <span className="col-span-3">Net Sale</span>
-                            <span className="col-span-1"></span>
+                    <div className="space-y-1 lg:pr-2 lg:border-r-2 lg:border-black">
+                        <h3 className="text-lg font-bold text-center">CREDIT</h3>
+                        <div className="grid grid-cols-7 gap-1 text-[10px] font-bold text-muted-foreground text-center">
+                            <span className="col-span-1">Date</span>
+                            <span className="col-span-1">Watak No.</span>
+                            <span className="col-span-1">Peti</span>
+                            <span className="col-span-1">Daba</span>
+                            <span className="col-span-1">Gross Sale</span>
+                            <span className="col-span-1">Expenses</span>
+                            <span className="col-span-1">Net Sale</span>
                         </div>
                         {creditRows.map(row => (
-                            <div key={row.id} className="grid grid-cols-12 gap-2 items-center">
-                                <Input className="col-span-2" type="text" placeholder="Date" value={row.date} onChange={e => handleCreditChange(row.id, 'date', e.target.value)} />
-                                <Input className="col-span-2" placeholder="Watak No" value={row.watakNo} onChange={e => handleCreditChange(row.id, 'watakNo', e.target.value)} />
-                                <Input className="col-span-2" type="number" placeholder="Peti" value={row.peti || ''} onChange={e => handleCreditChange(row.id, 'peti', Number(e.target.value))} />
-                                <Input className="col-span-2" type="number" placeholder="Daba" value={row.daba || ''} onChange={e => handleCreditChange(row.id, 'daba', Number(e.target.value))} />
-                                <Input className="col-span-3" type="number" placeholder="Net Sale" value={row.netSale || ''} onChange={e => handleCreditChange(row.id, 'netSale', Number(e.target.value))} />
-                                <Button variant="ghost" size="icon" className="col-span-1" onClick={() => removeCreditRow(row.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                            <div key={row.id} className="grid grid-cols-7 gap-1 items-center">
+                                <Input className="h-8 text-xs" value={row.date} onChange={e => handleCreditChange(row.id, 'date', e.target.value)} />
+                                <Input className="h-8 text-xs" value={row.watakNo} onChange={e => handleCreditChange(row.id, 'watakNo', e.target.value)} />
+                                <Input className="h-8 text-xs" type="number" value={row.peti || ''} onChange={e => handleCreditChange(row.id, 'peti', Number(e.target.value))} />
+                                <Input className="h-8 text-xs" type="number" value={row.daba || ''} onChange={e => handleCreditChange(row.id, 'daba', Number(e.target.value))} />
+                                <Input className="h-8 text-xs" type="number" value={row.grossSale || ''} onChange={e => handleCreditChange(row.id, 'grossSale', Number(e.target.value))} />
+                                <Input className="h-8 text-xs" type="number" value={row.expenses || ''} onChange={e => handleCreditChange(row.id, 'expenses', Number(e.target.value))} />
+                                <Input className="h-8 text-xs" type="number" value={row.netSale || ''} onChange={e => handleCreditChange(row.id, 'netSale', Number(e.target.value))} />
                             </div>
                         ))}
-                        <Button variant="outline" size="sm" onClick={addCreditRow} className="gap-1"><PlusCircle className="h-4 w-4" /> Add Credit Row</Button>
-                        <Separator />
-                        <div className="grid grid-cols-12 gap-2 font-bold text-lg">
-                           <span className="col-span-4 text-right">Total:</span>
-                           <span className="col-span-2 text-center">{creditTotals.peti}</span>
-                           <span className="col-span-2 text-center">{creditTotals.daba}</span>
-                           <span className="col-span-3 text-right">₹{creditTotals.netSale.toLocaleString('en-IN')}</span>
+                         <Separator className="my-2 bg-black"/>
+                         <div className="grid grid-cols-7 gap-1 font-bold text-sm text-center">
+                           <span className="col-span-2">Total:</span>
+                           <span className="col-span-1">{creditTotals.peti}</span>
+                           <span className="col-span-1">{creditTotals.daba}</span>
+                           <span className="col-span-1"></span>
+                           <span className="col-span-1"></span>
+                           <span className="col-span-1 text-right pr-1">₹{creditTotals.netSale.toLocaleString('en-IN')}</span>
                         </div>
                     </div>
                      {/* DEBIT Column */}
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-bold text-center text-red-600 border-b-2 pb-2">DEBIT (Kharch)</h3>
-                         <div className="hidden md:grid grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground">
-                            <span className="col-span-3">Date</span>
-                            <span className="col-span-5">Details of Remittance</span>
-                            <span className="col-span-3">Amount</span>
-                            <span className="col-span-1"></span>
+                    <div className="space-y-1 lg:pl-2">
+                        <h3 className="text-lg font-bold text-center">DEBIT</h3>
+                         <div className="grid grid-cols-4 gap-1 text-[10px] font-bold text-muted-foreground text-center">
+                            <span className="col-span-1">Date</span>
+                            <span className="col-span-2">Details of Remittance</span>
+                            <span className="col-span-1">Amount</span>
                         </div>
                          {debitRows.map(row => (
-                            <div key={row.id} className="grid grid-cols-12 gap-2 items-center">
-                                <Input className="col-span-3" type="text" placeholder="Date" value={row.date} onChange={e => handleDebitChange(row.id, 'date', e.target.value)} />
-                                <Input className="col-span-5" placeholder="Details" value={row.details} onChange={e => handleDebitChange(row.id, 'details', e.target.value)} />
-                                <Input className="col-span-3" type="number" placeholder="Amount" value={row.amount || ''} onChange={e => handleDebitChange(row.id, 'amount', Number(e.target.value))} />
-                                <Button variant="ghost" size="icon" className="col-span-1" onClick={() => removeDebitRow(row.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                            <div key={row.id} className="grid grid-cols-4 gap-1 items-center">
+                                <Input className="h-8 text-xs" value={row.date} onChange={e => handleDebitChange(row.id, 'date', e.target.value)} />
+                                <Input className="h-8 text-xs font-urdu" placeholder="تفصیل" value={row.details} onChange={e => handleDebitChange(row.id, 'details', e.target.value)} />
+                                <Input className="h-8 text-xs" type="number" value={row.amount || ''} onChange={e => handleDebitChange(row.id, 'amount', Number(e.target.value))} />
                             </div>
                         ))}
-                        <Button variant="outline" size="sm" onClick={addDebitRow} className="gap-1"><PlusCircle className="h-4 w-4" /> Add Debit Row</Button>
-                        <Separator />
-                         <div className="grid grid-cols-12 gap-2 font-bold text-lg">
-                            <span className="col-span-8 text-right">Total:</span>
-                            <span className="col-span-3 text-right">₹{totalDebit.toLocaleString('en-IN')}</span>
+                         <Separator className="my-2 bg-black" />
+                         <div className="grid grid-cols-4 gap-1 font-bold text-sm">
+                            <span className="col-span-3 text-right pr-1 font-urdu">کل خرچ:</span>
+                            <span className="col-span-1 text-right pr-1">₹{totalDebit.toLocaleString('en-IN')}</span>
                         </div>
                     </div>
                 </div>
 
-                <Separator />
-
                 {/* Final Calculation */}
-                 <div className="bg-muted p-4 rounded-lg space-y-4">
-                    <div className="flex justify-between items-center text-lg">
-                        <span className="text-muted-foreground">Total Credit (Jama):</span>
-                        <span className="font-bold">₹{creditTotals.netSale.toLocaleString('en-IN')}</span>
+                 <div className="grid grid-cols-2 gap-4 pt-2">
+                    <div className="space-y-2 text-right pr-4 border-r-2 border-black">
+                        <div className="flex justify-end items-center font-bold">
+                            <span className="font-urdu text-lg">کل ولنگ مع:</span>
+                            <span className="ml-4 text-lg">₹{creditTotals.netSale.toLocaleString('en-IN')}</span>
+                        </div>
                     </div>
-                     <div className="flex justify-between items-center text-lg">
-                        <span className="text-muted-foreground">Total Debit (Kharch):</span>
-                        <span className="font-bold">- ₹{totalDebit.toLocaleString('en-IN')}</span>
-                    </div>
-                     <div className="flex justify-between items-center text-2xl font-bold border-t pt-4 mt-4">
-                        <span>Balance (Baqaya):</span>
-                         <span className={finalBalance >= 0 ? 'text-green-600' : 'text-red-600'}>
-                           ₹{Math.abs(finalBalance).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                           <span className="text-sm ml-2">({finalBalance >= 0 ? 'Receivable by F.Co' : 'Payable to Grower'})</span>
-                        </span>
+                    <div className="space-y-2 text-right pr-4">
+                        <div className="flex justify-end items-center font-bold">
+                            <span className="font-urdu text-lg">کل خرچ:</span>
+                            <span className="ml-4 text-lg">₹{totalDebit.toLocaleString('en-IN')}</span>
+                        </div>
+                        <Separator className="bg-black" />
+                         <div className="flex justify-end items-center font-bold">
+                            <span className="font-urdu text-lg">بقایا:</span>
+                             <span className={`ml-4 text-lg ${finalBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                ₹{Math.abs(finalBalance).toLocaleString('en-IN')}
+                            </span>
+                        </div>
                     </div>
                 </div>
-
             </CardContent>
-             <CardFooter className="justify-center gap-4">
-                <Button className="gap-2" onClick={handlePrint}>
+             <CardFooter className="justify-between items-end">
+                <p className="text-xs text-muted-foreground">Kashmir Offset Press Chankhan Sopore # 9797162717</p>
+                <div className="flex flex-col items-center">
+                    <p className="font-bold">Signature</p>
+                </div>
+                <Button className="gap-2 print-hidden" onClick={handlePrint}>
                     <Printer className="h-4 w-4" /> Print / Save PDF
                 </Button>
             </CardFooter>
