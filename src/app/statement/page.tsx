@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -15,7 +14,6 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { PlusCircle, Trash2, Printer, Eye } from 'lucide-react';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import 'jspdf-autotable';
 
 type CreditRow = {
@@ -37,7 +35,6 @@ type DebitRow = {
 };
 
 export default function StatementOfAccountPage() {
-
   // Header State
   const [sNo, setSNo] = React.useState('');
   const [partyName, setPartyName] = React.useState('');
@@ -95,15 +92,13 @@ export default function StatementOfAccountPage() {
       return creditTotals.netSale - totalDebit;
   }, [creditTotals.netSale, totalDebit]);
 
-  
   const handlePrint = () => {
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 10;
-    
-    // It's important to load the font that supports the signature characters
-    doc.addFont('https://fonts.gstatic.com/s/dancingscript/v24/If2RXTr6YS-zF4S-kcSWSVi_szLviuEViw.ttf', 'DancingScript', 'normal');
 
+    // Load custom font for signature
+    doc.addFont('https://fonts.gstatic.com/s/dancingscript/v24/If2RXTr6YS-zF4S-kcSWSVi_szLviuEViw.ttf', 'DancingScript', 'normal');
 
     // Header
     doc.setFontSize(8);
@@ -136,68 +131,90 @@ export default function StatementOfAccountPage() {
     doc.text(`Date: ${new Date(statementDate).toLocaleDateString('en-GB')}`, pageWidth - margin, margin + 37, { align: 'right' });
     doc.line(margin, margin + 40, pageWidth - margin, margin + 40);
 
-    // Tables
-    const halfWidth = (pageWidth - margin * 2) / 2;
+    // Credit Table
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CREDIT (Jama)', margin, margin + 45);
     const creditData = creditRows
         .filter(r => r.netSale > 0 || r.grossSale > 0 || r.peti > 0 || r.daba > 0)
-        .map(r => [r.date ? new Date(r.date).toLocaleDateString('en-GB') : '', r.watakNo, r.peti || '', r.daba || '', r.grossSale || '', r.expenses || '', r.netSale || '']);
+        .map(r => [
+          r.date ? new Date(r.date).toLocaleDateString('en-GB') : '', 
+          r.watakNo, 
+          r.peti || '', 
+          r.daba || '', 
+          r.grossSale ? r.grossSale.toLocaleString('en-IN') : '', 
+          r.expenses ? r.expenses.toLocaleString('en-IN') : '', 
+          r.netSale ? r.netSale.toLocaleString('en-IN') : ''
+        ]);
     
-    const debitData = debitRows
-        .filter(r => r.amount > 0)
-        .map(r => [r.date ? new Date(r.date).toLocaleDateString('en-GB') : '', r.details, r.amount || '']);
-
     autoTable(doc, {
       head: [['Date', 'Watak No.', 'Peti', 'Daba', 'Gross', 'Exp', 'Net']],
       body: creditData,
-      startY: margin + 42,
-      tableWidth: halfWidth - 2,
-      margin: { left: margin },
-      styles: { fontSize: 8, cellPadding: 1 },
-      headStyles: { fillColor: '#F3F4F6', textColor: '#000' },
+      startY: margin + 47,
+      theme: 'grid',
+      styles: { fontSize: 8, cellPadding: 1.5, lineColor: '#000' },
+      headStyles: { fillColor: '#F3F4F6', textColor: '#000', fontStyle: 'bold' },
       foot: [
-          [{ content: 'Total:', colSpan: 2, styles: { halign: 'right' } }, creditTotals.peti, creditTotals.daba, creditTotals.grossSale.toLocaleString(), creditTotals.expenses.toLocaleString(), creditTotals.netSale.toLocaleString()]
+          [{ content: 'Total:', colSpan: 2, styles: { halign: 'right' } }, creditTotals.peti, creditTotals.daba, creditTotals.grossSale.toLocaleString('en-IN'), creditTotals.expenses.toLocaleString('en-IN'), creditTotals.netSale.toLocaleString('en-IN')]
       ],
       footStyles: { fontStyle: 'bold', fillColor: '#E5E7EB' }
     });
 
+    let finalY = (doc as any).lastAutoTable.finalY + 5;
+
+    // Debit Table
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DEBIT (Kharch)', margin, finalY);
+    const debitData = debitRows
+        .filter(r => r.amount > 0)
+        .map(r => [
+          r.date ? new Date(r.date).toLocaleDateString('en-GB') : '', 
+          r.details, 
+          r.amount ? r.amount.toLocaleString('en-IN') : ''
+        ]);
+
     autoTable(doc, {
         head: [['Date', 'Details', 'Amount']],
         body: debitData,
-        startY: margin + 42,
-        tableWidth: halfWidth - 2,
-        margin: { left: halfWidth + margin + 2 },
-        styles: { fontSize: 8, cellPadding: 1 },
-        headStyles: { fillColor: '#F3F4F6', textColor: '#000' },
+        startY: finalY + 2,
+        theme: 'grid',
+        styles: { fontSize: 8, cellPadding: 1.5, lineColor: '#000' },
+        headStyles: { fillColor: '#F3F4F6', textColor: '#000', fontStyle: 'bold' },
         foot: [
-            [{ content: 'Total:', colSpan: 2, styles: { halign: 'right' } }, totalDebit.toLocaleString()]
+            [{ content: 'Total:', colSpan: 2, styles: { halign: 'right' } }, totalDebit.toLocaleString('en-IN')]
         ],
         footStyles: { fontStyle: 'bold', fillColor: '#E5E7EB' }
     });
-    
-    const finalY = (doc as any).lastAutoTable.finalY + 10;
+
+    finalY = (doc as any).lastAutoTable.finalY + 10;
     
     // Final Balance
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text('Total Credit (Jama):', margin, finalY);
-    doc.text(`₹${creditTotals.netSale.toLocaleString('en-IN')}`, halfWidth + margin -2, finalY, { align: 'right' });
-
-    doc.text('Total Debit (Kharch):', halfWidth + margin + 2, finalY);
+    
+    const summaryX = pageWidth / 2; // Position for the right-hand side summary
+    doc.text('Total Credit (Jama):', summaryX, finalY, {align: 'left'});
+    doc.text(`₹${creditTotals.netSale.toLocaleString('en-IN')}`, pageWidth - margin, finalY, { align: 'right' });
+    
+    finalY += 7;
+    doc.text('Total Debit (Kharch):', summaryX, finalY, {align: 'left'});
     doc.text(`₹${totalDebit.toLocaleString('en-IN')}`, pageWidth - margin, finalY, { align: 'right' });
 
+    finalY += 2;
     doc.setLineWidth(0.5);
-    doc.line(halfWidth + margin + 2, finalY + 2, pageWidth - margin, finalY + 2);
-
-    const balanceY = finalY + 7;
+    doc.line(summaryX, finalY, pageWidth - margin, finalY);
+    
+    finalY += 5;
     doc.setFontSize(14);
     if (finalBalance >= 0) {
         doc.setTextColor('#16A34A'); // Green
-        doc.text('Jama (Profit/Credit):', halfWidth + margin + 2, balanceY);
-        doc.text(`₹${finalBalance.toLocaleString('en-IN')}`, pageWidth - margin, balanceY, { align: 'right' });
+        doc.text('Jama (Profit/Credit):', summaryX, finalY, {align: 'left'});
+        doc.text(`₹${finalBalance.toLocaleString('en-IN')}`, pageWidth - margin, finalY, { align: 'right' });
     } else {
         doc.setTextColor('#DC2626'); // Red
-        doc.text('Baqaya (Balance/Due):', halfWidth + margin + 2, balanceY);
-        doc.text(`₹${Math.abs(finalBalance).toLocaleString('en-IN')}`, pageWidth - margin, balanceY, { align: 'right' });
+        doc.text('Baqaya (Balance/Due):', summaryX, finalY, {align: 'left'});
+        doc.text(`₹${Math.abs(finalBalance).toLocaleString('en-IN')}`, pageWidth - margin, finalY, { align: 'right' });
     }
     
     // Signature
@@ -207,7 +224,7 @@ export default function StatementOfAccountPage() {
     doc.text('Faisal', pageWidth - margin - 35, doc.internal.pageSize.getHeight() - 25);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
-    doc.text('Signature', pageWidth - margin - 30, doc.internal.pageSize.getHeight() - 15);
+    doc.text('Signature', pageWidth - margin - 30, doc.internal.pageSize.getHeight() - 18);
 
 
     doc.save(`Statement-${partyName}-${statementDate}.pdf`);
@@ -361,5 +378,3 @@ export default function StatementOfAccountPage() {
     </div>
   );
 }
-
-
