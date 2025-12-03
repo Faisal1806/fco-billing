@@ -20,7 +20,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { getClientMessaging } from '@/lib/firebase';
-import { saveDocument } from '@/lib/actions';
+import { saveDocument, sendPushNotification } from '@/lib/actions';
 import { getToken } from 'firebase/messaging';
 import { Input } from '@/components/ui/input';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -53,12 +53,27 @@ const InvoicePreview = ({ title, colors, children }: {
 export default function SettingsPage() {
     const { toast } = useToast();
     const [invoiceStyle, setInvoiceStyle] = React.useState('classic');
+    const [fcmTokens, setFcmTokens] = React.useState<string[]>([]);
+     const [isSending, setIsSending] = React.useState(false);
 
     React.useEffect(() => {
         const savedStyle = localStorage.getItem('invoiceStyle');
         if (savedStyle) {
             setInvoiceStyle(savedStyle);
         }
+        
+        const fetchTokens = async () => {
+            const tokensRaw = localStorage.getItem('fcm-tokens');
+            if (tokensRaw) {
+                try {
+                    const tokensData = JSON.parse(tokensRaw);
+                     if (Array.isArray(tokensData)) {
+                        setFcmTokens(tokensData.map(t => t.token));
+                    }
+                } catch {}
+            }
+        };
+        fetchTokens();
     }, []);
 
     const handleStyleChange = (style: string) => {
@@ -250,9 +265,13 @@ export default function SettingsPage() {
                 
                 if (fcmToken) {
                     await saveDocument('fcm-tokens', fcmToken, { token: fcmToken, enabledAt: new Date().toISOString() });
+                    // Also save to local state for immediate use
+                     if (!fcmTokens.includes(fcmToken)) {
+                        setFcmTokens([...fcmTokens, fcmToken]);
+                    }
                     toast({
                         title: 'Notifications Enabled',
-                        description: 'You will now receive push notifications.',
+                        description: 'You will now receive push notifications on this device.',
                     });
                 } else {
                      toast({ variant: 'destructive', title: 'Token Error', description: 'Could not get notification token. Is your service worker set up?' });
@@ -265,6 +284,28 @@ export default function SettingsPage() {
             toast({ variant: 'destructive', title: 'Notification Error', description: `An error occurred: ${(error as Error).message}` });
         }
     };
+
+    const handleSendTestNotification = async () => {
+        setIsSending(true);
+        if (fcmTokens.length === 0) {
+            toast({ variant: 'destructive', title: 'No Tokens', description: 'No devices have enabled notifications yet. Enable them first.'});
+            setIsSending(false);
+            return;
+        }
+        try {
+            await sendPushNotification({
+                title: 'F.Co Test Notification',
+                body: 'If you can see this, your notifications are working correctly!',
+                tokens: fcmTokens,
+                url: '/dashboard'
+            });
+            toast({ title: 'Test Sent', description: 'Check your device for a notification.'});
+        } catch (error) {
+             toast({ variant: 'destructive', title: 'Test Failed', description: 'Could not send test notification.'});
+        } finally {
+            setIsSending(false);
+        }
+    }
     
     return (
         <div className="space-y-6">
@@ -382,11 +423,17 @@ export default function SettingsPage() {
                         </TabsContent>
                          <TabsContent value="notifications" className="pt-6">
                             <h3 className="font-semibold text-lg mb-2">Push Notifications</h3>
-                            <p className="text-sm text-muted-foreground mb-4">Enable push notifications to receive real-time updates from the app, such as low stock alerts or large sale notifications.</p>
-                            <Button onClick={handleEnableNotifications} className="gap-2">
-                                <BellRing className="h-4 w-4" />
-                                Enable Notifications
-                            </Button>
+                            <p className="text-sm text-muted-foreground mb-4">Enable push notifications to receive real-time updates from the app, such as low stock alerts or new sale notifications.</p>
+                            <div className="flex items-center gap-4">
+                                <Button onClick={handleEnableNotifications} className="gap-2">
+                                    <BellRing className="h-4 w-4" />
+                                    Enable Notifications
+                                </Button>
+                                 <Button onClick={handleSendTestNotification} variant="secondary" className="gap-2" disabled={isSending}>
+                                    <BellRing className="h-4 w-4" />
+                                    {isSending ? 'Sending...' : 'Send Test Notification'}
+                                </Button>
+                            </div>
                         </TabsContent>
                         <TabsContent value="reset" className="pt-6">
                             <h3 className="font-semibold text-lg text-destructive mb-2">Factory Reset</h3>
