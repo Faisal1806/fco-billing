@@ -8,10 +8,20 @@ import { BillMakingTab } from '@/components/bill-making-tab';
 import { ReceiptMakingTab } from '@/components/receipt-making-tab';
 import { PesticideBillTab } from '@/components/pesticide-bill-tab';
 import { ChallanMakingTab } from '@/components/challan-making-tab';
+import { useSearchParams } from 'next/navigation';
 
 export default function SalesPage() {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = React.useState("wataks");
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'wataks';
+  const [activeTab, setActiveTab] = React.useState(initialTab);
+
+  React.useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

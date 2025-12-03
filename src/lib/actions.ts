@@ -2,7 +2,7 @@
 'use server';
 
 import { getClientDb } from './firebase';
-import { collection, getDocs, doc, setDoc, deleteDoc, getDoc, addDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, deleteDoc, getDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 
 /**
  * Sends push notifications to specified FCM tokens.
@@ -22,11 +22,10 @@ export async function sendPushNotification(notification: {
 
     try {
         const db = getClientDb();
-        // Use addDoc for auto-generated IDs in a collection
         const notificationJobsRef = collection(db, 'notificationJobs');
         await addDoc(notificationJobsRef, {
             ...notification,
-            createdAt: new Date().toISOString(),
+            createdAt: serverTimestamp(),
             status: 'pending',
         });
         return { success: true, message: "Notification job queued successfully." };
