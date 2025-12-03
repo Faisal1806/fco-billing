@@ -139,7 +139,7 @@ export default function StatementOfAccountPage() {
     // Tables
     const halfWidth = (pageWidth - margin * 2) / 2;
     const creditData = creditRows
-        .filter(r => r.netSale > 0 || r.grossSale > 0)
+        .filter(r => r.netSale > 0 || r.grossSale > 0 || r.peti > 0 || r.daba > 0)
         .map(r => [r.date ? new Date(r.date).toLocaleDateString('en-GB') : '', r.watakNo, r.peti || '', r.daba || '', r.grossSale || '', r.expenses || '', r.netSale || '']);
     
     const debitData = debitRows
@@ -160,8 +160,6 @@ export default function StatementOfAccountPage() {
       footStyles: { fontStyle: 'bold', fillColor: '#E5E7EB' }
     });
 
-    const creditTableY = (doc as any).lastAutoTable.finalY;
-
     autoTable(doc, {
         head: [['Date', 'Details', 'Amount']],
         body: debitData,
@@ -175,11 +173,9 @@ export default function StatementOfAccountPage() {
         ],
         footStyles: { fontStyle: 'bold', fillColor: '#E5E7EB' }
     });
-
-    const debitTableY = (doc as any).lastAutoTable.finalY;
-    const finalY = Math.max(creditTableY, debitTableY) + 10;
     
-
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    
     // Final Balance
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
@@ -365,4 +361,5 @@ export default function StatementOfAccountPage() {
     </div>
   );
 }
+
 
