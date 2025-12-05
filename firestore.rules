@@ -163,7 +163,11 @@ service cloud.firestore {
     // Transactional Data
     // (Sales Orders & Purchase Orders)
     // ------------------------------------------------------------------------
-
+    match /invoices/{invoiceId} {
+      allow get: if true;
+      allow list: if false;
+      allow create, update, delete: if isSignedIn();
+    }
     /**
      * @description Individual sales orders can be read publicly (e.g., via QR code), but cannot be listed. Writes are restricted to authenticated users.
      * @path        /sales_orders/{salesOrderId}
@@ -244,3 +248,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
