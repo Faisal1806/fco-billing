@@ -1,115 +1,56 @@
 
-/**
- * Core Philosophy:
- * This ruleset establishes a secure-by-default environment for the F.Co Billing System,
- * designed for rapid prototyping. The primary security goal is to allow public read
- * access for specific documents (like invoices, via QR codes) while strictly controlling
- * all write operations. All writes require user authentication. Data that is private
- * to a user (their own profile) is strictly locked down to that user.
- *
- * Data Structure:
- * The data is organized into several top-level collections representing core business
- * entities like products, customers, suppliers, and transactional data like sales and
- * purchase orders. User data is isolated in the `/users/{userId}` collection. Some
- * transactional data, like order items and payments, are stored in subcollections
- * under their parent order document.
- *
- * Key Security Decisions:
- * 1. Public Read for Transactional Docs: To support features like QR code scanning for invoices,
- *    receipts, challans, and purchase bills, individual `get` operations on these collections
- *    are public. However, `list` operations are disabled to prevent enumeration.
- * 2. Authenticated Writes: As this is a prototyping phase, all write operations
- *    (create, update, delete) on business collections are permitted for any signed-in
- *    user. This is a temporary measure. For production, these documents MUST be
- *    updated to include an `ownerId` or similar field to lock down writes to specific
- *    users or roles.
- * 3. User Data Privacy: The `/users/{userId}` path is strictly controlled. Users can
- *    only read and write their own document. Listing users is disabled.
- *
- * Denormalization for Authorization:
- * This ruleset is designed with denormalization in mind for future security enhancements.
- * Currently, many collections lack an "owner" field. To move from prototyping to
- * production, you MUST denormalize ownership information (e.g., a `creatorId` or
- * `organizationId` field) onto documents like `sales_orders`, `products`, etc. This
- * will allow for more granular and performant authorization checks without needing
- * costly `get()` calls on related documents.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ------------------------------------------------------------------------
-    // Helper Functions
-    // ------------------------------------------------------------------------
-
-    /**
-     * Returns true if the user is authenticated.
-     */
+    // Helper function to check if a user is signed in.
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * Returns true if the authenticated user's UID matches the provided userId.
-     */
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    // ------------------------------------------------------------------------
-    // User Profile Rules
-    // ------------------------------------------------------------------------
+    // USER DATA: Users can only read and write their own document.
     match /users/{userId} {
-      allow read, write: if isOwner(userId);
-      allow list: if false;
+      allow read, write: if request.auth.uid == userId;
     }
 
-    // ------------------------------------------------------------------------
-    // Public Master Data with Authenticated Writes
-    // ------------------------------------------------------------------------
-    match /products/{productId} {
+    // PUBLIC BILLS: This collection is for sharing. Anyone can read.
+    // This allows QR codes to work for anyone.
+    // Writes are still protected.
+    match /bills/{billId} {
       allow get, list: if true;
       allow create, update, delete: if isSignedIn();
     }
-    match /suppliers/{supplierId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
-    }
-    match /customers/{customerId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
-    }
-    match /locations/{locationId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
-    }
-    match /parties/{partyId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
-    }
-
-    // ------------------------------------------------------------------------
-    // Transactional Data - Public GET for QR codes, restricted writes
-    // ------------------------------------------------------------------------
+    
+    // All other business collections are protected.
+    // Only authenticated users can write. Read access is public for individual documents
+    // to support sharing and QR codes, but listing is disabled.
     match /invoices/{invoiceId} {
       allow get: if true;
       allow list: if false;
       allow create, update, delete: if isSignedIn();
     }
     match /purchases/{purchaseId} {
-        allow get: if true;
-        allow list: if false;
-        allow create, update, delete: if isSignedIn();
+      allow get: if true;
+      allow list: if false;
+      allow create, update, delete: if isSignedIn();
     }
     match /receipts/{receiptId} {
-        allow get: if true;
-        allow list: if false;
-        allow create, update, delete: if isSignedIn();
+      allow get: if true;
+      allow list: if false;
+      allow create, update, delete: if isSignedIn();
     }
-    match /challans/{challanId} {
-        allow get: if true;
-        allow list: if false;
-        allow create, update, delete: if isSignedIn();
+     match /challans/{challanId} {
+      allow get: if true;
+      allow list: if false;
+      allow create, update, delete: if isSignedIn();
+    }
+    match /products/{productId} {
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn();
+    }
+    match /parties/{partyId} {
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn();
     }
     match /advances/{advanceId} {
       allow get, list: if true;
@@ -119,24 +60,20 @@ service cloud.firestore {
       allow get, list: if true;
       allow create, update, delete: if isSignedIn();
     }
-     match /bikris/{bikriId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
-    }
     match /cold-storage/{csId} {
        allow get, list: if true;
        allow create, update, delete: if isSignedIn();
     }
-
-    // ------------------------------------------------------------------------
-    // System Collections
-    // ------------------------------------------------------------------------
-     match /fcm-tokens/{tokenId} {
-        allow read, write: if isSignedIn();
-     }
-     match /notificationJobs/{jobId} {
+     match /bikris/{bikriId} {
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn();
+    }
+    match /fcm-tokens/{tokenId} {
+       allow read, write: if isSignedIn();
+    }
+    match /notificationJobs/{jobId} {
         allow create: if isSignedIn();
-        allow read, update, delete: if false; // Only backend functions should process these
-     }
+        allow read, update, delete: if false;
+    }
   }
 }

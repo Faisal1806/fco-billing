@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import * as React from 'react';
@@ -325,9 +323,11 @@ export function BillMakingTab() {
     
     // Save to local storage first for immediate access
     localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
-    
+
     try {
-        await saveDocument('invoices', billId, billData);
+        // Also save a copy to the public 'bills' collection for QR sharing
+        await saveDocument('bills', billId, billData);
+
         toast({
             title: isEditing ? 'Invoice Updated' : 'Invoice Saved',
             description: 'The invoice has been successfully saved to the cloud.',
@@ -433,7 +433,7 @@ export function BillMakingTab() {
         localStorage.removeItem(`invoice-${sNoToDelete}`);
         
         try {
-            await deleteDocument('invoices', sNoToDelete);
+            await deleteDocument('bills', sNoToDelete);
             toast({ title: "Invoice Deleted", description: `Invoice #${sNoToDelete} has been deleted from local and cloud storage.`});
         } catch (error) {
             toast({ variant: "destructive", title: "Cloud Delete Failed", description: `Invoice #${sNoToDelete} was removed locally but failed to delete from the cloud.`});

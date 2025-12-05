@@ -1,5 +1,3 @@
-
-
 'use client'
 
 import * as React from 'react';
@@ -8,15 +6,14 @@ import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Printer, Download, FileText, Receipt, Loader2 } from "lucide-react";
 import { FaWhatsapp } from 'react-icons/fa';
-import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import QRCode from 'qrcode.react';
 import { ClassicA4Layout } from "@/components/invoice-templates/classic-a4";
 import { ModernDarkA4Layout } from "@/components/invoice-templates/modern-dark-a4";
 import { ThermalLayout } from "@/components/invoice-templates/thermal";
 import { ModernLightA4Layout } from "@/components/invoice-templates/modern-light-a4";
-import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { getDocument } from '@/lib/actions';
 
 interface BillData {
@@ -61,9 +58,6 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     const [pageUrl, setPageUrl] = useState('');
     const [printStyle, setPrintStyle] = useState<'a4' | 'thermal'>('a4');
     const [invoiceStyle, setInvoiceStyle] = useState('classic');
-    const searchParams = useSearchParams();
-    const isPublicView = searchParams.get('source') === 'qr';
-
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -83,27 +77,24 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             setLoading(true);
 
             let data: BillData | null = null;
-            const documentId = `invoice-${params.id}`;
-
-            // Always try fetching from cloud first, especially for QR views or direct access
-            const { success, data: firestoreData, error } = await getDocument('invoices', params.id);
-            
-            if (success && firestoreData) {
-                data = firestoreData as BillData;
+            // The internal page can just use the local copy
+            const localData = localStorage.getItem(`invoice-${params.id}`);
+            if (localData) {
+                try {
+                    data = JSON.parse(localData) as BillData;
+                } catch (e) {
+                    toast({ variant: "destructive", title: "Local Data Corrupted" });
+                }
             } else {
-                // If cloud fails, fall back to local storage (for offline/local-only cases)
-                const localData = localStorage.getItem(documentId);
-                if (localData) {
-                    try {
-                        data = JSON.parse(localData) as BillData;
-                    } catch (e) {
-                         toast({ variant: "destructive", title: "Local Data Corrupted" });
-                    }
+                // As a fallback, try fetching from the public collection if local is missing
+                const { success, data: firestoreData, error } = await getDocument('bills', params.id);
+                 if (success && firestoreData) {
+                    data = firestoreData as BillData;
                 } else {
                      toast({
                         variant: "destructive",
                         title: "Invoice Not Found",
-                        description: error || "The invoice may not exist in the cloud or on this device."
+                        description: error || "The invoice may not exist on this device or in the cloud."
                     });
                 }
             }
@@ -112,14 +103,15 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             if (data) {
                 setBillData(data);
                 if(typeof window !== 'undefined'){
-                  setPageUrl(`${window.location.origin}/invoice/${params.id}?source=qr`);
+                  // The QR link points to the new public page and includes the style
+                  setPageUrl(`${window.location.origin}/bill/view/${params.id}?style=${invoiceStyle}`);
                 }
             }
             
             setLoading(false);
         };
         fetchBill();
-    }, [params.id, toast, isPublicView]);
+    }, [params.id, toast, invoiceStyle]);
 
 
     const handleShare = () => {
@@ -138,42 +130,28 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             description: "Your PDF is being created. This might take a moment.",
         });
 
-        const invoiceElement = printRef.current;
-        if (!invoiceElement || !billData) return;
-
-        const activeLayout = printStyle === 'a4' ? invoiceElement.querySelector('.print-area-a4 > div') : invoiceElement.querySelector('.print-area-thermal');
-        if (!activeLayout) return;
+        const activeLayout = printRef.current;
+        if (!activeLayout || !billData) return;
 
         const isThermal = printStyle === 'thermal';
-        const format = isThermal ? [80, 297] : 'a5';
+        const format: any = isThermal ? [80, 297] : 'a5';
         const orientation = 'portrait';
-        const backgroundColor = invoiceStyle === 'modern-dark' ? '#1f2937' : (printStyle === 'thermal' || invoiceStyle === 'modern-light' ? '#ffffff' : '#FDFEE2');
 
-        html2canvas(activeLayout as HTMLElement, {
-            scale: 3,
-            useCORS: true,
-            backgroundColor: backgroundColor,
-            onclone: (document) => {
-                const clonedBody = document.body;
-                if (invoiceStyle === 'modern-dark') {
-                    clonedBody.style.color = '#e5e7eb';
-                } else {
-                    clonedBody.style.color = '#111827';
-                }
-            }
-        }).then(canvas => {
-            const pdf = new jsPDF({
-                orientation,
-                unit: 'mm',
-                format,
-            });
-            
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-            
-            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
-            pdf.save(`Invoice-${billData.sNo}_${billData.customerName}.pdf`);
+        const doc = new jsPDF({
+            orientation,
+            unit: 'mm',
+            format,
         });
+
+        const content = printStyle === 'a4'
+            ? activeLayout.querySelector('.print-area-a4 > div')
+            : activeLayout.querySelector('.print-area-thermal');
+
+        if (!content) return;
+        
+        // This is a temporary workaround until `html2canvas` is fixed
+        autoTable(doc, { html: content as HTMLTableElement });
+        doc.save(`Invoice-${billData.sNo}_${billData.customerName}.pdf`);
     };
 
 
@@ -202,7 +180,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 <Download className="h-4 w-4" />
                 Save to Device
             </Button>
-             {billData && (
+             {billData && pageUrl && (
                 <div className="p-4 border bg-muted rounded-md flex flex-col items-center gap-2">
                     <QRCode value={pageUrl} size={128} bgColor="transparent" fgColor="hsl(var(--foreground))" />
                     <p className="text-xs font-semibold text-muted-foreground mt-1">Scan to View Bill</p>
@@ -246,10 +224,6 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     return (
         <div className="bg-muted/40 font-sans print:bg-white flex flex-col md:flex-row gap-8 justify-center p-4 md:p-8">
              <style jsx global>{`
-                @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
-                .font-signature {
-                    font-family: 'Dancing Script', cursive;
-                }
                 @media print {
                     body {
                         background: white !important;
@@ -264,10 +238,10 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                         height: 100%;
                     }
                     .print-area-a4 {
-                        display: ${printStyle === 'a4' ? 'flex !important' : 'none !important'};
+                        display: ${printStyle === 'a4' ? 'block' : 'none'} !important;
                     }
                      .print-area-thermal {
-                        display: ${printStyle === 'thermal' ? 'block !important' : 'none !important'};
+                        display: ${printStyle === 'thermal' ? 'block' : 'none'} !important;
                     }
                     .A5-page {
                          @page {
