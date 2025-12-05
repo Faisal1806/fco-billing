@@ -6,7 +6,7 @@ import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
-import { Printer, Download, FileText, Receipt } from "lucide-react";
+import { Printer, Download, FileText, Receipt, Loader2 } from "lucide-react";
 import { FaWhatsapp } from 'react-icons/fa';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -70,28 +70,25 @@ export default function PurchaseBillPage({ params }: { params: { id:string } }) 
             let data: PurchaseData | null = null;
             const docId = `purchase-${params.id}`;
 
-            if(isPublicView) {
-                const { success, data: firestoreData, error } = await getDocument('purchases', docId);
-                 if (success && firestoreData) {
-                    data = firestoreData as PurchaseData;
-                } else {
-                    toast({ variant: "destructive", title: "Not Found", description: error });
-                }
+            const { success, data: firestoreData, error } = await getDocument('purchases', docId);
+
+            if (success && firestoreData) {
+                data = firestoreData as PurchaseData;
             } else {
                 const localData = localStorage.getItem(docId);
                 if (localData) {
                     data = JSON.parse(localData);
+                } else {
+                    toast({
+                        variant: "destructive",
+                        title: "Not Found",
+                        description: error || "The purchase bill was not found."
+                    });
                 }
             }
             
             if (data) {
                 setBillData(data);
-            } else if (!isPublicView) {
-                 toast({
-                    variant: "destructive",
-                    title: "Not Found",
-                    description: "The requested purchase bill was not found on this device."
-                });
             }
             setLoading(false);
         };
@@ -173,12 +170,10 @@ export default function PurchaseBillPage({ params }: { params: { id:string } }) 
 
     if (loading) {
         return (
-            <div className="bg-gray-50 min-h-screen p-8 flex items-center justify-center">
-                 <div className="w-[148mm] min-h-[210mm] mx-auto bg-white p-4 border">
-                    <Skeleton className="h-16 w-full mb-4" />
-                    <div className="flex-grow mt-4">
-                        <Skeleton className="h-48 w-full" />
-                    </div>
+            <div className="bg-muted min-h-screen p-8 flex items-center justify-center">
+                 <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="h-16 w-16 animate-spin text-primary" />
+                    <p className="text-lg text-muted-foreground">Loading Purchase Bill...</p>
                  </div>
             </div>
         )
@@ -381,18 +376,9 @@ export default function PurchaseBillPage({ params }: { params: { id:string } }) 
                 }
             `}</style>
             
-            {!isPublicView ? (
-                <div className="print:hidden w-full max-w-xs space-y-4">
-                    <Controls />
-                </div>
-             ) : (
-                <div className="print:hidden w-full max-w-xs space-y-4">
-                    <Button onClick={handleDownloadPdf} size="lg" className="w-full gap-2 bg-blue-600 hover:bg-blue-700 text-white h-12 text-base">
-                        <Download className="h-5 w-5" />
-                        Save to Device
-                    </Button>
-                </div>
-            )}
+            <div className="print:hidden w-full max-w-xs space-y-4">
+                <Controls />
+            </div>
 
             <div className="print-container">
                 <div ref={printRef}>
@@ -407,4 +393,3 @@ export default function PurchaseBillPage({ params }: { params: { id:string } }) 
         </div>
     );
 }
-

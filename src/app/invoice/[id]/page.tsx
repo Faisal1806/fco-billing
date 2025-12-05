@@ -6,7 +6,7 @@ import * as React from 'react';
 import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { Printer, Download, FileText, Receipt } from "lucide-react";
+import { Printer, Download, FileText, Receipt, Loader2 } from "lucide-react";
 import { FaWhatsapp } from 'react-icons/fa';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -85,32 +85,26 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             let data: BillData | null = null;
             const documentId = `invoice-${params.id}`;
 
-            if (isPublicView) {
-                // For public QR views, always fetch from the cloud
-                const { success, data: firestoreData, error } = await getDocument('invoices', params.id);
-                if (success && firestoreData) {
-                    data = firestoreData as BillData;
-                } else {
-                    toast({
-                        variant: "destructive",
-                        title: "Invoice Not Found",
-                        description: error || "The invoice may not have been synced to the cloud."
-                    });
-                }
+            // Always try fetching from cloud first, especially for QR views or direct access
+            const { success, data: firestoreData, error } = await getDocument('invoices', params.id);
+            
+            if (success && firestoreData) {
+                data = firestoreData as BillData;
             } else {
-                // For internal views, prioritize local storage for speed
+                // If cloud fails, fall back to local storage (for offline/local-only cases)
                 const localData = localStorage.getItem(documentId);
                 if (localData) {
                     try {
                         data = JSON.parse(localData) as BillData;
                     } catch (e) {
-                        console.error("Failed to parse invoice data", e);
-                        toast({
-                            variant: "destructive",
-                            title: "Error Loading Invoice",
-                            description: "The saved invoice data appears to be corrupted."
-                        });
+                         toast({ variant: "destructive", title: "Local Data Corrupted" });
                     }
+                } else {
+                     toast({
+                        variant: "destructive",
+                        title: "Invoice Not Found",
+                        description: error || "The invoice may not exist in the cloud or on this device."
+                    });
                 }
             }
 
@@ -120,12 +114,6 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 if(typeof window !== 'undefined'){
                   setPageUrl(`${window.location.origin}/invoice/${params.id}?source=qr`);
                 }
-            } else if (!isPublicView) { // Only show local not found error if not a public view
-                toast({
-                    variant: "destructive",
-                    title: "Invoice Not Found",
-                    description: "The requested invoice was not found on this device."
-                });
             }
             
             setLoading(false);
@@ -226,11 +214,9 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     if (loading) {
         return (
             <div className="bg-muted min-h-screen p-8 flex items-center justify-center">
-                 <div className="w-[148mm] min-h-[210mm] mx-auto bg-card p-8">
-                    <Skeleton className="h-16 w-3/4 self-center mb-8" />
-                    <div className="flex-grow mt-8">
-                        <Skeleton className="h-96 w-full" />
-                    </div>
+                 <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="h-16 w-16 animate-spin text-primary" />
+                    <p className="text-lg text-muted-foreground">Loading Invoice...</p>
                  </div>
             </div>
         )
@@ -292,18 +278,9 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 }
             `}</style>
             
-            {!isPublicView ? (
-                <div className="print:hidden w-full max-w-[250px] space-y-4 sticky top-4 self-start">
-                    <Controls />
-                </div>
-            ) : (
-                 <div className="print:hidden w-full max-w-[250px] space-y-4 sticky top-4 self-start">
-                    <Button onClick={handleDownloadPdf} size="lg" className="w-full gap-2 bg-blue-600 hover:bg-blue-700 text-white h-12 text-base">
-                        <Download className="h-5 w-5" />
-                        Save to Device
-                    </Button>
-                </div>
-            )}
+            <div className="print:hidden w-full max-w-[250px] space-y-4 sticky top-4 self-start">
+                <Controls />
+            </div>
 
             <div className="print-container A5-page">
                 <div ref={printRef}>

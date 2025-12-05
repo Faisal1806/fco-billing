@@ -1,3 +1,4 @@
+
 /**
  * Core Philosophy:
  * This ruleset establishes a secure-by-default environment for the F.Co Billing System,
@@ -14,9 +15,9 @@
  * under their parent order document.
  *
  * Key Security Decisions:
- * 1. Public Read for Orders: To support features like QR code scanning for invoices,
- *    individual `get` operations on `sales_orders` and `purchase_orders` are public.
- *    However, `list` operations are disabled to prevent enumeration of all orders.
+ * 1. Public Read for Transactional Docs: To support features like QR code scanning for invoices,
+ *    receipts, challans, and purchase bills, individual `get` operations on these collections
+ *    are public. However, `list` operations are disabled to prevent enumeration.
  * 2. Authenticated Writes: As this is a prototyping phase, all write operations
  *    (create, update, delete) on business collections are permitted for any signed-in
  *    user. This is a temporary measure. For production, these documents MUST be
@@ -24,9 +25,6 @@
  *    users or roles.
  * 3. User Data Privacy: The `/users/{userId}` path is strictly controlled. Users can
  *    only read and write their own document. Listing users is disabled.
- * 4. Relational Integrity: For subcollections, rules ensure that a child document
- *    can only be created if its parent document exists and that the ID fields linking
- *    them are consistent.
  *
  * Denormalization for Authorization:
  * This ruleset is designed with denormalization in mind for future security enhancements.
@@ -58,195 +56,87 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /**
-     * Returns true if the document being operated on already exists.
-     * CRITICAL for safe update and delete operations.
-     */
-    function isExistingDoc() {
-      return resource != null;
-    }
-
-    /**
-     * Returns true if the user is the owner of an existing document.
-     */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && isExistingDoc();
-    }
-
     // ------------------------------------------------------------------------
     // User Profile Rules
     // ------------------------------------------------------------------------
-
-    /**
-     * @description Users can manage their own profile, but cannot see other profiles.
-     * @path        /users/{userId}
-     * @allow       (get, update, delete) A logged-in user (`auth.uid: 'user123'`) accesses their own document at `/users/user123`.
-     * @allow       (create) A new user (`auth.uid: 'user123'`) creates their own document at `/users/user123`.
-     * @deny        (get) A logged-in user (`auth.uid: 'user123'`) tries to read `/users/user456`.
-     * @deny        (list) Any user tries to list all documents in the `/users` collection.
-     * @principle   Restricts access to a user's own data tree and prevents user enumeration.
-     */
     match /users/{userId} {
-      allow get: if isOwner(userId);
+      allow read, write: if isOwner(userId);
       allow list: if false;
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(userId);
     }
 
     // ------------------------------------------------------------------------
     // Public Master Data with Authenticated Writes
-    // (Products, Suppliers, Customers, Locations)
     // ------------------------------------------------------------------------
-
-    /**
-     * @description Product data is public to read, but only authenticated users can modify it.
-     * @path        /products/{productId}
-     * @allow       (get, list) Any user, including anonymous users, can read product information.
-     * @allow       (create, update, delete) A logged-in user modifies the product catalog.
-     * @deny        (create) An anonymous user tries to create a new product.
-     * @principle   Enables public browsing of master data while securing modifications.
-     */
     match /products/{productId} {
-      // CRITICAL: Cannot implement owner-only writes. The 'Product' entity is missing an 'ownerId' or 'authorId' field.
       allow get, list: if true;
-      allow create: if isSignedIn(); // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update, delete: if isSignedIn() && isExistingDoc(); // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow create, update, delete: if isSignedIn();
     }
-
-    /**
-     * @description Supplier data is public to read, but only authenticated users can modify it.
-     * @path        /suppliers/{supplierId}
-     * @allow       (get, list) Any user, including anonymous users, can read supplier information.
-     * @allow       (create, update, delete) A logged-in user modifies the supplier list.
-     * @deny        (create) An anonymous user tries to create a new supplier.
-     * @principle   Enables public browsing of master data while securing modifications.
-     */
     match /suppliers/{supplierId} {
-      // CRITICAL: Cannot implement owner-only writes. The 'Supplier' entity is missing an 'ownerId' or 'authorId' field.
       allow get, list: if true;
-      allow create: if isSignedIn(); // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update, delete: if isSignedIn() && isExistingDoc(); // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow create, update, delete: if isSignedIn();
     }
-
-    /**
-     * @description Customer data is public to read, but only authenticated users can modify it.
-     * @path        /customers/{customerId}
-     * @allow       (get, list) Any user, including anonymous users, can read customer information.
-     * @allow       (create, update, delete) A logged-in user modifies the customer list.
-     * @deny        (create) An anonymous user tries to create a new customer.
-     * @principle   Enables public browsing of master data while securing modifications.
-     */
     match /customers/{customerId} {
-      // CRITICAL: Cannot implement owner-only writes. The 'Customer' entity is missing an 'ownerId' or 'authorId' field.
       allow get, list: if true;
-      allow create: if isSignedIn(); // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update, delete: if isSignedIn() && isExistingDoc(); // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow create, update, delete: if isSignedIn();
     }
-    
-    /**
-     * @description Location data is public to read, but only authenticated users can modify it.
-     * @path        /locations/{locationId}
-     * @allow       (get, list) Any user, including anonymous users, can read location information.
-     * @allow       (create, update, delete) A logged-in user modifies the location list.
-     * @deny        (create) An anonymous user tries to create a new location.
-     * @principle   Enables public browsing of master data while securing modifications.
-     */
     match /locations/{locationId} {
-      // CRITICAL: Cannot implement owner-only writes. The 'Location' entity is missing an 'ownerId' or 'authorId' field.
       allow get, list: if true;
-      allow create: if isSignedIn(); // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update, delete: if isSignedIn() && isExistingDoc(); // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow create, update, delete: if isSignedIn();
+    }
+    match /parties/{partyId} {
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn();
     }
 
     // ------------------------------------------------------------------------
-    // Transactional Data
-    // (Sales Orders & Purchase Orders)
+    // Transactional Data - Public GET for QR codes, restricted writes
     // ------------------------------------------------------------------------
     match /invoices/{invoiceId} {
       allow get: if true;
       allow list: if false;
       allow create, update, delete: if isSignedIn();
     }
-    /**
-     * @description Individual sales orders can be read publicly (e.g., via QR code), but cannot be listed. Writes are restricted to authenticated users.
-     * @path        /sales_orders/{salesOrderId}
-     * @allow       (get) Any user, including an anonymous one, can fetch a specific sales order.
-     * @allow       (create) A signed-in user creates a new sales order.
-     * @deny        (list) No user can list all sales orders in the collection.
-     * @deny        (update) An anonymous user tries to update a sales order.
-     * @principle   Supports direct document access for features like QR scanning while preventing data enumeration.
-     */
-    match /sales_orders/{salesOrderId} {
-      // CRITICAL: Cannot implement owner-only writes. The 'SalesOrder' entity is missing an 'ownerId' or 'customerId' field.
-      allow get: if true;
-      allow list: if false;
-      allow create: if isSignedIn(); // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update, delete: if isSignedIn() && isExistingDoc(); // TODO: Add owner validation once the schema is updated with an ownership field.
-
-      /**
-       * @description Order Items are tied to a parent sales order.
-       * @path        /sales_orders/{salesOrderId}/order_items/{orderItemId}
-       * @allow       (get) Any user can get an order item if the parent order exists.
-       * @allow       (create) An authenticated user can add an item to an existing sales order.
-       * @deny        (create) A user tries to create an item for a non-existent sales order.
-       * @principle   Enforces relational integrity between parent and subcollection documents.
-       */
-      match /order_items/{orderItemId} {
-        allow get: if exists(/databases/$(database)/documents/sales_orders/$(salesOrderId));
+    match /purchases/{purchaseId} {
+        allow get: if true;
         allow list: if false;
-        allow create: if isSignedIn() && exists(/databases/$(database)/documents/sales_orders/$(salesOrderId)) && request.resource.data.salesOrderId == salesOrderId;
-        allow update, delete: if isSignedIn() && isExistingDoc() && exists(/databases/$(database)/documents/sales_orders/$(salesOrderId));
-      }
-
-      /**
-       * @description Payments are tied to a parent sales order.
-       * @path        /sales_orders/{salesOrderId}/payments/{paymentId}
-       * @allow       (get) Any user can get a payment if the parent order exists.
-       * @allow       (create) An authenticated user can add a payment to an existing sales order.
-       * @deny        (create) A user tries to create a payment for a non-existent sales order.
-       * @principle   Enforces relational integrity between parent and subcollection documents.
-       */
-      match /payments/{paymentId} {
-        allow get: if exists(/databases/$(database)/documents/sales_orders/$(salesOrderId));
+        allow create, update, delete: if isSignedIn();
+    }
+    match /receipts/{receiptId} {
+        allow get: if true;
         allow list: if false;
-        allow create: if isSignedIn() && exists(/databases/$(database)/documents/sales_orders/$(salesOrderId)) && request.resource.data.orderId == salesOrderId;
-        allow update, delete: if isSignedIn() && isExistingDoc() && exists(/databases/$(database)/documents/sales_orders/$(salesOrderId));
-      }
+        allow create, update, delete: if isSignedIn();
+    }
+    match /challans/{challanId} {
+        allow get: if true;
+        allow list: if false;
+        allow create, update, delete: if isSignedIn();
+    }
+    match /advances/{advanceId} {
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn();
+    }
+    match /expenses/{expenseId} {
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn();
+    }
+     match /bikris/{bikriId} {
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn();
+    }
+    match /cold-storage/{csId} {
+       allow get, list: if true;
+       allow create, update, delete: if isSignedIn();
     }
 
-    /**
-     * @description Individual purchase orders can be read publicly, but cannot be listed. Writes are restricted to authenticated users.
-     * @path        /purchase_orders/{purchaseOrderId}
-     * @allow       (get) Any user can fetch a specific purchase order.
-     * @allow       (create) A signed-in user creates a new purchase order.
-     * @deny        (list) No user can list all purchase orders in the collection.
-     * @deny        (update) An anonymous user tries to update a purchase order.
-     * @principle   Supports direct document access while preventing data enumeration.
-     */
-    match /purchase_orders/{purchaseOrderId} {
-      // CRITICAL: Cannot implement owner-only writes. The 'PurchaseOrder' entity is missing an 'ownerId' or 'supplierId' field.
-      allow get: if true;
-      allow list: if false;
-      allow create: if isSignedIn(); // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update, delete: if isSignedIn() && isExistingDoc(); // TODO: Add owner validation once the schema is updated with an ownership field.
-
-      /**
-       * @description Purchase Order Items are tied to a parent purchase order.
-       * @path        /purchase_orders/{purchaseOrderId}/purchase_order_items/{purchaseOrderItemId}
-       * @allow       (get) Any user can get a purchase item if the parent order exists.
-       * @allow       (create) An authenticated user can add an item to an existing purchase order.
-       * @deny        (create) A user tries to create an item for a non-existent purchase order.
-       * @principle   Enforces relational integrity between parent and subcollection documents.
-       */
-      match /purchase_order_items/{purchaseOrderItemId} {
-        allow get: if exists(/databases/$(database)/documents/purchase_orders/$(purchaseOrderId));
-        allow list: if false;
-        allow create: if isSignedIn() && exists(/databases/$(database)/documents/purchase_orders/$(purchaseOrderId)) && request.resource.data.purchaseOrderId == purchaseOrderId;
-        allow update, delete: if isSignedIn() && isExistingDoc() && exists(/databases/$(database)/documents/purchase_orders/$(purchaseOrderId));
-      }
-    }
+    // ------------------------------------------------------------------------
+    // System Collections
+    // ------------------------------------------------------------------------
+     match /fcm-tokens/{tokenId} {
+        allow read, write: if isSignedIn();
+     }
+     match /notificationJobs/{jobId} {
+        allow create: if isSignedIn();
+        allow read, update, delete: if false; // Only backend functions should process these
+     }
   }
 }
-
-    

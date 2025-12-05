@@ -40,8 +40,7 @@ export async function sendPushNotification(notification: {
 export async function saveDocument(collectionName: string, id: string, data: any) {
   try {
     const db = getClientDb();
-    const docRef = doc(db, collectionName, id);
-    await setDoc(docRef, data, { merge: true });
+    await setDoc(doc(db, collectionName, id), data, { merge: true });
     return { success: true, id };
   } catch (error) {
     console.error(`Error saving document to ${collectionName}:`, error);
@@ -71,7 +70,7 @@ export async function getDocument(collectionName: string, id: string): Promise<{
         if (docSnap.exists()) {
             return { success: true, data: { id: docSnap.id, ...docSnap.data() } };
         } else {
-            return { success: false, error: "Document not found." };
+            return { success: false, error: "Document not found in the cloud." };
         }
     } catch (error) {
         console.error(`Error fetching document from ${collectionName}:`, error);
