@@ -82,29 +82,6 @@ export async function getDocument(collectionName: string, id: string): Promise<{
 
 // Generic function to get documents from a collection
 export async function getDocuments(collectionName: string): Promise<{ success: boolean; data?: any[]; error?: string }> {
-    // This function will now prioritize reading from localStorage to ensure data is always visible
-    // even if there are Firestore permission issues.
-    if (typeof window !== 'undefined') {
-        try {
-            const data: any[] = [];
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                // Check for both new and old prefixes to ensure all data is loaded.
-                if (key?.startsWith(`${collectionName}-`) || key?.startsWith(`${collectionName.slice(0, -1)}-`)) {
-                    const item = localStorage.getItem(key);
-                    if (item) {
-                        data.push(JSON.parse(item));
-                    }
-                }
-            }
-            return { success: true, data };
-        } catch (error) {
-             console.error("Error fetching documents from localStorage:", error);
-             return { success: false, error: (error as Error).message };
-        }
-    }
-    
-    // Fallback for server-side rendering (though this component seems client-side heavy)
     try {
         const db = getClientDb();
         const querySnapshot = await getDocs(collection(db, collectionName));
@@ -112,9 +89,7 @@ export async function getDocuments(collectionName: string): Promise<{ success: b
 
         return { success: true, data };
     } catch (error) {
-        console.error("Error fetching documents from Firestore:", error);
+        console.error(`Error fetching documents from ${collectionName}:`, error);
         return { success: false, error: (error as Error).message };
     }
 }
-
-    
