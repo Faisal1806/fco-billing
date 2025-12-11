@@ -12,9 +12,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { PlusCircle, Trash2, Printer, Eye } from 'lucide-react';
+import { PlusCircle, Trash2, Printer, Eye, Save, FilePenLine, FilePlus } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { useToast } from '@/hooks/use-toast';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type CreditRow = {
   id: number;
@@ -34,63 +36,134 @@ type DebitRow = {
   amount: number;
 };
 
+const emptyCreditRow = { id: Date.now(), date: '', watakNo: '', peti: 0, daba: 0, grossSale: 0, expenses: 0, netSale: 0 };
+const emptyDebitRow = { id: Date.now(), date: '', details: '', amount: 0 };
+
 export default function StatementOfAccountPage() {
-  // Header State
-  const [sNo, setSNo] = React.useState('');
-  const [partyName, setPartyName] = React.useState('');
-  const [statementDate, setStatementDate] = React.useState(new Date().toISOString().split('T')[0]);
-  
-  // Credit (Sales) State
-  const [creditRows, setCreditRows] = React.useState<CreditRow[]>(
-    Array.from({ length: 12 }, (_, i) => ({ id: i, date: '', watakNo: '', peti: 0, daba: 0, grossSale: 0, expenses: 0, netSale: 0 }))
-  );
+    const { toast } = useToast();
+    // Header State
+    const [sNo, setSNo] = React.useState('');
+    const [partyName, setPartyName] = React.useState('');
+    const [statementDate, setStatementDate] = React.useState(new Date().toISOString().split('T')[0]);
+    
+    // Credit (Sales) State
+    const [creditRows, setCreditRows] = React.useState<CreditRow[]>([emptyCreditRow]);
+    // Debit (Remittance) State
+    const [debitRows, setDebitRows] = React.useState<DebitRow[]>([emptyDebitRow]);
 
-  // Debit (Remittance) State
-  const [debitRows, setDebitRows] = React.useState<DebitRow[]>(
-     Array.from({ length: 12 }, (_, i) => ({ id: i, date: '', details: '', amount: 0 }))
-  );
-  
-  // --- Credit Functions ---
-  const addCreditRow = () => {
-    setCreditRows(prev => [...prev, { id: Date.now(), date: '', watakNo: '', peti: 0, daba: 0, grossSale: 0, expenses: 0, netSale: 0 }]);
-  };
-  const removeCreditRow = (id: number) => {
-    setCreditRows(prev => prev.length > 1 ? prev.filter(row => row.id !== id) : prev);
-  };
-  const handleCreditChange = (id: number, field: keyof Omit<CreditRow, 'id'>, value: string | number) => {
-    setCreditRows(prev => prev.map(row => (row.id === id ? { ...row, [field]: value } : row)));
-  };
+    // Saved statements state
+    const [savedStatements, setSavedStatements] = React.useState<any[]>([]);
+    const [isEditing, setIsEditing] = React.useState(false);
+    
+    const fetchStatements = () => {
+        if (typeof window !== 'undefined') {
+            const statements = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key?.startsWith('manual-statement-')) {
+                    statements.push(JSON.parse(localStorage.getItem(key)!));
+                }
+            }
+            setSavedStatements(statements.sort((a,b) => new Date(b.statementDate).getTime() - new Date(a.statementDate).getTime()));
+        }
+    };
+    
+    React.useEffect(() => {
+        fetchStatements();
+    }, []);
 
-  // --- Debit Functions ---
-  const addDebitRow = () => {
-    setDebitRows(prev => [...prev, { id: Date.now(), date: '', details: '', amount: 0 }]);
-  };
-  const removeDebitRow = (id: number) => {
-    setDebitRows(prev => prev.length > 1 ? prev.filter(row => row.id !== id) : prev);
-  };
-  const handleDebitChange = (id: number, field: keyof Omit<DebitRow, 'id'>, value: string | number) => {
-    setDebitRows(prev => prev.map(row => (row.id === id ? { ...row, [field]: value } : row)));
-  };
+    // --- Credit Functions ---
+    const addCreditRow = () => {
+        setCreditRows(prev => [...prev, { ...emptyCreditRow, id: Date.now() }]);
+    };
+    const removeCreditRow = (id: number) => {
+        setCreditRows(prev => prev.length > 1 ? prev.filter(row => row.id !== id) : [{...emptyCreditRow, id: Date.now()}]);
+    };
+    const handleCreditChange = (id: number, field: keyof Omit<CreditRow, 'id'>, value: string | number) => {
+        setCreditRows(prev => prev.map(row => (row.id === id ? { ...row, [field]: value } : row)));
+    };
 
-  // --- Calculations ---
-  const creditTotals = React.useMemo(() => {
-    return creditRows.reduce((acc, row) => {
-        acc.peti += Number(row.peti) || 0;
-        acc.daba += Number(row.daba) || 0;
-        acc.grossSale += Number(row.grossSale) || 0;
-        acc.expenses += Number(row.expenses) || 0;
-        acc.netSale += Number(row.netSale) || 0;
-        return acc;
-    }, { peti: 0, daba: 0, grossSale: 0, expenses: 0, netSale: 0 });
-  }, [creditRows]);
+    // --- Debit Functions ---
+    const addDebitRow = () => {
+        setDebitRows(prev => [...prev, { ...emptyDebitRow, id: Date.now() }]);
+    };
+    const removeDebitRow = (id: number) => {
+        setDebitRows(prev => prev.length > 1 ? prev.filter(row => row.id !== id) : [{...emptyDebitRow, id: Date.now()}]);
+    };
+    const handleDebitChange = (id: number, field: keyof Omit<DebitRow, 'id'>, value: string | number) => {
+        setDebitRows(prev => prev.map(row => (row.id === id ? { ...row, [field]: value } : row)));
+    };
 
-  const totalDebit = React.useMemo(() => {
-    return debitRows.reduce((acc, row) => acc + (Number(row.amount) || 0), 0);
-  }, [debitRows]);
+    // --- Calculations ---
+    const creditTotals = React.useMemo(() => {
+        return creditRows.reduce((acc, row) => {
+            acc.peti += Number(row.peti) || 0;
+            acc.daba += Number(row.daba) || 0;
+            acc.grossSale += Number(row.grossSale) || 0;
+            acc.expenses += Number(row.expenses) || 0;
+            acc.netSale += Number(row.netSale) || 0;
+            return acc;
+        }, { peti: 0, daba: 0, grossSale: 0, expenses: 0, netSale: 0 });
+    }, [creditRows]);
 
-  const finalBalance = React.useMemo(() => {
-      return creditTotals.netSale - totalDebit;
-  }, [creditTotals.netSale, totalDebit]);
+    const totalDebit = React.useMemo(() => {
+        return debitRows.reduce((acc, row) => acc + (Number(row.amount) || 0), 0);
+    }, [debitRows]);
+
+    const finalBalance = React.useMemo(() => {
+        return creditTotals.netSale - totalDebit;
+    }, [creditTotals.netSale, totalDebit]);
+    
+    const resetForm = () => {
+        setSNo('');
+        setPartyName('');
+        setStatementDate(new Date().toISOString().split('T')[0]);
+        setCreditRows([emptyCreditRow]);
+        setDebitRows([emptyDebitRow]);
+        setIsEditing(false);
+    };
+
+    const handleSave = () => {
+        if (!sNo || !partyName) {
+            toast({ variant: "destructive", title: "Missing Info", description: "Please enter a Statement No. and Party Name." });
+            return;
+        }
+        const statementData = {
+            sNo,
+            partyName,
+            statementDate,
+            creditRows: creditRows.filter(r => r.netSale > 0 || r.grossSale > 0 || r.peti > 0 || r.daba > 0),
+            debitRows: debitRows.filter(r => r.amount > 0),
+            creditTotals,
+            totalDebit,
+            finalBalance
+        };
+        localStorage.setItem(`manual-statement-${sNo}`, JSON.stringify(statementData));
+        toast({ title: "Statement Saved", description: "The statement has been saved locally." });
+        fetchStatements();
+        setIsEditing(true);
+    };
+
+    const handleLoadStatement = (statement: any) => {
+        setSNo(statement.sNo);
+        setPartyName(statement.partyName);
+        setStatementDate(statement.statementDate);
+        setCreditRows(statement.creditRows.length > 0 ? statement.creditRows : [emptyCreditRow]);
+        setDebitRows(statement.debitRows.length > 0 ? statement.debitRows : [emptyDebitRow]);
+        setIsEditing(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleDeleteStatement = (sNoToDelete: string) => {
+        if (!window.confirm(`Are you sure you want to delete statement #${sNoToDelete}?`)) return;
+        localStorage.removeItem(`manual-statement-${sNoToDelete}`);
+        toast({ title: "Statement Deleted" });
+        fetchStatements();
+        if (sNo === sNoToDelete) {
+            resetForm();
+        }
+    };
+
 
   const handlePrint = () => {
     const doc = new jsPDF('p', 'mm', 'a4');
@@ -134,8 +207,6 @@ export default function StatementOfAccountPage() {
     // --- Tables ---
     let finalY = margin + 42;
 
-    const halfWidth = (pageWidth - margin * 2) / 2 - 2;
-
     // Credit Table
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
@@ -163,16 +234,15 @@ export default function StatementOfAccountPage() {
           [{ content: 'Total:', colSpan: 2, styles: { halign: 'right' } }, creditTotals.peti, creditTotals.daba, creditTotals.grossSale.toLocaleString('en-IN'), creditTotals.expenses.toLocaleString('en-IN'), creditTotals.netSale.toLocaleString('en-IN')]
       ],
       footStyles: { fontStyle: 'bold', fillColor: '#E5E7EB' },
-      tableWidth: halfWidth,
-      margin: { left: margin }
     });
+    
+    finalY = (doc as any).lastAutoTable.finalY + 5;
 
-    const creditTableY = (doc as any).lastAutoTable.finalY;
 
     // Debit Table
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text('DEBIT (Kharch)', margin + halfWidth + 4, finalY);
+    doc.text('DEBIT (Kharch)', margin, finalY);
     const debitData = debitRows
         .filter(r => r.amount > 0)
         .map(r => [
@@ -192,30 +262,25 @@ export default function StatementOfAccountPage() {
             [{ content: 'Total:', colSpan: 2, styles: { halign: 'right' } }, totalDebit.toLocaleString('en-IN')]
         ],
         footStyles: { fontStyle: 'bold', fillColor: '#E5E7EB' },
-        tableWidth: halfWidth,
-        margin: { left: margin + halfWidth + 4 }
     });
     
-    const debitTableY = (doc as any).lastAutoTable.finalY;
-
-    // Position summary below the taller of the two tables
-    finalY = Math.max(creditTableY, debitTableY) + 10;
+    finalY = (doc as any).lastAutoTable.finalY + 10;
     
     // Final Balance Summary
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     
-    const summaryX = pageWidth / 2 + 10;
+    const summaryX = margin;
     doc.text('Total Credit (Jama):', summaryX, finalY);
     doc.text(`₹${creditTotals.netSale.toLocaleString('en-IN')}`, pageWidth - margin, finalY, { align: 'right' });
     
     finalY += 7;
     doc.text('Total Debit (Kharch):', summaryX, finalY);
-    doc.text(`₹${totalDebit.toLocaleString('en-IN')}`, pageWidth - margin, finalY, { align: 'right' });
+    doc.text(`- ₹${totalDebit.toLocaleString('en-IN')}`, pageWidth - margin, finalY, { align: 'right' });
 
     finalY += 2;
     doc.setLineWidth(0.5);
-    doc.line(summaryX - 2, finalY, pageWidth - margin, finalY);
+    doc.line(summaryX, finalY, pageWidth - margin, finalY);
     
     finalY += 7;
     doc.setFontSize(14);
@@ -244,15 +309,15 @@ export default function StatementOfAccountPage() {
 
 
   return (
-    <div className="space-y-6">
-        <Card className="max-w-6xl mx-auto">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="max-w-6xl mx-auto lg:col-span-2">
             <CardHeader className="text-center">
                  <div className="text-muted-foreground flex justify-between items-center text-xs">
                     <span>🍎 F.Co.</span>
                     <span className="font-bold text-lg text-foreground">STATEMENT OF ACCOUNT</span>
                     <span>Mob: 9797002164, 7006136330, 9906740921</span>
                 </div>
-                <div className="flex items-center justify-center gap-4 py-2">
+                 <div className="flex items-center justify-center gap-4 py-2">
                     <span className="text-4xl">🍎</span>
                     <div className="text-center">
                         <h1 className="text-3xl font-bold text-red-700">Firdous Ahmad & Company</h1>
@@ -268,7 +333,7 @@ export default function StatementOfAccountPage() {
                 <div className="grid grid-cols-3 gap-4 items-end">
                     <div className="space-y-2">
                         <Label htmlFor="sNo">S.No:</Label>
-                        <Input id="sNo" value={sNo} onChange={(e) => setSNo(e.target.value)} />
+                        <Input id="sNo" value={sNo} onChange={(e) => setSNo(e.target.value)} disabled={isEditing} />
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="partyName">M/s</Label>
@@ -284,24 +349,25 @@ export default function StatementOfAccountPage() {
                     {/* CREDIT Column */}
                     <div className="space-y-1 lg:pr-2 lg:border-r-2 lg:border-black">
                         <h3 className="text-lg font-bold text-center">CREDIT (Jama)</h3>
-                        <div className="grid grid-cols-7 gap-1 text-[10px] font-bold text-muted-foreground text-center">
+                         <div className="grid grid-cols-8 gap-1 text-[10px] font-bold text-muted-foreground text-center">
                             <span className="col-span-1">Date</span>
-                            <span className="col-span-1">Watak No.</span>
+                            <span className="col-span-1">Watak</span>
                             <span className="col-span-1">Peti</span>
                             <span className="col-span-1">Daba</span>
-                            <span className="col-span-1">Gross Sale</span>
-                            <span className="col-span-1">Expenses</span>
-                            <span className="col-span-1">Net Sale</span>
+                            <span className="col-span-1">Gross</span>
+                            <span className="col-span-1">Exp</span>
+                            <span className="col-span-1">Net</span>
                         </div>
-                        {creditRows.map((row, i) => (
-                            <div key={row.id} className="grid grid-cols-7 gap-1 items-center">
-                                <Input className="h-8 text-xs" value={row.date} onChange={e => handleCreditChange(row.id, 'date', e.target.value)} />
+                        {creditRows.map((row) => (
+                            <div key={row.id} className="grid grid-cols-8 gap-1 items-center">
+                                <Input className="h-8 text-xs" type="date" value={row.date} onChange={e => handleCreditChange(row.id, 'date', e.target.value)} />
                                 <Input className="h-8 text-xs" value={row.watakNo} onChange={e => handleCreditChange(row.id, 'watakNo', e.target.value)} />
                                 <Input className="h-8 text-xs" type="number" value={row.peti || ''} onChange={e => handleCreditChange(row.id, 'peti', Number(e.target.value))} />
                                 <Input className="h-8 text-xs" type="number" value={row.daba || ''} onChange={e => handleCreditChange(row.id, 'daba', Number(e.target.value))} />
                                 <Input className="h-8 text-xs" type="number" value={row.grossSale || ''} onChange={e => handleCreditChange(row.id, 'grossSale', Number(e.target.value))} />
                                 <Input className="h-8 text-xs" type="number" value={row.expenses || ''} onChange={e => handleCreditChange(row.id, 'expenses', Number(e.target.value))} />
                                 <Input className="h-8 text-xs" type="number" value={row.netSale || ''} onChange={e => handleCreditChange(row.id, 'netSale', Number(e.target.value))} />
+                                 <Button variant="ghost" size="icon" onClick={() => removeCreditRow(row.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                             </div>
                         ))}
                          <div className="flex justify-start mt-2">
@@ -320,16 +386,17 @@ export default function StatementOfAccountPage() {
                      {/* DEBIT Column */}
                     <div className="space-y-1 lg:pl-2">
                         <h3 className="text-lg font-bold text-center">DEBIT (Kharch)</h3>
-                         <div className="grid grid-cols-3 gap-1 text-[10px] font-bold text-muted-foreground text-center">
+                         <div className="grid grid-cols-4 gap-1 text-[10px] font-bold text-muted-foreground text-center">
                             <span className="col-span-1">Date</span>
-                            <span className="col-span-1">Details of Remittance</span>
+                            <span className="col-span-2">Details of Remittance</span>
                             <span className="col-span-1">Amount</span>
                         </div>
-                         {debitRows.map((row, i) => (
-                            <div key={row.id} className="grid grid-cols-3 gap-1 items-center">
-                                <Input className="h-8 text-xs" value={row.date} onChange={e => handleDebitChange(row.id, 'date', e.target.value)} />
-                                <Input className="h-8 text-xs font-urdu" placeholder="تفصیل" value={row.details} onChange={e => handleDebitChange(row.id, 'details', e.target.value)} />
+                         {debitRows.map((row) => (
+                            <div key={row.id} className="grid grid-cols-4 gap-1 items-center">
+                                <Input className="h-8 text-xs" type="date" value={row.date} onChange={e => handleDebitChange(row.id, 'date', e.target.value)} />
+                                <Input className="h-8 text-xs font-urdu col-span-2" placeholder="تفصیل" value={row.details} onChange={e => handleDebitChange(row.id, 'details', e.target.value)} />
                                 <Input className="h-8 text-xs" type="number" value={row.amount || ''} onChange={e => handleDebitChange(row.id, 'amount', Number(e.target.value))} />
+                                 <Button variant="ghost" size="icon" onClick={() => removeDebitRow(row.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                             </div>
                         ))}
                         <div className="flex justify-start mt-2">
@@ -378,8 +445,8 @@ export default function StatementOfAccountPage() {
                     <p className="font-bold">Signature</p>
                 </div>
                 <div className='flex gap-2'>
-                    <Button className="gap-2" onClick={handlePrint}>
-                        <Eye className="h-4 w-4" /> View
+                    <Button className="gap-2" onClick={handleSave}>
+                        <Save className="h-4 w-4" /> {isEditing ? 'Update Statement' : 'Save Statement'}
                     </Button>
                     <Button className="gap-2" onClick={handlePrint}>
                         <Printer className="h-4 w-4" /> Print / Save PDF
@@ -387,8 +454,35 @@ export default function StatementOfAccountPage() {
                 </div>
             </CardFooter>
         </Card>
+        <Card className="lg:col-span-1 h-fit">
+            <CardHeader>
+                <h3 className="text-lg font-medium">Saved Statements</h3>
+            </CardHeader>
+            <CardContent>
+                <ScrollArea className="h-96">
+                    <div className="space-y-2">
+                        {savedStatements.map(stmt => (
+                            <div key={stmt.sNo} className="flex justify-between items-center p-2 border rounded-md">
+                                <div>
+                                    <p className="font-medium">Statement #{stmt.sNo}</p>
+                                    <p className="text-sm text-muted-foreground">{stmt.partyName}</p>
+                                    <p className="text-xs text-muted-foreground">{new Date(stmt.statementDate).toLocaleDateString()}</p>
+                                </div>
+                                <div className="flex items-center">
+                                    <Button variant="ghost" size="icon" onClick={() => handleLoadStatement(stmt)}>
+                                        <FilePenLine className="h-4 w-4" />
+                                    </Button>
+                                     <Button variant="ghost" size="icon" onClick={() => handleDeleteStatement(stmt.sNo)}>
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                         {savedStatements.length === 0 && <p className="text-sm text-muted-foreground text-center">No saved statements found.</p>}
+                    </div>
+                </ScrollArea>
+            </CardContent>
+        </Card>
     </div>
   );
 }
-
-    
