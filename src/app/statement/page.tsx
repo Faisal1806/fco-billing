@@ -1,11 +1,9 @@
-
 'use client';
 
 import * as React from 'react';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
 } from '@/components/ui/card';
@@ -19,6 +17,8 @@ import autoTable from 'jspdf-autotable';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useRouter } from 'next/navigation';
+import { Badge } from '@/components/ui/badge';
+
 
 type CreditRow = {
   id: number;
@@ -327,18 +327,18 @@ export default function StatementOfAccountPage() {
         <Card className="max-w-6xl mx-auto lg:col-span-2">
             <CardHeader className="text-center">
                  <div className="text-muted-foreground flex justify-between items-center text-xs">
-                    <span className="font-bold text-lg text-red-600">🍎 F.Co.</span>
+                    <span className="font-bold text-lg text-red-600">🍎</span>
                     <span>Mob: 9797002164, 7006136330, 9906740921</span>
                     <span className="font-bold text-lg text-red-600">🍎</span>
                 </div>
                  <div className="flex items-center justify-center gap-4 py-2">
                     <div className="text-center">
                         <h1 className="text-3xl font-bold text-red-700">Firdous Ahmad & Company</h1>
-                        <CardDescription>
+                        <p className="text-sm text-muted-foreground">
                             FRUIT MERCHANTS & COMMISSION AGENTS <br/>
                             Shed No.13, Fud No-12 A Fruit Mandi Apple Town Sopore -193201 (KMR) <br/>
                             Prop: Firdous Ahmad Lone (Nadihal Rafiabad)
-                        </CardDescription>
+                        </p>
                     </div>
                 </div>
             </CardHeader>
@@ -476,7 +476,10 @@ export default function StatementOfAccountPage() {
         </Card>
         <Card className="lg:col-span-1 h-fit">
             <CardHeader>
-                <h3 className="text-lg font-medium">Saved Statements</h3>
+                <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-medium">Saved Statements</h3>
+                    {savedStatements.length > 0 && <Badge variant="secondary">{savedStatements.length} Saved</Badge>}
+                </div>
             </CardHeader>
             <CardContent>
                 <ScrollArea className="h-[calc(100vh-12rem)]">
