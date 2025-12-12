@@ -5,6 +5,7 @@ import * as React from 'react';
 import {
   Card,
   CardContent,
+  CardDescription,
   CardFooter,
   CardHeader,
 } from '@/components/ui/card';
@@ -12,11 +13,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { PlusCircle, Trash2, Printer, Eye, Save, FilePenLine, FilePlus } from 'lucide-react';
+import { PlusCircle, Trash2, Printer, Eye, Save, FilePenLine, FilePlus, FileDown } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useRouter } from 'next/navigation';
 
 type CreditRow = {
   id: number;
@@ -41,6 +43,7 @@ const emptyDebitRow = { id: Date.now(), date: '', details: '', amount: 0 };
 
 export default function StatementOfAccountPage() {
     const { toast } = useToast();
+    const router = useRouter();
     // Header State
     const [sNo, setSNo] = React.useState('');
     const [partyName, setPartyName] = React.useState('');
@@ -165,7 +168,7 @@ export default function StatementOfAccountPage() {
     };
 
 
-  const handlePrint = () => {
+  const handleSaveAsPdf = () => {
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 10;
@@ -176,7 +179,9 @@ export default function StatementOfAccountPage() {
     // Header
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.text('🍎 F.Co.', margin, margin);
+    doc.setTextColor('#DC2626');
+    doc.text('🍎', margin, margin);
+    doc.setTextColor('#000000');
     doc.setFont('helvetica', 'normal');
     doc.text('Mob: 9797002164, 7006136330, 9906740921', pageWidth - margin, margin, { align: 'right' });
     
@@ -194,7 +199,12 @@ export default function StatementOfAccountPage() {
     doc.text('FRUIT MERCHANTS & COMMISSION AGENTS', pageWidth / 2, margin + 20, { align: 'center' });
     doc.text('Shed No.13, Fud No-12 A Fruit Mandi Apple Town Sopore -193201 (KMR)', pageWidth / 2, margin + 24, { align: 'center' });
     doc.text('Prop: Firdous Ahmad Lone (Nadihal Rafiabad)', pageWidth / 2, margin + 28, { align: 'center' });
-    
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor('#DC2626');
+    doc.text('🍎', pageWidth - margin - 5, margin);
+    doc.setTextColor('#000000');
+
     // Bill Info
     doc.setLineWidth(0.5);
     doc.line(margin, margin + 32, pageWidth - margin, margin + 32);
@@ -307,25 +317,29 @@ export default function StatementOfAccountPage() {
     doc.save(`Statement-${partyName}-${statementDate}.pdf`);
   };
 
+  const handlePrint = () => {
+    window.print();
+  }
+
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="max-w-6xl mx-auto lg:col-span-2">
             <CardHeader className="text-center">
                  <div className="text-muted-foreground flex justify-between items-center text-xs">
-                    <span>🍎 F.Co.</span>
-                    <span className="font-bold text-lg text-foreground">STATEMENT OF ACCOUNT</span>
+                    <span className="font-bold text-lg text-red-600">🍎 F.Co.</span>
                     <span>Mob: 9797002164, 7006136330, 9906740921</span>
+                    <span className="font-bold text-lg text-red-600">🍎</span>
                 </div>
                  <div className="flex items-center justify-center gap-4 py-2">
-                    <span className="text-4xl">🍎</span>
                     <div className="text-center">
                         <h1 className="text-3xl font-bold text-red-700">Firdous Ahmad & Company</h1>
-                        <p className="font-semibold">FRUIT MERCHANTS & COMMISSION AGENTS</p>
-                        <p className="text-sm">Shed No.13, Fud No-12 A Fruit Mandi Apple Town Sopore -193201 (KMR)</p>
-                        <p className="text-sm">Prop: Firdous Ahmad Lone (Nadihal Rafiabad)</p>
+                        <CardDescription>
+                            FRUIT MERCHANTS & COMMISSION AGENTS <br/>
+                            Shed No.13, Fud No-12 A Fruit Mandi Apple Town Sopore -193201 (KMR) <br/>
+                            Prop: Firdous Ahmad Lone (Nadihal Rafiabad)
+                        </CardDescription>
                     </div>
-                    <span className="text-4xl">🍎</span>
                 </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -345,9 +359,9 @@ export default function StatementOfAccountPage() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 border-t-2 border-b-2 border-black py-4">
+                <div className="space-y-4 border-t-2 border-b-2 border-black py-4">
                     {/* CREDIT Column */}
-                    <div className="space-y-1 lg:pr-2 lg:border-r-2 lg:border-black">
+                    <div className="space-y-1">
                         <h3 className="text-lg font-bold text-center">CREDIT (Jama)</h3>
                          <div className="grid grid-cols-8 gap-1 text-[10px] font-bold text-muted-foreground text-center">
                             <span className="col-span-1">Date</span>
@@ -384,7 +398,7 @@ export default function StatementOfAccountPage() {
                         </div>
                     </div>
                      {/* DEBIT Column */}
-                    <div className="space-y-1 lg:pl-2">
+                    <div className="space-y-1">
                         <h3 className="text-lg font-bold text-center">DEBIT (Kharch)</h3>
                          <div className="grid grid-cols-4 gap-1 text-[10px] font-bold text-muted-foreground text-center">
                             <span className="col-span-1">Date</span>
@@ -444,12 +458,18 @@ export default function StatementOfAccountPage() {
                 <div className="flex flex-col items-center">
                     <p className="font-bold">Signature</p>
                 </div>
-                <div className='flex gap-2'>
+                <div className='flex gap-2 flex-wrap'>
                     <Button className="gap-2" onClick={handleSave}>
-                        <Save className="h-4 w-4" /> {isEditing ? 'Update Statement' : 'Save Statement'}
+                        <Save className="h-4 w-4" /> {isEditing ? 'Update' : 'Save'}
                     </Button>
-                    <Button className="gap-2" onClick={handlePrint}>
-                        <Printer className="h-4 w-4" /> Print / Save PDF
+                     <Button variant="secondary" className="gap-2" onClick={resetForm}>
+                        <FilePlus className="h-4 w-4" /> New
+                    </Button>
+                    <Button variant="secondary" className="gap-2" onClick={handlePrint}>
+                        <Printer className="h-4 w-4" /> View/Print
+                    </Button>
+                    <Button variant="secondary" className="gap-2" onClick={handleSaveAsPdf}>
+                        <FileDown className="h-4 w-4" /> Save as PDF
                     </Button>
                 </div>
             </CardFooter>
@@ -459,7 +479,7 @@ export default function StatementOfAccountPage() {
                 <h3 className="text-lg font-medium">Saved Statements</h3>
             </CardHeader>
             <CardContent>
-                <ScrollArea className="h-96">
+                <ScrollArea className="h-[calc(100vh-12rem)]">
                     <div className="space-y-2">
                         {savedStatements.map(stmt => (
                             <div key={stmt.sNo} className="flex justify-between items-center p-2 border rounded-md">
