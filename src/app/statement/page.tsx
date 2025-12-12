@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -67,7 +68,8 @@ export default function StatementOfAccountPage() {
                     statements.push(JSON.parse(localStorage.getItem(key)!));
                 }
             }
-            setSavedStatements(statements.sort((a,b) => new Date(b.statementDate).getTime() - new Date(a.statementDate).getTime()));
+            // Sort by statement number (sNo)
+            setSavedStatements(statements.sort((a,b) => Number(a.sNo) - Number(b.sNo)));
         }
     };
     
