@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -19,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
+import '@/app/khata/print.css';
 
 
 type CreditRow = {
@@ -326,157 +328,159 @@ export default function StatementOfAccountPage() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="max-w-6xl mx-auto lg:col-span-2">
-            <CardHeader className="text-center">
-                 <div className="text-muted-foreground flex justify-between items-center text-xs">
-                    <span className="font-bold text-lg text-red-600">🍎</span>
-                    <span>Mob: 9797002164, 7006136330, 9906740921</span>
-                    <span className="font-bold text-lg text-red-600">🍎</span>
-                </div>
-                 <div className="flex items-center justify-center gap-4 py-2">
-                    <div className="text-center">
-                        <h1 className="text-3xl font-bold text-red-700">Firdous Ahmad & Company</h1>
-                        <p className="text-sm text-muted-foreground">
-                            FRUIT MERCHANTS & COMMISSION AGENTS <br/>
-                            Shed No.13, Fud No-12 A Fruit Mandi Apple Town Sopore -193201 (KMR) <br/>
-                            Prop: Firdous Ahmad Lone (Nadihal Rafiabad)
-                        </p>
+        <div className="printable-area lg:col-span-2">
+            <Card>
+                <CardHeader className="text-center">
+                    <div className="text-muted-foreground flex justify-between items-center text-xs">
+                        <span className="font-bold text-lg text-red-600">🍎</span>
+                        <span>Mob: 9797002164, 7006136330, 9906740921</span>
+                        <span className="font-bold text-lg text-red-600">🍎</span>
                     </div>
-                </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                {/* Header Details */}
-                <div className="grid grid-cols-3 gap-4 items-end">
-                    <div className="space-y-2">
-                        <Label htmlFor="sNo">S.No:</Label>
-                        <Input id="sNo" value={sNo} onChange={(e) => setSNo(e.target.value)} disabled={isEditing} />
+                    <div className="flex items-center justify-center gap-4 py-2">
+                        <div className="text-center">
+                            <h1 className="text-3xl font-bold text-red-700">Firdous Ahmad & Company</h1>
+                            <p className="text-sm text-muted-foreground">
+                                FRUIT MERCHANTS & COMMISSION AGENTS <br/>
+                                Shed No.13, Fud No-12 A Fruit Mandi Apple Town Sopore -193201 (KMR) <br/>
+                                Prop: Firdous Ahmad Lone (Nadihal Rafiabad)
+                            </p>
+                        </div>
                     </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="partyName">M/s</Label>
-                        <Input id="partyName" value={partyName} onChange={(e) => setPartyName(e.target.value)} />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {/* Header Details */}
+                    <div className="grid grid-cols-3 gap-4 items-end">
+                        <div className="space-y-2">
+                            <Label htmlFor="sNo">S.No:</Label>
+                            <Input id="sNo" value={sNo} onChange={(e) => setSNo(e.target.value)} disabled={isEditing} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="partyName">M/s</Label>
+                            <Input id="partyName" value={partyName} onChange={(e) => setPartyName(e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="statementDate">Date</Label>
+                            <Input id="statementDate" type="date" value={statementDate} onChange={(e) => setStatementDate(e.target.value)} />
+                        </div>
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="statementDate">Date</Label>
-                        <Input id="statementDate" type="date" value={statementDate} onChange={(e) => setStatementDate(e.target.value)} />
-                    </div>
-                </div>
 
-                <div className="space-y-4 border-t-2 border-b-2 border-black py-4">
-                    {/* CREDIT Column */}
-                    <div className="space-y-1">
-                        <h3 className="text-lg font-bold text-center">CREDIT (Jama)</h3>
-                         <div className="grid grid-cols-8 gap-1 text-[10px] font-bold text-muted-foreground text-center">
-                            <span className="col-span-1">Date</span>
-                            <span className="col-span-1">Watak</span>
-                            <span className="col-span-1">Peti</span>
-                            <span className="col-span-1">Daba</span>
-                            <span className="col-span-1">Gross</span>
-                            <span className="col-span-1">Exp</span>
-                            <span className="col-span-1">Net</span>
-                        </div>
-                        {creditRows.map((row) => (
-                            <div key={row.id} className="grid grid-cols-8 gap-1 items-center">
-                                <Input className="h-8 text-xs" type="date" value={row.date} onChange={e => handleCreditChange(row.id, 'date', e.target.value)} />
-                                <Input className="h-8 text-xs" value={row.watakNo} onChange={e => handleCreditChange(row.id, 'watakNo', e.target.value)} />
-                                <Input className="h-8 text-xs" type="number" value={row.peti || ''} onChange={e => handleCreditChange(row.id, 'peti', Number(e.target.value))} />
-                                <Input className="h-8 text-xs" type="number" value={row.daba || ''} onChange={e => handleCreditChange(row.id, 'daba', Number(e.target.value))} />
-                                <Input className="h-8 text-xs" type="number" value={row.grossSale || ''} onChange={e => handleCreditChange(row.id, 'grossSale', Number(e.target.value))} />
-                                <Input className="h-8 text-xs" type="number" value={row.expenses || ''} onChange={e => handleCreditChange(row.id, 'expenses', Number(e.target.value))} />
-                                <Input className="h-8 text-xs" type="number" value={row.netSale || ''} onChange={e => handleCreditChange(row.id, 'netSale', Number(e.target.value))} />
-                                 <Button variant="ghost" size="icon" onClick={() => removeCreditRow(row.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    <div className="space-y-4 border-t-2 border-b-2 border-black py-4">
+                        {/* CREDIT Column */}
+                        <div className="space-y-1">
+                            <h3 className="text-lg font-bold text-center">CREDIT (Jama)</h3>
+                            <div className="grid grid-cols-8 gap-1 text-[10px] font-bold text-muted-foreground text-center">
+                                <span className="col-span-1">Date</span>
+                                <span className="col-span-1">Watak</span>
+                                <span className="col-span-1">Peti</span>
+                                <span className="col-span-1">Daba</span>
+                                <span className="col-span-1">Gross</span>
+                                <span className="col-span-1">Exp</span>
+                                <span className="col-span-1">Net</span>
                             </div>
-                        ))}
-                         <div className="flex justify-start mt-2">
-                           <Button size="sm" variant="outline" onClick={addCreditRow} className="gap-1"><PlusCircle className="h-4 w-4"/>Add Row</Button>
-                         </div>
-                         <Separator className="my-2 bg-black"/>
-                         <div className="grid grid-cols-7 gap-1 font-bold text-sm text-center">
-                           <span className="col-span-2">Total:</span>
-                           <span className="col-span-1">{creditTotals.peti}</span>
-                           <span className="col-span-1">{creditTotals.daba}</span>
-                           <span className="col-span-1 text-right pr-1">₹{creditTotals.grossSale.toLocaleString('en-IN')}</span>
-                           <span className="col-span-1 text-right pr-1">₹{creditTotals.expenses.toLocaleString('en-IN')}</span>
-                           <span className="col-span-1 text-right pr-1">₹{creditTotals.netSale.toLocaleString('en-IN')}</span>
+                            {creditRows.map((row) => (
+                                <div key={row.id} className="grid grid-cols-8 gap-1 items-center">
+                                    <Input className="h-8 text-xs" type="date" value={row.date} onChange={e => handleCreditChange(row.id, 'date', e.target.value)} />
+                                    <Input className="h-8 text-xs" value={row.watakNo} onChange={e => handleCreditChange(row.id, 'watakNo', e.target.value)} />
+                                    <Input className="h-8 text-xs" type="number" value={row.peti || ''} onChange={e => handleCreditChange(row.id, 'peti', Number(e.target.value))} />
+                                    <Input className="h-8 text-xs" type="number" value={row.daba || ''} onChange={e => handleCreditChange(row.id, 'daba', Number(e.target.value))} />
+                                    <Input className="h-8 text-xs" type="number" value={row.grossSale || ''} onChange={e => handleCreditChange(row.id, 'grossSale', Number(e.target.value))} />
+                                    <Input className="h-8 text-xs" type="number" value={row.expenses || ''} onChange={e => handleCreditChange(row.id, 'expenses', Number(e.target.value))} />
+                                    <Input className="h-8 text-xs" type="number" value={row.netSale || ''} onChange={e => handleCreditChange(row.id, 'netSale', Number(e.target.value))} />
+                                    <Button variant="ghost" size="icon" onClick={() => removeCreditRow(row.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                </div>
+                            ))}
+                            <div className="flex justify-start mt-2">
+                            <Button size="sm" variant="outline" onClick={addCreditRow} className="gap-1"><PlusCircle className="h-4 w-4"/>Add Row</Button>
+                            </div>
+                            <Separator className="my-2 bg-black"/>
+                            <div className="grid grid-cols-7 gap-1 font-bold text-sm text-center">
+                            <span className="col-span-2">Total:</span>
+                            <span className="col-span-1">{creditTotals.peti}</span>
+                            <span className="col-span-1">{creditTotals.daba}</span>
+                            <span className="col-span-1 text-right pr-1">₹{creditTotals.grossSale.toLocaleString('en-IN')}</span>
+                            <span className="col-span-1 text-right pr-1">₹{creditTotals.expenses.toLocaleString('en-IN')}</span>
+                            <span className="col-span-1 text-right pr-1">₹{creditTotals.netSale.toLocaleString('en-IN')}</span>
+                            </div>
+                        </div>
+                        {/* DEBIT Column */}
+                        <div className="space-y-1">
+                            <h3 className="text-lg font-bold text-center">DEBIT (Kharch)</h3>
+                            <div className="grid grid-cols-4 gap-1 text-[10px] font-bold text-muted-foreground text-center">
+                                <span className="col-span-1">Date</span>
+                                <span className="col-span-2">Details of Remittance</span>
+                                <span className="col-span-1">Amount</span>
+                            </div>
+                            {debitRows.map((row) => (
+                                <div key={row.id} className="grid grid-cols-4 gap-1 items-center">
+                                    <Input className="h-8 text-xs" type="date" value={row.date} onChange={e => handleDebitChange(row.id, 'date', e.target.value)} />
+                                    <Input className="h-8 text-xs font-urdu col-span-2" placeholder="" value={row.details} onChange={e => handleDebitChange(row.id, 'details', e.target.value)} />
+                                    <Input className="h-8 text-xs" type="number" value={row.amount || ''} onChange={e => handleDebitChange(row.id, 'amount', Number(e.target.value))} />
+                                    <Button variant="ghost" size="icon" onClick={() => removeDebitRow(row.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                </div>
+                            ))}
+                            <div className="flex justify-start mt-2">
+                            <Button size="sm" variant="outline" onClick={addDebitRow} className="gap-1"><PlusCircle className="h-4 w-4"/>Add Row</Button>
+                            </div>
+                            <Separator className="my-2 bg-black" />
+                            <div className="grid grid-cols-3 gap-1 font-bold text-sm">
+                                <span className="col-span-2 text-right pr-1">Total Debit (Kharch):</span>
+                                <span className="col-span-1 text-right pr-1">₹{totalDebit.toLocaleString('en-IN')}</span>
+                            </div>
                         </div>
                     </div>
-                     {/* DEBIT Column */}
-                    <div className="space-y-1">
-                        <h3 className="text-lg font-bold text-center">DEBIT (Kharch)</h3>
-                         <div className="grid grid-cols-4 gap-1 text-[10px] font-bold text-muted-foreground text-center">
-                            <span className="col-span-1">Date</span>
-                            <span className="col-span-2">Details of Remittance</span>
-                            <span className="col-span-1">Amount</span>
-                        </div>
-                         {debitRows.map((row) => (
-                            <div key={row.id} className="grid grid-cols-4 gap-1 items-center">
-                                <Input className="h-8 text-xs" type="date" value={row.date} onChange={e => handleDebitChange(row.id, 'date', e.target.value)} />
-                                <Input className="h-8 text-xs font-urdu col-span-2" placeholder="تفصیل" value={row.details} onChange={e => handleDebitChange(row.id, 'details', e.target.value)} />
-                                <Input className="h-8 text-xs" type="number" value={row.amount || ''} onChange={e => handleDebitChange(row.id, 'amount', Number(e.target.value))} />
-                                 <Button variant="ghost" size="icon" onClick={() => removeDebitRow(row.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                            </div>
-                        ))}
-                        <div className="flex justify-start mt-2">
-                           <Button size="sm" variant="outline" onClick={addDebitRow} className="gap-1"><PlusCircle className="h-4 w-4"/>Add Row</Button>
-                        </div>
-                         <Separator className="my-2 bg-black" />
-                         <div className="grid grid-cols-3 gap-1 font-bold text-sm">
-                            <span className="col-span-2 text-right pr-1">Total Debit (Kharch):</span>
-                            <span className="col-span-1 text-right pr-1">₹{totalDebit.toLocaleString('en-IN')}</span>
-                        </div>
-                    </div>
-                </div>
 
-                {/* Final Calculation */}
-                 <div className="grid grid-cols-2 gap-4 pt-4">
-                    <div className="space-y-2 text-right pr-4 border-r-2 border-black">
-                        <div className="flex justify-end items-center font-bold">
-                            <span className="text-lg">Total Credit (Jama):</span>
-                            <span className="ml-4 text-lg">₹{creditTotals.netSale.toLocaleString('en-IN')}</span>
+                    {/* Final Calculation */}
+                    <div className="grid grid-cols-2 gap-4 pt-4">
+                        <div className="space-y-2 text-right pr-4 border-r-2 border-black">
+                            <div className="flex justify-end items-center font-bold">
+                                <span className="text-lg">Total Credit (Jama):</span>
+                                <span className="ml-4 text-lg">₹{creditTotals.netSale.toLocaleString('en-IN')}</span>
+                            </div>
+                        </div>
+                        <div className="space-y-2 text-right pr-4">
+                            <div className="flex justify-end items-center font-bold">
+                                <span className="text-lg">Total Debit (Kharch):</span>
+                                <span className="ml-4 text-lg">₹{totalDebit.toLocaleString('en-IN')}</span>
+                            </div>
+                            <Separator className="bg-black" />
+                            <div className="flex justify-end items-center font-bold">
+                                {finalBalance >= 0 ? (
+                                    <>
+                                    <span className="text-lg text-green-600">Jama (Profit/Credit):</span>
+                                    <span className="ml-4 text-lg text-green-600">₹{finalBalance.toLocaleString('en-IN')}</span>
+                                    </>
+                                ) : (
+                                    <>
+                                    <span className="text-lg text-red-600">Baqaya (Balance/Due):</span>
+                                    <span className="ml-4 text-lg text-red-600">₹{Math.abs(finalBalance).toLocaleString('en-IN')}</span>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
-                     <div className="space-y-2 text-right pr-4">
-                        <div className="flex justify-end items-center font-bold">
-                            <span className="text-lg">Total Debit (Kharch):</span>
-                            <span className="ml-4 text-lg">₹{totalDebit.toLocaleString('en-IN')}</span>
-                        </div>
-                        <Separator className="bg-black" />
-                        <div className="flex justify-end items-center font-bold">
-                             {finalBalance >= 0 ? (
-                                <>
-                                <span className="text-lg text-green-600">Jama (Profit/Credit):</span>
-                                <span className="ml-4 text-lg text-green-600">₹{finalBalance.toLocaleString('en-IN')}</span>
-                                </>
-                            ) : (
-                                <>
-                                <span className="text-lg text-red-600">Baqaya (Balance/Due):</span>
-                                <span className="ml-4 text-lg text-red-600">₹{Math.abs(finalBalance).toLocaleString('en-IN')}</span>
-                                </>
-                            )}
-                        </div>
+                </CardContent>
+                <CardFooter className="justify-between items-end">
+                    <div className="flex flex-col items-center">
+                        <p className="font-bold">Signature</p>
                     </div>
-                </div>
-            </CardContent>
-             <CardFooter className="justify-between items-end">
-                <div className="flex flex-col items-center">
-                    <p className="font-bold">Signature</p>
-                </div>
-                <div className='flex gap-2 flex-wrap'>
-                    <Button className="gap-2" onClick={handleSave}>
-                        <Save className="h-4 w-4" /> {isEditing ? 'Update' : 'Save'}
-                    </Button>
-                     <Button variant="secondary" className="gap-2" onClick={resetForm}>
-                        <FilePlus className="h-4 w-4" /> New
-                    </Button>
-                    <Button variant="secondary" className="gap-2" onClick={handlePrint}>
-                        <Printer className="h-4 w-4" /> View/Print
-                    </Button>
-                    <Button variant="secondary" className="gap-2" onClick={handleSaveAsPdf}>
-                        <FileDown className="h-4 w-4" /> Save as PDF
-                    </Button>
-                </div>
-            </CardFooter>
-        </Card>
-        <Card className="lg:col-span-1 h-fit">
+                    <div className='flex gap-2 flex-wrap'>
+                        <Button className="gap-2" onClick={handleSave}>
+                            <Save className="h-4 w-4" /> {isEditing ? 'Update' : 'Save'}
+                        </Button>
+                        <Button variant="secondary" className="gap-2" onClick={resetForm}>
+                            <FilePlus className="h-4 w-4" /> New
+                        </Button>
+                        <Button variant="secondary" className="gap-2" onClick={handlePrint}>
+                            <Printer className="h-4 w-4" /> View/Print
+                        </Button>
+                        <Button variant="secondary" className="gap-2" onClick={handleSaveAsPdf}>
+                            <FileDown className="h-4 w-4" /> Save as PDF
+                        </Button>
+                    </div>
+                </CardFooter>
+            </Card>
+        </div>
+        <Card className="lg:col-span-1 h-fit print-hidden">
             <CardHeader>
                 <div className="flex items-center gap-2">
                     <h3 className="text-lg font-medium">Saved Statements</h3>
@@ -497,13 +501,13 @@ export default function StatementOfAccountPage() {
                                     <Button variant="ghost" size="icon" onClick={() => handleLoadStatement(stmt)}>
                                         <FilePenLine className="h-4 w-4" />
                                     </Button>
-                                     <Button variant="ghost" size="icon" onClick={() => handleDeleteStatement(stmt.sNo)}>
+                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteStatement(stmt.sNo)}>
                                         <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
                                 </div>
                             </div>
                         ))}
-                         {savedStatements.length === 0 && <p className="text-sm text-muted-foreground text-center">No saved statements found.</p>}
+                        {savedStatements.length === 0 && <p className="text-sm text-muted-foreground text-center">No saved statements found.</p>}
                     </div>
                 </ScrollArea>
             </CardContent>
