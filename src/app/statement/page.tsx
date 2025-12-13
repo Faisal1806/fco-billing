@@ -328,6 +328,27 @@ export default function StatementOfAccountPage() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <style jsx global>{`
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .printable-area, .printable-area * {
+                visibility: visible;
+            }
+            .printable-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            body {
+              background: white !important;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+        }
+      `}</style>
         <div className="printable-area lg:col-span-2">
             <Card>
                 <CardHeader className="text-center">
@@ -459,7 +480,7 @@ export default function StatementOfAccountPage() {
                         </div>
                     </div>
                 </CardContent>
-                <CardFooter className="justify-between items-end">
+                <CardFooter className="justify-between items-end print-hidden">
                     <div className="flex flex-col items-center">
                         <p className="font-bold">Signature</p>
                     </div>
