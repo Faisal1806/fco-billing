@@ -267,70 +267,63 @@ export default function SalesRegisterPage() {
       });
       return;
     }
-
+  
     setIsDownloading(true);
     toast({
       title: 'Starting Bulk Download',
       description: `Preparing to download ${filteredWataks.length} invoices. This may take a while.`,
     });
-
+  
     const tempContainer = document.createElement('div');
-    // Position it off-screen
     tempContainer.style.position = 'fixed';
     tempContainer.style.left = '-9999px';
+    tempContainer.style.width = '148mm';
     document.body.appendChild(tempContainer);
-
-    for (let i = 0; i < filteredWataks.length; i++) {
-      const billData = filteredWataks[i];
+  
+    // Dynamically import ReactDOM only on the client
+    const ReactDOM = (await import('react-dom/client')).default;
+    const root = ReactDOM.createRoot(tempContainer);
+  
+    for (const billData of filteredWataks) {
       try {
-        const billElement = document.createElement('div');
-        tempContainer.appendChild(billElement);
-
-        const root = require('react-dom/client').createRoot(billElement);
-        // We need to wait for React to render the component before we can capture it.
         await new Promise<void>((resolve) => {
-            root.render(<ClassicA4Layout billData={billData} pageUrl={`${window.location.origin}/bill/view/${billData.sNo}?style=classic`} />, () => {
-              // A small delay to ensure all assets (like fonts) are loaded and rendered
-              setTimeout(resolve, 100); 
+          root.render(<ClassicA4Layout billData={billData} pageUrl={`${window.location.origin}/bill/view/${billData.sNo}?style=classic`} />, async () => {
+            await new Promise(r => setTimeout(r, 100));
+            
+            const canvas = await html2canvas(tempContainer.children[0] as HTMLElement, {
+              scale: 2,
+              useCORS: true,
+              backgroundColor: '#FDFEE2',
             });
-        });
-        
-        const canvas = await html2canvas(billElement.children[0] as HTMLElement, {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: '#FDFEE2',
-        });
-        
-        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
-        const pdfWidth = doc.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-        doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
-        
-        doc.save(`Invoice-${billData.sNo}_${billData.customerName}.pdf`);
-
-        root.unmount();
-        tempContainer.removeChild(billElement);
-
-        // A small delay between downloads to prevent browser from blocking popups
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-      } catch (error) {
-          console.error("Failed to generate PDF for invoice:", billData.sNo, error);
-          toast({
-            variant: "destructive",
-            title: `Failed to Download Invoice #${billData.sNo}`,
-            description: "An error occurred while generating this PDF.",
+  
+            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
+            const pdfWidth = doc.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
+            
+            doc.save(`Invoice-${billData.sNo}_${billData.customerName}.pdf`);
+            
+            await new Promise(r => setTimeout(r, 300));
+            resolve();
           });
+        });
+      } catch (error) {
+        console.error("Failed to generate PDF for invoice:", billData.sNo, error);
+        toast({
+          variant: "destructive",
+          title: `Failed to Download Invoice #${billData.sNo}`,
+          description: "An error occurred while generating this PDF.",
+        });
       }
     }
     
-    // Clean up the temporary container
+    root.unmount();
     document.body.removeChild(tempContainer);
-
+  
     setIsDownloading(false);
     toast({
-      title: 'Bulk Download Complete',
-      description: `Finished downloading ${filteredWataks.length} invoices.`,
+        title: 'Bulk Download Complete',
+        description: `Finished downloading ${filteredWataks.length} invoices.`,
     });
   };
 

@@ -269,37 +269,37 @@ export default function PurchaseRegisterPage() {
     const tempContainer = document.createElement('div');
     tempContainer.style.position = 'fixed';
     tempContainer.style.left = '-9999px';
+    tempContainer.style.width = '148mm'; // A5 width
     document.body.appendChild(tempContainer);
-
+  
+    // Dynamically import ReactDOM only on the client
+    const ReactDOM = (await import('react-dom/client')).default;
+    const root = ReactDOM.createRoot(tempContainer);
+  
     for (const billData of filteredPurchases) {
       try {
-        const billElement = document.createElement('div');
-        tempContainer.appendChild(billElement);
-
-        const root = require('react-dom/client').createRoot(billElement);
         await new Promise<void>((resolve) => {
-            root.render(<A4PurchaseBillLayout billData={billData} />, () => {
-              setTimeout(resolve, 100); 
+          root.render(<A4PurchaseBillLayout billData={billData} />, async () => {
+            // A short delay to ensure rendering is complete
+            await new Promise(r => setTimeout(r, 100)); 
+            
+            const canvas = await html2canvas(tempContainer.children[0] as HTMLElement, {
+              scale: 2,
+              useCORS: true,
+              backgroundColor: '#FDFEE2',
             });
+  
+            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
+            const pdfWidth = doc.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
+            
+            doc.save(`PurchaseBill-${billData.billNo}_${billData.growerName}.pdf`);
+            
+            await new Promise(r => setTimeout(r, 300));
+            resolve();
+          });
         });
-        
-        const canvas = await html2canvas(billElement.children[0] as HTMLElement, {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: '#FDFEE2',
-        });
-        
-        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
-        const pdfWidth = doc.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-        doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
-        
-        doc.save(`PurchaseBill-${billData.billNo}_${billData.growerName}.pdf`);
-
-        root.unmount();
-        tempContainer.removeChild(billElement);
-
-        await new Promise(resolve => setTimeout(resolve, 300));
       } catch (error) {
         console.error("Failed to generate PDF for bill:", billData.billNo, error);
         toast({
@@ -310,7 +310,9 @@ export default function PurchaseRegisterPage() {
       }
     }
     
+    root.unmount();
     document.body.removeChild(tempContainer);
+  
     setIsDownloading(false);
     toast({
         title: 'Bulk Download Complete',
