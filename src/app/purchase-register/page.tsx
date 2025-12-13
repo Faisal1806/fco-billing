@@ -167,37 +167,54 @@ export default function PurchaseRegisterPage() {
     for (const billData of filteredPurchases) {
       try {
         const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
+        doc.addFont('/fonts/times.ttf', 'Times', 'normal');
+        doc.addFont('/fonts/times-bold.ttf', 'Times', 'bold');
+        doc.setFont('Times', 'normal');
+
         const pageWidth = doc.internal.pageSize.getWidth();
         const margin = 10;
-        doc.setFont('Times', 'normal');
         
+        doc.setFillColor('#FDFEE2');
+        doc.rect(0, 0, pageWidth, doc.internal.pageSize.getHeight(), 'F');
+        
+        doc.setDrawColor(34, 139, 34);
+        doc.setLineWidth(1.5);
+        doc.rect(margin / 2, margin / 2, pageWidth - margin, doc.internal.pageSize.getHeight() - margin);
+
+
         // Header
         doc.setFontSize(8);
+        doc.setFont('Times', 'bold');
+        doc.text('🍎 F.Co', margin, margin);
+        doc.text('🍎 F.Co', pageWidth - margin, margin, { align: 'right'});
+
+        doc.setFontSize(8);
+        doc.setFont('Times', 'normal');
         doc.text('Prop: Firdous Ahmad Lone (Nadihal)', pageWidth / 2, margin, { align: 'center' });
         doc.text('Cell: 7006136330, 9797002164, 9906740921', pageWidth / 2, margin + 3, { align: 'center' });
         
         doc.setFontSize(16);
         doc.setFont('Times', 'bold');
         doc.setTextColor(34, 139, 34); // Green color
-        doc.text('FIRDOUS AHMAD & COMPANY', pageWidth / 2, margin + 8, { align: 'center' });
+        doc.text('FIRDOUS AHMAD & COMPANY', pageWidth / 2, margin + 9, { align: 'center' });
         
         doc.setFontSize(8);
         doc.setTextColor(0, 0, 0);
         doc.setFont('Times', 'normal');
-        doc.text('Fruit Merchants & Commission Agents', pageWidth / 2, margin + 11, { align: 'center' });
-        doc.text('SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.', pageWidth / 2, margin + 14, { align: 'center' });
-
-        // Bill Info
-        doc.setFontSize(10);
-        doc.text(`No: ${billData.billNo}`, margin, margin + 22);
-        doc.text(`M/s: ${billData.growerName}`, margin, margin + 28);
-        doc.text(`Dated: ${new Date(billData.date).toLocaleDateString('en-GB')}`, pageWidth - margin, margin + 22, { align: 'right' });
+        doc.text('Fruit Merchants & Commission Agents', pageWidth / 2, margin + 12, { align: 'center' });
+        doc.text('SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.', pageWidth / 2, margin + 15, { align: 'center' });
         
         doc.setLineWidth(0.5);
         doc.setDrawColor(34, 139, 34);
-        doc.line(margin, margin + 16, pageWidth - margin, margin + 16);
+        doc.line(margin, margin + 18, pageWidth - margin, margin + 18);
 
-
+        // Bill Info
+        doc.setFontSize(10);
+        doc.setFont('Times', 'normal');
+        doc.text(`No: ${billData.billNo}`, margin, margin + 23);
+        doc.text(`M/s: ${billData.growerName}`, margin, margin + 28);
+        doc.text(`Dated: ${new Date(billData.date).toLocaleDateString('en-GB')}`, pageWidth - margin, margin + 23, { align: 'right' });
+        
         // Table
         autoTable(doc, {
           head: [['Petti', 'Dabba', 'VARIETY', 'RATE', 'AMOUNT']],
@@ -210,17 +227,40 @@ export default function PurchaseRegisterPage() {
           ]),
           startY: margin + 32,
           theme: 'grid',
-          styles: { fontSize: 8, font: 'Times' },
-          headStyles: { fillColor: '#e0ffe0', textColor: '#228b22', fontStyle: 'bold' }
+          styles: { fontSize: 8, font: 'Times', cellPadding: 1, lineColor: [34,139,34], lineWidth: 0.2 },
+          headStyles: { fillColor: '#e0ffe0', textColor: '#228b22', fontStyle: 'bold', halign: 'center' },
+          footStyles: { fillColor: '#e0ffe0', textColor: '#228b22', fontStyle: 'bold' },
+          columnStyles: {
+            0: { halign: 'center' }, 1: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right', fontStyle: 'bold' }
+          }
         });
 
         const finalY = (doc as any).lastAutoTable.finalY;
 
         // Footer
+        doc.setLineWidth(1);
+        doc.setDrawColor(34, 139, 34);
+        doc.rect(pageWidth - margin - 50, finalY + 5, 45, 10);
         doc.setFontSize(10);
         doc.setFont('Times', 'bold');
-        const grandTotalText = `G. Total: ₹${billData.totals.grandTotal.toFixed(2)}`;
-        doc.text(grandTotalText, pageWidth - margin, finalY + 10, { align: 'right'});
+        doc.text('G. Total', pageWidth - margin - 48, finalY + 11);
+        doc.text(`₹${billData.totals.grandTotal.toFixed(2)}`, pageWidth - margin - 5, finalY + 11, { align: 'right' });
+
+
+        doc.setFontSize(8);
+        doc.setFont('Times', 'normal');
+        doc.text('Your Satisfaction is our Success', pageWidth / 2, doc.internal.pageSize.getHeight() - 25, { align: 'center'});
+        doc.setFont('Times', 'italic');
+        doc.text('If the bill is not paid within 15 days interest @ 5% will be Charged extra', pageWidth / 2, doc.internal.pageSize.getHeight() - 21, { align: 'center'});
+        
+        doc.addFont('/fonts/DancingScript-Bold.ttf', 'DancingScript', 'normal');
+        doc.setFont('DancingScript', 'normal');
+        doc.setFontSize(22);
+        doc.text('Faisal', pageWidth - margin - 35, doc.internal.pageSize.getHeight() - 15);
+        doc.setFont('Times', 'bold');
+        doc.setFontSize(8);
+        doc.text('Sign. Of Manager', pageWidth - margin - 30, doc.internal.pageSize.getHeight() - 10);
+
 
         doc.save(`PurchaseBill-${billData.billNo}_${billData.growerName}.pdf`);
         await new Promise(resolve => setTimeout(resolve, 300));
