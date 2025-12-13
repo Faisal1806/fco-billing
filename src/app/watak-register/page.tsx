@@ -257,20 +257,11 @@ export default function SalesRegisterPage() {
   };
 
   const exportAllToPDFs = async () => {
-    let growerToDownload = selectedGrower;
-
-    if (selectedGrower === 'All Growers' && searchTerm) {
-        const searchedNames = new Set(filteredWataks.map(w => partyNameMap.get(getCanonicalName(w.customerName)) || w.customerName));
-        if (searchedNames.size === 1) {
-            growerToDownload = Array.from(searchedNames)[0];
-        }
-    }
-    
-    if (growerToDownload === 'All Growers' || filteredWataks.length === 0) {
+    if (filteredWataks.length === 0) {
       toast({
         variant: 'destructive',
-        title: 'Select a Grower',
-        description: 'You must select a specific grower with invoices to use this feature.',
+        title: 'No Invoices to Download',
+        description: 'There are no invoices matching your current filters.',
       });
       return;
     }
@@ -278,7 +269,7 @@ export default function SalesRegisterPage() {
     setIsDownloading(true);
     toast({
       title: 'Starting Bulk Download',
-      description: `Preparing to download ${filteredWataks.length} invoices for ${growerToDownload}.`,
+      description: `Preparing to download ${filteredWataks.length} invoices.`,
     });
 
     for (let i = 0; i < filteredWataks.length; i++) {
@@ -467,7 +458,7 @@ export default function SalesRegisterPage() {
     fetchWataks();
   }
   
-  const isDownloadAllDisabled = (selectedGrower === 'All Growers' && !searchTerm) || isDownloading;
+  const isDownloadAllDisabled = isDownloading;
 
   return (
     <div className="space-y-6">
