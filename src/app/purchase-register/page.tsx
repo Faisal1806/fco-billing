@@ -157,88 +157,81 @@ export default function PurchaseRegisterPage() {
       });
       return;
     }
-
+  
     setIsDownloading(true);
     toast({
       title: 'Starting Bulk Download',
       description: `Preparing to download ${filteredPurchases.length} purchase bills.`,
     });
+  
+    for (const billData of filteredPurchases) {
+      try {
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const margin = 10;
+        doc.setFont('Times', 'normal');
+        
+        // Header
+        doc.setFontSize(8);
+        doc.text('Prop: Firdous Ahmad Lone (Nadihal)', pageWidth / 2, margin, { align: 'center' });
+        doc.text('Cell: 7006136330, 9797002164, 9906740921', pageWidth / 2, margin + 3, { align: 'center' });
+        
+        doc.setFontSize(16);
+        doc.setFont('Times', 'bold');
+        doc.setTextColor(34, 139, 34); // Green color
+        doc.text('FIRDOUS AHMAD & COMPANY', pageWidth / 2, margin + 8, { align: 'center' });
+        
+        doc.setFontSize(8);
+        doc.setTextColor(0, 0, 0);
+        doc.setFont('Times', 'normal');
+        doc.text('Fruit Merchants & Commission Agents', pageWidth / 2, margin + 11, { align: 'center' });
+        doc.text('SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.', pageWidth / 2, margin + 14, { align: 'center' });
 
-    for (let i = 0; i < filteredPurchases.length; i++) {
-        const billData = filteredPurchases[i];
-        try {
-            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
-            
-            const pageWidth = doc.internal.pageSize.getWidth();
-            const margin = 10;
-            doc.addFileToVFS('TNR-normal.ttf', 'AAEAAAAQAQAABAAAR0RFRg... (your font data here)');
-            doc.addFont('TNR-normal.ttf', 'Times New Roman', 'normal');
-            doc.setFont('Times New Roman');
+        // Bill Info
+        doc.setFontSize(10);
+        doc.text(`No: ${billData.billNo}`, margin, margin + 22);
+        doc.text(`M/s: ${billData.growerName}`, margin, margin + 28);
+        doc.text(`Dated: ${new Date(billData.date).toLocaleDateString('en-GB')}`, pageWidth - margin, margin + 22, { align: 'right' });
+        
+        doc.setLineWidth(0.5);
+        doc.setDrawColor(34, 139, 34);
+        doc.line(margin, margin + 16, pageWidth - margin, margin + 16);
 
-            // Header
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'bold');
-            doc.text('🍎 F.Co', margin, margin);
-            doc.text('🍎 F.Co', pageWidth - margin, margin, { align: 'right' });
-            doc.setFontSize(7);
-            doc.setFont('helvetica', 'normal');
-            doc.text('Prop: Firdous Ahmad Lone (Nadihal)', pageWidth / 2, margin - 2, { align: 'center' });
-            doc.text('Cell: 7006136330, 9797002164, 9906740921', pageWidth / 2, margin + 1, { align: 'center' });
-            doc.setFontSize(16);
-            doc.setFont('Times New Roman', 'bold');
-            doc.setTextColor('#166534');
-            doc.text('FIRDOUS AHMAD & COMPANY', pageWidth / 2, margin + 8, { align: 'center' });
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(0, 0, 0);
-            doc.text('Fruit Merchants & Commission Agents', pageWidth / 2, margin + 12, { align: 'center' });
-            doc.setFontSize(6);
-            doc.text('SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.', pageWidth / 2, margin + 15, { align: 'center' });
-            doc.setLineWidth(0.5);
-            doc.setDrawColor('#15803d');
-            doc.line(margin, margin + 17, pageWidth - margin, margin + 17);
 
-            // Bill Info
-            doc.setFontSize(10);
-            doc.text(`No: ${billData.billNo}`, margin, margin + 22);
-            doc.text(`M/s: ${billData.growerName}`, margin, margin + 28);
-            doc.text(`Dated: ${new Date(billData.date).toLocaleDateString('en-GB')}`, pageWidth - margin, margin + 22, { align: 'right' });
+        // Table
+        autoTable(doc, {
+          head: [['Petti', 'Dabba', 'VARIETY', 'RATE', 'AMOUNT']],
+          body: billData.entries.map(e => [
+              e.type === 'Patti' ? e.qty : '',
+              e.type === 'Dabba' ? e.qty : '',
+              e.variety,
+              `₹${e.rate.toFixed(2)}`,
+              `₹${e.total.toFixed(2)}`
+          ]),
+          startY: margin + 32,
+          theme: 'grid',
+          styles: { fontSize: 8, font: 'Times' },
+          headStyles: { fillColor: '#e0ffe0', textColor: '#228b22', fontStyle: 'bold' }
+        });
 
-            // Table
-            const tableData = billData.entries.map(e => [
-                e.type === 'Patti' ? e.qty : '',
-                e.type === 'Dabba' ? e.qty : '',
-                e.variety,
-                `₹${e.rate.toFixed(2)}`,
-                `₹${e.total.toFixed(2)}`
-            ]);
-            autoTable(doc, {
-                head: [['Petti', 'Dabba', 'VARIETY', 'RATE', 'AMOUNT']],
-                body: tableData,
-                startY: margin + 32,
-                theme: 'grid',
-                styles: { fontSize: 8, font: 'Times New Roman' },
-                headStyles: { fillColor: '#dcfce7', textColor: '#166534', fontStyle: 'bold' }
-            });
-            
-            const finalY = (doc as any).lastAutoTable.finalY;
+        const finalY = (doc as any).lastAutoTable.finalY;
 
-            // Footer
-            doc.setFontSize(10);
-            doc.setFont('Times New Roman', 'bold');
-            doc.text('G. Total', pageWidth - margin - 50, finalY + 10, { align: 'left'});
-            doc.text(`₹${billData.totals.grandTotal.toFixed(2)}`, pageWidth - margin, finalY + 10, { align: 'right'});
+        // Footer
+        doc.setFontSize(10);
+        doc.setFont('Times', 'bold');
+        const grandTotalText = `G. Total: ₹${billData.totals.grandTotal.toFixed(2)}`;
+        doc.text(grandTotalText, pageWidth - margin, finalY + 10, { align: 'right'});
 
-            doc.save(`PurchaseBill-${billData.billNo}_${billData.growerName}.pdf`);
-            await new Promise(resolve => setTimeout(resolve, 300));
-        } catch (error) {
-            console.error("Failed to generate PDF for bill:", billData.billNo, error);
-            toast({
-              variant: "destructive",
-              title: `Failed to Download Bill #${billData.billNo}`,
-              description: "An error occurred while generating this PDF.",
-            });
-        }
+        doc.save(`PurchaseBill-${billData.billNo}_${billData.growerName}.pdf`);
+        await new Promise(resolve => setTimeout(resolve, 300));
+      } catch (error) {
+        console.error("Failed to generate PDF for bill:", billData.billNo, error);
+        toast({
+          variant: "destructive",
+          title: `Failed to Download Bill #${billData.billNo}`,
+          description: "An error occurred while generating this PDF.",
+        });
+      }
     }
     setIsDownloading(false);
     toast({
@@ -456,5 +449,3 @@ export default function PurchaseRegisterPage() {
     </Card>
   );
 }
-
-    

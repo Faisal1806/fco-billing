@@ -280,101 +280,90 @@ export default function SalesRegisterPage() {
           unit: 'mm',
           format: 'a5'
         });
-        
         const pageWidth = doc.internal.pageSize.getWidth();
         const margin = 10;
-
-        doc.setFont('helvetica');
+        doc.setFont('Times', 'normal');
 
         // Header
         doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
-        doc.text('🍎 F.Co App', margin, margin);
-        doc.text('🍎 F.Co App', pageWidth - margin, margin, { align: 'right' });
-        doc.setFontSize(7);
-        doc.setFont('helvetica', 'normal');
-        doc.text('Prop: Firdous Ahmad Lone (Nadihal)', pageWidth / 2, margin - 2, { align: 'center' });
-        doc.text('Cell: 7006136330, 9797002164, 9906740921', pageWidth / 2, margin + 1, { align: 'center' });
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor('#166534');
-        doc.text('FIRDOUS AHMAD & COMPANY', pageWidth / 2, margin + 6, { align: 'center' });
+        doc.text('Prop: Firdous Ahmad Lone (Nadihal)', pageWidth / 2, margin, { align: 'center' });
+        doc.text('Cell: 7006136330, 9797002164, 9906740921', pageWidth / 2, margin + 3, { align: 'center' });
+
+        doc.setFontSize(16);
+        doc.setFont('Times', 'bold');
+        doc.setTextColor(34, 139, 34); // Green color
+        doc.text('FIRDOUS AHMAD & COMPANY', pageWidth / 2, margin + 8, { align: 'center' });
+        
         doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
         doc.setTextColor(0, 0, 0);
-        doc.text('Fruit Merchants & Commission Agents', pageWidth / 2, margin + 10, { align: 'center' });
-        doc.setFontSize(6);
-        doc.text('SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.', pageWidth / 2, margin + 13, { align: 'center' });
-        doc.setLineWidth(0.5);
-        doc.setDrawColor('#16a34a');
-        doc.line(margin, margin + 15, pageWidth - margin, margin + 15);
+        doc.setFont('Times', 'normal');
+        doc.text('Fruit Merchants & Commission Agents', pageWidth / 2, margin + 11, { align: 'center' });
+        doc.text('SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.', pageWidth / 2, margin + 14, { align: 'center' });
 
         // Bill Info
-        let billInfoY = margin + 22;
         doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`M/s: ${billData.customerName}`, margin, billInfoY);
+        doc.text(`M/s: ${billData.customerName}`, margin, margin + 22);
         if (billData.khata) {
-            billInfoY += 5;
-            doc.text(`Khata: ${billData.khata}`, margin, billInfoY);
+             doc.text(`Khata: ${billData.khata}`, margin, margin + 27);
         }
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
         doc.text(`Bill No: ${billData.sNo}`, pageWidth - margin, margin + 22, { align: 'right' });
-        doc.text(`Date: ${new Date(billData.date).toLocaleDateString('en-GB')}`, pageWidth - margin, margin + 26, { align: 'right' });
-        if(billData.date2) {
-             doc.text(`Date 2: ${new Date(billData.date2).toLocaleDateString('en-GB')}`, pageWidth - margin, margin + 30, { align: 'right' });
-        }
-        if(billData.watakNo) {
-            doc.text(`Watak No: ${billData.watakNo}`, pageWidth - margin, margin + 34, { align: 'right' });
-        }
+        doc.text(`Date: ${new Date(billData.date).toLocaleDateString('en-GB')}`, pageWidth - margin, margin + 27, { align: 'right' });
 
+        doc.setLineWidth(0.5);
+        doc.setDrawColor(34, 139, 34);
+        doc.line(margin, margin + 16, pageWidth - margin, margin + 16);
+        
         // Table
-        const tableData = billData.entries.map(e => [
-            e.type,
-            e.variety,
-            e.qty.toString(),
-            e.isForwarded ? 'Forwarded' : `₹${e.rate.toFixed(2)}`,
-            e.isForwarded ? 'Forwarded' : `₹${(e.total).toFixed(2)}`
-        ]);
         autoTable(doc, {
             head: [['TYPE', 'VARIETY', 'QTY', 'RATE', 'GROSS']],
-            body: tableData,
-            startY: billInfoY + 8,
+            body: billData.entries.map(e => [
+                e.type,
+                e.variety,
+                e.qty,
+                e.isForwarded ? 'Forwarded' : `₹${e.rate.toFixed(2)}`,
+                e.isForwarded ? 'Forwarded' : `₹${e.total.toFixed(2)}`
+            ]),
+            startY: margin + 32,
             theme: 'grid',
-            headStyles: { fillColor: '#dcfce7', textColor: '#166534', fontStyle: 'bold', halign: 'center', lineColor: '#15803d', lineWidth: 0.1 },
-            styles: { fontSize: 8, cellPadding: 1.5, font: 'helvetica', lineColor: '#15803d', lineWidth: 0.1 },
+            styles: { fontSize: 8, font: 'Times' },
+            headStyles: { fillColor: '#e0ffe0', textColor: '#228b22', fontStyle: 'bold', halign: 'center' },
             columnStyles: { 2: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right', fontStyle: 'bold' } }
         });
 
         const finalY = (doc as any).lastAutoTable.finalY;
-        
-        // Totals
-        const summaryX = pageWidth / 2 + 10;
-        doc.setFont('helvetica', 'normal');
+
+        // Totals and Footer
         doc.setFontSize(8);
         doc.text(`Total Quantity: ${billData.totals.totalQty} (Patti: ${billData.totals.pattiQty}, Dabba: ${billData.totals.dabbaQty})`, margin, finalY + 8);
+        
         const expenseLines = [
             { label: 'Gross Sale:', value: `₹${billData.totals.grossSale.toFixed(2)}` }, { label: 'Freight:', value: `- ₹${billData.freight.toFixed(2)}` },
             { label: 'Labour:', value: `- ₹${billData.totals.labour.toFixed(2)}` }, { label: 'Association:', value: `- ₹${billData.totals.association.toFixed(2)}` },
             { label: 'Security:', value: `- ₹${billData.totals.security.toFixed(2)}` }, { label: 'Commission:', value: `- ₹${billData.totals.commissionAmount.toFixed(2)}` }
         ];
         let currentY = finalY + 8;
-        doc.setFont('helvetica', 'normal');
-        expenseLines.forEach(line => { doc.text(line.label, summaryX, currentY, { align: 'left' }); doc.text(line.value, pageWidth - margin, currentY, { align: 'right' }); currentY += 4; });
+        const summaryX = pageWidth / 2;
+        doc.setFont('Times', 'normal');
+        expenseLines.forEach(line => {
+            doc.text(line.label, summaryX, currentY, { align: 'left' });
+            doc.text(line.value, pageWidth - margin, currentY, { align: 'right' });
+            currentY += 4;
+        });
+
         doc.setLineWidth(0.2);
+        doc.setDrawColor(0,0,0);
         doc.line(summaryX, currentY, pageWidth - margin, currentY); currentY += 4;
-        doc.setFont('helvetica', 'bold');
+        
+        doc.setFont('Times', 'bold');
         doc.text('Total Exp:', summaryX, currentY, { align: 'left' });
         doc.text(`- ₹${billData.totals.totalExpenses.toFixed(2)}`, pageWidth - margin, currentY, { align: 'right' }); currentY += 4;
         doc.line(summaryX, currentY, pageWidth - margin, currentY); currentY += 5;
+        
         doc.setFontSize(12);
         doc.text('Net Sale:', summaryX, currentY, { align: 'left' });
         doc.text(`₹${billData.totals.netSale.toFixed(2)}`, pageWidth - margin, currentY, { align: 'right' });
-
-        doc.save(`Invoice-${billData.sNo}_${billData.customerName}.pdf`);
         
-        // Give browser a moment to process the download
+        doc.save(`Invoice-${billData.sNo}_${billData.customerName}.pdf`);
         await new Promise(resolve => setTimeout(resolve, 300));
         
       } catch (error) {
