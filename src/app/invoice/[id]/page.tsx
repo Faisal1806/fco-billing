@@ -13,8 +13,8 @@ import { ModernDarkA4Layout } from "@/components/invoice-templates/modern-dark-a
 import { ThermalLayout } from "@/components/invoice-templates/thermal";
 import { ModernLightA4Layout } from "@/components/invoice-templates/modern-light-a4";
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import { getDocument } from '@/lib/actions';
+import html2canvas from 'html2canvas';
+import { getDocument } from "@/lib/actions";
 
 interface BillData {
     id: string;
@@ -124,7 +124,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         }
     };
     
-    const handleDownloadPdf = () => {
+    const handleDownloadPdf = async () => {
         toast({
             title: "Generating PDF...",
             description: "Your PDF is being created. This might take a moment.",
@@ -137,21 +137,29 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         const format: any = isThermal ? [80, 297] : 'a5';
         const orientation = 'portrait';
 
-        const doc = new jsPDF({
-            orientation,
-            unit: 'mm',
-            format,
-        });
-
         const content = printStyle === 'a4'
             ? activeLayout.querySelector('.print-area-a4 > div')
             : activeLayout.querySelector('.print-area-thermal');
 
         if (!content) return;
+
+        const canvas = await html2canvas(content as HTMLElement, {
+            scale: 2, // Higher scale for better quality
+            useCORS: true,
+            backgroundColor: invoiceStyle === 'modern-dark' ? '#1f2937' : '#ffffff',
+        });
+
+        const pdf = new jsPDF({
+            orientation,
+            unit: 'mm',
+            format,
+        });
         
-        // This is a temporary workaround until `html2canvas` is fixed
-        autoTable(doc, { html: content as HTMLTableElement });
-        doc.save(`Invoice-${billData.sNo}_${billData.customerName}.pdf`);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`Invoice-${billData.sNo}_${billData.customerName}.pdf`);
     };
 
 
