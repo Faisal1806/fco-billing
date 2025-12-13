@@ -37,6 +37,8 @@ import { FaWhatsapp } from 'react-icons/fa';
 import { Badge } from '@/components/ui/badge';
 import { deleteDocument } from '@/lib/actions';
 import { Logo } from '@/components/logo';
+import BusinessCardQR from '@/components/BusinessCardQR';
+import html2canvas from 'html2canvas';
 
 export interface PurchaseEntry {
     billNo: string;
@@ -54,6 +56,106 @@ export interface PurchaseEntry {
         grandTotal: number;
     }
 }
+
+// A standalone component for the printable purchase bill layout
+const A4PurchaseBillLayout = ({ billData }: { billData: PurchaseEntry }) => {
+    const { billNo, date, growerName, entries, totals } = billData;
+    return (
+         <div className="w-[148mm] h-[210mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-4 border-2 border-green-700 flex flex-col relative font-serif">
+            {/* Watermark */}
+            <div className="absolute inset-0 flex items-center justify-center z-0">
+               <Logo className="w-48 h-48 opacity-10" />
+            </div>
+            
+            <div className="relative z-10 flex flex-col flex-grow">
+
+                {/* Header */}
+                <header className="text-center border-b-2 border-green-700 pb-2">
+                    <div className="flex justify-between items-start">
+                         <div className="text-left text-sm font-bold">
+                            <p>🍎 F.Co</p>
+                         </div>
+                         <div className="flex-grow">
+                            <div className="text-xs">
+                                 <p className="font-bold">Prop: Firdous Ahmad Lone (Nadihal)</p>
+                                 <p>Cell: 7006136330, 9797002164, 9906740921</p>
+                            </div>
+                            <h1 className="text-2xl font-bold text-green-800">FIRDOUS AHMAD & COMPANY</h1>
+                            <p className="text-xs font-semibold">Fruit Merchants & Commission Agents</p>
+                            <p className="text-xs">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
+                         </div>
+                         <div className="text-right text-sm font-bold">
+                            <p>🍎 F.Co</p>
+                         </div>
+                    </div>
+                </header>
+                
+                {/* Bill Info */}
+                <section className="flex justify-between items-end my-2 text-sm">
+                    <div className="flex-1">
+                        <p><strong>No:</strong> {billNo}</p>
+                        <p><strong>M/s:</strong> {growerName}</p>
+                    </div>
+                    <div className="text-right">
+                        <p><strong>Dated:</strong> {new Date(date).toLocaleDateString('en-GB')}</p>
+                    </div>
+                </section>
+
+                {/* Table */}
+                <main className="flex-grow">
+                    <table className="w-full text-sm border-collapse">
+                        <thead>
+                            <tr className="border-y-2 border-green-700">
+                                <th className="p-1 border-x border-green-600 w-[15%]">Petti</th>
+                                <th className="p-1 border-x border-green-600 w-[15%]">Dabba</th>
+                                <th className="p-1 border-x border-green-600">VARIETY</th>
+                                <th className="p-1 border-x border-green-600 w-[20%]">RATE</th>
+                                <th className="p-1 border-x border-green-600 w-[25%]">AMOUNT</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {entries.map((entry, index) => (
+                                <tr key={index} className="border-b border-green-600/50 h-8">
+                                    <td className="p-1 border-x border-green-600 text-center">{entry.type === 'Patti' ? entry.qty : ''}</td>
+                                    <td className="p-1 border-x border-green-600 text-center">{entry.type === 'Dabba' ? entry.qty : ''}</td>
+                                    <td className="p-1 border-x border-green-600">{entry.variety}</td>
+                                    <td className="p-1 border-x border-green-600 text-right">₹{entry.rate.toFixed(2)}</td>
+                                    <td className="p-1 border-x border-green-600 text-right font-semibold">₹{entry.total.toFixed(2)}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </main>
+
+                {/* Footer */}
+                <footer className="mt-auto pt-2 text-sm">
+                    <div className="flex justify-end">
+                       <div className="w-2/5 p-1 border-2 border-green-700">
+                          <div className="flex justify-between font-bold">
+                            <span>G. Total</span>
+                            <span>₹{totals.grandTotal.toFixed(2)}</span>
+                          </div>
+                       </div>
+                    </div>
+                    <div className="text-center text-xs mt-2">
+                        <p>Your Satisfaction is our Success</p>
+                        <p className="italic">If the bill is not paid within 15 days interest @ 5% will be Charged extra</p>
+                    </div>
+                    <div className="flex justify-between items-end mt-4">
+                         <div className="text-center">
+                            {/* This space is intentionally left blank for the controls on screen */}
+                        </div>
+                        <div className="text-center">
+                            <p className="font-signature text-2xl text-gray-700 dark:text-gray-300">Faisal</p>
+                            <p className="font-bold -mt-2">Sign. Of Manager</p>
+                        </div>
+                    </div>
+                </footer>
+            </div>
+        </div>
+    );
+};
+
 
 export default function PurchaseRegisterPage() {
   const router = useRouter();
@@ -164,105 +266,39 @@ export default function PurchaseRegisterPage() {
       description: `Preparing to download ${filteredPurchases.length} purchase bills.`,
     });
   
+    const tempContainer = document.createElement('div');
+    tempContainer.style.position = 'fixed';
+    tempContainer.style.left = '-9999px';
+    document.body.appendChild(tempContainer);
+
     for (const billData of filteredPurchases) {
       try {
-        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
-        doc.addFont('/fonts/times.ttf', 'Times', 'normal');
-        doc.addFont('/fonts/times-bold.ttf', 'Times', 'bold');
-        doc.setFont('Times', 'normal');
+        const billElement = document.createElement('div');
+        tempContainer.appendChild(billElement);
 
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const margin = 10;
-        
-        doc.setFillColor('#FDFEE2');
-        doc.rect(0, 0, pageWidth, doc.internal.pageSize.getHeight(), 'F');
-        
-        doc.setDrawColor(34, 139, 34);
-        doc.setLineWidth(1.5);
-        doc.rect(margin / 2, margin / 2, pageWidth - margin, doc.internal.pageSize.getHeight() - margin);
-
-
-        // Header
-        doc.setFontSize(8);
-        doc.setFont('Times', 'bold');
-        doc.text('🍎 F.Co', margin, margin);
-        doc.text('🍎 F.Co', pageWidth - margin, margin, { align: 'right'});
-
-        doc.setFontSize(8);
-        doc.setFont('Times', 'normal');
-        doc.text('Prop: Firdous Ahmad Lone (Nadihal)', pageWidth / 2, margin, { align: 'center' });
-        doc.text('Cell: 7006136330, 9797002164, 9906740921', pageWidth / 2, margin + 3, { align: 'center' });
-        
-        doc.setFontSize(16);
-        doc.setFont('Times', 'bold');
-        doc.setTextColor(34, 139, 34); // Green color
-        doc.text('FIRDOUS AHMAD & COMPANY', pageWidth / 2, margin + 9, { align: 'center' });
-        
-        doc.setFontSize(8);
-        doc.setTextColor(0, 0, 0);
-        doc.setFont('Times', 'normal');
-        doc.text('Fruit Merchants & Commission Agents', pageWidth / 2, margin + 12, { align: 'center' });
-        doc.text('SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.', pageWidth / 2, margin + 15, { align: 'center' });
-        
-        doc.setLineWidth(0.5);
-        doc.setDrawColor(34, 139, 34);
-        doc.line(margin, margin + 18, pageWidth - margin, margin + 18);
-
-        // Bill Info
-        doc.setFontSize(10);
-        doc.setFont('Times', 'normal');
-        doc.text(`No: ${billData.billNo}`, margin, margin + 23);
-        doc.text(`M/s: ${billData.growerName}`, margin, margin + 28);
-        doc.text(`Dated: ${new Date(billData.date).toLocaleDateString('en-GB')}`, pageWidth - margin, margin + 23, { align: 'right' });
-        
-        // Table
-        autoTable(doc, {
-          head: [['Petti', 'Dabba', 'VARIETY', 'RATE', 'AMOUNT']],
-          body: billData.entries.map(e => [
-              e.type === 'Patti' ? e.qty : '',
-              e.type === 'Dabba' ? e.qty : '',
-              e.variety,
-              `₹${e.rate.toFixed(2)}`,
-              `₹${e.total.toFixed(2)}`
-          ]),
-          startY: margin + 32,
-          theme: 'grid',
-          styles: { fontSize: 8, font: 'Times', cellPadding: 1, lineColor: [34,139,34], lineWidth: 0.2 },
-          headStyles: { fillColor: '#e0ffe0', textColor: '#228b22', fontStyle: 'bold', halign: 'center' },
-          footStyles: { fillColor: '#e0ffe0', textColor: '#228b22', fontStyle: 'bold' },
-          columnStyles: {
-            0: { halign: 'center' }, 1: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right', fontStyle: 'bold' }
-          }
+        const root = require('react-dom/client').createRoot(billElement);
+        await new Promise<void>((resolve) => {
+            root.render(<A4PurchaseBillLayout billData={billData} />, () => {
+              setTimeout(resolve, 100); 
+            });
         });
-
-        const finalY = (doc as any).lastAutoTable.finalY;
-
-        // Footer
-        doc.setLineWidth(1);
-        doc.setDrawColor(34, 139, 34);
-        doc.rect(pageWidth - margin - 50, finalY + 5, 45, 10);
-        doc.setFontSize(10);
-        doc.setFont('Times', 'bold');
-        doc.text('G. Total', pageWidth - margin - 48, finalY + 11);
-        doc.text(`₹${billData.totals.grandTotal.toFixed(2)}`, pageWidth - margin - 5, finalY + 11, { align: 'right' });
-
-
-        doc.setFontSize(8);
-        doc.setFont('Times', 'normal');
-        doc.text('Your Satisfaction is our Success', pageWidth / 2, doc.internal.pageSize.getHeight() - 25, { align: 'center'});
-        doc.setFont('Times', 'italic');
-        doc.text('If the bill is not paid within 15 days interest @ 5% will be Charged extra', pageWidth / 2, doc.internal.pageSize.getHeight() - 21, { align: 'center'});
         
-        doc.addFont('/fonts/DancingScript-Bold.ttf', 'DancingScript', 'normal');
-        doc.setFont('DancingScript', 'normal');
-        doc.setFontSize(22);
-        doc.text('Faisal', pageWidth - margin - 35, doc.internal.pageSize.getHeight() - 15);
-        doc.setFont('Times', 'bold');
-        doc.setFontSize(8);
-        doc.text('Sign. Of Manager', pageWidth - margin - 30, doc.internal.pageSize.getHeight() - 10);
-
-
+        const canvas = await html2canvas(billElement.children[0] as HTMLElement, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#FDFEE2',
+        });
+        
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
+        const pdfWidth = doc.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
+        
         doc.save(`PurchaseBill-${billData.billNo}_${billData.growerName}.pdf`);
+
+        root.unmount();
+        tempContainer.removeChild(billElement);
+
         await new Promise(resolve => setTimeout(resolve, 300));
       } catch (error) {
         console.error("Failed to generate PDF for bill:", billData.billNo, error);
@@ -273,6 +309,8 @@ export default function PurchaseRegisterPage() {
         });
       }
     }
+    
+    document.body.removeChild(tempContainer);
     setIsDownloading(false);
     toast({
         title: 'Bulk Download Complete',

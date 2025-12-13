@@ -38,6 +38,8 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
+import { ClassicA4Layout } from '@/components/invoice-templates/classic-a4';
+import html2canvas from 'html2canvas';
 
 export interface WatakEntry {
     id: string;
@@ -269,136 +271,47 @@ export default function SalesRegisterPage() {
     setIsDownloading(true);
     toast({
       title: 'Starting Bulk Download',
-      description: `Preparing to download ${filteredWataks.length} invoices.`,
+      description: `Preparing to download ${filteredWataks.length} invoices. This may take a while.`,
     });
+
+    const tempContainer = document.createElement('div');
+    // Position it off-screen
+    tempContainer.style.position = 'fixed';
+    tempContainer.style.left = '-9999px';
+    document.body.appendChild(tempContainer);
 
     for (let i = 0; i < filteredWataks.length; i++) {
       const billData = filteredWataks[i];
       try {
-        const doc = new jsPDF({
-          orientation: 'portrait',
-          unit: 'mm',
-          format: 'a5'
+        const billElement = document.createElement('div');
+        tempContainer.appendChild(billElement);
+
+        const root = require('react-dom/client').createRoot(billElement);
+        // We need to wait for React to render the component before we can capture it.
+        await new Promise<void>((resolve) => {
+            root.render(<ClassicA4Layout billData={billData} pageUrl={`${window.location.origin}/bill/view/${billData.sNo}?style=classic`} />, () => {
+              // A small delay to ensure all assets (like fonts) are loaded and rendered
+              setTimeout(resolve, 100); 
+            });
         });
-        doc.addFont('/fonts/times.ttf', 'Times', 'normal');
-        doc.addFont('/fonts/times-bold.ttf', 'Times', 'bold');
-        doc.addFont('/fonts/DancingScript-Bold.ttf', 'DancingScript', 'normal');
-        doc.setFont('Times', 'normal');
         
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const margin = 10;
-        
-        // Background and border
-        doc.setFillColor('#FDFEE2');
-        doc.rect(0, 0, pageWidth, doc.internal.pageSize.getHeight(), 'F');
-        doc.setDrawColor(34, 139, 34);
-        doc.setLineWidth(1.5);
-        doc.rect(margin / 2, margin / 2, pageWidth - margin, doc.internal.pageSize.getHeight() - margin);
-
-        // Header
-        doc.setFontSize(8);
-        doc.setFont('Times', 'bold');
-        doc.setTextColor('#DC2626');
-        doc.text('🍎', margin, margin);
-        doc.text('F.Co App', margin + 3, margin);
-        doc.text('F.Co App', pageWidth - margin - 11, margin, { align: 'right'});
-        doc.text('🍎', pageWidth - margin, margin, { align: 'right'});
-        
-        doc.setTextColor(0,0,0);
-        doc.setFont('Times', 'normal');
-        doc.text('Prop: Firdous Ahmad Lone (Nadihal)', pageWidth / 2, margin, { align: 'center' });
-        doc.text('Cell: 7006136330, 9797002164, 9906740921', pageWidth / 2, margin + 3, { align: 'center' });
-        
-        doc.setFontSize(16);
-        doc.setFont('Times', 'bold');
-        doc.setTextColor(34, 139, 34); // Green color
-        doc.text('FIRDOUS AHMAD & COMPANY', pageWidth / 2, margin + 9, { align: 'center' });
-        
-        doc.setFontSize(8);
-        doc.setTextColor(0, 0, 0);
-        doc.setFont('Times', 'normal');
-        doc.text('Fruit Merchants & Commission Agents', pageWidth / 2, margin + 12, { align: 'center' });
-        doc.text('SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.', pageWidth / 2, margin + 15, { align: 'center' });
-        
-        doc.setLineWidth(0.5);
-        doc.setDrawColor(34, 139, 34);
-        doc.line(margin, margin + 18, pageWidth - margin, margin + 18);
-
-        // Bill Info
-        doc.setFontSize(10);
-        doc.text(`M/s: ${billData.customerName}`, margin, margin + 23);
-        if (billData.khata) {
-             doc.text(`Khata: ${billData.khata}`, margin, margin + 28);
-        }
-        doc.text(`Bill No: ${billData.sNo}`, pageWidth - margin, margin + 23, { align: 'right' });
-        doc.text(`Date: ${new Date(billData.date).toLocaleDateString('en-GB')}`, pageWidth - margin, margin + 28, { align: 'right' });
-        if (billData.date2) {
-             doc.text(`Date 2: ${new Date(billData.date2).toLocaleDateString('en-GB')}`, pageWidth - margin, margin + 33, { align: 'right' });
-        }
-        if (billData.watakNo) {
-             doc.text(`Watak No: ${billData.watakNo}`, pageWidth - margin, margin + 38, { align: 'right' });
-        }
-        
-        // Table
-        autoTable(doc, {
-            head: [['TYPE', 'VARIETY', 'QTY', 'RATE', 'GROSS']],
-            body: billData.entries.map(e => [
-                e.type,
-                e.variety,
-                e.qty,
-                e.isForwarded ? 'Forwarded' : `₹${e.rate.toFixed(2)}`,
-                e.isForwarded ? 'Forwarded' : `₹${e.total.toFixed(2)}`
-            ]),
-            startY: margin + 42,
-            theme: 'grid',
-            styles: { fontSize: 8, font: 'Times', cellPadding: 1, lineColor: [34,139,34], lineWidth: 0.2 },
-            headStyles: { fillColor: '#e0ffe0', textColor: '#228b22', fontStyle: 'bold', halign: 'center' },
-            columnStyles: { 2: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right', fontStyle: 'bold' } }
+        const canvas = await html2canvas(billElement.children[0] as HTMLElement, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#FDFEE2',
         });
-
-        const finalY = (doc as any).lastAutoTable.finalY;
-
-        // Footer
-        doc.setFontSize(8);
-        doc.text(`Total Quantity: ${billData.totals.totalQty} (Patti: ${billData.totals.pattiQty}, Dabba: ${billData.totals.dabbaQty})`, margin, finalY + 8);
         
-        const expenseLines = [
-            { label: 'Gross Sale:', value: `₹${billData.totals.grossSale.toFixed(2)}` },
-            { label: 'Freight:', value: `- ₹${billData.freight.toFixed(2)}` },
-            { label: 'Labour:', value: `- ₹${billData.totals.labour.toFixed(2)}` },
-            { label: 'Association:', value: `- ₹${billData.totals.association.toFixed(2)}` },
-            { label: 'Security:', value: `- ₹${billData.totals.security.toFixed(2)}` },
-        ];
-        let currentY = finalY + 8;
-        const summaryX = pageWidth / 2 + 10;
-        doc.setFont('Times', 'normal');
-        expenseLines.forEach(line => {
-            doc.text(line.label, summaryX, currentY);
-            doc.text(line.value, pageWidth - margin, currentY, { align: 'right' });
-            currentY += 4;
-        });
-
-        doc.setLineWidth(0.2);
-        doc.setDrawColor(0,0,0);
-        doc.line(summaryX, currentY, pageWidth - margin, currentY); currentY += 4;
-        
-        doc.setFont('Times', 'bold');
-        doc.text('Total Exp:', summaryX, currentY);
-        doc.text(`- ₹${billData.totals.totalExpenses.toFixed(2)}`, pageWidth - margin, currentY, { align: 'right' }); currentY += 4;
-        doc.line(summaryX, currentY, pageWidth - margin, currentY); currentY += 5;
-        
-        doc.setFontSize(12);
-        doc.text('Net Sale:', summaryX, currentY);
-        doc.text(`₹${billData.totals.netSale.toFixed(2)}`, pageWidth - margin, currentY, { align: 'right' });
-        
-        doc.setFont('DancingScript', 'normal');
-        doc.setFontSize(22);
-        doc.text('Faisal', pageWidth - margin - 35, doc.internal.pageSize.getHeight() - 15);
-        doc.setFont('Times', 'bold');
-        doc.setFontSize(8);
-        doc.text('Sign. of Manager', pageWidth - margin - 30, doc.internal.pageSize.getHeight() - 10);
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
+        const pdfWidth = doc.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
         
         doc.save(`Invoice-${billData.sNo}_${billData.customerName}.pdf`);
+
+        root.unmount();
+        tempContainer.removeChild(billElement);
+
+        // A small delay between downloads to prevent browser from blocking popups
         await new Promise(resolve => setTimeout(resolve, 300));
         
       } catch (error) {
@@ -410,6 +323,9 @@ export default function SalesRegisterPage() {
           });
       }
     }
+    
+    // Clean up the temporary container
+    document.body.removeChild(tempContainer);
 
     setIsDownloading(false);
     toast({
