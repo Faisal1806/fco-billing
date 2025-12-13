@@ -19,7 +19,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, PlusCircle, Loader2, FilePenLine, Trash2, List, LayoutGrid, Search, FileDown } from 'lucide-react';
+import { ChevronDown, PlusCircle, Loader2, FilePenLine, Trash2, List, LayoutGrid, Search, FileDown, DownloadCloud } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +36,7 @@ import * as XLSX from 'xlsx';
 import { FaWhatsapp } from 'react-icons/fa';
 import { Badge } from '@/components/ui/badge';
 import { deleteDocument } from '@/lib/actions';
+import { Logo } from '@/components/logo';
 
 export interface PurchaseEntry {
     billNo: string;
@@ -43,9 +44,13 @@ export interface PurchaseEntry {
     growerName: string;
     entries: {
         type: 'Patti' | 'Dabba';
+        variety: string;
         qty: number;
+        rate: number;
+        total: number;
     }[];
     totals: {
+        totalQty: number;
         grandTotal: number;
     }
 }
@@ -59,6 +64,7 @@ export default function PurchaseRegisterPage() {
   const [selectedCustomer, setSelectedCustomer] = React.useState('All Customers');
   const [searchTerm, setSearchTerm] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isDownloading, setIsDownloading] = React.useState(false);
   const [viewMode, setViewMode] = React.useState<'grid' | 'table'>('grid');
   const [userRole, setUserRole] = React.useState<string | null>(null);
 
@@ -141,6 +147,105 @@ export default function PurchaseRegisterPage() {
         console.error("Cloud delete failed but local was successful", e);
     }
   }
+
+  const exportAllToPDFs = async () => {
+    if (filteredPurchases.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'No Bills to Download',
+        description: 'There are no bills matching your current filters.',
+      });
+      return;
+    }
+
+    setIsDownloading(true);
+    toast({
+      title: 'Starting Bulk Download',
+      description: `Preparing to download ${filteredPurchases.length} purchase bills.`,
+    });
+
+    for (let i = 0; i < filteredPurchases.length; i++) {
+        const billData = filteredPurchases[i];
+        try {
+            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
+            
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const margin = 10;
+            doc.addFileToVFS('TNR-normal.ttf', 'AAEAAAAQAQAABAAAR0RFRg... (your font data here)');
+            doc.addFont('TNR-normal.ttf', 'Times New Roman', 'normal');
+            doc.setFont('Times New Roman');
+
+            // Header
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'bold');
+            doc.text('🍎 F.Co', margin, margin);
+            doc.text('🍎 F.Co', pageWidth - margin, margin, { align: 'right' });
+            doc.setFontSize(7);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Prop: Firdous Ahmad Lone (Nadihal)', pageWidth / 2, margin - 2, { align: 'center' });
+            doc.text('Cell: 7006136330, 9797002164, 9906740921', pageWidth / 2, margin + 1, { align: 'center' });
+            doc.setFontSize(16);
+            doc.setFont('Times New Roman', 'bold');
+            doc.setTextColor('#166534');
+            doc.text('FIRDOUS AHMAD & COMPANY', pageWidth / 2, margin + 8, { align: 'center' });
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(0, 0, 0);
+            doc.text('Fruit Merchants & Commission Agents', pageWidth / 2, margin + 12, { align: 'center' });
+            doc.setFontSize(6);
+            doc.text('SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.', pageWidth / 2, margin + 15, { align: 'center' });
+            doc.setLineWidth(0.5);
+            doc.setDrawColor('#15803d');
+            doc.line(margin, margin + 17, pageWidth - margin, margin + 17);
+
+            // Bill Info
+            doc.setFontSize(10);
+            doc.text(`No: ${billData.billNo}`, margin, margin + 22);
+            doc.text(`M/s: ${billData.growerName}`, margin, margin + 28);
+            doc.text(`Dated: ${new Date(billData.date).toLocaleDateString('en-GB')}`, pageWidth - margin, margin + 22, { align: 'right' });
+
+            // Table
+            const tableData = billData.entries.map(e => [
+                e.type === 'Patti' ? e.qty : '',
+                e.type === 'Dabba' ? e.qty : '',
+                e.variety,
+                `₹${e.rate.toFixed(2)}`,
+                `₹${e.total.toFixed(2)}`
+            ]);
+            autoTable(doc, {
+                head: [['Petti', 'Dabba', 'VARIETY', 'RATE', 'AMOUNT']],
+                body: tableData,
+                startY: margin + 32,
+                theme: 'grid',
+                styles: { fontSize: 8, font: 'Times New Roman' },
+                headStyles: { fillColor: '#dcfce7', textColor: '#166534', fontStyle: 'bold' }
+            });
+            
+            const finalY = (doc as any).lastAutoTable.finalY;
+
+            // Footer
+            doc.setFontSize(10);
+            doc.setFont('Times New Roman', 'bold');
+            doc.text('G. Total', pageWidth - margin - 50, finalY + 10, { align: 'left'});
+            doc.text(`₹${billData.totals.grandTotal.toFixed(2)}`, pageWidth - margin, finalY + 10, { align: 'right'});
+
+            doc.save(`PurchaseBill-${billData.billNo}_${billData.growerName}.pdf`);
+            await new Promise(resolve => setTimeout(resolve, 300));
+        } catch (error) {
+            console.error("Failed to generate PDF for bill:", billData.billNo, error);
+            toast({
+              variant: "destructive",
+              title: `Failed to Download Bill #${billData.billNo}`,
+              description: "An error occurred while generating this PDF.",
+            });
+        }
+    }
+    setIsDownloading(false);
+    toast({
+        title: 'Bulk Download Complete',
+        description: `Finished downloading ${filteredPurchases.length} purchase bills.`,
+    });
+  };
 
   const exportToPDF = () => {
     const doc = new jsPDF();
@@ -261,6 +366,16 @@ export default function PurchaseRegisterPage() {
                 <Button size="sm" variant="outline" className="gap-1" onClick={exportToPDF}>
                     <FileDown className="h-3.5 w-3.5" />
                     PDF
+                </Button>
+                 <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1"
+                    onClick={exportAllToPDFs}
+                    disabled={isDownloading}
+                >
+                    {isDownloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <DownloadCloud className="h-3.5 w-3.5" />}
+                    Download All
                 </Button>
                 <Button size="sm" variant="outline" className="gap-1" onClick={exportToExcel}>
                     <FileDown className="h-3.5 w-3.5" />
