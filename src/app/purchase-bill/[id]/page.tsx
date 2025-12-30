@@ -278,7 +278,7 @@ export default function PurchaseBillPage({ params }: { params: { id:string } }) 
                             {/* This space is intentionally left blank for the controls on screen */}
                         </div>
                         <div className="text-center">
-                            <p className="font-signature text-2xl text-gray-700 dark:text-gray-300">Faisal</p>
+                            <p className="font-signature text-2xl text-gray-700">Faisal</p>
                             <p className="font-bold -mt-2">Sign. Of Manager</p>
                         </div>
                     </div>
@@ -345,7 +345,6 @@ export default function PurchaseBillPage({ params }: { params: { id:string } }) 
     return (
         <div className="bg-gray-200 dark:bg-gray-900 font-sans print:bg-white flex flex-col md:flex-row gap-8 justify-center p-4 md:p-8">
             <style jsx global>{`
-                @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
                 .font-signature {
                     font-family: 'Dancing Script', cursive;
                 }

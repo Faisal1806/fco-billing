@@ -346,7 +346,6 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
     return (
         <div className="bg-gray-100 dark:bg-gray-900 font-sans print:bg-white flex flex-col md:flex-row gap-8 justify-center p-4 md:p-8">
              <style jsx global>{`
-                @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
                 .font-signature {
                     font-family: 'Dancing Script', cursive;
                 }
