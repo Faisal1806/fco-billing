@@ -1,6 +1,6 @@
 
 
-'use client'
+'use client';
 
 import * as React from 'react';
 import {
@@ -184,7 +184,7 @@ export default function SalesRegisterPage() {
                 }
             }
         }
-        setWataks(items.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
+        setWataks(items.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         setPartyNameMap(growerMap);
         const uniqueGrowers = ['All Growers', ...Array.from(growerMap.values()).sort()];
         setGrowers(uniqueGrowers);
@@ -205,18 +205,18 @@ export default function SalesRegisterPage() {
 
   const filteredWataks = wataks
     .filter(w => {
-        if (selectedGrower === 'All Growers' && !searchTerm) return true;
+        if (selectedGrower === 'All Growers') return true;
         const canonicalName = partyNameMap.get(getCanonicalName(w.customerName)) || w.customerName;
-        if (selectedGrower !== 'All Growers' && canonicalName !== selectedGrower) return false;
-        if (searchTerm) {
-             const lowerCaseSearch = searchTerm.toLowerCase();
-             return (
-                canonicalName.toLowerCase().includes(lowerCaseSearch) ||
-                w.sNo.toLowerCase().includes(lowerCaseSearch) ||
-                (w.watakNo && w.watakNo.toLowerCase().includes(lowerCaseSearch))
-            );
-        }
-        return true;
+        return canonicalName === selectedGrower;
+    }).filter(w => {
+        if (!searchTerm) return true;
+        const lowerCaseSearch = searchTerm.toLowerCase();
+        const canonicalName = partyNameMap.get(getCanonicalName(w.customerName)) || w.customerName;
+        return (
+            canonicalName.toLowerCase().includes(lowerCaseSearch) ||
+            w.sNo.toLowerCase().includes(lowerCaseSearch) ||
+            (w.watakNo && w.watakNo.toLowerCase().includes(lowerCaseSearch))
+        );
     });
 
   const footerTotals = filteredWataks.reduce((acc, watak) => {

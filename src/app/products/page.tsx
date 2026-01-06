@@ -322,7 +322,7 @@ export default function ProductsPage() {
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                     type="search"
-                    placeholder="Search by name..."
+                    placeholder="Search by name or supplier..."
                     className="pl-8 sm:w-[200px] lg:w-[250px]"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
