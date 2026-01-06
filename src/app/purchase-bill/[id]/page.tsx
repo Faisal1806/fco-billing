@@ -275,10 +275,10 @@ export default function PurchaseBillPage({ params }: { params: { id:string } }) 
                     </div>
                     <div className="flex justify-between items-end mt-4">
                          <div className="text-center">
-                            {/* This space is intentionally left blank for the controls on screen */}
+                            <BusinessCardQR size={60} />
                         </div>
                         <div className="text-center">
-                            <p className="font-signature text-2xl text-gray-700">Faisal</p>
+                            <p className="font-signature text-2xl text-gray-700 dark:text-gray-300">Faisal</p>
                             <p className="font-bold -mt-2">Sign. Of Manager</p>
                         </div>
                     </div>
