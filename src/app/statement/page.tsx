@@ -20,6 +20,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import '@/app/khata/print.css';
+import { motion } from 'framer-motion';
 
 
 type CreditRow = {
@@ -349,7 +350,7 @@ export default function StatementOfAccountPage() {
         }
       `}</style>
         <div className="printable-area lg:col-span-2">
-            <Card>
+            <Card className="bg-card/70 backdrop-blur-sm">
                 <CardHeader className="text-center">
                     <div className="text-muted-foreground flex justify-between items-center text-xs">
                         <span className="font-bold text-lg text-red-600">🍎</span>
@@ -384,7 +385,7 @@ export default function StatementOfAccountPage() {
                         </div>
                     </div>
 
-                    <div className="space-y-4 border-t-2 border-b-2 border-black py-4">
+                    <div className="space-y-4 border-t-2 border-b-2 border-border py-4">
                         {/* CREDIT Column */}
                         <div className="space-y-1">
                             <h3 className="text-lg font-bold text-center">CREDIT (Jama)</h3>
@@ -412,7 +413,7 @@ export default function StatementOfAccountPage() {
                             <div className="flex justify-start mt-2">
                             <Button size="sm" variant="outline" onClick={addCreditRow} className="gap-1"><PlusCircle className="h-4 w-4"/>Add Row</Button>
                             </div>
-                            <Separator className="my-2 bg-black"/>
+                            <Separator className="my-2 bg-border"/>
                             <div className="grid grid-cols-7 gap-1 font-bold text-sm text-center">
                             <span className="col-span-2">Total:</span>
                             <span className="col-span-1">{creditTotals.peti}</span>
@@ -441,7 +442,7 @@ export default function StatementOfAccountPage() {
                             <div className="flex justify-start mt-2">
                             <Button size="sm" variant="outline" onClick={addDebitRow} className="gap-1"><PlusCircle className="h-4 w-4"/>Add Row</Button>
                             </div>
-                            <Separator className="my-2 bg-black" />
+                            <Separator className="my-2 bg-border" />
                             <div className="grid grid-cols-3 gap-1 font-bold text-sm">
                                 <span className="col-span-2 text-right pr-1">Total Debit (Kharch):</span>
                                 <span className="col-span-1 text-right pr-1">₹{totalDebit.toLocaleString('en-IN')}</span>
@@ -451,7 +452,7 @@ export default function StatementOfAccountPage() {
 
                     {/* Final Calculation */}
                     <div className="grid grid-cols-2 gap-4 pt-4">
-                        <div className="space-y-2 text-right pr-4 border-r-2 border-black">
+                        <div className="space-y-2 text-right pr-4 border-r-2 border-border">
                             <div className="flex justify-end items-center font-bold">
                                 <span className="text-lg">Total Credit (Jama):</span>
                                 <span className="ml-4 text-lg">₹{creditTotals.netSale.toLocaleString('en-IN')}</span>
@@ -462,17 +463,17 @@ export default function StatementOfAccountPage() {
                                 <span className="text-lg">Total Debit (Kharch):</span>
                                 <span className="ml-4 text-lg">₹{totalDebit.toLocaleString('en-IN')}</span>
                             </div>
-                            <Separator className="bg-black" />
+                            <Separator className="bg-border" />
                             <div className="flex justify-end items-center font-bold">
                                 {finalBalance >= 0 ? (
                                     <>
-                                    <span className="text-lg text-green-600">Jama (Profit/Credit):</span>
-                                    <span className="ml-4 text-lg text-green-600">₹{finalBalance.toLocaleString('en-IN')}</span>
+                                    <span className="text-lg text-green-500">Jama (Profit/Credit):</span>
+                                    <span className="ml-4 text-lg text-green-500">₹{finalBalance.toLocaleString('en-IN')}</span>
                                     </>
                                 ) : (
                                     <>
-                                    <span className="text-lg text-red-600">Baqaya (Balance/Due):</span>
-                                    <span className="ml-4 text-lg text-red-600">₹{Math.abs(finalBalance).toLocaleString('en-IN')}</span>
+                                    <span className="text-lg text-red-500">Baqaya (Balance/Due):</span>
+                                    <span className="ml-4 text-lg text-red-500">₹{Math.abs(finalBalance).toLocaleString('en-IN')}</span>
                                     </>
                                 )}
                             </div>
@@ -511,21 +512,26 @@ export default function StatementOfAccountPage() {
                 <ScrollArea className="h-[calc(100vh-12rem)]">
                     <div className="space-y-2">
                         {savedStatements.map(stmt => (
-                            <div key={stmt.sNo} className="flex justify-between items-center p-2 border rounded-md">
+                            <motion.div 
+                                key={stmt.sNo}
+                                whileHover={{ scale: 1.05, z: 10, boxShadow: "0 10px 20px rgba(0,0,0,0.2)" }}
+                                className="flex justify-between items-center p-3 border rounded-lg bg-card/50 backdrop-blur-sm cursor-pointer"
+                                onClick={() => handleLoadStatement(stmt)}
+                            >
                                 <div>
-                                    <p className="font-medium">Statement #{stmt.sNo}</p>
+                                    <p className="font-semibold">Statement #{stmt.sNo}</p>
                                     <p className="text-sm text-muted-foreground">{stmt.partyName}</p>
                                     <p className="text-xs text-muted-foreground">{new Date(stmt.statementDate).toLocaleDateString()}</p>
                                 </div>
                                 <div className="flex items-center">
-                                    <Button variant="ghost" size="icon" onClick={() => handleLoadStatement(stmt)}>
+                                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleLoadStatement(stmt); }}>
                                         <FilePenLine className="h-4 w-4" />
                                     </Button>
-                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteStatement(stmt.sNo)}>
+                                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDeleteStatement(stmt.sNo); }}>
                                         <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
                                 </div>
-                            </div>
+                            </motion.div>
                         ))}
                         {savedStatements.length === 0 && <p className="text-sm text-muted-foreground text-center">No saved statements found.</p>}
                     </div>
