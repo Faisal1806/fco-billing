@@ -1,7 +1,13 @@
 
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, dialog } = require('electron');
 const path = require('path');
 const isDev = require('electron-is-dev');
+const { autoUpdater } = require('electron-updater');
+const log = require('electron-log');
+
+// Configure logging
+log.transports.file.level = 'info';
+autoUpdater.logger = log;
 
 function createWindow() {
   // Create the browser window.
@@ -12,7 +18,7 @@ function createWindow() {
       nodeIntegration: true,
       contextIsolation: false,
     },
-    icon: path.join(__dirname, 'public', 'favicon.ico'), // Optional: set an icon
+    icon: path.join(__dirname, 'public', 'favicon.ico'),
   });
 
   // In development, load from the Next.js dev server.
@@ -27,9 +33,18 @@ function createWindow() {
   if (isDev) {
     win.webContents.openDevTools();
   }
+
+  // Check for updates after the window is created
+  if (!isDev) {
+    win.once('ready-to-show', () => {
+        autoUpdater.checkForUpdatesAndNotify();
+    });
+  }
 }
 
-app.on('ready', createWindow);
+app.on('ready', () => {
+    createWindow();
+});
 
 // Quit when all windows are closed, except on macOS.
 app.on('window-all-closed', () => {
@@ -44,4 +59,31 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
+});
+
+
+// Auto-updater event handlers
+autoUpdater.on('update-available', () => {
+  log.info('Update available.');
+});
+
+autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
+  log.info('Update downloaded; will install on quit');
+  const dialogOpts = {
+    type: 'info',
+    buttons: ['Restart', 'Later'],
+    title: 'Application Update',
+    message: process.platform === 'win32' ? releaseNotes : releaseName,
+    detail: 'A new version has been downloaded. Restart the application to apply the updates.'
+  };
+
+  dialog.showMessageBox(dialogOpts).then((returnValue) => {
+    if (returnValue.response === 0) autoUpdater.quitAndInstall();
+  });
+});
+
+autoUpdater.on('error', (error) => {
+  log.error('There was a problem updating the application');
+  log.error(error);
+  dialog.showErrorBox('Update Error', error == null ? "unknown" : (error.stack || error).toString());
 });
