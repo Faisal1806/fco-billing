@@ -9,14 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -39,6 +31,8 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveDocument, deleteDocument } from '@/lib/actions';
 import { Progress } from '@/components/ui/progress';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Separator } from '@/components/ui/separator';
 
 
 const PARTY_STORAGE_PREFIX = 'party-';
@@ -76,7 +70,6 @@ const defaultGrowers: { name: string, address: string }[] = [
     { name: 'GH. Mohd. Lone B/P', address: 'R/o Nadihal Bla.' },
     { name: 'GH. Mohd. Bhat', address: 'R/o Nadihal Bla.' },
     { name: 'Nazir Ahmad Lone B/P', address: 'R/o Nadihal Bla.' },
-    { name: 'Mushtaq Ahmad Lone B/P', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Maqbool Baigh', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Shabaan Ahangar', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Akbar Lone B/P', address: 'R/o Nadihal Bla.' },
@@ -106,6 +99,14 @@ const defaultGrowers: { name: string, address: string }[] = [
 const getCanonicalName = (name: string): string => {
     if (!name) return '';
     return name.trim();
+};
+
+const PartyTypeIcon = ({ type }: { type: Party['type'] }) => {
+    if (type === 'Grower') return <Leaf className="h-8 w-8 text-green-400" />;
+    if (type === 'Customer') return <ShoppingCart className="h-8 w-8 text-blue-400" />;
+    if (type === 'Outside Party') return <Handshake className="h-8 w-8 text-orange-400" />;
+    if (type === 'Both (Outside & Customer)') return <Users className="h-8 w-8 text-cyan-400" />;
+    return <Users className="h-8 w-8 text-purple-400" />;
 };
 
 
@@ -318,12 +319,7 @@ export default function PartiesPage() {
     resetForm();
     setIsFormDialogOpen(false);
   };
-
-  const handleEditClick = (party: Party) => {
-    setFormState(party);
-    setIsFormDialogOpen(true);
-  }
-
+  
   const handleRowClick = (party: Party) => {
     setSelectedParty(party);
     setIsProfileDialogOpen(true);
@@ -376,30 +372,74 @@ export default function PartiesPage() {
       XLSX.writeFile(wb, "parties-directory.xlsx");
   };
 
-  const PartyTypeBadge = ({type}: {type: Party['type']}) => {
-    switch (type) {
-        case 'Grower': return <Badge variant="default" className="bg-green-600 hover:bg-green-700">Grower</Badge>;
-        case 'Customer': return <Badge variant="secondary">Customer</Badge>;
-        case 'Both': return <Badge variant="outline">Both (Grower & Customer)</Badge>;
-        case 'Outside Party': return <Badge variant="destructive" className="bg-orange-500 hover:bg-orange-600">Outside Party</Badge>;
-        case 'Both (Outside & Customer)': return <Badge variant="outline" className="bg-purple-500 text-white hover:bg-purple-600">Both (Outside & Customer)</Badge>;
-        default: return <Badge>{type}</Badge>;
-    }
-  }
-  
-  const StatCard = ({ icon: Icon, title, value, color, description }: { icon: React.ElementType, title: string, value: string, color?: string, description?: string }) => (
-    <div className="flex items-center gap-4 bg-muted p-3 rounded-lg">
-        <div className={`p-3 rounded-full bg-background`}>
-            <Icon className={`h-5 w-5 ${color || 'text-primary'}`} />
-        </div>
-        <div>
-            <p className="text-sm text-muted-foreground">{title}</p>
-            <p className="text-lg font-bold">{value}</p>
-            {description && <p className="text-xs text-muted-foreground">{description}</p>}
-        </div>
-    </div>
-  );
+  const PartyCard = ({ party }: { party: Party }) => {
+    const stats = partyStats[getCanonicalName(party.name)];
+    if (!stats) return null;
 
+    const [isFlipped, setIsFlipped] = useState(false);
+
+    const balance = stats.balance || 0;
+    const netSales = stats.netSales || 0;
+
+    let balanceText, balanceColor;
+    if (party.type === 'Grower' || party.type === 'Both') {
+        balanceText = balance >= 0 ? 'Payable' : 'Advance';
+        balanceColor = balance >= 0 ? 'text-red-400' : 'text-green-400';
+    } else {
+        balanceText = balance >= 0 ? 'Receivable' : 'Credit';
+        balanceColor = balance >= 0 ? 'text-green-400' : 'text-red-400';
+    }
+    
+    const tier = stats?.tier || 'Bronze';
+    const tierIcon = tier === 'Gold' ? '🥇' : tier === 'Silver' ? '🥈' : '🥉';
+
+    return (
+        <div
+            className="w-full h-48 [perspective:1000px]"
+            onMouseEnter={() => setIsFlipped(true)}
+            onMouseLeave={() => setIsFlipped(false)}
+            onClick={() => handleRowClick(party)}
+        >
+            <motion.div
+                className="relative w-full h-full [transform-style:preserve-3d] cursor-pointer"
+                animate={{ rotateY: isFlipped ? 180 : 0 }}
+                transition={{ duration: 0.6, ease: 'easeInOut' }}
+            >
+                {/* Front Side */}
+                <div className="absolute w-full h-full [backface-visibility:hidden] bg-card/60 backdrop-blur-sm border border-white/10 rounded-2xl p-4 flex flex-col justify-between shadow-lg">
+                    <div>
+                        <div className="flex justify-between items-start">
+                            <h3 className="font-bold text-lg leading-tight text-primary-foreground">{party.name}</h3>
+                            <PartyTypeIcon type={party.type} />
+                        </div>
+                        <p className="text-xs text-muted-foreground">{party.address}</p>
+                    </div>
+                     <div className="flex justify-between items-end">
+                        <p className="text-sm font-semibold">{party.phone}</p>
+                        <p className="text-2xl font-bold" title={`${tier} Tier`}>{tierIcon}</p>
+                    </div>
+                </div>
+
+                {/* Back Side */}
+                <div className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] bg-card/80 backdrop-blur-sm border border-white/10 rounded-2xl p-4 flex flex-col justify-center items-center text-center shadow-xl">
+                    <h4 className="font-bold text-lg text-primary-foreground">Financials</h4>
+                    <Separator className="my-2 bg-white/10" />
+                    <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">{balanceText}</p>
+                        <p className={`text-2xl font-bold font-mono ${balanceColor}`}>
+                            {balance >= 0 ? '₹' : '-₹'}{Math.abs(balance).toLocaleString('en-IN', {maximumFractionDigits: 0})}
+                        </p>
+                    </div>
+                     <div className="mt-2 space-y-1">
+                        <p className="text-xs text-muted-foreground">YTD Net Sales</p>
+                        <p className="font-semibold font-mono text-primary-foreground">₹{netSales.toLocaleString('en-IN', {maximumFractionDigits: 0})}</p>
+                    </div>
+                </div>
+            </motion.div>
+        </div>
+    );
+  };
+  
   const PartyProfileDialog = () => {
     const [redemptionAmount, setRedemptionAmount] = useState(0);
 
@@ -412,7 +452,6 @@ export default function PartiesPage() {
     const netSales = stats.netSales || 0;
     const creditLimit = selectedParty.creditLimit || 0;
     const creditUsed = stats.creditUsed || 0;
-    const creditRemaining = creditLimit - creditUsed;
     const creditUsagePercent = creditLimit > 0 ? (creditUsed / creditLimit) * 100 : 0;
     
     let balanceText, balanceColor;
@@ -525,7 +564,6 @@ export default function PartiesPage() {
     );
   };
 
-
   if (isLoading) {
     return (
         <div className="flex justify-center items-center h-64">
@@ -534,6 +572,18 @@ export default function PartiesPage() {
         </div>
     )
   }
+
+  const PartyTypeBadge = ({type}: {type: Party['type']}) => {
+    switch (type) {
+        case 'Grower': return <Badge variant="default" className="bg-green-600 hover:bg-green-700">Grower</Badge>;
+        case 'Customer': return <Badge variant="secondary">Customer</Badge>;
+        case 'Both': return <Badge variant="outline">Both (Grower & Customer)</Badge>;
+        case 'Outside Party': return <Badge variant="destructive" className="bg-orange-500 hover:bg-orange-600">Outside Party</Badge>;
+        case 'Both (Outside & Customer)': return <Badge variant="outline" className="bg-purple-500 text-white hover:bg-purple-600">Both (Outside & Customer)</Badge>;
+        default: return <Badge>{type}</Badge>;
+    }
+  }
+
 
   return (
     <>
@@ -635,74 +685,12 @@ export default function PartiesPage() {
         </div>
       </CardHeader>
       <CardContent>
-         {parties.length > 0 ? (
-            <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[50px]">S.No.</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Credit Status</TableHead>
-                <TableHead className="text-right">Balance</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredParties.map((party, index) => {
-                const stats = partyStats[getCanonicalName(party.name)];
-                const balance = stats?.balance || 0;
-                const creditLimit = party.creditLimit || 0;
-                const creditUsed = stats?.creditUsed || 0;
-                const creditUsagePercent = creditLimit > 0 ? Math.min((creditUsed / creditLimit) * 100, 100) : 0;
-
-                let balanceText, balanceColor;
-                if (party.type === 'Grower' || party.type === 'Both') {
-                    balanceText = balance >= 0 ? 'Payable' : 'Advance';
-                    balanceColor = balance >= 0 ? 'text-red-500' : 'text-green-500';
-                } else {
-                    balanceText = balance >= 0 ? 'Receivable' : 'Credit';
-                    balanceColor = balance >= 0 ? 'text-green-500' : 'text-red-500';
-                }
-                
-                const tier = stats?.tier || 'Bronze';
-                const tierIcon = tier === 'Gold' ? '🥇' : tier === 'Silver' ? '🥈' : '🥉';
-
-
-                return (
-                <TableRow key={party.id} className="cursor-pointer" onClick={() => handleRowClick(party)}>
-                  <TableCell>{index + 1}</TableCell>
-                  <TableCell className="font-medium">{party.name} <span title={tier + ' Tier'}>{tierIcon}</span></TableCell>
-                  <TableCell><PartyTypeBadge type={party.type} /></TableCell>
-                   <TableCell>
-                        {creditLimit > 0 ? (
-                             <div className="flex flex-col">
-                                <Progress value={creditUsagePercent} />
-                                <span className="text-xs text-muted-foreground mt-1">
-                                    ₹{creditUsed.toLocaleString('en-IN')} / ₹{creditLimit.toLocaleString('en-IN')}
-                                </span>
-                            </div>
-                        ) : (
-                            <span className="text-xs text-muted-foreground">Not Set</span>
-                        )}
-                   </TableCell>
-                  <TableCell className={`text-right font-mono ${balanceColor}`}>
-                    {balance >= 0 ? '₹' : '-₹'}{Math.abs(balance).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                    <p className="text-xs">{balanceText}</p>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEditClick(party); }}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    {userRole === 'admin' && (
-                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDeleteParty(party.id); }}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              )})}
-            </TableBody>
-          </Table>
+         {filteredParties.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredParties.map(party => (
+                  <PartyCard key={party.id} party={party} />
+              ))}
+            </div>
          ) : (
           <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
             <Users className="mx-auto h-12 w-12" />
