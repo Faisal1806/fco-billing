@@ -31,9 +31,10 @@ type Row = {
   variety: string;
   rate: number;
   isForwarded: boolean;
+  taxRate: number;
 };
 
-const emptyRow: Row = { type: 'Patti', qty: 0, variety: '', rate: 0, isForwarded: false };
+const emptyRow: Row = { type: 'Patti', qty: 0, variety: '', rate: 0, isForwarded: false, taxRate: 0 };
 const initialRows: Row[] = Array.from({ length: 5 }, () => ({ ...emptyRow }));
 
 
@@ -146,7 +147,8 @@ export function BillMakingTab() {
                 qty: e.qty,
                 variety: e.variety,
                 rate: e.rate,
-                isForwarded: false
+                isForwarded: false,
+                taxRate: e.taxRate || 0,
             }));
             
             setSNo(scannedData.sNo);
@@ -189,10 +191,10 @@ export function BillMakingTab() {
         if (Array.isArray(selectedReceipt.entries)) {
           selectedReceipt.entries.forEach((entry: any) => {
               if (entry.peti > 0) {
-                  newRows.push({ type: 'Patti', variety: entry.kind, qty: entry.peti, rate: 0, isForwarded: false });
+                  newRows.push({ ...emptyRow, type: 'Patti', variety: entry.kind, qty: entry.peti, rate: 0 });
               }
               if (entry.daba > 0) {
-                  newRows.push({ type: 'Dabba', variety: entry.kind, qty: entry.daba, rate: 0, isForwarded: false });
+                  newRows.push({ ...emptyRow, type: 'Dabba', variety: entry.kind, qty: entry.daba, rate: 0 });
               }
           });
         }
@@ -209,7 +211,7 @@ export function BillMakingTab() {
     }
   }, [selectedReceipt, isEditing, isReceiptUsed, toast]);
 
-  // --- Calculations (ALL from your spec) ---
+  // --- Calculations ---
   const totals = useMemo(() => {
     const validRows = rows.filter(r => r.qty > 0 && r.variety);
     const totalQty = validRows.reduce((s, r) => s + (Number(r.qty) || 0), 0);
@@ -220,14 +222,23 @@ export function BillMakingTab() {
       .filter(r => r.type === 'Dabba')
       .reduce((s, r) => s + (Number(r.qty) || 0), 0);
 
-    const rowGross = validRows.map(r => (r.isForwarded ? 0 : (Number(r.qty) || 0) * (Number(r.rate) || 0)));
-    const totalGrossSale = rowGross.reduce((s, v) => s + v, 0);
+    let subtotal = 0;
+    let totalTax = 0;
 
-    // Expenses by formula
+    const rowGross = validRows.map(r => {
+        const taxableAmount = r.isForwarded ? 0 : (Number(r.qty) || 0) * (Number(r.rate) || 0);
+        const taxAmount = taxableAmount * (Number(r.taxRate) || 0) / 100;
+        subtotal += taxableAmount;
+        totalTax += taxAmount;
+        return taxableAmount + taxAmount;
+    });
+
+    const totalGrossSale = subtotal + totalTax;
+
     const labour = totalQty * 3;
     const association = totalQty * 0.1;
     const security = totalQty * 0.9;
-    const commission = Math.floor(totalGrossSale * 0.12);
+    const commission = Math.floor(subtotal * 0.12);
 
     const totalExp = commission + labour + association + security + (Number(freight) || 0);
     const netSale = totalGrossSale - totalExp;
@@ -236,6 +247,10 @@ export function BillMakingTab() {
       pattiQty,
       dabbaQty,
       totalQty,
+      subtotal,
+      cgst: totalTax / 2,
+      sgst: totalTax / 2,
+      totalTax,
       totalGrossSale,
       commission,
       labour,
@@ -245,7 +260,8 @@ export function BillMakingTab() {
       netSale,
       rowGross,
     };
-  }, [rows, freight]);
+}, [rows, freight]);
+
 
   const updateRow = (i: number, patch: Partial<Row>) => {
     setRows(prev => {
@@ -254,6 +270,7 @@ export function BillMakingTab() {
       // if forwarded, zero out the rate
       if (patch.isForwarded === true) {
           copy[i].rate = 0;
+          copy[i].taxRate = 0;
       }
       return copy;
     });
@@ -304,12 +321,18 @@ export function BillMakingTab() {
         variety: r.variety,
         rate: Number(r.rate),
         isForwarded: r.isForwarded,
-        total: r.isForwarded ? 0 : Number(r.qty) * Number(r.rate)
+        taxRate: r.taxRate || 0,
+        taxableAmount: r.isForwarded ? 0 : (Number(r.qty) || 0) * (Number(r.rate) || 0),
+        total: r.isForwarded ? 0 : ((Number(r.qty) || 0) * (Number(r.rate) || 0)) * (1 + (r.taxRate || 0) / 100),
       })),
       totals: {
         pattiQty: totals.pattiQty,
         dabbaQty: totals.dabbaQty,
         totalQty: totals.totalQty,
+        subtotal: Number(totals.subtotal.toFixed(2)),
+        cgst: Number(totals.cgst.toFixed(2)),
+        sgst: Number(totals.sgst.toFixed(2)),
+        totalTax: Number(totals.totalTax.toFixed(2)),
         grossSale: Number(totals.totalGrossSale.toFixed(2)),
         commissionAmount: Number(totals.commission.toFixed(2)),
         labour: Number(totals.labour.toFixed(2)),
@@ -415,6 +438,7 @@ export function BillMakingTab() {
             variety: e.variety,
             rate: e.rate,
             isForwarded: e.isForwarded || false,
+            taxRate: e.taxRate || 0,
         })) : [];
 
         setRows(loadedRows.length > 0 ? loadedRows : initialRows);
@@ -569,6 +593,7 @@ export function BillMakingTab() {
                         <TableHead className="text-right">Qty</TableHead>
                         <TableHead>Forward</TableHead>
                         <TableHead className="text-right">Rate</TableHead>
+                        <TableHead className="text-right">GST %</TableHead>
                         <TableHead className="text-right">Gross</TableHead>
                         <TableHead className="w-12"></TableHead>
                     </TableRow>
@@ -621,6 +646,16 @@ export function BillMakingTab() {
                             disabled={formDisabled || r.isForwarded}
                             />
                         </TableCell>
+                         <TableCell>
+                            <Input
+                            type="number"
+                            className="w-20 text-right"
+                            placeholder="%"
+                            value={r.taxRate || ''}
+                            onChange={e => updateRow(i, { taxRate: Number(e.target.value) || 0 })}
+                            disabled={formDisabled || r.isForwarded}
+                            />
+                        </TableCell>
                         <TableCell className="text-right font-medium">
                             {r.isForwarded ? <Badge variant="secondary">Forwarded</Badge> : (totals.rowGross[i] || 0).toFixed(2)}
                         </TableCell>
@@ -634,7 +669,7 @@ export function BillMakingTab() {
                     </TableBody>
                     <TableFooter>
                         <TableRow>
-                            <TableCell colSpan={8}>
+                            <TableCell colSpan={9}>
                                  <Button onClick={addRow} variant="outline" size="sm" className="mt-2" disabled={formDisabled}>
                                     <PlusCircle className="h-4 w-4 mr-2" />
                                     Add Row
@@ -675,8 +710,11 @@ export function BillMakingTab() {
 
                 <div className="space-y-1 bg-muted p-3 rounded-md">
                     <h3 className="font-bold mb-2">Financial Summary</h3>
-                    <div>💰 Gross Sale: <b>{totals.totalGrossSale.toFixed(2)}</b></div>
-                    <div>Commission (12%): <b>{totals.commission.toFixed(2)}</b></div>
+                    <div>Subtotal: <b>{totals.subtotal.toFixed(2)}</b></div>
+                    <div>CGST: <b>{totals.cgst.toFixed(2)}</b></div>
+                    <div>SGST: <b>{totals.sgst.toFixed(2)}</b></div>
+                    <div className="font-bold border-t pt-1">💰 Gross Sale: <b>{totals.totalGrossSale.toFixed(2)}</b></div>
+                    <div>Commission (12% of Subtotal): <b>{totals.commission.toFixed(2)}</b></div>
                     <div className="font-bold">📉 Total Exp: <b>{totals.totalExp.toFixed(2)}</b></div>
                     <div className="text-lg font-bold mt-2 border-t pt-2">🧾 Net Sale: <b>{totals.netSale.toFixed(2)}</b></div>
                 </div>

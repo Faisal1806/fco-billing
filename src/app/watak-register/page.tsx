@@ -64,6 +64,10 @@ export interface WatakEntry {
       pattiQty: number;
       dabbaQty: number;
       totalQty: number;
+      subtotal: number;
+      cgst: number;
+      sgst: number;
+      totalTax: number;
       grossSale: number;
       commissionAmount: number;
       labour: number;
