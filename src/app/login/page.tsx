@@ -9,12 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import Lottie from 'lottie-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function FCo3DHome() {
   const router = useRouter();
   const { toast } = useToast();
-  const [logoClicks, setLogoClicks] = useState(0);
-  const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState('');
   const [logoAnimationData, setLogoAnimationData] = useState(null);
   const [bgAnimationData, setBgAnimationData] = useState(null);
@@ -32,17 +31,6 @@ export default function FCo3DHome() {
 
   }, []);
 
-
-  const handleLogoClick = () => {
-    const newClickCount = logoClicks + 1;
-    setLogoClicks(newClickCount);
-
-    if (newClickCount >= 5) {
-      setShowPassword(true);
-      setLogoClicks(0);
-    }
-  };
-
   const handleAdminLogin = () => {
     const adminPass = 'fco';
     if (password === adminPass) {
@@ -50,7 +38,7 @@ export default function FCo3DHome() {
             localStorage.setItem('userRole', 'admin');
         }
         toast({ 
-            title: "Admin Access Granted", 
+            title: "Access Granted", 
             description: "Welcome back!", 
             isSuccess: true 
         });
@@ -68,7 +56,7 @@ export default function FCo3DHome() {
     if (typeof window !== 'undefined' && localStorage.getItem('userRole') === 'admin') {
       const timer = setTimeout(() => {
         router.push('/dashboard');
-      }, 2000); // 2-second delay for splash screen
+      }, 1500); // Shorter delay for returning users
       return () => clearTimeout(timer);
     }
   }, [router]);
@@ -90,7 +78,7 @@ export default function FCo3DHome() {
         transition={{ duration: 1, type: "spring", stiffness: 100, damping: 10 }}
         className="z-10 flex flex-col items-center"
       >
-        <div onClick={handleLogoClick} className="cursor-pointer" title="Admin Access">
+        <div className="cursor-pointer">
            {logoAnimationData ? (
              <Lottie animationData={logoAnimationData} loop={true} style={{ width: 200, height: 200 }} />
            ) : (
@@ -104,27 +92,32 @@ export default function FCo3DHome() {
       </motion.div>
 
        <AnimatePresence>
-        {showPassword && (
-             <motion.div
+            <motion.div
                 initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
+                animate={{ opacity: 1, y: 0, transition: { delay: 0.5, duration: 0.5 } }}
                 exit={{ opacity: 0, y: 50 }}
-                className="absolute bottom-24 z-20 bg-card/80 backdrop-blur-sm border border-white/10 p-6 rounded-lg shadow-2xl w-full max-w-sm"
+                className="absolute bottom-24 z-20 w-full max-w-sm"
              >
-                <h3 className="font-semibold text-lg flex items-center gap-2"><ShieldCheck className="text-green-500" /> Admin Login</h3>
-                <div className="flex items-center gap-2 mt-4">
-                    <KeyRound className="h-5 w-5 text-muted-foreground" />
-                    <Input 
-                        type="password"
-                        placeholder="Enter admin password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleAdminLogin()}
-                    />
-                    <Button onClick={handleAdminLogin}>Login</Button>
-                </div>
+                <Card className="bg-card/80 backdrop-blur-sm border-white/10 shadow-2xl">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><ShieldCheck className="text-green-500"/> App Locked</CardTitle>
+                        <CardDescription>Enter the admin password to unlock.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex items-center gap-2 mt-4">
+                            <KeyRound className="h-5 w-5 text-muted-foreground" />
+                            <Input 
+                                type="password"
+                                placeholder="Enter admin password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleAdminLogin()}
+                            />
+                            <Button onClick={handleAdminLogin}>Unlock</Button>
+                        </div>
+                    </CardContent>
+                </Card>
             </motion.div>
-        )}
         </AnimatePresence>
 
       <motion.p
