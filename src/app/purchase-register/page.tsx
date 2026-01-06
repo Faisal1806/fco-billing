@@ -39,6 +39,7 @@ import { deleteDocument } from '@/lib/actions';
 import { Logo } from '@/components/logo';
 import BusinessCardQR from '@/components/BusinessCardQR';
 import html2canvas from 'html2canvas';
+import { motion } from 'framer-motion';
 
 export interface PurchaseEntry {
     billNo: string;
@@ -471,14 +472,22 @@ export default function PurchaseRegisterPage() {
             </div>
         ) : viewMode === 'grid' ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {filteredPurchases.map((purchase) => (
-                     <div key={purchase.billNo} onClick={() => navigateToBill(purchase.billNo)} className="cursor-pointer">
+                {filteredPurchases.map((purchase, index) => (
+                     <motion.div 
+                        key={purchase.billNo} 
+                        onClick={() => navigateToBill(purchase.billNo)} 
+                        className="cursor-pointer"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                        whileHover={{ y: -5, scale: 1.05, boxShadow: "0 10px 20px rgba(0,0,0,0.1)" }}
+                    >
                         <DocumentCard type="bill" title={`Purchase #${purchase.billNo}`}>
                             <p className="text-lg font-semibold">{purchase.growerName}</p>
                             <p className="text-sm mt-2">Date: {new Date(purchase.date).toLocaleDateString()}</p>
                             <p className="text-2xl font-bold mt-4">₹{purchase.totals.grandTotal.toFixed(2)}</p>
                         </DocumentCard>
-                    </div>
+                    </motion.div>
                 ))}
             </div>
         ) : (
@@ -532,3 +541,4 @@ export default function PurchaseRegisterPage() {
 
 
     
+
