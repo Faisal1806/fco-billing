@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -186,7 +185,7 @@ export default function SalesRegisterPage() {
         }
         setWataks(items.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         setPartyNameMap(growerMap);
-        const uniqueGrowers = ['All Growers', ...Array.from(growerMap.values())).sort();
+        const uniqueGrowers = ['All Growers', ...Array.from(growerMap.values())].sort();
         setGrowers(uniqueGrowers);
     }
     setIsLoading(false);
