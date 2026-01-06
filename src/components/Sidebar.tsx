@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -32,6 +33,7 @@ import { Button } from "./ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { ThemeSwitcher } from "./theme-switcher";
+import { motion } from 'framer-motion';
 
 export const sidebarSections = [
     {
@@ -99,7 +101,11 @@ export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
     const { name, href, icon: Icon } = item;
     const isActive = pathname === href;
     const linkContent = (
-       <div className="neon-glow-container">
+       <motion.div
+        whileHover={{ x: 5, scale: 1.05, originX: 0 }}
+        transition={{ type: 'spring', stiffness: 300 }}
+        className="neon-glow-container"
+       >
          <Link
           href={href}
           className={cn(
@@ -107,10 +113,10 @@ export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
             isActive && "bg-white/20 text-primary-foreground"
           )}
         >
-          <Icon className={cn("h-4 w-4", isActive ? "text-green-300 neon-glow-icon" : "")} />
+          <Icon className={cn("h-4 w-4 transition-all", isActive ? "text-green-300 neon-glow-icon" : "")} />
           {name}
         </Link>
-      </div>
+      </motion.div>
     );
 
     if (isMobile) {

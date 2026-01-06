@@ -32,9 +32,9 @@
   }
 
   .dark {
-    --background: 240 10% 3.9%;
+    --background: 220 20% 5%;
     --foreground: 0 0% 98%;
-    --card: 240 5% 10%;
+    --card: 220 20% 10%;
     --card-foreground: 0 0% 98%;
     --primary: 0 0% 98%;
     --primary-foreground: 240 5.9% 10%;
@@ -42,13 +42,13 @@
     --secondary-foreground: 0 0% 98%;
     --muted: 240 3.7% 15.9%;
     --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
+    --accent: 140 80% 60%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --border: 220 20% 15%;
+    --input: 220 20% 15%;
+    --ring: 140 80% 60%;
     
     --star-background: hsl(var(--muted));
   }
@@ -72,18 +72,11 @@
 
 @layer components {
     .neon-glow-container:hover .neon-glow-icon {
-        color: #fff;
+        color: hsl(var(--accent));
         text-shadow:
-            0 0 7px #34d399,
-            0 0 10px #34d399,
-            0 0 21px #34d399,
-            0 0 42px #0fa,
-            0 0 82px #0fa,
-            0 0 92px #0fa;
-    }
-    .neon-glow-icon {
-        color: #34d399;
-        transition: all 0.3s ease-in-out;
+            0 0 5px hsl(var(--accent)),
+            0 0 10px hsl(var(--accent)),
+            0 0 15px hsl(var(--accent));
     }
 }
 
