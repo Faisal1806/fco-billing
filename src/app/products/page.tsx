@@ -8,15 +8,8 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,13 +24,15 @@ import {
 } from '@/components/ui/dialog';
 import { PlusCircle, Edit, Trash2, Package, Apple, Box, Search, FileDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveDocument, deleteDocument, sendPushNotification, getDocuments } from '@/lib/actions';
+import { motion } from 'framer-motion';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 
 
 interface Product {
@@ -65,7 +60,7 @@ const emptyFormState: Omit<Product, 'id'> = {
     batchNo: '',
     expiryDate: '',
     supplier: '',
-    reorderLevel: 0,
+    reorderLevel: 10, // Default reorder level
     notes: '',
 }
 
@@ -124,30 +119,12 @@ export default function ProductsPage() {
         })
         .filter(p => {
             if (categoryFilter === 'all') return true;
-            if (categoryFilter === 'fruits') {
-                 return ['fruit', 'apple', 'pear', 'nakh', 'gosha', 'red delicious', 'american', 'gala mast', 'shimla'].includes(p.category.toLowerCase());
-            }
-            if (categoryFilter === 'accessories') {
-                 return !['fruit', 'apple', 'pear', 'nakh', 'gosha', 'red delicious', 'american', 'gala mast', 'shimla'].includes(p.category.toLowerCase());
-            }
+            const isFruit = ['fruit', 'apple', 'pear', 'nakh', 'gosha', 'red delicious', 'american', 'gala mast', 'shimla'].includes(p.category.toLowerCase());
+            if (categoryFilter === 'fruits') return isFruit;
+            if (categoryFilter === 'accessories') return !isFruit;
             return true;
         });
   }, [products, searchTerm, categoryFilter]);
-
-
-  const { fruitProducts, accessoryProducts } = useMemo(() => {
-    const fruits: Product[] = [];
-    const accessories: Product[] = [];
-    filteredProducts.forEach(p => {
-        const lowerCat = p.category.toLowerCase();
-        if (['fruit', 'apple', 'pear', 'nakh', 'gosha', 'red delicious', 'american', 'gala mast', 'shimla'].includes(lowerCat)) {
-            fruits.push(p);
-        } else {
-            accessories.push(p);
-        }
-    });
-    return { fruitProducts: fruits, accessoryProducts: accessories };
-  }, [filteredProducts]);
   
   const resetForm = () => {
     setFormState(emptyFormState);
@@ -171,9 +148,7 @@ export default function ProductsPage() {
 
     const id = 'id' in formState ? formState.id : `product-${Date.now()}`;
     const newProduct: Product = { id, ...formState } as Product;
-    const oldProduct = 'id' in formState ? products.find(p => p.id === formState.id) : null;
-
-
+    
     localStorage.setItem(id, JSON.stringify(newProduct));
     
     try {
@@ -201,12 +176,14 @@ export default function ProductsPage() {
     setIsDialogOpen(false);
   };
 
-  const handleEditClick = (product: Product) => {
+  const handleEditClick = (e: React.MouseEvent, product: Product) => {
+    e.stopPropagation();
     setFormState(product);
     setIsDialogOpen(true);
   }
   
-  const handleDeleteProduct = async (id: string) => {
+  const handleDeleteProduct = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
     if(userRole !== 'admin') {
       toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot delete products.' });
       return;
@@ -231,14 +208,12 @@ export default function ProductsPage() {
     const doc = new jsPDF();
     doc.text("Product Inventory List", 14, 15);
     autoTable(doc, {
-        head: [['Name', 'Category', 'Stock', 'Unit', 'Variety/Grade', 'Rate Range', 'Supplier', 'Expiry']],
+        head: [['Name', 'Category', 'Stock', 'Unit', 'Supplier', 'Expiry']],
         body: filteredProducts.map(p => [
             p.name,
             p.category,
             p.stock,
             p.unitType || '',
-            p.varietyGrade || '',
-            p.rateRange || '',
             p.supplier || '',
             p.expiryDate || '',
         ]),
@@ -248,71 +223,67 @@ export default function ProductsPage() {
 
   const exportToExcel = () => {
       const ws = XLSX.utils.json_to_sheet(filteredProducts.map(p => ({
-          'Product Name': p.name,
-          'Category': p.category,
-          'Stock Quantity': p.stock,
-          'Unit Type': p.unitType,
-          'Variety/Grade': p.varietyGrade,
-          'Rate Range': p.rateRange,
-          'Batch No': p.batchNo,
-          'Expiry Date': p.expiryDate,
-          'Supplier': p.supplier,
-          'Reorder Level': p.reorderLevel,
-          'Notes': p.notes,
+          'Product Name': p.name, 'Category': p.category, 'Stock Quantity': p.stock, 'Unit Type': p.unitType,
+          'Variety/Grade': p.varietyGrade, 'Rate Range': p.rateRange, 'Batch No': p.batchNo,
+          'Expiry Date': p.expiryDate, 'Supplier': p.supplier, 'Reorder Level': p.reorderLevel, 'Notes': p.notes,
       })));
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Inventory");
       XLSX.writeFile(wb, "product-inventory.xlsx");
   };
 
-  const ProductTable = ({ products }: { products: Product[] }) => (
-    <div className="mb-4">
-        {products.length > 0 ? (
-            <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Product Name</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Variety/Grade</TableHead>
-                <TableHead>Unit</TableHead>
-                <TableHead>Stock</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {products.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>{product.category}</TableCell>
-                  <TableCell>{product.varietyGrade}</TableCell>
-                  <TableCell>{product.unitType}</TableCell>
-                  <TableCell>{product.stock}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => handleEditClick(product)}>
-                      <Edit className="h-4 w-4" />
+  const ProductCard = ({ product }: { product: Product }) => {
+      const isLowStock = product.stock < (product.reorderLevel || 10);
+      const stockPercentage = Math.max(0, (product.stock / ((product.reorderLevel || 10) * 3)) * 100);
+
+      const Icon = ['fruit', 'apple', 'pear'].includes(product.category.toLowerCase()) ? Apple : Box;
+
+      return (
+        <motion.div
+            whileHover={{ y: -8, scale: 1.05 }}
+            transition={{ type: 'spring', stiffness: 300 }}
+            className="bg-card/70 backdrop-blur-sm border border-white/10 rounded-xl overflow-hidden shadow-lg h-full flex flex-col"
+        >
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-lg font-bold truncate">{product.name}</CardTitle>
+                <Badge variant={isLowStock ? "destructive" : "outline"} className="shrink-0">{product.category}</Badge>
+            </CardHeader>
+            <CardContent className="flex-grow space-y-3 pt-2">
+                <p className="text-sm text-muted-foreground">{product.varietyGrade || 'Standard Grade'}</p>
+                <div className="space-y-2">
+                    <div className="flex justify-between items-baseline">
+                        <span className="text-sm text-muted-foreground">Stock Level</span>
+                        <span className="text-2xl font-bold">{product.stock} <span className="text-sm font-normal">{product.unitType}</span></span>
+                    </div>
+                     <div className="relative">
+                        <Progress value={stockPercentage} className="h-3" />
+                         {isLowStock && <div className="absolute inset-0 bg-red-500/50 rounded-full animate-pulse"></div>}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Reorder at {product.reorderLevel || 10}</p>
+                </div>
+            </CardContent>
+            <CardFooter className="bg-black/10 p-2 flex justify-end">
+                <Button variant="ghost" size="icon" onClick={(e) => handleEditClick(e, product)}>
+                    <Edit className="h-4 w-4" />
+                </Button>
+                {userRole === 'admin' && (
+                    <Button variant="ghost" size="icon" onClick={(e) => handleDeleteProduct(e, product.id)}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
-                    {userRole === 'admin' && (
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(product.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        ) : (
-            <p className="text-sm text-muted-foreground text-center py-4">No products in this category match your search.</p>
-        )}
-    </div>
-  );
+                )}
+            </CardFooter>
+        </motion.div>
+      )
+  };
+
 
   return (
-    <Card>
+    <>
+    <Card className="bg-transparent border-none shadow-none">
       <CardHeader>
         <div className="flex justify-between items-center flex-wrap gap-4">
           <div>
-            <CardTitle>Products & Inventory</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-3xl"><Package className="h-8 w-8"/> Products & Inventory</CardTitle>
             <CardDescription>
               Manage your product inventory, track stock levels, and receive low-stock alerts here.
             </CardDescription>
@@ -342,12 +313,10 @@ export default function ProductsPage() {
             <Button onClick={exportToExcel} variant="outline" size="sm" className="gap-1"><FileDown className="h-4 w-4"/>Excel</Button>
             <Dialog open={isDialogOpen} onOpenChange={(isOpen) => {
                 setIsDialogOpen(isOpen);
-                if (!isOpen) {
-                  resetForm();
-                }
+                if (!isOpen) resetForm();
             }}>
               <DialogTrigger asChild>
-                <Button size="sm" className="gap-1">
+                <Button size="sm" className="gap-1 bg-primary">
                   <PlusCircle className="h-3.5 w-3.5" />
                   Add Product
                 </Button>
@@ -364,39 +333,35 @@ export default function ProductsPage() {
                       </div>
                        <div className="space-y-2">
                           <Label htmlFor="category">Category</Label>
-                          <Input id="category" name="category" value={formState.category} onChange={handleInputChange} placeholder="e.g., Fruit, Pesticide, Fertilizer" />
+                          <Input id="category" name="category" value={formState.category} onChange={handleInputChange} placeholder="e.g., Fruit, Pesticide" />
                       </div>
                        <div className="space-y-2">
                           <Label htmlFor="unitType">Unit Type</Label>
-                          <Input id="unitType" name="unitType" value={formState.unitType || ''} onChange={handleInputChange} placeholder="e.g., kg, box, patti, liter, piece" />
+                          <Input id="unitType" name="unitType" value={formState.unitType || ''} onChange={handleInputChange} placeholder="e.g., kg, box" />
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="varietyGrade">Variety/Grade</Label>
-                          <Input id="varietyGrade" name="varietyGrade" value={formState.varietyGrade || ''} onChange={handleInputChange} placeholder="e.g., Extraordinary, Standard" />
-                      </div>
-                      <div className="space-y-2">
-                          <Label htmlFor="rateRange">Rate Range</Label>
-                          <Input id="rateRange" name="rateRange" value={formState.rateRange || ''} onChange={handleInputChange} placeholder="e.g., 500-600" />
+                          <Input id="varietyGrade" name="varietyGrade" value={formState.varietyGrade || ''} onChange={handleInputChange} placeholder="e.g., A Grade" />
                       </div>
                        <div className="space-y-2">
                           <Label htmlFor="stock">Stock Quantity</Label>
                           <Input id="stock" name="stock" type="number" value={formState.stock || ''} onChange={handleInputChange} />
                       </div>
+                       <div className="space-y-2">
+                          <Label htmlFor="reorderLevel">Reorder Level</Label>
+                          <Input id="reorderLevel" name="reorderLevel" type="number" value={formState.reorderLevel || ''} onChange={handleInputChange} placeholder="Alert when stock drops to this" />
+                      </div>
                       <div className="space-y-2">
-                          <Label htmlFor="batchNo">Batch No. (for chemicals)</Label>
+                          <Label htmlFor="batchNo">Batch No.</Label>
                           <Input id="batchNo" name="batchNo" value={formState.batchNo || ''} onChange={handleInputChange} />
                       </div>
                       <div className="space-y-2">
-                          <Label htmlFor="expiryDate">Expiry Date (for chemicals)</Label>
+                          <Label htmlFor="expiryDate">Expiry Date</Label>
                           <Input id="expiryDate" name="expiryDate" type="date" value={formState.expiryDate || ''} onChange={handleInputChange} />
                       </div>
-                       <div className="space-y-2">
+                       <div className="space-y-2 md:col-span-2">
                           <Label htmlFor="supplier">Supplier / Company</Label>
                           <Input id="supplier" name="supplier" value={formState.supplier || ''} onChange={handleInputChange} />
-                      </div>
-                       <div className="space-y-2">
-                          <Label htmlFor="reorderLevel">Reorder Level</Label>
-                          <Input id="reorderLevel" name="reorderLevel" type="number" value={formState.reorderLevel || ''} onChange={handleInputChange} placeholder="Alert when stock drops to this level" />
                       </div>
                       <div className="space-y-2 md:col-span-2">
                           <Label htmlFor="notes">Notes</Label>
@@ -414,71 +379,19 @@ export default function ProductsPage() {
         </div>
       </CardHeader>
       <CardContent>
-         {isClient && products.length > 0 ? (
-            <Accordion type="multiple" defaultValue={['fruits', 'accessories']} className="w-full">
-                <AccordionItem value="fruits" className={categoryFilter !== 'accessories' ? '' : 'hidden'}>
-                    <AccordionTrigger>
-                        <h2 className="text-xl font-semibold flex items-center gap-2"><Apple className="h-5 w-5 text-red-500" /> Fruits ({fruitProducts.length})</h2>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                       <ProductTable products={fruitProducts} />
-                    </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="accessories" className={categoryFilter !== 'fruits' ? '' : 'hidden'}>
-                    <AccordionTrigger>
-                        <h2 className="text-xl font-semibold flex items-center gap-2"><Box className="h-5 w-5 text-blue-500" /> Accessories ({accessoryProducts.length})</h2>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                        <ProductTable products={accessoryProducts} />
-                    </AccordionContent>
-                </AccordionItem>
-            </Accordion>
+         {isClient && filteredProducts.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredProducts.map(product => <ProductCard key={product.id} product={product} />)}
+            </div>
          ) : (
-          <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
+          <div className="text-center py-16 text-muted-foreground border-2 border-dashed rounded-lg">
             <Package className="mx-auto h-12 w-12" />
             <h3 className="mt-4 text-lg font-semibold">No products found.</h3>
-            <p className="mt-1 text-sm">Get started by adding your first product.</p>
-             <Dialog open={isDialogOpen} onOpenChange={(isOpen) => {
-                setIsDialogOpen(isOpen);
-                if (!isOpen) {
-                    resetForm();
-                }
-             }}>
-                <DialogTrigger asChild>
-                <Button size="sm" className="mt-4 gap-1">
-                    <PlusCircle className="h-3.5 w-3.5" />
-                    Add Your First Product
-                </Button>
-                </DialogTrigger>
-                <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>{'id' in formState ? 'Edit Product' : 'Add New Product'}</DialogTitle>
-                </DialogHeader>
-                 <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                          <Label htmlFor="name">Name</Label>
-                          <Input id="name" name="name" value={formState.name} onChange={handleInputChange} />
-                      </div>
-                       <div className="space-y-2">
-                          <Label htmlFor="category">Category</Label>
-                          <Input id="category" name="category" value={formState.category} onChange={handleInputChange} placeholder="e.g., Fruit, Pesticide, Fertilizer" />
-                      </div>
-                       <div className="space-y-2">
-                          <Label htmlFor="stock">Stock Quantity</Label>
-                          <Input id="stock" name="stock" type="number" value={formState.stock || ''} onChange={handleInputChange} />
-                      </div>
-                    </div>
-                </div>
-                <DialogFooter>
-                    <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                    <Button onClick={handleSaveProduct}>Save Product</Button>
-                </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <p className="mt-1 text-sm">Get started by adding your first product to the inventory.</p>
           </div>
         )}
       </CardContent>
     </Card>
+    </>
   );
 }
