@@ -55,6 +55,7 @@ export default function SettingsPage() {
     const [invoiceStyle, setInvoiceStyle] = React.useState('classic');
     const [fcmTokens, setFcmTokens] = React.useState<string[]>([]);
      const [isSending, setIsSending] = React.useState(false);
+     const [isUploading, setIsUploading] = React.useState(false);
 
     React.useEffect(() => {
         const savedStyle = localStorage.getItem('invoiceStyle');
@@ -307,6 +308,70 @@ export default function SettingsPage() {
         }
     }
     
+    const handleUploadToCloud = async () => {
+        setIsUploading(true);
+        toast({ title: "Starting Cloud Sync", description: "Uploading all local data to Firebase..." });
+
+        const collectionMap: { [key: string]: string } = {
+            'invoice-': 'bills', // The public invoices are in 'bills'
+            'purchase-': 'purchases',
+            'receipt-': 'receipts',
+            'challan-': 'challans',
+            'pesticide-invoice-': 'pesticide-invoices',
+            'party-': 'parties',
+            'product-': 'products',
+            'advance-': 'advances',
+            'cs-': 'cold-storage',
+            'bikri-': 'bikris',
+            'accessory-ledger-': 'accessory-ledger',
+            'fcm-tokens-': 'fcm-tokens',
+        };
+
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (!key) continue;
+
+            for (const prefix in collectionMap) {
+                if (key.startsWith(prefix)) {
+                    const collectionName = collectionMap[prefix];
+                    const docId = key.substring(prefix.length);
+                    
+                    try {
+                        const data = JSON.parse(localStorage.getItem(key)!);
+                        // Use the new saveDocument function
+                        const result = await saveDocument(collectionName, data.id || docId, data);
+                        if(result.success) {
+                            successCount++;
+                        } else {
+                            errorCount++;
+                        }
+                    } catch (e) {
+                        errorCount++;
+                        console.error(`Failed to parse or upload item: ${key}`, e);
+                    }
+                    break; 
+                }
+            }
+        }
+        
+        setIsUploading(false);
+        if (errorCount > 0) {
+            toast({
+                variant: "destructive",
+                title: "Sync Partially Failed",
+                description: `${successCount} records synced, but ${errorCount} records failed. Check console for details.`,
+            });
+        } else {
+            toast({
+                title: "Cloud Sync Complete",
+                description: `Successfully synced ${successCount} records to the cloud.`,
+            });
+        }
+    };
+    
     return (
         <div className="space-y-6">
              <Card>
@@ -401,8 +466,12 @@ export default function SettingsPage() {
                         </TabsList>
                         <TabsContent value="data" className="pt-6">
                              <h3 className="font-semibold text-lg mb-2">Data Portability & Backup</h3>
-                            <p className="text-sm text-muted-foreground mb-4">Use the JSON option to transfer data between devices. Use the Excel option for archival records.</p>
+                            <p className="text-sm text-muted-foreground mb-4">Use the JSON option to transfer data between devices. Use the Excel option for archival records. The "Upload to Cloud" button manually syncs all local data to Firebase.</p>
                             <div className="flex flex-wrap gap-4">
+                                 <Button onClick={handleUploadToCloud} className="gap-2 bg-green-600 hover:bg-green-700" disabled={isUploading}>
+                                    <UploadCloud className="h-4 w-4" />
+                                    {isUploading ? 'Syncing...' : 'Upload Local Data to Cloud'}
+                                </Button>
                                 <Button onClick={handleBackupDataJson} className="gap-2">
                                     <DownloadCloud className="h-4 w-4" />
                                     Download JSON Backup
@@ -466,7 +535,3 @@ export default function SettingsPage() {
         </div>
     );
 }
-
-    
-
-    
