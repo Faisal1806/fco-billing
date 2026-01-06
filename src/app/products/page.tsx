@@ -184,10 +184,10 @@ export default function ProductsPage() {
         });
 
         // Check for low stock alert
-        if (oldProduct && newProduct.stock < (oldProduct.reorderLevel || 0) && fcmTokens.length > 0) {
+        if (newProduct.stock < (newProduct.reorderLevel || 0) && fcmTokens.length > 0) {
             await sendPushNotification({
                 title: 'Low Stock Alert',
-                body: `Stock for ${newProduct.name} is now at ${newProduct.stock}, below the reorder level of ${oldProduct.reorderLevel}.`,
+                body: `Stock for ${newProduct.name} is now at ${newProduct.stock}, below the reorder level of ${newProduct.reorderLevel}.`,
                 tokens: fcmTokens,
             });
         }
@@ -482,5 +482,3 @@ export default function ProductsPage() {
     </Card>
   );
 }
-
-    

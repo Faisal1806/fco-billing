@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Product": {
@@ -33,6 +34,10 @@
         "minStock": {
           "type": "number",
           "description": "Minimum stock level for the product."
+        },
+        "reorderLevel": {
+          "type": "number",
+          "description": "The stock level at which a reorder should be triggered."
         }
       },
       "required": [
