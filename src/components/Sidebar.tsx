@@ -109,7 +109,7 @@ export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
     const { name, href, icon: Icon } = item;
     const isActive = pathname === href;
 
-    const motionProps = name === 'Notifications'
+    const motionProps = (name === 'Notifications' || name === 'Help & Support')
       ? { whileHover: { scale: 1.1, rotate: [0, 15, -10, 10, -5, 5, 0], transition: { duration: 0.5 } } }
       : { whileHover: { x: 5, scale: 1.05, originX: 0 } };
 
