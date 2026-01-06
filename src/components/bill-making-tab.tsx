@@ -24,6 +24,8 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { cn } from '@/lib/utils';
 import { saveDocument, deleteDocument, sendPushNotification, getDocuments } from '@/lib/actions';
 import { Checkbox } from './ui/checkbox';
+import { Progress } from './ui/progress';
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 
 type Row = {
@@ -107,7 +109,7 @@ export function BillMakingTab() {
             setPartyCredit(null);
             return;
         }
-        const partyKey = `party-${partyName.trim().toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+        const partyKey = `party-${partyName.trim()}`;
         const partyData = localStorage.getItem(partyKey);
         
         let limit = 0;
@@ -305,6 +307,16 @@ export function BillMakingTab() {
     };
 }, [rows, freight]);
 
+  const creditLimitExceeded = useMemo(() => {
+    if (!partyCredit || partyCredit.limit === 0) return false;
+    // For a new bill, check if current usage + new bill amount exceeds limit.
+    // For an existing bill being edited, we don't block, as it's already recorded.
+    if (!isEditing) {
+        return partyCredit.used + totals.netSale > partyCredit.limit;
+    }
+    // If editing, only show alert if they are already over the limit.
+    return partyCredit.used > partyCredit.limit;
+  }, [partyCredit, totals.netSale, isEditing]);
 
   const updateRow = (i: number, patch: Partial<Row>) => {
     setRows(prev => {
@@ -344,6 +356,15 @@ export function BillMakingTab() {
             variant: 'destructive',
             title: 'Missing Details',
             description: 'Please fill in Invoice No, Date, and Customer Name before saving.',
+        });
+        return;
+    }
+
+    if (creditLimitExceeded && !isEditing) {
+        toast({
+            variant: 'destructive',
+            title: 'Credit Limit Exceeded',
+            description: `This sale would exceed the credit limit for ${ms}. Cannot save.`,
         });
         return;
     }
@@ -629,6 +650,14 @@ export function BillMakingTab() {
                             <Progress value={(partyCredit.used / partyCredit.limit) * 100} className="h-2"/>
                             <span className="text-xs font-mono whitespace-nowrap">₹{partyCredit.used.toLocaleString()}/₹{partyCredit.limit.toLocaleString()}</span>
                         </div>
+                         {creditLimitExceeded && !isEditing &&
+                             <Alert variant="destructive" className="mt-2 p-2">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertDescription className="text-xs">
+                                    This sale will exceed the credit limit.
+                                </AlertDescription>
+                            </Alert>
+                        }
                     </div>
                  )}
             </div>
@@ -776,7 +805,7 @@ export function BillMakingTab() {
         </CardContent>
         <CardFooter>
             <div className="flex w-full justify-center flex-wrap gap-3">
-                <Button onClick={saveBill} className="flex-1 min-w-[150px]" disabled={isSubmitting || formDisabled}>
+                <Button onClick={saveBill} className="flex-1 min-w-[150px]" disabled={isSubmitting || formDisabled || (creditLimitExceeded && !isEditing)}>
                     {isSubmitting && loaderAnimation ? (
                       <Lottie animationData={loaderAnimation} loop={true} style={{ width: 24, height: 24 }} className="mr-2"/>
                     ) : null}

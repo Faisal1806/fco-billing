@@ -76,6 +76,7 @@ const defaultGrowers: { name: string, address: string }[] = [
     { name: 'GH. Mohd. Lone B/P', address: 'R/o Nadihal Bla.' },
     { name: 'GH. Mohd. Bhat', address: 'R/o Nadihal Bla.' },
     { name: 'Nazir Ahmad Lone B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Mushtaq Ahmad Lone B/P', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Maqbool Baigh', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Shabaan Ahangar', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Akbar Lone B/P', address: 'R/o Nadihal Bla.' },
@@ -85,20 +86,19 @@ const defaultGrowers: { name: string, address: string }[] = [
     { name: 'Mohd. Subhan Parry', address: 'R/o Nadihal Bla.' },
     { name: 'GH. Mohiuddin Lone (Poltry)', address: 'R/o Nadihal Bla.' },
     { name: 'Majoor Ahmad Lone ®', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Akbar Lone (Lama)', address: 'R/o Nadihal Bla.' },
     { name: 'Jaana ® B/P', address: 'R/o Nadihal Bla.' },
     { name: 'Rayees Rajab ®', address: 'R/o Nadihal Bla.' },
     { name: 'Hilal Ahmad Wani', address: 'R/o Nadihal Bla.' },
     { name: 'Javid Ahmad Sheikh', address: 'R/o Shanoo, Mawer Handwara' },
+    { name: 'Manzoor Ah. Lone B/P', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Ashraf wani', address: 'R/o Nadihal Bla.' },
     { name: 'Bashir Ah. Lone B/P', address: 'R/o Nadihal Bla.' },
-    { name: 'GH. Nabi Lone', address: 'R/o Nadihal Bla.' },
-    { name: 'GH. Mohiuddin Lone (H)', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd Yousuf Lone (Waza)', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Akbar Lone (Lama)', address: 'R/o Nadihal Bla.' },
-    { name: 'Mushtaq Ahmed Lone B/P', address: 'R/o Nadihal Bla.'},
-    { name: 'Manzoor Ahmad Lone B/P', address: 'R/o Nadihal Bla.'},
     { name: 'Mohd. Yousuf Lone B/P', address: 'R/o Nadihal Bla.' },
     { name: 'Farooq Ahmad Lone (Lama)', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Mohiuddin Lone (H)', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd Yousuf Lone (Waza)', address: 'R/o Nadihal Bla.' },
+    { name: 'GH. Nabi Lone', address: 'R/o Nadihal Bla.' },
     { name: 'Farooq Ahmad Bhat', address: 'R/o Nadihal Bla.' },
     { name: 'GH. Nabi Wani', address: 'R/o Nadihal Bla.' }
 ];
@@ -252,7 +252,7 @@ export default function PartiesPage() {
             stats.loyaltyPoints = Math.floor(stats.netSales * 0.01);
         }
 
-        // Credit Used is the current balance if it's receivable
+        // Credit Used is the current balance if it's positive (money owed to F.Co)
         if (stats.balance > 0) {
             stats.creditUsed = stats.balance;
         }
@@ -676,7 +676,7 @@ export default function PartiesPage() {
                    <TableCell>
                         {creditLimit > 0 ? (
                              <div className="flex flex-col">
-                                <Progress value={creditUsagePercent} className="h-2" />
+                                <Progress value={creditUsagePercent} />
                                 <span className="text-xs text-muted-foreground mt-1">
                                     ₹{creditUsed.toLocaleString('en-IN')} / ₹{creditLimit.toLocaleString('en-IN')}
                                 </span>
