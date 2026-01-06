@@ -77,6 +77,8 @@ export function BillMakingTab() {
       const receipts = [];
       const usedNos = new Map<string, string>();
 
+      let maxSNo = 0;
+
       for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
           if (key && key.startsWith('invoice-')) {
@@ -85,6 +87,10 @@ export function BillMakingTab() {
                   bills.push(bill);
                   if (bill.linkedReceiptNo) {
                       usedNos.set(bill.linkedReceiptNo, bill.sNo);
+                  }
+                  const currentSNo = parseInt(bill.sNo, 10);
+                  if (!isNaN(currentSNo) && currentSNo > maxSNo) {
+                      maxSNo = currentSNo;
                   }
               } catch(e) {
                   console.error("Failed to parse bill from local storage", e);
@@ -102,6 +108,10 @@ export function BillMakingTab() {
       setSavedWataks(bills.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
       setAvailableReceipts(receipts.sort((a,b) => (a.no > b.no) ? 1 : -1));
       setUsedReceiptsMap(usedNos);
+      
+      if (!isEditing) {
+          setSNo((maxSNo + 1).toString());
+      }
     };
 
     const fetchPartyCreditInfo = (partyName: string) => {
@@ -347,6 +357,7 @@ export function BillMakingTab() {
         setIsEditing(false);
         setSelectedReceiptNo('');
         setPartyCredit(null);
+        fetchBillsAndReceipts();
     };
 
 

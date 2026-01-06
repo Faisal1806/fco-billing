@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -90,28 +91,33 @@ export function ChallanMakingTab() {
     if (typeof window !== 'undefined') {
       setUserRole(localStorage.getItem('userRole'));
     }
+    fetchChallans();
   }, []);
 
   const fetchChallans = () => {
     const challans = [];
+    let maxNo = 0;
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && key.startsWith('challan-')) {
             try {
                 const challan = JSON.parse(localStorage.getItem(key)!);
                 challans.push(challan);
+                const currentNo = parseInt(challan.challanNo, 10);
+                if (!isNaN(currentNo) && currentNo > maxNo) {
+                    maxNo = currentNo;
+                }
             } catch(e) {
                 console.error("Failed to parse challan from local storage", e);
             }
         }
     }
     setSavedChallans(challans.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    if (!isEditing) {
+        setDetails(prev => ({...prev, challanNo: (maxNo + 1).toString()}));
+    }
   };
   
-  React.useEffect(() => {
-    fetchChallans();
-  }, []);
-
   const yearlyCount = React.useMemo(() => {
     if(!savedChallans) return 0;
     const currentYear = new Date().getFullYear();
@@ -161,6 +167,7 @@ export function ChallanMakingTab() {
     setDetails(initialDetails);
     setEntries(initialEntries);
     setIsEditing(false);
+    fetchChallans();
   };
 
   const handleSaveChallan = async () => {

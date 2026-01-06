@@ -88,24 +88,29 @@ export function PesticideBillTab() {
     if (typeof window !== 'undefined') {
       setUserRole(localStorage.getItem('userRole'));
     }
+    fetchBills();
   }, []);
 
   const fetchBills = () => {
+    let maxNo = 0;
     const bills = [];
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && key.startsWith('pesticide-invoice-')) {
             const bill = JSON.parse(localStorage.getItem(key)!);
             bills.push(bill);
+            const currentNo = parseInt(bill.no, 10);
+            if (!isNaN(currentNo) && currentNo > maxNo) {
+                maxNo = currentNo;
+            }
         }
     }
     setSavedBills(bills.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    if (!isEditing) {
+        setBillDetails(prev => ({...prev, no: (maxNo + 1).toString()}));
+    }
   };
   
-  React.useEffect(() => {
-    fetchBills();
-  }, []);
-
   const filteredBills = React.useMemo(() => {
     if (!searchTerm) return savedBills;
     const lowerCaseSearch = searchTerm.toLowerCase();
@@ -149,6 +154,7 @@ export function PesticideBillTab() {
     setBillDetails(initialBillDetails);
     setEntries(initialEntries);
     setIsEditing(false);
+    fetchBills();
   };
 
   const handleSaveBill = () => {

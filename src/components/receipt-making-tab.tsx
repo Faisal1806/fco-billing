@@ -139,15 +139,23 @@ export function ReceiptMakingTab() {
   }, [toast]);
 
   const fetchReceipts = () => {
+    let maxNo = 0;
     const receipts = [];
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && key.startsWith('receipt-')) {
             const receipt = JSON.parse(localStorage.getItem(key)!);
             receipts.push(receipt);
+            const currentNo = parseInt(receipt.no, 10);
+            if (!isNaN(currentNo) && currentNo > maxNo) {
+                maxNo = currentNo;
+            }
         }
     }
     setSavedReceipts(receipts.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    if (!isEditing) {
+        setReceiptDetails(prev => ({ ...prev, no: (maxNo + 1).toString() }));
+    }
   };
   
   const yearlyCount = React.useMemo(() => {
@@ -196,6 +204,7 @@ export function ReceiptMakingTab() {
     setReceiptDetails(initialReceiptDetails);
     setEntries(initialEntries);
     setIsEditing(false);
+    fetchReceipts(); // This will set the next available number
   };
 
   const handleSaveReceipt = async () => {
