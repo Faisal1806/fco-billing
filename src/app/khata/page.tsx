@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -22,6 +23,7 @@ import { useRouter } from 'next/navigation';
 import Lottie from 'lottie-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { motion } from 'framer-motion';
 
 type TransactionType = 'Sale' | 'Purchase' | 'Advance' | 'Repayment' | 'Bikri' | 'Discount';
 
@@ -218,7 +220,11 @@ export default function KhataDirectoryPage() {
                                 const balanceText = data.balance >= 0 ? 'Payable' : 'Receivable';
                                 const balanceColor = data.balance >= 0 ? 'text-red-500' : 'text-green-500';
                                 return (
-                                    <TableRow key={name}>
+                                    <motion.tr 
+                                        key={name}
+                                        className="hover:shadow-lg transition-shadow duration-300"
+                                        whileHover={{ y: -5, scale: 1.02 }}
+                                    >
                                         <TableCell className="font-medium flex items-center gap-2">
                                             <User className="h-4 w-4 text-muted-foreground" /> {name}
                                         </TableCell>
@@ -235,7 +241,7 @@ export default function KhataDirectoryPage() {
                                                 View Statement
                                             </Button>
                                         </TableCell>
-                                    </TableRow>
+                                    </motion.tr>
                                 );
                             }) : (
                                 <TableRow>
