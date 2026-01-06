@@ -120,7 +120,7 @@ export default function PurchaseBillPage({ params }: { params: { id:string } }) 
         });
     
         const isThermal = printStyle === 'thermal';
-        const format = isThermal ? [80, 297] : 'a5';
+        const format: any = isThermal ? [80, 297] : 'a5';
         const orientation = 'portrait';
     
         const pdf = new jsPDF({
@@ -193,7 +193,7 @@ export default function PurchaseBillPage({ params }: { params: { id:string } }) 
     const { billNo, date, growerName, entries, totals } = billData;
     
     const A4Layout = () => (
-         <div className="w-[148mm] h-[210mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-4 border-2 border-green-700 flex flex-col relative font-serif">
+         <div className="w-[148mm] min-h-[210mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-4 border-2 border-green-700 flex flex-col relative font-serif">
             {/* Watermark */}
             <div className="absolute inset-0 flex items-center justify-center z-0">
                <Logo className="w-48 h-48 opacity-10" />

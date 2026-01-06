@@ -110,7 +110,7 @@ export default function PaymentPage({ params }: { params: { id: string } }) {
         if (!element || !receiptData) return;
 
         const isThermal = printStyle === 'thermal';
-        const format = isThermal ? [80, 297] : 'a6';
+        const format: any = isThermal ? [80, 297] : 'a6';
         const orientation = 'portrait';
     
         const activeLayout = printStyle === 'a4' ? element.querySelector('.print-area-a4 > div') : element.querySelector('.print-area-thermal');

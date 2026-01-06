@@ -251,11 +251,9 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                      .print-area-thermal {
                         display: ${printStyle === 'thermal' ? 'block' : 'none'} !important;
                     }
-                    .A5-page {
-                         @page {
-                            size: A5 portrait;
-                            margin: 0;
-                        }
+                    @page {
+                        size: ${printStyle === 'a4' ? 'A5 portrait' : '80mm 297mm'};
+                        margin: 0;
                     }
                 }
             `}</style>
@@ -264,7 +262,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 <Controls />
             </div>
 
-            <div className="print-container A5-page">
+            <div className="print-container">
                 <div ref={printRef}>
                     <div className="print-area-a4">
                         {renderContent()}

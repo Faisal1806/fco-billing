@@ -120,7 +120,7 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
         if (!element || !challanData) return;
 
         const isThermal = printStyle === 'thermal';
-        const format = isThermal ? [80, 297] : 'a5';
+        const format: any = isThermal ? [80, 297] : 'a5';
         const orientation = 'portrait';
     
         const activeLayout = printStyle === 'a4' ? element.querySelector('.print-area-a4 > div') : element.querySelector('.print-area-thermal');
@@ -363,16 +363,14 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
                         height: 100%;
                     }
                     .print-area-a4 {
-                        display: ${printStyle === 'a4' ? 'flex !important' : 'none !important'};
+                        display: ${printStyle === 'a4' ? 'block' : 'none'} !important;
                     }
                      .print-area-thermal {
-                        display: ${printStyle === 'thermal' ? 'block !important' : 'none !important'};
+                        display: ${printStyle === 'thermal' ? 'block' : 'none'} !important;
                     }
-                    .A5-page {
-                         @page {
-                            size: A5 portrait;
-                            margin: 0;
-                        }
+                    @page {
+                        size: ${printStyle === 'a4' ? 'A5 portrait' : '80mm 297mm'};
+                        margin: 0;
                     }
                 }
             `}</style>
@@ -390,7 +388,7 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
                 </div>
             )}
 
-            <div className="print-container A5-page">
+            <div className="print-container">
                 <div ref={printRef}>
                     <div className="print-area-a4">
                         {renderContent()}
