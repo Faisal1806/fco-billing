@@ -26,6 +26,7 @@ import { Input } from '@/components/ui/input';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import * as XLSX from 'xlsx';
 import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
 
 const InvoicePreview = ({ title, colors, children }: {
     title: string,
@@ -56,6 +57,7 @@ export default function SettingsPage() {
     const [fcmTokens, setFcmTokens] = React.useState<any[]>([]);
      const [isSending, setIsSending] = React.useState(false);
      const [isUploading, setIsUploading] = React.useState(false);
+     const [uploadProgress, setUploadProgress] = React.useState(0);
 
      const fetchTokens = async () => {
         const { success, data } = await getDocuments('fcm-tokens');
@@ -312,10 +314,11 @@ export default function SettingsPage() {
     
     const handleUploadToCloud = async () => {
         setIsUploading(true);
+        setUploadProgress(0);
         toast({ title: "Starting Cloud Sync", description: "Uploading all local data to Firebase..." });
-
+    
         const collectionMap: { [key: string]: string } = {
-            'invoice-': 'bills', // The public invoices are in 'bills'
+            'invoice-': 'bills',
             'purchase-': 'purchases',
             'receipt-': 'receipts',
             'challan-': 'challans',
@@ -328,37 +331,47 @@ export default function SettingsPage() {
             'accessory-ledger-': 'accessory-ledger',
             'fcm-tokens-': 'fcm-tokens',
         };
-
+    
         let successCount = 0;
         let errorCount = 0;
-
+        const itemsToUpload = [];
+    
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (!key) continue;
-
-            for (const prefix in collectionMap) {
-                if (key.startsWith(prefix)) {
-                    const collectionName = collectionMap[prefix];
-                    const docId = key.substring(prefix.length);
-                    
-                    try {
-                        const data = JSON.parse(localStorage.getItem(key)!);
-                        // Use the new saveDocument function
-                        const result = await saveDocument(collectionName, data.id || docId, data);
-                        if(result.success) {
-                            successCount++;
-                        } else {
-                            errorCount++;
-                        }
-                    } catch (e) {
-                        errorCount++;
-                        console.error(`Failed to parse or upload item: ${key}`, e);
+            if (key) {
+                 for (const prefix in collectionMap) {
+                    if (key.startsWith(prefix)) {
+                        itemsToUpload.push({ key, prefix });
+                        break;
                     }
-                    break; 
                 }
             }
         }
         
+        const totalItems = itemsToUpload.length;
+
+        for (let i = 0; i < totalItems; i++) {
+            const { key, prefix } = itemsToUpload[i];
+            const collectionName = collectionMap[prefix];
+            const docId = key.substring(prefix.length);
+    
+            try {
+                const data = JSON.parse(localStorage.getItem(key)!);
+                const result = await saveDocument(collectionName, data.id || docId, data);
+                if (result.success) {
+                    successCount++;
+                } else {
+                    errorCount++;
+                }
+            } catch (e) {
+                errorCount++;
+                console.error(`Failed to parse or upload item: ${key}`, e);
+            }
+
+            // Update progress after each item
+            setUploadProgress(((i + 1) / totalItems) * 100);
+        }
+    
         setIsUploading(false);
         if (errorCount > 0) {
             toast({
@@ -370,6 +383,7 @@ export default function SettingsPage() {
             toast({
                 title: "Cloud Sync Complete",
                 description: `Successfully synced ${successCount} records to the cloud.`,
+                isSuccess: true,
             });
         }
     };
@@ -469,27 +483,35 @@ export default function SettingsPage() {
                         <TabsContent value="data" className="pt-6">
                              <h3 className="font-semibold text-lg mb-2">Data Portability & Backup</h3>
                             <p className="text-sm text-muted-foreground mb-4">Use the JSON option to transfer data between devices. Use the Excel option for archival records. The "Upload to Cloud" button manually syncs all local data to Firebase.</p>
-                            <div className="flex flex-wrap gap-4">
-                                 <Button onClick={handleUploadToCloud} className="gap-2 bg-green-600 hover:bg-green-700" disabled={isUploading}>
-                                    <UploadCloud className="h-4 w-4" />
-                                    {isUploading ? 'Syncing...' : 'Upload Local Data to Cloud'}
-                                </Button>
-                                <Button onClick={handleBackupDataJson} className="gap-2">
-                                    <DownloadCloud className="h-4 w-4" />
-                                    Download JSON Backup
-                                </Button>
-                                 <div className="flex items-center gap-2">
-                                    <Label htmlFor="import-file-json" className="cursor-pointer">
-                                        <Button asChild>
-                                            <span className="gap-2"><UploadCloud className="h-4 w-4" /> Import from JSON</span>
-                                        </Button>
-                                    </Label>
-                                    <Input id="import-file-json" type="file" className="hidden" accept=".json" onChange={handleImportDataJson}/>
+                             <div className="space-y-4">
+                                <div className="flex flex-wrap gap-4">
+                                    <Button onClick={handleUploadToCloud} className="gap-2 bg-green-600 hover:bg-green-700" disabled={isUploading}>
+                                        <UploadCloud className="h-4 w-4" />
+                                        {isUploading ? 'Syncing...' : 'Upload Local Data to Cloud'}
+                                    </Button>
+                                    <Button onClick={handleBackupDataJson} className="gap-2">
+                                        <DownloadCloud className="h-4 w-4" />
+                                        Download JSON Backup
+                                    </Button>
+                                    <div className="flex items-center gap-2">
+                                        <Label htmlFor="import-file-json" className="cursor-pointer">
+                                            <Button asChild>
+                                                <span className="gap-2"><UploadCloud className="h-4 w-4" /> Import from JSON</span>
+                                            </Button>
+                                        </Label>
+                                        <Input id="import-file-json" type="file" className="hidden" accept=".json" onChange={handleImportDataJson}/>
+                                    </div>
+                                    <Button onClick={handleBackupDataExcel} variant="outline" className="gap-2">
+                                        <FileDown className="h-4 w-4" />
+                                        Backup to Excel
+                                    </Button>
                                 </div>
-                                <Button onClick={handleBackupDataExcel} variant="outline" className="gap-2">
-                                    <FileDown className="h-4 w-4" />
-                                    Backup to Excel
-                                </Button>
+                                {isUploading && (
+                                    <div className="space-y-2">
+                                        <Progress value={uploadProgress} className="w-full h-3 bg-primary/20" />
+                                        <p className="text-xs text-muted-foreground text-center">Syncing progress: {Math.round(uploadProgress)}%</p>
+                                    </div>
+                                )}
                             </div>
                         </TabsContent>
                          <TabsContent value="notifications" className="pt-6 space-y-4">
