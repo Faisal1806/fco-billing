@@ -5,12 +5,13 @@ import * as React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { IndianRupee, TrendingUp, Calendar, ShoppingBasket, Banknote, Scale } from 'lucide-react';
+import { IndianRupee, TrendingUp, Calendar, ShoppingBasket, Banknote, Scale, Loader2, Users, ArrowUp, ArrowDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import placeholderImages from '@/app/lib/placeholder-images.json';
 import { motion } from 'framer-motion';
 import { sidebarSections } from '@/components/Sidebar';
-import { Loader2 } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 
 
 interface Invoice {
@@ -35,6 +36,7 @@ interface Invoice {
 interface Purchase {
     id: string;
     date: string;
+    growerName: string;
     totals: {
         grandTotal: number;
     }
@@ -46,6 +48,18 @@ interface Advance {
     type: 'Advance Given' | 'Repayment Received' | 'Discount';
     amount: number;
 }
+
+interface PartyStat {
+    name: string;
+    netSales: number;
+    totalPurchases: number;
+    profit: number;
+}
+
+const getCanonicalName = (name: string): string => {
+    if (!name) return '';
+    return name.trim();
+};
 
 
 const StatCard = ({ title, value, subtitle, icon: Icon, colorClass }: { title: string, value: string, subtitle: string, icon: React.ElementType, colorClass: string }) => (
@@ -95,6 +109,7 @@ export default function DashboardPage() {
   const [allInvoices, setAllInvoices] = useState<Invoice[]>([]);
   const [allPurchases, setAllPurchases] = useState<Purchase[]>([]);
   const [allAdvances, setAllAdvances] = useState<Advance[]>([]);
+  const [allParties, setAllParties] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -106,12 +121,14 @@ export default function DashboardPage() {
             invoices: [],
             purchases: [],
             advances: [],
+            parties: [],
         };
 
         const prefixes: { [key: string]: keyof typeof data } = {
             'invoice-': 'invoices',
             'purchase-': 'purchases',
             'advance-': 'advances',
+            'party-': 'parties',
         };
 
         for (let i = 0; i < localStorage.length; i++) {
@@ -132,7 +149,12 @@ export default function DashboardPage() {
         setAllInvoices(data.invoices);
         setAllPurchases(data.purchases);
         setAllAdvances(data.advances);
-        
+
+        const partyNames = new Set<string>(data.parties.map(p => p.name));
+        data.invoices.forEach(inv => inv.customerName && partyNames.add(inv.customerName));
+        data.purchases.forEach(pur => pur.growerName && partyNames.add(pur.growerName));
+        setAllParties(Array.from(partyNames));
+
         setIsLoading(false);
     }
     fetchData();
@@ -195,6 +217,38 @@ export default function DashboardPage() {
         outstandingAdvances,
     };
   }, [allInvoices, allPurchases, allAdvances, isLoading]);
+  
+  const partyProfitStats = useMemo(() => {
+    if (isLoading) return [];
+
+    const statsByName: {[key: string]: PartyStat} = {};
+
+    allParties.forEach(partyName => {
+        const canonical = getCanonicalName(partyName);
+        statsByName[canonical] = { name: partyName, netSales: 0, totalPurchases: 0, profit: 0 };
+    });
+
+    allInvoices.forEach(inv => {
+        const canonical = getCanonicalName(inv.customerName);
+        if (statsByName[canonical]) {
+            statsByName[canonical].netSales += inv.totals?.netSale || 0;
+        }
+    });
+
+    allPurchases.forEach(pur => {
+        const canonical = getCanonicalName(pur.growerName);
+        if (statsByName[canonical]) {
+            statsByName[canonical].totalPurchases += pur.totals?.grandTotal || 0;
+        }
+    });
+
+    return Object.values(statsByName).map(stat => ({
+        ...stat,
+        profit: stat.netSales - stat.totalPurchases,
+    })).filter(stat => stat.netSales > 0 || stat.totalPurchases > 0)
+     .sort((a,b) => b.profit - a.profit);
+
+  }, [isLoading, allInvoices, allPurchases, allParties]);
   
 
   if (isLoading) {
@@ -301,11 +355,49 @@ export default function DashboardPage() {
         >
             <Card className="bg-card/80 backdrop-blur-sm border border-white/10">
                 <CardHeader>
-                    <CardTitle>Coming Soon: Graphs &amp; Charts</CardTitle>
-                    <CardDescription>Visual representations of your business data will appear here.</CardDescription>
+                    <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5"/> Analytics & Reports</CardTitle>
+                    <CardDescription>High-level profit analysis by party (grower/customer).</CardDescription>
                 </CardHeader>
-                <CardContent className="flex items-center justify-center h-64 text-muted-foreground border-2 border-dashed rounded-lg">
-                    <p>Advanced data visualization is under development.</p>
+                <CardContent>
+                    {partyProfitStats.length > 0 ? (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Party / Grower Name</TableHead>
+                                    <TableHead className="text-right">Total Net Sales</TableHead>
+                                    <TableHead className="text-right">Total Purchases</TableHead>
+                                    <TableHead className="text-right">Estimated Profit</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {partyProfitStats.map(stat => (
+                                    <TableRow key={stat.name}>
+                                        <TableCell className="font-medium">{stat.name}</TableCell>
+                                        <TableCell className="text-right font-mono text-green-400">₹{stat.netSales.toLocaleString('en-IN')}</TableCell>
+                                        <TableCell className="text-right font-mono text-orange-400">₹{stat.totalPurchases.toLocaleString('en-IN')}</TableCell>
+                                        <TableCell className={`text-right font-mono font-bold ${stat.profit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                            <div className="flex items-center justify-end gap-2">
+                                                {stat.profit >= 0 ? <ArrowUp className="h-4 w-4"/> : <ArrowDown className="h-4 w-4"/>}
+                                                ₹{stat.profit.toLocaleString('en-IN')}
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                             <TableFooter>
+                                <TableRow className="font-bold text-lg">
+                                    <TableCell>Total Yearly Profit (Est.)</TableCell>
+                                    <TableCell colSpan={3} className="text-right font-mono">
+                                        ₹{Math.round((stats?.yearNetSales ?? 0) - (stats?.yearTotalPurchases ?? 0)).toLocaleString('en-IN')}
+                                    </TableCell>
+                                </TableRow>
+                            </TableFooter>
+                        </Table>
+                    ) : (
+                        <div className="flex items-center justify-center h-48 text-muted-foreground border-2 border-dashed rounded-lg">
+                            <p>No sales or purchase data available to generate reports.</p>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         </motion.div>
