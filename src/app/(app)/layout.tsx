@@ -5,6 +5,8 @@ import Sidebar from "@/components/Sidebar";
 import { motion } from 'framer-motion';
 import Lottie from 'lottie-react';
 import { useEffect, useState } from 'react';
+import FloatingActionButton from '@/components/FloatingActionButton';
+
 
 export default function AppLayout({
   children,
@@ -50,6 +52,7 @@ export default function AppLayout({
             </motion.div>
           </main>
         </div>
+        <FloatingActionButton />
       </div>
     </div>
   );
