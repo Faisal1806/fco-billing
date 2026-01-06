@@ -280,7 +280,7 @@ export default function DashboardPage() {
                 priority
             />
             <div className="relative z-10">
-                <h1 className="text-4xl md:text-5xl font-bold text-white shadow-lg">Welcome to F.Co App</h1>
+                <h1 className="text-4xl md:text-5xl font-bold text-white shadow-lg">FCO BILLING SYSTEM</h1>
                 <p className="text-lg text-gray-300/80 shadow-md mt-2">Your complete business management solution.</p>
             </div>
         </motion.div>
@@ -303,7 +303,7 @@ export default function DashboardPage() {
              <StatCard 
                 title="This Year's Sales (Net)" 
                 value={`₹${Math.round(stats?.yearNetSales ?? 0).toLocaleString('en-IN')}`} 
-                subtitle="Total net profit this year" 
+                subtitle="Total net sales this year" 
                 icon={IndianRupee}
                 colorClass="text-yellow-400"
             />
@@ -337,7 +337,7 @@ export default function DashboardPage() {
         >
              <Card className="bg-card/80 backdrop-blur-sm border border-white/10">
                 <CardHeader>
-                    <CardTitle>App Sections</CardTitle>
+                    <CardTitle>Quick Actions</CardTitle>
                     <CardDescription>Jump to any section of the application.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
