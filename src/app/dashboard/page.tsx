@@ -297,7 +297,7 @@ export default function DashboardPage() {
         >
              <Card className="bg-card/80 backdrop-blur-sm border border-white/10">
                 <CardHeader>
-                    <CardTitle>Quick Navigation</CardTitle>
+                    <CardTitle>App Sections</CardTitle>
                     <CardDescription>Jump to any section of the application.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
