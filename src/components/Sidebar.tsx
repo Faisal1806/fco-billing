@@ -25,6 +25,7 @@ import {
   Menu,
   Search,
   Award,
+  History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -77,7 +78,7 @@ export const sidebarSections = [
      {
       title: "CONFIGURATION",
       items: [
-        { name: "Activity Log", href: "/activity-log", icon: FileText },
+        { name: "Activity Log", href: "/activity-log", icon: History },
         { name: "Feedback", href: "/feedback", icon: Smile },
         { name: "Settings", href: "/settings", icon: Cog },
       ]
