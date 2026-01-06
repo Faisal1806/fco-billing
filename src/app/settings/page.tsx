@@ -27,6 +27,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import * as XLSX from 'xlsx';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
+import { motion } from 'framer-motion';
 
 const InvoicePreview = ({ title, colors, children }: {
     title: string,
@@ -50,6 +51,7 @@ const InvoicePreview = ({ title, colors, children }: {
     </Card>
 );
 
+const MotionCard = motion(Card);
 
 export default function SettingsPage() {
     const { toast } = useToast();
@@ -390,7 +392,7 @@ export default function SettingsPage() {
     
     return (
         <div className="space-y-6">
-             <Card>
+             <MotionCard whileHover={{ y: -5, scale: 1.02, boxShadow: '0 10px 20px rgba(0,0,0,0.1)' }} transition={{type: 'spring', stiffness: 300}}>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-3"><Rocket className="h-6 w-6 text-blue-500" /> Deploy to Web</CardTitle>
                     <CardDescription>Publish your application to a permanent URL on the web.</CardDescription>
@@ -406,9 +408,9 @@ export default function SettingsPage() {
                  <CardFooter>
                     <p className="text-xs text-muted-foreground">This will open a new tab to guide you through the final authentication and deployment steps.</p>
                  </CardFooter>
-            </Card>
+            </MotionCard>
 
-             <Card>
+             <MotionCard whileHover={{ y: -5, scale: 1.02, boxShadow: '0 10px 20px rgba(0,0,0,0.1)' }} transition={{type: 'spring', stiffness: 300}}>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-3"><Paintbrush className="h-6 w-6" /> Appearance &amp; Customization</CardTitle>
                     <CardDescription>Customize the look and feel of your documents and application.</CardDescription>
@@ -465,11 +467,11 @@ export default function SettingsPage() {
                         </AccordionItem>
                     </Accordion>
                 </CardContent>
-            </Card>
+            </MotionCard>
 
             <CompanyInfoForm />
 
-            <Card>
+            <MotionCard whileHover={{ y: -5, scale: 1.02, boxShadow: '0 10px 20px rgba(0,0,0,0.1)' }} transition={{type: 'spring', stiffness: 300}}>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-3"><Cog className="h-6 w-6" /> General Settings</CardTitle>
                 </CardHeader>
@@ -570,7 +572,7 @@ export default function SettingsPage() {
                         </TabsContent>
                     </Tabs>
                 </CardContent>
-            </Card>
+            </MotionCard>
 
         </div>
     );
