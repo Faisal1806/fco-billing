@@ -1,3 +1,4 @@
+
 'use client'
 
 import React, { useState, useEffect } from 'react';
@@ -124,7 +125,6 @@ export default function SuppliesPage() {
             toast({
                 title: 'Ledger Entry Saved',
                 description: 'Your entry has been recorded locally and synced to the cloud.',
-                isSuccess: true,
             });
         } catch (error) {
             toast({
@@ -289,7 +289,7 @@ export default function SuppliesPage() {
                         <TableHead>Rate</TableHead>
                         <TableHead>Payment</TableHead>
                         <TableHead className="text-right">Amount</TableHead>
-                        <TableHead className="text-right print-hidden">Actions</TableHead>
+                        {userRole === 'admin' && <TableHead className="text-right print-hidden">Actions</TableHead>}
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -303,29 +303,29 @@ export default function SuppliesPage() {
                             <TableCell>₹{entry.rate.toFixed(2)}</TableCell>
                             <TableCell>{entry.paymentMode}</TableCell>
                             <TableCell className="text-right font-mono">₹{(entry.qty * entry.rate).toFixed(2)}</TableCell>
-                            <TableCell className="text-right print-hidden">
-                                <Button variant="outline" size="sm" className="mr-2" disabled>
-                                    <FileSignature className="h-3 w-3 mr-1" /> Bill
-                                </Button>
-                                {userRole === 'admin' && (
+                            {userRole === 'admin' && (
+                                <TableCell className="text-right print-hidden">
+                                    <Button variant="outline" size="sm" className="mr-2" disabled>
+                                        <FileSignature className="h-3 w-3 mr-1" /> Bill
+                                    </Button>
                                     <Button variant="ghost" size="icon" onClick={() => handleDeleteEntry(entry.id)}>
                                         <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
-                                )}
-                            </TableCell>
+                                </TableCell>
+                            )}
                         </TableRow>
                     ))}
                 </TableBody>
                 <TableFooter>
                     <TableRow className="font-bold text-lg">
-                        <TableCell colSpan={7} className="text-right">Today's Total</TableCell>
+                        <TableCell colSpan={userRole === 'admin' ? 8 : 7} className="text-right">Today's Total</TableCell>
                         <TableCell className="text-right font-mono">₹{dailyTotal.toFixed(2)}</TableCell>
-                        <TableCell className="print-hidden"></TableCell>
+                        {userRole === 'admin' && <TableCell className="print-hidden"></TableCell>}
                     </TableRow>
                      <TableRow className="font-bold text-xl bg-muted/50">
-                        <TableCell colSpan={7} className="text-right">Overall Total</TableCell>
+                        <TableCell colSpan={userRole === 'admin' ? 8 : 7} className="text-right">Overall Total</TableCell>
                         <TableCell className="text-right font-mono">₹{overallTotal.toFixed(2)}</TableCell>
-                        <TableCell className="print-hidden"></TableCell>
+                        {userRole === 'admin' && <TableCell className="print-hidden"></TableCell>}
                     </TableRow>
                 </TableFooter>
             </Table>
