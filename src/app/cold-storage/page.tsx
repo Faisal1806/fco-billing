@@ -10,14 +10,6 @@ import {
   CardTitle,
   CardFooter,
 } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,10 +22,12 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import { PlusCircle, ArrowUpRightFromSquare, Snowflake, Loader2, Trash2, Edit } from 'lucide-react';
+import { PlusCircle, ArrowUpRightFromSquare, Snowflake, Loader2, Trash2, Edit, Box } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { saveDocument, deleteDocument, sendPushNotification, getDocuments } from '@/lib/actions';
+import { motion } from 'framer-motion';
+import { Progress } from '@/components/ui/progress';
 
 const STORAGE_PREFIX = 'cs-';
 
@@ -56,6 +50,49 @@ const emptyFormState: Omit<StockItem, 'id' | 'currentQty' | 'status' | 'outwardH
   chamberNo: '',
   initialQty: '',
 };
+
+const StockCard = ({ item, onReleaseClick, onDeleteClick, userRole }: { item: StockItem, onReleaseClick: (item: StockItem) => void, onDeleteClick: (id: string) => void, userRole: string | null }) => {
+    const stockPercentage = (item.initialQty > 0) ? (item.currentQty / item.initialQty) * 100 : 0;
+    const isLowStock = item.status === 'In Stock' && stockPercentage < 25;
+
+    return (
+         <motion.div
+            whileHover={{ y: -8, scale: 1.05 }}
+            transition={{ type: 'spring', stiffness: 300 }}
+            className="bg-card/70 backdrop-blur-sm border border-white/10 rounded-xl overflow-hidden shadow-lg h-full flex flex-col"
+        >
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-lg font-bold truncate">{item.item}</CardTitle>
+                <Badge variant={item.status === 'In Stock' ? 'default' : 'secondary'} className="shrink-0">{item.status}</Badge>
+            </CardHeader>
+            <CardContent className="flex-grow space-y-3 pt-2">
+                <p className="text-sm text-muted-foreground font-semibold">{item.grower} - Chamber {item.chamberNo}</p>
+                <div className="space-y-2">
+                    <div className="flex justify-between items-baseline">
+                        <span className="text-sm text-muted-foreground">Current Stock</span>
+                        <span className="text-2xl font-bold">{item.currentQty} <span className="text-sm font-normal">/ {item.initialQty}</span></span>
+                    </div>
+                     <div className="relative">
+                        <Progress value={stockPercentage} className="h-3" />
+                         {isLowStock && <div className="absolute inset-0 bg-red-500/50 rounded-full animate-pulse"></div>}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Date In: {new Date(item.dateIn).toLocaleDateString('en-GB')}</p>
+                </div>
+            </CardContent>
+            <CardFooter className="bg-black/10 p-2 flex justify-end">
+                <Button variant="ghost" size="sm" className="gap-1" disabled={item.status === 'Released'} onClick={() => onReleaseClick(item)}>
+                    <ArrowUpRightFromSquare className="h-3 w-3" /> Release
+                </Button>
+                {userRole === 'admin' && (
+                    <Button variant="ghost" size="icon" onClick={() => onDeleteClick(item.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                )}
+            </CardFooter>
+        </motion.div>
+    );
+};
+
 
 export default function ColdStoragePage() {
   const { toast } = useToast();
@@ -219,7 +256,7 @@ export default function ColdStoragePage() {
       <CardHeader>
         <div className="flex justify-between items-start">
             <div>
-                 <CardTitle className="flex items-center gap-2"><Snowflake className="h-6 w-6 text-blue-400"/> Cold Storage Register</CardTitle>
+                 <CardTitle className="flex items-center gap-2 text-3xl"><Snowflake className="h-8 w-8 text-blue-400"/> Cold Storage Register</CardTitle>
                  <CardDescription>Manage stock placed in Sopore cold storages. Track inward and outward movements.</CardDescription>
             </div>
              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -268,54 +305,20 @@ export default function ColdStoragePage() {
         {isLoading ? (
             <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : stock.length > 0 ? (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date In</TableHead>
-              <TableHead>Grower</TableHead>
-              <TableHead>Item</TableHead>
-              <TableHead>Chamber No.</TableHead>
-              <TableHead>Initial Qty</TableHead>
-              <TableHead>Current Qty</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {stock.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell>{new Date(item.dateIn).toLocaleDateString('en-GB')}</TableCell>
-                <TableCell className="font-medium">{item.grower}</TableCell>
-                <TableCell>{item.item}</TableCell>
-                <TableCell>{item.chamberNo}</TableCell>
-                <TableCell>{item.initialQty}</TableCell>
-                <TableCell className="font-semibold">{item.currentQty}</TableCell>
-                <TableCell>
-                  <Badge variant={item.status === 'In Stock' ? 'default' : 'secondary'}>{item.status}</Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1 mr-2"
-                    disabled={item.status === 'Released'}
-                    onClick={() => { setSelectedStock(item); setIsOutwardDialogOpen(true); }}
-                  >
-                    <ArrowUpRightFromSquare className="h-3 w-3" /> Release
-                  </Button>
-                   {userRole === 'admin' && (
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                   )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {stock.map((item) => (
+                    <StockCard 
+                        key={item.id} 
+                        item={item} 
+                        onReleaseClick={() => { setSelectedStock(item); setIsOutwardDialogOpen(true); }}
+                        onDeleteClick={handleDelete}
+                        userRole={userRole}
+                    />
+                ))}
+            </div>
         ) : (
             <div className="text-center py-16 text-muted-foreground border-2 border-dashed rounded-lg">
-                <Snowflake className="mx-auto h-12 w-12" />
+                <Box className="mx-auto h-12 w-12" />
                 <h3 className="mt-4 text-lg font-semibold">No stock logged in cold storage.</h3>
                 <p className="mt-1 text-sm">Use the "Add Stock" button to log your first inward entry.</p>
             </div>
