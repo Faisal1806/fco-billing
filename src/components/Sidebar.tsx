@@ -108,9 +108,14 @@ export function SidebarContent({ isMobile }: { isMobile?: boolean }) {
   const renderLink = (item: any) => {
     const { name, href, icon: Icon } = item;
     const isActive = pathname === href;
+
+    const motionProps = name === 'Notifications'
+      ? { whileHover: { scale: 1.1, rotate: [0, 15, -10, 10, -5, 5, 0], transition: { duration: 0.5 } } }
+      : { whileHover: { x: 5, scale: 1.05, originX: 0 } };
+
     const linkContent = (
        <motion.div
-        whileHover={{ x: 5, scale: 1.05, originX: 0 }}
+        {...motionProps}
         transition={{ type: 'spring', stiffness: 300 }}
         className="neon-glow-container"
        >

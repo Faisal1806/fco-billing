@@ -5,7 +5,7 @@ import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { Paintbrush, Palette, Upload, Rocket, Cog, DownloadCloud, Factory, BellRing, UploadCloud, FileDown } from 'lucide-react';
+import { Paintbrush, Palette, Upload, Rocket, Cog, DownloadCloud, Factory, BellRing, UploadCloud, FileDown, Trash2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CompanyInfoForm } from "@/components/profile-form";
 import {
@@ -20,7 +20,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { getClientMessaging } from '@/lib/firebase';
-import { saveDocument, sendPushNotification } from '@/lib/actions';
+import { saveDocument, sendPushNotification, deleteDocument, getDocuments } from '@/lib/actions';
 import { getToken } from 'firebase/messaging';
 import { Input } from '@/components/ui/input';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -53,27 +53,22 @@ const InvoicePreview = ({ title, colors, children }: {
 export default function SettingsPage() {
     const { toast } = useToast();
     const [invoiceStyle, setInvoiceStyle] = React.useState('classic');
-    const [fcmTokens, setFcmTokens] = React.useState<string[]>([]);
+    const [fcmTokens, setFcmTokens] = React.useState<any[]>([]);
      const [isSending, setIsSending] = React.useState(false);
      const [isUploading, setIsUploading] = React.useState(false);
+
+     const fetchTokens = async () => {
+        const { success, data } = await getDocuments('fcm-tokens');
+        if (success && data) {
+            setFcmTokens(data);
+        }
+    };
 
     React.useEffect(() => {
         const savedStyle = localStorage.getItem('invoiceStyle');
         if (savedStyle) {
             setInvoiceStyle(savedStyle);
         }
-        
-        const fetchTokens = async () => {
-            const tokensRaw = localStorage.getItem('fcm-tokens');
-            if (tokensRaw) {
-                try {
-                    const tokensData = JSON.parse(tokensRaw);
-                     if (Array.isArray(tokensData)) {
-                        setFcmTokens(tokensData.map(t => t.token));
-                    }
-                } catch {}
-            }
-        };
         fetchTokens();
     }, []);
 
@@ -266,10 +261,7 @@ export default function SettingsPage() {
                 
                 if (fcmToken) {
                     await saveDocument('fcm-tokens', fcmToken, { token: fcmToken, enabledAt: new Date().toISOString() });
-                    // Also save to local state for immediate use
-                     if (!fcmTokens.includes(fcmToken)) {
-                        setFcmTokens([...fcmTokens, fcmToken]);
-                    }
+                    fetchTokens();
                     toast({
                         title: 'Notifications Enabled',
                         description: 'You will now receive push notifications on this device.',
@@ -297,7 +289,7 @@ export default function SettingsPage() {
             await sendPushNotification({
                 title: 'F.Co Test Notification',
                 body: 'If you can see this, your notifications are working correctly!',
-                tokens: fcmTokens,
+                tokens: fcmTokens.map(t => t.token),
                 url: '/dashboard'
             });
             toast({ title: 'Test Sent', description: 'Check your device for a notification.'});
@@ -305,6 +297,16 @@ export default function SettingsPage() {
              toast({ variant: 'destructive', title: 'Test Failed', description: 'Could not send test notification.'});
         } finally {
             setIsSending(false);
+        }
+    }
+
+    const handleDeleteToken = async (tokenId: string) => {
+        try {
+            await deleteDocument('fcm-tokens', tokenId);
+            fetchTokens();
+            toast({ title: 'Device Unregistered', description: 'The device will no longer receive notifications.'});
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Unregister Failed', description: 'Could not remove the device token.'});
         }
     }
     
@@ -490,18 +492,34 @@ export default function SettingsPage() {
                                 </Button>
                             </div>
                         </TabsContent>
-                         <TabsContent value="notifications" className="pt-6">
-                            <h3 className="font-semibold text-lg mb-2">Push Notifications</h3>
-                            <p className="text-sm text-muted-foreground mb-4">Enable push notifications to receive real-time updates from the app, such as low stock alerts or new sale notifications.</p>
-                            <div className="flex items-center gap-4">
-                                <Button onClick={handleEnableNotifications} className="gap-2">
-                                    <BellRing className="h-4 w-4" />
-                                    Enable Notifications
-                                </Button>
-                                 <Button onClick={handleSendTestNotification} variant="secondary" className="gap-2" disabled={isSending}>
-                                    <BellRing className="h-4 w-4" />
-                                    {isSending ? 'Sending...' : 'Send Test Notification'}
-                                </Button>
+                         <TabsContent value="notifications" className="pt-6 space-y-4">
+                            <div>
+                                <h3 className="font-semibold text-lg mb-2">Push Notifications</h3>
+                                <p className="text-sm text-muted-foreground mb-4">Enable push notifications to receive real-time updates from the app, such as low stock alerts or new sale notifications.</p>
+                                <div className="flex items-center gap-4">
+                                    <Button onClick={handleEnableNotifications} className="gap-2">
+                                        <BellRing className="h-4 w-4" />
+                                        Enable Notifications
+                                    </Button>
+                                    <Button onClick={handleSendTestNotification} variant="secondary" className="gap-2" disabled={isSending}>
+                                        <BellRing className="h-4 w-4" />
+                                        {isSending ? 'Sending...' : 'Send Test Notification'}
+                                    </Button>
+                                </div>
+                            </div>
+                             <div>
+                                <h3 className="font-semibold text-lg mb-2">Registered Devices</h3>
+                                <p className="text-sm text-muted-foreground mb-4">These devices have enabled notifications. You can remove them if they are no longer in use.</p>
+                                <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                                    {fcmTokens.length > 0 ? fcmTokens.map((token: any) => (
+                                        <div key={token.id} className="flex justify-between items-center bg-muted p-2 rounded-md">
+                                            <p className="text-xs font-mono break-all pr-4">{token.id}</p>
+                                            <Button variant="ghost" size="icon" onClick={() => handleDeleteToken(token.id)}>
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
+                                        </div>
+                                    )) : <p className="text-sm text-muted-foreground">No devices registered for notifications yet.</p>}
+                                </div>
                             </div>
                         </TabsContent>
                         <TabsContent value="reset" className="pt-6">
