@@ -29,7 +29,7 @@ import {
   DialogClose,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { PlusCircle, Edit, Trash2, Users, Search, FileDown, Loader2, Leaf, ShoppingCart, Handshake, Award, Star, TrendingUp, CalendarDays, Gift, ListChecks, Info } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Users, Search, FileDown, Loader2, Leaf, ShoppingCart, Handshake, Award, Star, TrendingUp, CalendarDays, Gift, ListChecks, Info, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -38,6 +38,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveDocument, deleteDocument } from '@/lib/actions';
+import { Progress } from '@/components/ui/progress';
 
 
 const PARTY_STORAGE_PREFIX = 'party-';
@@ -50,6 +51,7 @@ interface Party {
   phone?: string;
   email?: string;
   notes?: string;
+  creditLimit?: number;
 }
 
 const emptyFormState: Omit<Party, 'id'> = {
@@ -59,6 +61,7 @@ const emptyFormState: Omit<Party, 'id'> = {
     phone: '',
     email: '',
     notes: '',
+    creditLimit: 0,
 };
 
 const defaultGrowers: { name: string, address: string }[] = [
@@ -187,7 +190,7 @@ export default function PartiesPage() {
     });
 
     partiesMap.forEach((party, canonical) => {
-        const stats = { balance: 0, netSales: 0, lastActivityDate: null, transactionCount: 0, loyaltyPoints: 0, tier: 'Bronze', lastRedemptionDate: null };
+        const stats = { balance: 0, netSales: 0, lastActivityDate: null, transactionCount: 0, loyaltyPoints: 0, tier: 'Bronze', lastRedemptionDate: null, creditUsed: 0 };
         const partyTransactions = allTransactions
             .filter(t => {
                 if(!t.id && !t.billNo && !t.sNo) return false;
@@ -248,6 +251,11 @@ export default function PartiesPage() {
             stats.tier = 'Bronze';
             stats.loyaltyPoints = Math.floor(stats.netSales * 0.01);
         }
+
+        // Credit Used is the current balance if it's receivable
+        if (stats.balance > 0) {
+            stats.creditUsed = stats.balance;
+        }
         
         localPartyStats.set(canonical, stats);
     });
@@ -285,8 +293,9 @@ export default function PartiesPage() {
   const resetForm = () => setFormState(emptyFormState);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormState(prev => ({...prev, [name]: value}));
+    const { name, value, type } = e.target;
+    const val = type === 'number' ? Number(value) : value;
+    setFormState(prev => ({...prev, [name]: val}));
   };
   
   const handleSelectChange = (name: keyof Omit<Party, 'id'>, value: string) => {
@@ -401,6 +410,10 @@ export default function PartiesPage() {
     const loyaltyPoints = stats.loyaltyPoints || 0;
     const balance = stats.balance || 0;
     const netSales = stats.netSales || 0;
+    const creditLimit = selectedParty.creditLimit || 0;
+    const creditUsed = stats.creditUsed || 0;
+    const creditRemaining = creditLimit - creditUsed;
+    const creditUsagePercent = creditLimit > 0 ? (creditUsed / creditLimit) * 100 : 0;
     
     let balanceText, balanceColor;
     if (selectedParty.type === 'Grower' || selectedParty.type === 'Both') {
@@ -446,34 +459,52 @@ export default function PartiesPage() {
 
     return (
         <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
-            <DialogContent className="max-w-xl">
+            <DialogContent className="max-w-2xl">
                 <DialogHeader>
                     <DialogTitle className="text-2xl flex items-center gap-2">{selectedParty.name} <PartyTypeBadge type={selectedParty.type} /></DialogTitle>
                     <p className="text-muted-foreground">{selectedParty.address} &bull; {selectedParty.phone}</p>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-4 rounded-lg border bg-muted/30 p-4 md:col-span-2">
                             <h4 className="font-semibold text-lg flex items-center gap-2">
-                            <Info className="h-5 w-5 text-blue-500" /> Account Summary
+                                <Info className="h-5 w-5 text-blue-500" /> Account Summary
                             </h4>
                             <div className="space-y-2">
                                 <div className="flex justify-between"><span>Total Net Sales:</span> <span className="font-bold">₹{netSales.toLocaleString('en-IN')}</span></div>
                                 <div className="flex justify-between"><span>Current Dues:</span> <span className={`font-bold ${balanceColor}`}>₹{Math.abs(balance).toLocaleString('en-IN')}</span></div>
                                 <p className="text-xs text-muted-foreground text-right">{balanceText}</p>
                             </div>
+                            <Separator />
+                            <h4 className="font-semibold text-lg flex items-center gap-2 pt-2">
+                                <AlertCircle className="h-5 w-5 text-orange-500" /> Credit Status
+                            </h4>
+                             <div className="space-y-2">
+                                {creditLimit > 0 ? (
+                                    <>
+                                        <Progress value={creditUsagePercent} />
+                                        <div className="flex justify-between text-xs">
+                                            <span className="text-green-500">Used: ₹{creditUsed.toLocaleString('en-IN')}</span>
+                                            <span className="text-muted-foreground">Limit: ₹{creditLimit.toLocaleString('en-IN')}</span>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <p className="text-sm text-muted-foreground">No credit limit set.</p>
+                                )}
+                            </div>
                         </div>
 
                         <div className="space-y-4 rounded-lg border p-4">
                             <h4 className="font-semibold text-lg flex items-center gap-2">
-                                <Award className="h-5 w-5 text-yellow-500" /> F.Co Loyalty Rewards
+                                <Award className="h-5 w-5 text-yellow-500" /> Loyalty
                                 <Badge variant="secondary">{stats?.tier} Tier</Badge>
                             </h4>
-                            <div className="space-y-2">
-                            <div className="flex justify-between"><span>Loyalty Points:</span> <span className="font-bold">{loyaltyPoints.toLocaleString('en-IN')}</span></div>
-                            <div className="flex justify-between"><span>Equivalent in ₹:</span> <span className="font-bold">₹{loyaltyPoints.toLocaleString('en-IN')}</span></div>
-                            <div className="flex justify-between"><span>Redeemable:</span> <span className="font-bold">{hasPointsToRedeem ? 'YES' : 'NO'}</span></div>
-                            <div className="flex justify-between"><span>Last Redemption:</span> <span className="font-bold">{stats?.lastRedemptionDate ? new Date(stats.lastRedemptionDate).toLocaleDateString('en-GB') : 'N/A'}</span></div>
+                            <div className="space-y-2 text-sm">
+                                <div className="flex justify-between"><span>Points:</span> <span className="font-bold">{loyaltyPoints.toLocaleString('en-IN')}</span></div>
+                                <div className="flex justify-between"><span>Value (₹):</span> <span className="font-bold">₹{loyaltyPoints.toLocaleString('en-IN')}</span></div>
+                                <div className="flex justify-between"><span>Next Due Date:</span> <span className="font-bold">N/A</span></div>
+                                <div className="flex justify-between"><span>Risk Score:</span> <span className="font-bold">Low</span></div>
+                                <div className="flex justify-between"><span>Last Redemption:</span> <span className="font-bold">{stats?.lastRedemptionDate ? new Date(stats.lastRedemptionDate).toLocaleDateString('en-GB') : 'N/A'}</span></div>
                             </div>
                         </div>
                     </div>
@@ -576,6 +607,10 @@ export default function PartiesPage() {
                           <Label htmlFor="phone">Phone / WhatsApp</Label>
                           <Input id="phone" name="phone" value={formState.phone || ''} onChange={handleInputChange} />
                       </div>
+                       <div className="space-y-2">
+                          <Label htmlFor="creditLimit">Credit Limit (₹)</Label>
+                          <Input id="creditLimit" name="creditLimit" type="number" value={formState.creditLimit || ''} onChange={handleInputChange} />
+                      </div>
                        <div className="space-y-2 md:col-span-2">
                           <Label htmlFor="address">Address</Label>
                           <Input id="address" name="address" value={formState.address || ''} onChange={handleInputChange} />
@@ -607,9 +642,7 @@ export default function PartiesPage() {
                 <TableHead className="w-[50px]">S.No.</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Type</TableHead>
-                <TableHead className="text-right">Transactions</TableHead>
-                <TableHead className="text-right">Net Sales</TableHead>
-                <TableHead className="text-right">Loyalty Points</TableHead>
+                <TableHead>Credit Status</TableHead>
                 <TableHead className="text-right">Balance</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -618,10 +651,9 @@ export default function PartiesPage() {
               {filteredParties.map((party, index) => {
                 const stats = partyStats[getCanonicalName(party.name)];
                 const balance = stats?.balance || 0;
-                const netSales = stats?.netSales || 0;
-                const loyaltyPoints = stats?.loyaltyPoints || 0;
-                const transactionCount = stats?.transactionCount || 0;
-                const tier = stats?.tier || 'Bronze';
+                const creditLimit = party.creditLimit || 0;
+                const creditUsed = stats?.creditUsed || 0;
+                const creditUsagePercent = creditLimit > 0 ? Math.min((creditUsed / creditLimit) * 100, 100) : 0;
 
                 let balanceText, balanceColor;
                 if (party.type === 'Grower' || party.type === 'Both') {
@@ -632,6 +664,7 @@ export default function PartiesPage() {
                     balanceColor = balance >= 0 ? 'text-green-500' : 'text-red-500';
                 }
                 
+                const tier = stats?.tier || 'Bronze';
                 const tierIcon = tier === 'Gold' ? '🥇' : tier === 'Silver' ? '🥈' : '🥉';
 
 
@@ -640,19 +673,18 @@ export default function PartiesPage() {
                   <TableCell>{index + 1}</TableCell>
                   <TableCell className="font-medium">{party.name} <span title={tier + ' Tier'}>{tierIcon}</span></TableCell>
                   <TableCell><PartyTypeBadge type={party.type} /></TableCell>
-                  <TableCell className="text-right font-mono">
-                    <div className="flex items-center justify-end gap-1">
-                        <ListChecks className="h-4 w-4 text-muted-foreground" /> {transactionCount}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right font-mono">
-                    ₹{netSales.toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0})}
-                  </TableCell>
-                   <TableCell className="text-right font-mono text-yellow-500">
-                    <div className="flex items-center justify-end gap-1">
-                       <Star className="h-4 w-4" /> {loyaltyPoints.toLocaleString('en-IN')}
-                    </div>
-                  </TableCell>
+                   <TableCell>
+                        {creditLimit > 0 ? (
+                             <div className="flex flex-col">
+                                <Progress value={creditUsagePercent} className="h-2" />
+                                <span className="text-xs text-muted-foreground mt-1">
+                                    ₹{creditUsed.toLocaleString('en-IN')} / ₹{creditLimit.toLocaleString('en-IN')}
+                                </span>
+                            </div>
+                        ) : (
+                            <span className="text-xs text-muted-foreground">Not Set</span>
+                        )}
+                   </TableCell>
                   <TableCell className={`text-right font-mono ${balanceColor}`}>
                     {balance >= 0 ? '₹' : '-₹'}{Math.abs(balance).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                     <p className="text-xs">{balanceText}</p>
@@ -684,5 +716,3 @@ export default function PartiesPage() {
     </>
   );
 }
-
-    

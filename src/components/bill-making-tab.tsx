@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -11,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Separator } from './ui/separator';
-import { PlusCircle, Trash2, FilePenLine, FilePlus, Share, FileText, ChevronsUpDown, Check, Search } from 'lucide-react';
+import { PlusCircle, Trash2, FilePenLine, FilePlus, Share, FileText, ChevronsUpDown, Check, Search, AlertCircle } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { ScrollArea } from './ui/scroll-area';
 import Lottie from 'lottie-react';
@@ -63,6 +64,7 @@ export function BillMakingTab() {
   const [userRole, setUserRole] = React.useState<string | null>(null);
   const [searchTerm, setSearchTerm] = React.useState('');
   const [fcmTokens, setFcmTokens] = useState<string[]>([]);
+  const [partyCredit, setPartyCredit] = useState<{ limit: number, used: number} | null>(null);
 
 
   // Voice Input State
@@ -99,6 +101,47 @@ export function BillMakingTab() {
       setAvailableReceipts(receipts.sort((a,b) => (a.no > b.no) ? 1 : -1));
       setUsedReceiptsMap(usedNos);
     };
+
+    const fetchPartyCreditInfo = (partyName: string) => {
+        if (!partyName) {
+            setPartyCredit(null);
+            return;
+        }
+        const partyKey = `party-${partyName.trim().toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+        const partyData = localStorage.getItem(partyKey);
+        
+        let limit = 0;
+        if (partyData) {
+            try {
+                limit = JSON.parse(partyData).creditLimit || 0;
+            } catch (e) {
+                console.error("Failed to parse party data for credit limit", e);
+            }
+        }
+        
+        let used = 0;
+        for (let i = 0; i < localStorage.length; i++) {
+             const key = localStorage.key(i);
+             if (key?.startsWith('invoice-')) {
+                 const inv = JSON.parse(localStorage.getItem(key)!);
+                 if (inv.customerName === partyName) used += inv.totals.netSale;
+             }
+             if(key?.startsWith('advance-')) {
+                 const adv = JSON.parse(localStorage.getItem(key)!);
+                 if (adv.partyName === partyName && (adv.type === 'Repayment Received' || adv.type === 'Discount')) used -= adv.amount;
+             }
+        }
+        setPartyCredit({ limit, used: Math.max(0, used) });
+    };
+
+    useEffect(() => {
+        if(ms) {
+            fetchPartyCreditInfo(ms);
+        } else {
+            setPartyCredit(null);
+        }
+    }, [ms]);
+
 
   const yearlyCount = useMemo(() => {
     if(!savedWataks) return 0;
@@ -291,6 +334,7 @@ export function BillMakingTab() {
         setRows(initialRows);
         setIsEditing(false);
         setSelectedReceiptNo('');
+        setPartyCredit(null);
     };
 
 
@@ -578,6 +622,15 @@ export function BillMakingTab() {
                     <Label>Watak No</Label>
                     <Input value={watakNo} onChange={e => setWatakNo(e.target.value)} disabled={formDisabled} />
                 </div>
+                {partyCredit && partyCredit.limit > 0 && (
+                    <div className="col-span-2 md:col-span-2 bg-muted p-2 rounded-md">
+                        <Label className="text-xs font-semibold">Credit Status</Label>
+                        <div className="flex items-center gap-2">
+                            <Progress value={(partyCredit.used / partyCredit.limit) * 100} className="h-2"/>
+                            <span className="text-xs font-mono whitespace-nowrap">₹{partyCredit.used.toLocaleString()}/₹{partyCredit.limit.toLocaleString()}</span>
+                        </div>
+                    </div>
+                 )}
             </div>
 
             <Separator />
