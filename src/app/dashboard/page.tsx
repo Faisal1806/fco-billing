@@ -83,6 +83,26 @@ const StatCard = ({ title, value, subtitle, icon: Icon, colorClass }: { title: s
     </motion.div>
 );
 
+const NavCard = ({ title, icon: Icon, href }: { title: string, icon: React.ElementType, href: string }) => {
+    const router = useRouter();
+    return (
+        <motion.div
+            whileHover={{ y: -10, scale: 1.05, rotateX: 10, rotateY: -5 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            style={{ perspective: 800, transformStyle: 'preserve-3d' }}
+            onClick={() => router.push(href)}
+            className="cursor-pointer"
+        >
+            <Card className="bg-card/70 backdrop-blur-sm border border-white/10 shadow-lg hover:shadow-2xl h-full p-4 transition-all duration-300 flex flex-col items-center justify-center text-center">
+                <div className="p-3 bg-primary/10 rounded-full mb-2">
+                     <Icon className="h-8 w-8 text-primary-foreground" />
+                </div>
+                <p className="text-sm font-semibold text-primary-foreground">{title}</p>
+            </Card>
+        </motion.div>
+    )
+};
+
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -277,22 +297,13 @@ export default function DashboardPage() {
         >
              <Card className="bg-card/80 backdrop-blur-sm border border-white/10">
                 <CardHeader>
-                    <CardTitle>Quick Actions</CardTitle>
-                    <CardDescription>Navigate to key sections of the application.</CardDescription>
+                    <CardTitle>Quick Navigation</CardTitle>
+                    <CardDescription>Jump to any section of the application.</CardDescription>
                 </CardHeader>
-                <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <Button onClick={() => router.push('/sales')} className="h-20 text-lg w-full bg-primary/80 hover:bg-primary border border-primary-foreground/20">
-                        <PlusCircle className="mr-2 h-6 w-6" /> Sales Entry
-                    </Button>
-                    <Button onClick={() => router.push('/watak-register')} className="h-20 text-lg w-full bg-primary/80 hover:bg-primary border border-primary-foreground/20">
-                        <FileText className="mr-2 h-6 w-6" /> Watak Register
-                    </Button>
-                    <Button onClick={() => router.push('/purchases')} className="h-20 text-lg w-full bg-primary/80 hover:bg-primary border border-primary-foreground/20">
-                        <ShoppingBasket className="mr-2 h-6 w-6" /> Purchases
-                    </Button>
-                    <Button onClick={() => router.push('/khata')} className="h-20 text-lg w-full bg-primary/80 hover:bg-primary border border-primary-foreground/20">
-                        <BookOpen className="mr-2 h-6 w-6" /> Khata Ledger
-                    </Button>
+                <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                    {sidebarSections.flatMap(section => section.items).map((item) => (
+                        <NavCard key={item.name} title={item.name} icon={item.icon} href={item.href} />
+                    ))}
                 </CardContent>
             </Card>
         </motion.div>
@@ -315,4 +326,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
 
