@@ -67,7 +67,7 @@ export const sidebarSections = [
             { name: "Khata Ledger", href: "/khata", icon: BookOpen },
             { name: "Statement of Account", href: "/statement", icon: FileSpreadsheet },
             { name: "Payments", href: "/advances", icon: Banknote },
-            { name: "Loyalty Points", href: "/loyalty", icon: Award },
+            { name: "Loyalty", href: "/loyalty", icon: Award },
         ]
     },
     {
