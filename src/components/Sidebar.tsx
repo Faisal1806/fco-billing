@@ -7,13 +7,10 @@ import {
   LayoutDashboard,
   FileText,
   ShoppingCart,
-  Globe,
   Package,
   BookOpen,
   DollarSign,
   TrendingUp,
-  FlaskConical,
-  Box,
   Cog,
   Snowflake,
   Banknote,
@@ -33,6 +30,7 @@ import {
   UserCheck,
   DatabaseZap,
   LifeBuoy,
+  Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -77,16 +75,16 @@ export const sidebarSections = [
       items: [
         { name: "Cold Storage", href: "/cold-storage", icon: Snowflake },
         { name: "Receipts", href: "/sales?tab=receipts", icon: Receipt },
-        { name: "Returns", href: "#", icon: RotateCcw },
-        { name: "Stock Transfer", href: "#", icon: Truck },
+        { name: "Returns", href: "/returns", icon: RotateCcw },
+        { name: "Stock Transfer", href: "/stock-transfer", icon: Truck },
       ]
     },
      {
       title: "SYSTEM",
       items: [
-        { name: "Reports", href: "/dashboard", icon: TrendingUp },
+        { name: "Reports", href: "/reports", icon: TrendingUp },
         { name: "Notifications", href: "/settings", icon: Bell },
-        { name: "Users & Roles", href: "/settings", icon: UserCheck },
+        { name: "Users & Roles", href: "/users", icon: UserCheck },
         { name: "Backup & Sync", href: "/settings", icon: DatabaseZap },
         { name: "Settings", href: "/settings", icon: Cog },
         { name: "Help & Support", href: "/feedback", icon: LifeBuoy },
