@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { IndianRupee, TrendingUp, Calendar, FileText, ShoppingBasket, BookOpen, Loader2, Package, Box, ClipboardList, Globe, PlusCircle, User, Truck, Receipt, PieChart, BarChart, Award, ChevronDown, ListChecks, ShoppingCart } from 'lucide-react';
+import { IndianRupee, TrendingUp, Calendar, FileText, ShoppingBasket, BookOpen, Loader2, Package, Box, ClipboardList, Globe, PlusCircle, User, Truck, Receipt, PieChart, BarChart, Award, ChevronDown, ListChecks, ShoppingCart, Banknote, Scale } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -46,120 +46,50 @@ interface Invoice {
     customerName: string;
 }
 
-interface Receipt {
-    id:string;
-    date: string;
-    entries: {
-        peti: number;
-        daba: number;
-    }[];
-}
-
-interface Bikri {
+interface Purchase {
     id: string;
     date: string;
-    growerName?: string;
-    market?: string;
-    bikriType?: 'fcoStock' | 'growerForwarding';
-    calculation: {
-        grossSale: number;
-        totalExpenses: number;
-        netProfitOrLoss?: number;
-        netSalePayableToGrower?: number;
-        commissionAmount?: number;
-    };
-    saleEntries: {
-        type: 'Patti' | 'Dabba';
-        qty: number;
-    }[];
-    challanId?: string;
-}
-
-interface Challan {
-    id: string;
-    date: string;
-    challanNo?: string;
-    totalPetti: number;
-    totalDabba: number;
+    totals: {
+        grandTotal: number;
+    }
 }
 
 interface Advance {
     id: string;
     date: string;
-    type: string;
+    type: 'Advance Given' | 'Repayment Received' | 'Discount';
     amount: number;
 }
 
 
-const StatCard = ({ title, value, subtitle, icon: Icon }: { title: string, value: string, subtitle: string, icon: React.ElementType }) => (
+const StatCard = ({ title, value, subtitle, icon: Icon, colorClass }: { title: string, value: string, subtitle: string, icon: React.ElementType, colorClass: string }) => (
      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        whileHover={{ y: -10, scale: 1.05, rotateX: 10, rotateY: -5 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+        style={{ perspective: 800, transformStyle: 'preserve-3d' }}
     >
-        <Card className="bg-card/80 backdrop-blur-sm border border-white/10 shadow-lg p-4 h-full">
+        <Card className="bg-card/80 backdrop-blur-sm border border-white/10 shadow-lg hover:shadow-2xl h-full p-4 transition-all duration-300">
              <div className="flex items-start justify-between">
                 <div className="space-y-1">
                     <p className="text-sm font-medium text-muted-foreground">{title}</p>
-                    <p className="text-2xl font-bold">{value}</p>
+                    <p className={`text-3xl font-bold ${colorClass}`}>{value}</p>
                     <p className="text-xs text-muted-foreground">{subtitle}</p>
                 </div>
-                <div className="p-2 bg-primary/10 rounded-full">
-                    <Icon className="h-5 w-5 text-primary-foreground/80" />
+                <div className="p-3 bg-primary/10 rounded-lg">
+                    <Icon className={`h-6 w-6 ${colorClass}`} />
                 </div>
             </div>
         </Card>
     </motion.div>
 );
 
-const AppSectionCard = ({ item }: { item: { name: string; href: string; icon: React.ElementType } }) => {
-    const router = useRouter();
-    const { name, href, icon: Icon } = item;
-    
-    // Mapping user-friendly names to specific icons
-    const iconMap: { [key: string]: React.ElementType } = {
-        'Watak Register': FileText, // 3D clipboard
-        'Sales': ShoppingCart, // Represents Bills
-        'Khata Ledger': BookOpen, // Represents 3D Money Bag
-        'Products': Package, // Represents Stock / 3D box
-        'Loyalty Points': Award, // Spinning gold coin
-        'Purchases': ShoppingBasket, // Represents Reports
-        'Outside Sales': Globe, // Represents Reports
-    };
-
-    const DisplayIcon = iconMap[name] || Icon;
-
-    return (
-        <motion.div
-            whileHover={{ scale: 1.08, y: -5, rotateY: 10, transition: { type: 'spring', stiffness: 300 } }}
-            whileTap={{ scale: 0.95 }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: 'easeOut' }}
-            className="cursor-pointer group bg-card/50 backdrop-blur-sm border border-white/10 rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-white/10 transition-colors"
-            onClick={() => router.push(href)}
-            style={{ perspective: 800 }}
-        >
-            <div className="neon-glow-container">
-                <DisplayIcon className="h-7 w-7 text-green-400 neon-glow-icon" />
-            </div>
-            <span className="text-xs font-medium text-center text-muted-foreground group-hover:text-primary-foreground transition-colors">{name}</span>
-        </motion.div>
-    );
-}
 
 export default function DashboardPage() {
   const router = useRouter();
   const [allInvoices, setAllInvoices] = useState<Invoice[]>([]);
-  const [allBikris, setAllBikris] = useState<Bikri[]>([]);
-  const [allReceipts, setAllReceipts] = useState<Receipt[]>([]);
-  const [allChallans, setAllChallans] = useState<Challan[]>([]);
+  const [allPurchases, setAllPurchases] = useState<Purchase[]>([]);
   const [allAdvances, setAllAdvances] = useState<Advance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  // New state for interactive charts
-  const [salesChartYear, setSalesChartYear] = useState(new Date().getFullYear());
-  const [isOthersDrilldownOpen, setIsOthersDrilldownOpen] = useState(false);
 
   useEffect(() => {
     function fetchData() {
@@ -168,17 +98,13 @@ export default function DashboardPage() {
 
         const data: { [key: string]: any[] } = {
             invoices: [],
-            bikris: [],
-            receipts: [],
-            challans: [],
+            purchases: [],
             advances: [],
         };
 
         const prefixes: { [key: string]: keyof typeof data } = {
             'invoice-': 'invoices',
-            'bikri-': 'bikris',
-            'receipt-': 'receipts',
-            'challan-': 'challans',
+            'purchase-': 'purchases',
             'advance-': 'advances',
         };
 
@@ -190,8 +116,7 @@ export default function DashboardPage() {
             if (matchingPrefix) {
                 try {
                     const item = JSON.parse(localStorage.getItem(key)!);
-                    const category = prefixes[matchingPrefix];
-                    data[category].push(item);
+                    data[prefixes[matchingPrefix]].push(item);
                 } catch (error) {
                     console.error(`Error parsing item from localStorage with key: ${key}`, error);
                 }
@@ -199,9 +124,7 @@ export default function DashboardPage() {
         }
         
         setAllInvoices(data.invoices);
-        setAllBikris(data.bikris);
-        setAllReceipts(data.receipts);
-        setAllChallans(data.challans);
+        setAllPurchases(data.purchases);
         setAllAdvances(data.advances);
         
         setIsLoading(false);
@@ -209,12 +132,7 @@ export default function DashboardPage() {
     fetchData();
   }, []);
   
-  const availableYears = useMemo(() => {
-      const allDates = [...allInvoices.map(i => i.date), ...allBikris.map(b => b.date)];
-      const years = new Set(allDates.map(d => new Date(d).getFullYear()));
-      return Array.from(years).sort((a,b) => b-a);
-  }, [allInvoices, allBikris]);
-
+  
   const stats = useMemo(() => {
     if (isLoading) return null;
     const today = new Date();
@@ -223,225 +141,55 @@ export default function DashboardPage() {
     const currentYear = new Date().getFullYear();
     
     let totalSaleValueToday = 0;
-    let pattiToday = 0;
-    let dabbaToday = 0;
-    
-    const monthlySalesData = Array(12).fill(0);
     let monthlyTotalSales = 0;
-
-    let yearGrossSales = 0;
-    let yearTotalExpenses = 0;
     let yearNetSales = 0;
-    let yearPattiSold = 0;
-    let yearDabbaSold = 0;
-    let yearPattiReceived = 0;
-    let yearDabbaReceived = 0;
-    let yearPattiSentOutside = 0;
-    let yearDabbaSentOutside = 0;
-
+    let yearTotalPurchases = 0;
+    let outstandingAdvances = 0;
 
     allInvoices.forEach(sale => {
-        if (!sale.totals) return; // Fix: Check if totals object exists
+        if (!sale.totals) return; 
         const saleDate = new Date(sale.date);
         const saleYear = saleDate.getFullYear();
         const saleMonth = saleDate.getMonth();
         const netSale = sale.totals.netSale || 0;
-        const grossSale = sale.totals.grossSale || 0;
-        const totalExpenses = sale.totals.totalExpenses || 0;
         
-        const nonForwardedEntries = sale.entries?.filter(e => !e.isForwarded) || [];
-
         if (sale.date === todayStr) {
             totalSaleValueToday += netSale;
-            nonForwardedEntries.forEach(entry => {
-                if (entry.type === 'Patti') pattiToday += entry.qty;
-                if (entry.type === 'Dabba') dabbaToday += entry.qty;
-            });
         }
         
         if (saleYear === currentYear) {
             if (saleMonth === currentMonth) {
                 monthlyTotalSales += netSale;
             }
-            
-            yearGrossSales += grossSale;
-            yearTotalExpenses += totalExpenses;
             yearNetSales += netSale;
-            
-            nonForwardedEntries.forEach(entry => {
-                if (entry.type === 'Patti') yearPattiSold += entry.qty;
-                if (entry.type === 'Dabba') yearDabbaSold += entry.qty;
-            });
         }
+    });
 
-        if (saleYear === salesChartYear) {
-            monthlySalesData[saleMonth] += netSale;
+    allPurchases.forEach(purchase => {
+        const purchaseDate = new Date(purchase.date);
+        if (purchaseDate.getFullYear() === currentYear) {
+            yearTotalPurchases += purchase.totals.grandTotal || 0;
+        }
+    });
+
+    allAdvances.forEach(advance => {
+        const advanceAmount = advance.amount || 0;
+        if(advance.type === 'Advance Given') {
+            outstandingAdvances += advanceAmount;
+        } else if (advance.type === 'Repayment Received' || advance.type === 'Discount') {
+            outstandingAdvances -= advanceAmount;
         }
     });
     
-    allBikris.forEach(bikri => {
-        if (!bikri.calculation) return;
-        const bikriDate = new Date(bikri.date);
-        const bikriYear = bikriDate.getFullYear();
-        
-        const grossSale = bikri.calculation.grossSale || 0;
-        const totalExpenses = bikri.calculation.totalExpenses || 0;
-        
-        let bikriNetSale = 0;
-        if (bikri.bikriType === 'growerForwarding') {
-            bikriNetSale = bikri.calculation.netSalePayableToGrower || 0;
-            // The profit for F.Co is the commission, which is part of expenses
-            // For simplicity, we add commission to net sales from F.Co's perspective
-            if (bikriYear === currentYear) yearNetSales += bikri.calculation.commissionAmount || 0;
-        } else { // fcoStock
-            bikriNetSale = bikri.calculation.netProfitOrLoss || 0;
-            if (bikriYear === currentYear) yearNetSales += bikriNetSale;
-        }
-        
-        if(bikriYear === currentYear) {
-            yearTotalExpenses += totalExpenses;
-            yearGrossSales += grossSale; // Add bikri gross sales to total gross
-        }
-
-        if (bikri.date === todayStr) {
-            totalSaleValueToday += bikriNetSale;
-            pattiToday += bikri.saleEntries?.filter((e:any) => e.type === 'Patti').reduce((acc:number, e:any) => acc + e.qty, 0) || 0;
-            dabbaToday += bikri.saleEntries?.filter((e:any) => e.type === 'Dabba').reduce((acc:number, e:any) => acc + e.qty, 0) || 0;
-        }
-        
-        const saleMonth = bikriDate.getMonth();
-        if (bikriYear === currentYear && saleMonth === currentMonth) {
-            monthlyTotalSales += bikriNetSale;
-        }
-        if (bikriYear === salesChartYear) {
-            monthlySalesData[saleMonth] += bikriNetSale;
-        }
-
-        if(bikriYear === currentYear) {
-            const pattiSent = bikri.saleEntries?.filter((e:any) => e.type === 'Patti').reduce((acc:number, e:any) => acc + e.qty, 0) || 0;
-            const dabbaSent = bikri.saleEntries?.filter((e:any) => e.type === 'Dabba').reduce((acc:number, e:any) => acc + e.qty, 0) || 0;
-            yearPattiSentOutside += pattiSent;
-            yearDabbaSentOutside += dabbaSent;
-        }
-    });
-
-    allReceipts.forEach(receipt => {
-        if (!receipt.entries || !Array.isArray(receipt.entries)) return;
-        const receiptDate = new Date(receipt.date);
-        if (receiptDate.getFullYear() === currentYear) {
-            receipt.entries.forEach(entry => {
-                yearPattiReceived += Number(entry.peti) || 0;
-                yearDabbaReceived += Number(entry.daba) || 0;
-            });
-        }
-    });
-    
-    // Note: This logic for sent outside might be double counting if challans are also used for bikris.
-    // Assuming for now they are separate or bikris are the primary record for outside sales qty.
-    allChallans.forEach(challan => {
-        if (!challan.id) return;
-        const challanDate = new Date(challan.date);
-        const isLinkedToBikri = allBikris.some(b => b.challanId === challan.id);
-        if (challanDate.getFullYear() === currentYear && !isLinkedToBikri) {
-            yearPattiSentOutside += Number(challan.totalPetti) || 0;
-            yearDabbaSentOutside += Number(challan.totalDabba) || 0;
-        }
-    });
-    
-    const grossProfitMargin = yearGrossSales > 0 ? ((yearNetSales / yearGrossSales) * 100) : 0;
-
     return {
         totalSaleValueToday,
-        pattiToday,
-        dabbaToday,
         monthlyTotalSales,
-        monthlySalesData,
-        yearGrossSales,
-        yearTotalExpenses,
         yearNetSales,
-        grossProfitMargin,
-        yearPattiSold,
-        yearDabbaSold,
-        yearNugsSold: yearPattiSold + yearDabbaSold,
-        yearPattiReceived,
-        yearDabbaReceived,
-        yearNugsReceived: yearPattiReceived + yearDabbaReceived,
-        yearPattiSentOutside,
-        yearDabbaSentOutside,
-        yearNugsSentOutside: yearPattiSentOutside + yearDabbaSentOutside,
+        yearTotalPurchases,
+        outstandingAdvances,
     };
-  }, [allInvoices, allBikris, allReceipts, allChallans, isLoading, salesChartYear]);
+  }, [allInvoices, allPurchases, allAdvances, isLoading]);
   
-  const growerProfits = useMemo(() => {
-    if (isLoading) return { topGrowers: [], otherGrowers: [] };
-    
-    const profitsByGrower: { [name: string]: { name: string; profit: number } } = {};
-    const currentYear = new Date().getFullYear();
-
-    const addProfit = (name: string, amount: number) => {
-        if (!name || !amount) return;
-        if (!profitsByGrower[name]) {
-            profitsByGrower[name] = { name: name, profit: 0 };
-        }
-        profitsByGrower[name].profit += amount;
-    };
-
-    // Process local invoices
-    allInvoices.forEach(sale => {
-        if (!sale.totals) return;
-        const saleYear = new Date(sale.date).getFullYear();
-        if (saleYear === currentYear) {
-            addProfit(sale.customerName, sale.totals.netSale);
-        }
-    });
-
-    // Process outside sales (bikris)
-    allBikris.forEach(bikri => {
-        if (!bikri.calculation) return;
-        const bikriYear = new Date(bikri.date).getFullYear();
-        if (bikriYear === currentYear && bikri.bikriType === 'growerForwarding' && bikri.growerName) {
-            addProfit(bikri.growerName, bikri.calculation.netSalePayableToGrower || 0);
-        }
-    });
-    
-    const sortedGrowers = Object.values(profitsByGrower).sort((a, b) => b.profit - a.profit);
-
-    return {
-        topGrowers: sortedGrowers.slice(0, 20),
-        otherGrowers: sortedGrowers.slice(20)
-    };
-  }, [allInvoices, allBikris, isLoading]);
-
-  const loyaltyStats = useMemo(() => {
-        if (isLoading) return null;
-        
-        let totalPointsDistributed = 0;
-        let redeemedThisMonth = 0;
-        const currentMonth = new Date().getMonth();
-        const currentYear = new Date().getFullYear();
-        
-        const allGrowerProfits = [...growerProfits.topGrowers, ...growerProfits.otherGrowers];
-
-        allGrowerProfits.forEach(grower => {
-            totalPointsDistributed += Math.floor(grower.profit * 0.01); // 1% of net sales
-        });
-
-        allAdvances.forEach(advance => {
-            const advanceDate = new Date(advance.date);
-            if(advance.type === 'Discount' && advanceDate.getMonth() === currentMonth && advanceDate.getFullYear() === currentYear) {
-                redeemedThisMonth += advance.amount;
-            }
-        });
-
-        const topGrower = growerProfits.topGrowers.length > 0 ? growerProfits.topGrowers[0] : null;
-
-        return {
-            totalPointsDistributed: totalPointsDistributed.toLocaleString(),
-            redeemedThisMonth: `₹${redeemedThisMonth.toLocaleString()}`,
-            topGrower: topGrower ? `${topGrower.name} (${Math.floor(topGrower.profit * 0.01).toLocaleString()} pts)` : 'N/A',
-        };
-    }, [isLoading, growerProfits, allAdvances]);
-
 
   if (isLoading) {
     return (
@@ -453,38 +201,6 @@ export default function DashboardPage() {
   }
 
   const { dashboardHeader } = placeholderImages;
-  
-  const appSections = sidebarSections.flatMap(s => s.items);
-  
-  const pieChartData = growerProfits.topGrowers.map(g => ({ x: g.name.split(' ')[0], y: g.profit, label: `${g.name.split(' ')[0]}\n₹${(g.profit / 1000).toFixed(1)}k` }));
-  const otherProfit = growerProfits.otherGrowers.reduce((acc, g) => acc + g.profit, 0);
-  if (otherProfit > 0) {
-      pieChartData.push({ x: 'Others', y: otherProfit, label: `Others\n₹${(otherProfit / 1000).toFixed(1)}k` });
-  }
-
-  const barChartData = stats?.monthlySalesData.map((sales, i) => ({
-      x: new Date(2000, i).toLocaleString('default', { month: 'short' }),
-      y: sales,
-      label: `₹${(sales/1000).toFixed(1)}k`
-  }));
-  
-  const otherGrowersBarChartData = growerProfits.otherGrowers.map(g => ({
-    x: g.name,
-    y: g.profit,
-  }));
-
-  const pieColorScale = ["#10b981", "#3b82f6", "#f97316", "#8b5cf6", "#ec4899", "#64748b"];
-
-  const ChartModalContent = ({ title, children }: { title: string, children: React.ReactNode }) => (
-    <DialogContent className="max-w-3xl h-[80vh] flex flex-col">
-        <DialogHeader>
-            <DialogTitle>{title}</DialogTitle>
-        </DialogHeader>
-        <div className="flex-grow h-full">
-            {children}
-        </div>
-    </DialogContent>
-  );
 
   return (
     <div className="space-y-8">
@@ -509,370 +225,94 @@ export default function DashboardPage() {
             </div>
         </motion.div>
         
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <StatCard 
+                title="Today's Sales (Net)" 
+                value={`₹${Math.round(stats?.totalSaleValueToday ?? 0).toLocaleString('en-IN')}`} 
+                subtitle="Net sales from today's invoices" 
+                icon={TrendingUp}
+                colorClass="text-green-400"
+            />
+             <StatCard 
+                title="This Month's Sales (Net)" 
+                value={`₹${Math.round(stats?.monthlyTotalSales ?? 0).toLocaleString('en-IN')}`} 
+                subtitle="Current calendar month" 
+                icon={Calendar}
+                colorClass="text-blue-400"
+            />
+             <StatCard 
+                title="This Year's Sales (Net)" 
+                value={`₹${Math.round(stats?.yearNetSales ?? 0).toLocaleString('en-IN')}`} 
+                subtitle="Total net profit this year" 
+                icon={IndianRupee}
+                colorClass="text-yellow-400"
+            />
+            <StatCard 
+                title="This Year's Purchases" 
+                value={`₹${Math.round(stats?.yearTotalPurchases ?? 0).toLocaleString('en-IN')}`} 
+                subtitle="Total purchases from growers" 
+                icon={ShoppingBasket}
+                colorClass="text-orange-400"
+            />
+             <StatCard 
+                title="Outstanding Advances" 
+                value={`₹${Math.round(stats?.outstandingAdvances ?? 0).toLocaleString('en-IN')}`} 
+                subtitle="Net balance of advances given" 
+                icon={Banknote}
+                colorClass="text-red-400"
+            />
+             <StatCard 
+                title="Yearly Profit (Est.)" 
+                value={`₹${Math.round((stats?.yearNetSales ?? 0) - (stats?.yearTotalPurchases ?? 0)).toLocaleString('en-IN')}`} 
+                subtitle="Net Sales - Purchases" 
+                icon={Scale}
+                colorClass="text-purple-400"
+            />
+        </div>
+        
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
         >
-            <Accordion type="single" collapsible defaultValue="item-1" className="w-full">
-                <AccordionItem value="item-1">
-                    <AccordionTrigger>
-                        <h2 className="text-xl font-semibold tracking-wider text-muted-foreground">APP SECTIONS</h2>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-4 pt-4">
-                            {appSections.map((item, index) => (
-                                <motion.div
-                                    key={item.name}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.5, delay: 0.1 + index * 0.05 }}
-                                >
-                                    <AppSectionCard item={item} />
-                                </motion.div>
-                            ))}
-                        </div>
-                    </AccordionContent>
-                </AccordionItem>
-            </Accordion>
-        </motion.div>
-
-        <motion.div
-             initial={{ opacity: 0, y: 20 }}
-             animate={{ opacity: 1, y: 0 }}
-             transition={{ duration: 0.5, delay: 0.2 }}
-             className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-        >
-            <Dialog>
-                <DialogTrigger asChild>
-                    <motion.div
-                        whileHover={{ scale: 1.02, transition: { type: 'spring', stiffness: 300 } }}
-                        className="lg:col-span-2"
-                    >
-                        <Card className="bg-card/80 backdrop-blur-sm border border-white/10 cursor-pointer h-full">
-                            <CardHeader>
-                                <div className="flex justify-between items-center">
-                                    <CardTitle className="flex items-center gap-2"><BarChart className="h-5 w-5 text-primary"/>Monthly Sales</CardTitle>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="outline">
-                                                {salesChartYear} <ChevronDown className="ml-2 h-4 w-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent>
-                                            {availableYears.map(year => (
-                                                <DropdownMenuItem key={year} onSelect={() => setSalesChartYear(year)}>
-                                                    {year}
-                                                </DropdownMenuItem>
-                                            ))}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
-                                <CardDescription>Net sales growth for {salesChartYear}. Click to enlarge.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="h-64">
-                                    {barChartData && barChartData.some(d => d.y > 0) ? (
-                                    <VictoryChart
-                                        theme={VictoryTheme.material}
-                                        domainPadding={{x: 20}}
-                                        padding={{ top: 20, bottom: 40, left: 60, right: 40 }}
-                                        animate={{ duration: 500 }}
-                                    >
-                                        <VictoryAxis 
-                                            style={{ 
-                                                tickLabels: { fill: 'hsl(var(--muted-foreground))', fontSize: 10 },
-                                                grid: { stroke: 'hsl(var(--border))', strokeDasharray: '4' } 
-                                            }} 
-                                        />
-                                        <VictoryAxis 
-                                            dependentAxis 
-                                            style={{ 
-                                                tickLabels: { fill: 'hsl(var(--muted-foreground))', fontSize: 10 },
-                                                grid: { stroke: 'hsl(var(--border))', strokeDasharray: '4' } 
-                                            }}
-                                            tickFormat={(x) => (`₹${x/1000}k`)} 
-                                        />
-                                        <VictoryBar
-                                            data={barChartData}
-                                            labelComponent={<VictoryTooltip style={{fill: 'black'}}/>}
-                                            style={{ data: { fill: "#34d399" }, labels: { fill: 'white' } }}
-                                            barRatio={0.8}
-                                            cornerRadius={{ top: 4 }}
-                                        />
-                                    </VictoryChart>
-                                    ) : <div className="flex items-center justify-center h-full text-muted-foreground">No monthly sales data available for {salesChartYear}.</div>}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                </DialogTrigger>
-                <ChartModalContent title={`Monthly Sales for ${salesChartYear}`}>
-                     <VictoryChart
-                        theme={VictoryTheme.material}
-                        domainPadding={{x: 30}}
-                        height={400}
-                        padding={{ top: 40, bottom: 60, left: 80, right: 50 }}
-                        animate={{ duration: 500 }}
-                    >
-                        <VictoryAxis 
-                            style={{ 
-                                tickLabels: { fill: 'hsl(var(--muted-foreground))', fontSize: 12 },
-                                grid: { stroke: 'hsl(var(--border))', strokeDasharray: '4' } 
-                            }} 
-                        />
-                        <VictoryAxis 
-                            dependentAxis 
-                            style={{ 
-                                tickLabels: { fill: 'hsl(var(--muted-foreground))', fontSize: 12 },
-                                grid: { stroke: 'hsl(var(--border))', strokeDasharray: '4' } 
-                            }}
-                            tickFormat={(x) => (`₹${(x/1000).toFixed(0)}k`)} 
-                        />
-                        <VictoryBar
-                            data={barChartData}
-                            labelComponent={<VictoryTooltip style={{fill: 'black'}}/>}
-                            style={{ data: { fill: "#34d399" }, labels: { fill: 'white' } }}
-                            barRatio={0.8}
-                            cornerRadius={{ top: 6 }}
-                        />
-                    </VictoryChart>
-                </ChartModalContent>
-            </Dialog>
-
-             <Dialog>
-                <DialogTrigger asChild>
-                    <motion.div
-                        whileHover={{ scale: 1.02, transition: { type: 'spring', stiffness: 300 } }}
-                    >
-                        <Card className="bg-card/80 backdrop-blur-sm border border-white/10 cursor-pointer h-full">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2"><PieChart className="h-5 w-5 text-primary"/>Top Grower Sales</CardTitle>
-                                <CardDescription>Net sales distribution among top growers this year. Click to enlarge or drill-down on 'Others'.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="h-64">
-                                    {pieChartData.length > 0 ? (
-                                        <VictoryPie
-                                            data={pieChartData}
-                                            colorScale={pieColorScale}
-                                            labelRadius={({ innerRadius }) => (innerRadius || 0) + 40 }
-                                            radius={({ datum }) => 100 + (datum.y / Math.max(...pieChartData.map(d => d.y))) * 20}
-                                            style={{
-                                                data: {
-                                                    fillOpacity: 0.8,
-                                                    stroke: "hsl(var(--card))",
-                                                    strokeWidth: 2,
-                                                },
-                                                labels: {
-                                                    fill: "hsl(var(--card-foreground))",
-                                                    fontSize: 8,
-                                                    fontWeight: "bold"
-                                                }
-                                            }}
-                                            animate={{ duration: 500 }}
-                                            events={[{
-                                                target: "data",
-                                                eventHandlers: {
-                                                    onClick: () => {
-                                                        return [{
-                                                            target: "data",
-                                                            mutation: ({ datum, ...props }) => {
-                                                                if (datum.x === "Others") {
-                                                                    setIsOthersDrilldownOpen(true);
-                                                                    return null;
-                                                                }
-                                                                return null;
-                                                            }
-                                                        }];
-                                                    }
-                                                }
-                                            }]}
-                                        />
-                                    ) : <div className="flex items-center justify-center h-full text-muted-foreground">No sales data for growers.</div>}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                </DialogTrigger>
-                <Dialog open={isOthersDrilldownOpen} onOpenChange={setIsOthersDrilldownOpen}>
-                    <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
-                        <DialogHeader>
-                            <DialogTitle>Sales from "Other" Growers</DialogTitle>
-                            <DialogDescription>A breakdown of net sales from growers not in the top 20.</DialogDescription>
-                        </DialogHeader>
-                        <ScrollArea className="max-h-96">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Grower</TableHead>
-                                        <TableHead className="text-right">Net Sales</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {growerProfits.otherGrowers.map((grower) => (
-                                        <TableRow key={grower.name}>
-                                            <TableCell className="font-medium">{grower.name}</TableCell>
-                                            <TableCell className="text-right font-mono">₹{grower.profit.toLocaleString('en-IN', {minimumFractionDigits: 2})}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </ScrollArea>
-                    </DialogContent>
-                </Dialog>
-                <ChartModalContent title="Top Grower Sales Distribution">
-                    <VictoryPie
-                        data={pieChartData}
-                        colorScale={pieColorScale}
-                        labelRadius={({ innerRadius }) => (innerRadius || 0) + 70 }
-                        radius={({ datum }) => 150 + (datum.y / Math.max(...pieChartData.map(d => d.y))) * 30}
-                        style={{
-                            data: { fillOpacity: 0.9, stroke: "hsl(var(--card))", strokeWidth: 3 },
-                            labels: { fill: "hsl(var(--card-foreground))", fontSize: 12, fontWeight: "bold" }
-                        }}
-                        animate={{ duration: 500 }}
-                    />
-                </ChartModalContent>
-            </Dialog>
+             <Card className="bg-card/80 backdrop-blur-sm border border-white/10">
+                <CardHeader>
+                    <CardTitle>Quick Actions</CardTitle>
+                    <CardDescription>Navigate to key sections of the application.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <Button onClick={() => router.push('/sales')} className="h-20 text-lg w-full bg-primary/80 hover:bg-primary border border-primary-foreground/20">
+                        <PlusCircle className="mr-2 h-6 w-6" /> Sales Entry
+                    </Button>
+                    <Button onClick={() => router.push('/watak-register')} className="h-20 text-lg w-full bg-primary/80 hover:bg-primary border border-primary-foreground/20">
+                        <FileText className="mr-2 h-6 w-6" /> Watak Register
+                    </Button>
+                    <Button onClick={() => router.push('/purchases')} className="h-20 text-lg w-full bg-primary/80 hover:bg-primary border border-primary-foreground/20">
+                        <ShoppingBasket className="mr-2 h-6 w-6" /> Purchases
+                    </Button>
+                    <Button onClick={() => router.push('/khata')} className="h-20 text-lg w-full bg-primary/80 hover:bg-primary border border-primary-foreground/20">
+                        <BookOpen className="mr-2 h-6 w-6" /> Khata Ledger
+                    </Button>
+                </CardContent>
+            </Card>
         </motion.div>
         
         <motion.div
              initial={{ opacity: 0, y: 20 }}
              animate={{ opacity: 1, y: 0 }}
              transition={{ duration: 0.5, delay: 0.3 }}
-             className="space-y-4"
-        >
-             <h2 className="text-xl font-semibold tracking-wider text-muted-foreground">THIS YEAR'S SUMMARY</h2>
-             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
-                <StatCard title="Today's Sales (Net)" value={`₹${Math.round(stats?.totalSaleValueToday ?? 0).toLocaleString('en-IN')}`} subtitle={`From ${stats?.pattiToday} Patti / ${stats?.dabbaToday} Dabba`} icon={TrendingUp} />
-                <StatCard title="This Month's Sales (Net)" value={`₹${Math.round(stats?.monthlyTotalSales ?? 0).toLocaleString('en-IN')}`} subtitle="Current calendar month" icon={Calendar} />
-                <StatCard title="This Year's Gross Sales" value={`₹${Math.round(stats?.yearGrossSales ?? 0).toLocaleString('en-IN')}`} subtitle="Total sale value this year" icon={IndianRupee} />
-                <StatCard title="This Year's Net Sales" value={`₹${Math.round(stats?.yearNetSales ?? 0).toLocaleString('en-IN')}`} subtitle="After all expenses" icon={IndianRupee} />
-                <StatCard title="Total Yearly Expenses" value={`₹${Math.round(stats?.yearTotalExpenses ?? 0).toLocaleString('en-IN')}`} subtitle="From all sales invoices" icon={IndianRupee} />
-                <StatCard title="Gross Profit Margin" value={`${Math.round(stats?.grossProfitMargin ?? 0)}%`} subtitle="Net / Gross Sales" icon={TrendingUp} />
-
-                <StatCard title="Total Patti Received" value={stats?.yearPattiReceived.toLocaleString('en-IN') ?? '0'} subtitle="This year via Goods Receipt" icon={Receipt} />
-                <StatCard title="Total Dabba Received" value={stats?.yearDabbaReceived.toLocaleString('en-IN') ?? '0'} subtitle="This year via Goods Receipt" icon={Receipt} />
-                <StatCard title="Total Nugs Received" value={stats?.yearNugsReceived.toLocaleString('en-IN') ?? '0'} subtitle="Patti + Dabba this year" icon={Receipt} />
-
-                <StatCard title="Total Patti Sold (Local)" value={stats?.yearPattiSold.toLocaleString('en-IN') ?? '0'} subtitle="This year in Sopore Mandi" icon={Package} />
-                <StatCard title="Total Dabba Sold (Local)" value={stats?.yearDabbaSold.toLocaleString('en-IN') ?? '0'} subtitle="This year in Sopore Mandi" icon={Box} />
-                <StatCard title="Total Nugs Sold (Local)" value={stats?.yearNugsSold.toLocaleString('en-IN') ?? '0'} subtitle="Patti + Dabba this year" icon={ClipboardList} />
-                
-                <StatCard title="Total Patti Sent Outside" value={stats?.yearPattiSentOutside.toLocaleString('en-IN') ?? '0'} subtitle="This year via Challan" icon={Truck} />
-                <StatCard title="Total Dabba Sent Outside" value={stats?.yearDabbaSentOutside.toLocaleString('en-IN') ?? '0'} subtitle="This year via Challan" icon={Truck} />
-                <StatCard title="Total Nugs Sent Outside" value={stats?.yearNugsSentOutside.toLocaleString('en-IN') ?? '0'} subtitle="Patti + Dabba this year" icon={Globe} />
-             </div>
-        </motion.div>
-
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="space-y-4"
-        >
-             <h2 className="text-xl font-semibold tracking-wider text-muted-foreground">QUICK ACTIONS</h2>
-             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <motion.div whileHover={{ scale: 1.05, transition: { type: "spring", stiffness: 400, damping: 10 } }} whileTap={{ scale: 0.95 }}>
-                    <Button onClick={() => router.push('/sales')} className="h-20 text-lg w-full bg-primary/80 hover:bg-primary border border-primary-foreground/20">
-                        <PlusCircle className="mr-2 h-6 w-6" /> Sales Entry
-                    </Button>
-                </motion.div>
-                <motion.div whileHover={{ scale: 1.05, transition: { type: "spring", stiffness: 400, damping: 10 } }} whileTap={{ scale: 0.95 }}>
-                    <Button onClick={() => router.push('/watak-register')} className="h-20 text-lg w-full bg-primary/80 hover:bg-primary border border-primary-foreground/20">
-                        <FileText className="mr-2 h-6 w-6" /> Watak Register
-                    </Button>
-                </motion.div>
-                 <motion.div whileHover={{ scale: 1.05, transition: { type: "spring", stiffness: 400, damping: 10 } }} whileTap={{ scale: 0.95 }}>
-                    <Button onClick={() => router.push('/purchases')} className="h-20 text-lg w-full bg-primary/80 hover:bg-primary border border-primary-foreground/20">
-                        <ShoppingBasket className="mr-2 h-6 w-6" /> Purchases
-                    </Button>
-                </motion.div>
-                 <motion.div whileHover={{ scale: 1.05, transition: { type: "spring", stiffness: 400, damping: 10 } }} whileTap={{ scale: 0.95 }}>
-                    <Button onClick={() => router.push('/khata')} className="h-20 text-lg w-full bg-primary/80 hover:bg-primary border border-primary-foreground/20">
-                        <BookOpen className="mr-2 h-6 w-6" /> Khata Ledger
-                    </Button>
-                 </motion.div>
-            </div>
-        </motion.div>
-        
-        <motion.div
-             initial={{ opacity: 0, y: 20 }}
-             animate={{ opacity: 1, y: 0 }}
-             transition={{ duration: 0.5, delay: 0.5 }}
         >
             <Card className="bg-card/80 backdrop-blur-sm border border-white/10">
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Award className="h-5 w-5 text-yellow-400" />Loyalty Program Summary</CardTitle>
-                    <CardDescription>A quick overview of your grower rewards program.</CardDescription>
+                    <CardTitle>Coming Soon: Graphs &amp; Charts</CardTitle>
+                    <CardDescription>Visual representations of your business data will appear here.</CardDescription>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-                     <div className="p-4 bg-muted/50 rounded-lg">
-                        <p className="text-sm text-muted-foreground">Total Points Distributed</p>
-                        <p className="text-2xl font-bold">{loyaltyStats?.totalPointsDistributed}</p>
-                    </div>
-                     <div className="p-4 bg-muted/50 rounded-lg">
-                        <p className="text-sm text-muted-foreground">Redeemed This Month</p>
-                        <p className="text-2xl font-bold">{loyaltyStats?.redeemedThisMonth}</p>
-                    </div>
-                     <div className="p-4 bg-muted/50 rounded-lg">
-                        <p className="text-sm text-muted-foreground">Top Grower</p>
-                        <p className="text-2xl font-bold">{loyaltyStats?.topGrower}</p>
-                    </div>
+                <CardContent className="flex items-center justify-center h-64 text-muted-foreground border-2 border-dashed rounded-lg">
+                    <p>Advanced data visualization is under development.</p>
                 </CardContent>
             </Card>
         </motion.div>
-        
-        <motion.div
-             initial={{ opacity: 0, y: 20 }}
-             animate={{ opacity: 1, y: 0 }}
-             transition={{ duration: 0.5, delay: 0.6 }}
-        >
-            <Card className="bg-card/80 backdrop-blur-sm border border-white/10">
-                <CardHeader>
-                    <CardTitle>All Growers by Net Sales</CardTitle>
-                    <CardDescription>This session's growers ranked by their total net sales.</CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                    <ScrollArea className="h-96">
-                        {[...growerProfits.topGrowers, ...growerProfits.otherGrowers].length > 0 ? (
-                            <Table>
-                                <TableHeader>
-                                    <TableRow className="border-white/10">
-                                        <TableHead>Grower</TableHead>
-                                        <TableHead className="text-right">Net Sales</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {[...growerProfits.topGrowers, ...growerProfits.otherGrowers].map((grower, index) => (
-                                        <TableRow key={grower.name} className="border-white/10">
-                                            <TableCell>
-                                                <div className="flex items-center gap-3">
-                                                    <span className={cn("flex items-center justify-center h-8 w-8 rounded-full text-white font-bold", 
-                                                        index === 0 && "bg-yellow-500",
-                                                        index === 1 && "bg-gray-400",
-                                                        index === 2 && "bg-orange-700",
-                                                        index > 2 && "bg-gray-600"
-                                                    )}>{index + 1}</span>
-                                                    <div>
-                                                    <span className="font-medium text-base">{grower.name}</span>
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-right font-mono text-lg text-green-400">₹{grower.profit.toLocaleString('en-IN', {minimumFractionDigits: 2})}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        ) : (
-                            <p className="text-sm text-muted-foreground text-center py-8">No sales data recorded this year.</p>
-                        )}
-                    </ScrollArea>
-                </CardContent>
-            </Card>
-        </motion.div>
-
     </div>
   );
 }
+
