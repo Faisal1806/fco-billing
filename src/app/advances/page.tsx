@@ -22,12 +22,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Trash2, Banknote, Loader2, Gift } from 'lucide-react';
+import { PlusCircle, Trash2, Banknote, Loader2, Gift, ArrowLeftRight, PiggyBank } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { PartySelector } from '@/components/party-selector';
 import { saveDocument, deleteDocument, sendPushNotification, getDocuments } from '@/lib/actions';
+import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 const STORAGE_PREFIX = 'advance-';
 
@@ -47,6 +48,29 @@ const emptyFormState: Omit<AdvanceEntry, 'id'> = {
     amount: 0,
     notes: '',
 };
+
+const TransactionTypeTile = ({ value, label, icon: Icon, selected, onSelect }: {
+    value: AdvanceEntry['type'];
+    label: string;
+    icon: React.ElementType;
+    selected: boolean;
+    onSelect: (value: AdvanceEntry['type']) => void;
+}) => (
+    <motion.div
+        whileHover={{ scale: 1.05, y: -5 }}
+        className={cn(
+            "cursor-pointer rounded-lg border-2 p-4 text-center transition-all duration-200 flex flex-col items-center justify-center h-full",
+            selected
+                ? "border-primary bg-primary/10 shadow-lg"
+                : "border-border bg-card hover:border-primary/50"
+        )}
+        onClick={() => onSelect(value)}
+    >
+        <Icon className={cn("h-8 w-8 mb-2", selected ? "text-primary" : "text-muted-foreground")} />
+        <p className="font-semibold text-sm">{label}</p>
+    </motion.div>
+);
+
 
 export default function AdvancesPage() {
     const { toast } = useToast();
@@ -186,40 +210,54 @@ export default function AdvancesPage() {
     <div className="space-y-6">
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Banknote className="h-6 w-6 text-primary"/> Add New Advance or Repayment</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-3xl"><Banknote className="h-8 w-8 text-primary"/> Advances & Payments</CardTitle>
                 <CardDescription>Record money given to growers/farmers as an advance or log any repayments received from them.</CardDescription>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="space-y-2">
-                    <Label htmlFor="date">Date</Label>
-                    <Input id="date" type="date" value={formState.date} onChange={(e) => handleInputChange(e, 'date')} />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="partyName">Party Name (Grower/Customer)</Label>
-                    <PartySelector value={formState.partyName} onChange={handlePartyChange} filter="all" />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="type">Transaction Type</Label>
-                    <Select value={formState.type} onValueChange={(val: 'Advance Given' | 'Repayment Received' | 'Discount') => handleInputChange(val, 'type')}>
-                        <SelectTrigger><SelectValue/></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="Advance Given">Advance Given (Debit)</SelectItem>
-                            <SelectItem value="Repayment Received">Repayment Received (Credit)</SelectItem>
-                            <SelectItem value="Discount">Loyalty Discount (Credit)</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="amount">Amount</Label>
-                    <Input id="amount" type="number" placeholder="0.00" value={formState.amount || ''} onChange={(e) => handleInputChange(e, 'amount')} />
-                </div>
-                 <div className="space-y-2 md:col-span-2 lg:col-span-4">
+            <CardContent className="space-y-6">
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <TransactionTypeTile 
+                        value="Advance Given" 
+                        label="Advance Given (Debit)" 
+                        icon={ArrowLeftRight} 
+                        selected={formState.type === 'Advance Given'} 
+                        onSelect={(v) => handleInputChange(v, 'type')}
+                    />
+                    <TransactionTypeTile 
+                        value="Repayment Received" 
+                        label="Repayment Received (Credit)" 
+                        icon={PiggyBank} 
+                        selected={formState.type === 'Repayment Received'} 
+                        onSelect={(v) => handleInputChange(v, 'type')}
+                    />
+                    <TransactionTypeTile 
+                        value="Discount" 
+                        label="Loyalty Discount (Credit)" 
+                        icon={Gift} 
+                        selected={formState.type === 'Discount'} 
+                        onSelect={(v) => handleInputChange(v, 'type')}
+                    />
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div className="space-y-2">
+                        <Label htmlFor="date">Date</Label>
+                        <Input id="date" type="date" value={formState.date} onChange={(e) => handleInputChange(e, 'date')} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="partyName">Party Name (Grower/Customer)</Label>
+                        <PartySelector value={formState.partyName} onChange={handlePartyChange} filter="all" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="amount">Amount</Label>
+                        <Input id="amount" type="number" placeholder="0.00" value={formState.amount || ''} onChange={(e) => handleInputChange(e, 'amount')} />
+                    </div>
+                 </div>
+                 <div className="space-y-2">
                     <Label htmlFor="notes">Notes / Remarks</Label>
-                    <Input id="notes" placeholder="e.g., For fertilizer purchase" value={formState.notes || ''} onChange={(e) => handleInputChange(e, 'notes')} />
+                    <Input id="notes" placeholder="e.g., For fertilizer purchase, cash payment" value={formState.notes || ''} onChange={(e) => handleInputChange(e, 'notes')} />
                 </div>
             </CardContent>
             <CardFooter>
-                <Button onClick={handleSaveEntry} className="gap-2">
+                <Button onClick={handleSaveEntry} className="w-full md:w-auto gap-2">
                     <PlusCircle className="h-4 w-4" /> Add Transaction
                 </Button>
             </CardFooter>
