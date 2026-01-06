@@ -522,7 +522,11 @@ export default function SalesRegisterPage() {
               {filteredWataks.map((watak: WatakEntry) => {
                 const canonicalName = partyNameMap.get(getCanonicalName(watak.customerName)) || watak.customerName;
                 return (
-                <TableRow key={watak.id}>
+                <motion.tr
+                    key={watak.id}
+                    className="hover:bg-muted/50 transition-colors"
+                    whileHover={{ scale: 1.02, y: -2, boxShadow: "0 8px 16px rgba(0,0,0,0.1)" }}
+                >
                   <TableCell>{new Date(watak.date).toLocaleDateString('en-GB')}</TableCell>
                   <TableCell>{watak.sNo}</TableCell>
                   <TableCell>{watak.watakNo}</TableCell>
@@ -542,7 +546,7 @@ export default function SalesRegisterPage() {
                       </Button>
                     )}
                   </TableCell>
-                </TableRow>
+                </motion.tr>
               )})}
               <TableRow className="font-bold bg-muted">
                   <TableCell colSpan={4} className="text-right">Total</TableCell>
