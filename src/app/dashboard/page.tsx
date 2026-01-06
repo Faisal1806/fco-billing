@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import placeholderImages from '@/app/lib/placeholder-images.json';
 import { motion } from 'framer-motion';
 import { sidebarSections } from '@/components/Sidebar';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 
 
@@ -337,10 +337,10 @@ export default function DashboardPage() {
         >
              <Card className="bg-card/80 backdrop-blur-sm border border-white/10">
                 <CardHeader>
-                    <CardTitle>Quick Actions</CardTitle>
+                    <CardTitle>App Sections</CardTitle>
                     <CardDescription>Jump to any section of the application.</CardDescription>
                 </CardHeader>
-                <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4">
                     {sidebarSections.flatMap(section => section.items).map((item) => (
                         <NavCard key={item.name} title={item.name} icon={item.icon} href={item.href} />
                     ))}

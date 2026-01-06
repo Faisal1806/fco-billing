@@ -26,6 +26,13 @@ import {
   Search,
   Award,
   History,
+  Receipt,
+  RotateCcw,
+  Truck,
+  Bell,
+  UserCheck,
+  DatabaseZap,
+  LifeBuoy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -45,42 +52,44 @@ export const sidebarSections = [
       ]
     },
     {
-      title: "SALES & PURCHASES",
+      title: "OPERATIONS",
       items: [
         { name: "Sales", href: "/sales", icon: ShoppingCart },
         { name: "Watak Register", href: "/watak-register", icon: FileText },
         { name: "Purchases", href: "/purchases", icon: ShoppingBasket },
-        { name: "Purchase Register", href: "/purchase-register", icon: FileSpreadsheet },
+        { name: "Products", href: "/products", icon: Package },
+        { name: "Parties", href: "/parties", icon: Users },
+        { name: "Expenses", href: "/expenses", icon: DollarSign },
         { name: "Outside Sales", href: "/outside-sales", icon: Globe },
       ]
     },
     {
-        title: "MANAGEMENT",
+        title: "FINANCE & LEDGERS",
         items: [
-            { name: "Products", href: "/products", icon: Package },
-            { name: "Parties", href: "/parties", icon: Users },
-            { name: "Expenses", href: "/expenses", icon: DollarSign },
-            { name: "Advances", href: "/advances", icon: Banknote },
             { name: "Khata Ledger", href: "/khata", icon: BookOpen },
             { name: "Statement of Account", href: "/statement", icon: FileSpreadsheet },
+            { name: "Payments", href: "/advances", icon: Banknote },
             { name: "Loyalty Points", href: "/loyalty", icon: Award },
-            { name: "Cold Storage", href: "/cold-storage", icon: Snowflake },
         ]
     },
     {
-      title: "RESOURCES",
+      title: "INVENTORY & LOGISTICS",
       items: [
-        { name: "Fruit Rates", href: "/rates", icon: TrendingUp },
-        { name: "Fertilizers", href: "/fertilizers", icon: FlaskConical },
-        { name: "Supplies Ledger", href: "/accessories", icon: Box },
+        { name: "Cold Storage", href: "/cold-storage", icon: Snowflake },
+        { name: "Receipts", href: "/sales?tab=receipts", icon: Receipt },
+        { name: "Returns", href: "#", icon: RotateCcw },
+        { name: "Stock Transfer", href: "#", icon: Truck },
       ]
     },
      {
-      title: "CONFIGURATION",
+      title: "SYSTEM",
       items: [
-        { name: "Activity Log", href: "/activity-log", icon: History },
-        { name: "Feedback", href: "/feedback", icon: Smile },
+        { name: "Reports", href: "/dashboard", icon: TrendingUp },
+        { name: "Notifications", href: "/settings", icon: Bell },
+        { name: "Users & Roles", href: "/settings", icon: UserCheck },
+        { name: "Backup & Sync", href: "/settings", icon: DatabaseZap },
         { name: "Settings", href: "/settings", icon: Cog },
+        { name: "Help & Support", href: "/feedback", icon: LifeBuoy },
       ]
     }
 ];
