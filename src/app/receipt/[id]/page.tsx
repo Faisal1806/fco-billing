@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import { useEffect, useState, useRef } from "react";
@@ -16,6 +15,8 @@ import jsPDF from 'jspdf';
 import QRCode from 'qrcode.react';
 import { useSearchParams } from "next/navigation";
 import { getDocument } from "@/lib/actions";
+import { motion } from 'framer-motion';
+
 
 interface ReceiptData {
     no: string;
@@ -358,15 +359,22 @@ export default function PaymentPage({ params }: { params: { id: string } }) {
             )}
 
             <div className="print-container">
-                <div ref={printRef}>
+                 <motion.div
+                    initial={{ opacity: 0, y: -50 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
+                    ref={printRef}
+                >
                     <div className="print-area-a4">
                         {renderContent()}
                     </div>
                      <div className="print-area-thermal">
                         <ThermalLayout />
                     </div>
-                </div>
+                </motion.div>
             </div>
         </div>
     );
 }
+
+    

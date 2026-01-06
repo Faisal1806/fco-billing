@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -231,7 +230,7 @@ export function ReceiptMakingTab() {
     toast({
       title: isEditing ? 'Receipt Updated!' : 'Receipt Saved!',
       description: 'The goods receipt has been successfully saved.',
-      isSuccess: true,
+      isSuccess: !isEditing, // Only show success animation on new save
     });
   };
 
@@ -424,3 +423,5 @@ export function ReceiptMakingTab() {
     </div>
   );
 }
+
+    
