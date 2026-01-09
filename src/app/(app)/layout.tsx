@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import Sidebar from "@/components/Sidebar";
+import { AppMenubar } from "@/components/Sidebar"; // Renamed for clarity
 import { motion } from 'framer-motion';
 import Lottie from 'lottie-react';
 import { useEffect, useState } from 'react';
@@ -36,8 +36,8 @@ export default function AppLayout({
              <div className="absolute inset-0 bg-background/90"></div>
         </div>
       <div className="relative z-10 flex min-h-screen w-full flex-col" style={{ perspective: '1200px' }}>
-        <Sidebar />
-        <div className="flex flex-col md:pl-[220px] lg:pl-[280px]">
+        <AppMenubar />
+        <div className="flex flex-col">
           <main className="flex flex-1 flex-col gap-4 p-4 sm:p-6 md:p-8 lg:p-10 pt-4 md:pt-10">
              <motion.div
               key={pathname}
