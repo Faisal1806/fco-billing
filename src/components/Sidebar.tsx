@@ -67,7 +67,7 @@ export const sidebarSections = [
       items: [
         { name: "Sales", href: "/sales", icon: ShoppingCart },
         { name: "Watak Register", href: "/watak-register", icon: FileText },
-        { name: "Purchase", href: "/purchases", icon: ShoppingBasket },
+        { name: "Purchases", href: "/purchases", icon: ShoppingBasket },
         { name: "Purchase Register", href: "/purchase-register", icon: BookOpen },
         { name: "Products", href: "/products", icon: Package },
         { name: "Parties", href: "/parties", icon: Users },
@@ -91,6 +91,8 @@ export const sidebarSections = [
         { name: "Cold Storage", href: "/cold-storage", icon: Snowflake },
         { name: "Activity Log", href: "/activity-log", icon: Activity },
         { name: "Accessories", href: "/accessories", icon: SprayCan },
+        { name: "Returns", href: "/returns", icon: RotateCcw },
+        { name: "Stock Transfer", href: "/stock-transfer", icon: Truck },
       ]
     },
      {
@@ -99,6 +101,7 @@ export const sidebarSections = [
         { name: "Reports", href: "/reports", icon: TrendingUp },
         { name: "Notifications", href: "/settings", icon: Bell },
         { name: "Users & Roles", href: "/users", icon: UserCheck },
+        { name: "Backup & Sync", href: "/settings", icon: DatabaseZap },
         { name: "Settings", href: "/settings", icon: Cog },
         { name: "Help & Support", href: "/feedback", icon: LifeBuoy },
       ]
