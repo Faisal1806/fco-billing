@@ -89,6 +89,8 @@ export const sidebarSections = [
       title: "INVENTORY & LOGISTICS",
       items: [
         { name: "Cold Storage", href: "/cold-storage", icon: Snowflake },
+        { name: "Returns", href: "/returns", icon: RotateCcw },
+        { name: "Stock Transfer", href: "/stock-transfer", icon: Truck },
         { name: "Activity Log", href: "/activity-log", icon: History },
         { name: "Accessories", href: "/accessories", icon: SprayCan },
       ]
@@ -99,6 +101,7 @@ export const sidebarSections = [
         { name: "Reports", href: "/reports", icon: TrendingUp },
         { name: "Notifications", href: "/settings", icon: Bell },
         { name: "Users & Roles", href: "/users", icon: UserCheck },
+        { name: "Backup & Sync", href: "/settings", icon: DatabaseZap },
         { name: "Settings", href: "/settings", icon: Cog },
         { name: "Help & Support", href: "/feedback", icon: LifeBuoy },
       ]
