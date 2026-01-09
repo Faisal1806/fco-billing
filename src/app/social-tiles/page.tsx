@@ -1,0 +1,39 @@
+'use client';
+
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { FaFacebookF, FaTwitter, FaTiktok, FaInstagram } from 'react-icons/fa';
+
+export default function SocialTilesPage() {
+  const socialLinks = [
+    { name: 'Facebook', icon: <FaFacebookF /> },
+    { name: 'Twitter', icon: <FaTwitter /> },
+    { name: 'TikTok', icon: <FaTiktok /> },
+    { name: 'Instagram', icon: <FaInstagram /> },
+  ];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>3D Social Tiles</CardTitle>
+        <CardDescription>
+          A demonstration of 3D-style social media links created with CSS pseudo-elements for a tactile, press-down effect on hover.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center justify-center bg-muted/40 p-10 rounded-lg">
+          <ul className="social-tiles-container flex gap-8">
+            {socialLinks.map((social, index) => (
+              <li key={index} className={`social-tile tile-${index + 1}`}>
+                <a href="#">
+                  <i className="icon">{social.icon}</i>
+                  {social.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

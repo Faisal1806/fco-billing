@@ -102,6 +102,7 @@ export const sidebarSections = [
         { name: "Notifications", href: "/settings", icon: Bell },
         { name: "Users & Roles", href: "/users", icon: UserCheck },
         { name: "Backup & Sync", href: "/settings", icon: DatabaseZap },
+        { name: "Social Tiles", href: "/social-tiles", icon: GitBranch },
         { name: "Settings", href: "/settings", icon: Cog },
         { name: "Help & Support", href: "/feedback", icon: LifeBuoy },
       ]
