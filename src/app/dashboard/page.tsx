@@ -1,10 +1,14 @@
-'use client'
+'use client';
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { sidebarSections } from '@/components/Sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { TrendingUp, ShoppingCart, Users } from 'lucide-react';
+import { WatakEntry } from '@/app/watak-register/page';
+import { PurchaseEntry } from '@/app/purchase-register/page';
+
 
 const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.ElementType, href: string }) => {
     const router = useRouter();
@@ -22,9 +26,57 @@ const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.Eleme
     );
 };
 
+const StatCard = ({ title, value, icon: Icon, description }: { title: string, value: string, icon: React.ElementType, description: string }) => (
+  <Card>
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardTitle className="text-sm font-medium">{title}</CardTitle>
+      <Icon className="h-4 w-4 text-muted-foreground" />
+    </CardHeader>
+    <CardContent>
+      <div className="text-2xl font-bold">{value}</div>
+      <p className="text-xs text-muted-foreground">{description}</p>
+    </CardContent>
+  </Card>
+);
+
 
 export default function DashboardPage() {
   const allNavItems = sidebarSections.flatMap(section => section.items);
+  const [stats, setStats] = React.useState({ sales: 0, purchases: 0, growers: 0 });
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const currentYear = new Date().getFullYear();
+      let totalSales = 0;
+      let totalPurchases = 0;
+      const growerNames = new Set<string>();
+
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key) {
+          if (key.startsWith('invoice-')) {
+            const watak: WatakEntry = JSON.parse(localStorage.getItem(key)!);
+            if (new Date(watak.date).getFullYear() === currentYear) {
+              totalSales += watak.totals.netSale || 0;
+            }
+          }
+          if (key.startsWith('purchase-')) {
+            const purchase: PurchaseEntry = JSON.parse(localStorage.getItem(key)!);
+            if (new Date(purchase.date).getFullYear() === currentYear) {
+                totalPurchases += purchase.totals.grandTotal || 0;
+            }
+          }
+           if (key.startsWith('party-')) {
+             const party = JSON.parse(localStorage.getItem(key)!);
+             if(party.type === 'Grower' || party.type === 'Both') {
+                growerNames.add(party.name);
+             }
+           }
+        }
+      }
+      setStats({ sales: totalSales, purchases: totalPurchases, growers: growerNames.size });
+    }
+  }, []);
 
   return (
     <div className="space-y-8">
@@ -38,6 +90,31 @@ export default function DashboardPage() {
                 </CardDescription>
             </CardHeader>
         </Card>
+
+        <motion.div 
+          className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0, transition: { duration: 0.5, delay: 0.3, staggerChildren: 0.1 } }}
+        >
+          <StatCard 
+            title="This Year's Sales" 
+            value={`₹${(stats.sales / 100000).toFixed(2)} L`} 
+            icon={TrendingUp} 
+            description="Total net sales recorded this year" 
+          />
+          <StatCard 
+            title="This Year's Purchases" 
+            value={`₹${(stats.purchases / 100000).toFixed(2)} L`} 
+            icon={ShoppingCart}
+            description="Total purchases recorded this year" 
+          />
+          <StatCard 
+            title="Total Growers" 
+            value={`${stats.growers}`} 
+            icon={Users}
+            description="Total number of unique growers" 
+          />
+        </motion.div>
         
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -49,8 +126,8 @@ export default function DashboardPage() {
                     <CardTitle>App Sections</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-x-8 gap-y-12 justify-center">
-                         {allNavItems.map((item, index) => (
+                     <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-x-4 gap-y-8 justify-center">
+                         {allNavItems.map((item) => (
                             <NavTile 
                                 key={item.name} 
                                 title={item.name} 
