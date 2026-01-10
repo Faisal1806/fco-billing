@@ -7,19 +7,8 @@ import { motion } from 'framer-motion';
 import { sidebarSections } from '@/components/Sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
-const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.ElementType, href: string }) => {
+const NavTile = ({ title, icon: Icon, href, colorIndex }: { title: string, icon: React.ElementType, href: string, colorIndex: number }) => {
     const router = useRouter();
-    
-    // A simple hash function to get a consistent color index
-    const getColorIndex = (str: string) => {
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-            hash = str.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        return (hash & 0x7FFFFFFF) % 4 + 1; // Return a value between 1 and 4
-    }
-
-    const colorIndex = getColorIndex(title);
 
     return (
         <li
@@ -36,6 +25,8 @@ const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.Eleme
 
 
 export default function DashboardPage() {
+  const allNavItems = sidebarSections.flatMap(section => section.items);
+
   return (
     <div className="space-y-8">
         <Card className="text-center bg-transparent border-none">
@@ -49,27 +40,30 @@ export default function DashboardPage() {
             </CardHeader>
         </Card>
         
-        {sidebarSections.map((section, sectionIndex) => (
-            <motion.div
-                key={section.title}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 * (sectionIndex + 1) }}
-            >
-                 <Card className="bg-card/60 backdrop-blur-sm border-white/10">
-                    <CardHeader>
-                        <CardTitle>{section.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-8 gap-y-12">
-                             {section.items.map((item) => (
-                                <NavTile key={item.name} title={item.name} icon={item.icon} href={item.href} />
-                            ))}
-                        </ul>
-                    </CardContent>
-                </Card>
-            </motion.div>
-        ))}
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+        >
+             <Card className="bg-card/60 backdrop-blur-sm border-white/10">
+                <CardHeader>
+                    <CardTitle>App Sections</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-8 gap-y-12">
+                         {allNavItems.map((item, index) => (
+                            <NavTile 
+                                key={item.name} 
+                                title={item.name} 
+                                icon={item.icon} 
+                                href={item.href} 
+                                colorIndex={(index % 4) + 1} 
+                            />
+                        ))}
+                    </ul>
+                </CardContent>
+            </Card>
+        </motion.div>
     </div>
   );
 }
