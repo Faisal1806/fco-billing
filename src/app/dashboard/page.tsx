@@ -1,4 +1,3 @@
-
 'use client'
 
 import * as React from 'react';
@@ -12,7 +11,7 @@ const NavTile = ({ title, icon: Icon, href, colorIndex }: { title: string, icon:
 
     return (
         <li
-            className={`social-tile tile-${colorIndex} w-full`}
+            className={`social-tile tile-${colorIndex}`}
             onClick={() => router.push(href)}
         >
             <a href="#" className="w-full">
@@ -50,7 +49,7 @@ export default function DashboardPage() {
                     <CardTitle>App Sections</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-8 gap-y-12">
+                    <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-8 gap-y-12 justify-center">
                          {allNavItems.map((item, index) => (
                             <NavTile 
                                 key={item.name} 
