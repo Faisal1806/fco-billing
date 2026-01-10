@@ -6,12 +6,12 @@ import { motion } from 'framer-motion';
 import { sidebarSections } from '@/components/Sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
-const NavTile = ({ title, icon: Icon, href, colorIndex }: { title: string, icon: React.ElementType, href: string, colorIndex: number }) => {
+const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.ElementType, href: string }) => {
     const router = useRouter();
 
     return (
         <li
-            className={`social-tile tile-${colorIndex}`}
+            className="social-tile"
             onClick={() => router.push(href)}
         >
             <a href="#" className="w-full">
@@ -49,14 +49,13 @@ export default function DashboardPage() {
                     <CardTitle>App Sections</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-8 gap-y-12 justify-center">
+                    <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-x-8 gap-y-12 justify-center">
                          {allNavItems.map((item, index) => (
                             <NavTile 
                                 key={item.name} 
                                 title={item.name} 
                                 icon={item.icon} 
-                                href={item.href} 
-                                colorIndex={(index % 4) + 1} 
+                                href={item.href}
                             />
                         ))}
                     </ul>
