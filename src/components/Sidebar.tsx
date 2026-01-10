@@ -51,7 +51,6 @@ import {
   MenubarSub,
   MenubarSubContent,
   MenubarSubTrigger,
-  MenubarShortcut,
 } from "@/components/ui/menubar";
 
 export const sidebarSections = [
@@ -91,6 +90,7 @@ export const sidebarSections = [
         { name: "Cold Storage", href: "/cold-storage", icon: Snowflake },
         { name: "Activity Log", href: "/activity-log", icon: Activity },
         { name: "Accessories", href: "/accessories", icon: SprayCan },
+        { name: "Receipts", href: "/receipts", icon: Receipt },
         { name: "Returns", href: "/returns", icon: RotateCcw },
         { name: "Stock Transfer", href: "/stock-transfer", icon: Truck },
       ]
