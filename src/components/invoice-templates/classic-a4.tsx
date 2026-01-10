@@ -54,7 +54,7 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
                                 <th className="p-1 text-left border-r border-green-600/50">VARIETY</th>
                                 <th className="p-1 text-center border-r border-green-600/50">QTY</th>
                                 <th className="p-1 text-right border-r border-green-600/50">RATE</th>
-                                <th className="p-1 text-right">TAXABLE AMT</th>
+                                <th className="p-1 text-right">AMOUNT</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -64,7 +64,7 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
                                     <td className="py-0.5 px-1 border-r border-green-600/50">{entry.variety}</td>
                                     <td className="py-0.5 px-1 text-center border-r border-green-600/50">{entry.qty}</td>
                                     <td className="py-0.5 px-1 text-right border-r border-green-600/50">{entry.isForwarded ? 'Forwarded' : `₹${entry.rate.toFixed(2)}`}</td>
-                                    <td className="py-0.5 px-1 text-right font-semibold">{entry.isForwarded ? 'Forwarded' : `₹${entry.taxableAmount.toFixed(2)}`}</td>
+                                    <td className="py-0.5 px-1 text-right font-semibold">{entry.isForwarded ? 'Forwarded' : `₹${entry.total.toFixed(2)}`}</td>
                                 </tr>
                             ))}
                             {emptyRows.map((_, index) => (
@@ -95,8 +95,6 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
                         </div>
                         <div className="space-y-0.5 border-l-2 border-green-700 pl-4 text-[10px]">
                             <div className="flex justify-between"><span>Subtotal:</span> <span className="font-semibold">₹{totals.subtotal.toFixed(2)}</span></div>
-                            <div className="flex justify-between"><span>CGST:</span> <span>+ ₹{totals.cgst.toFixed(2)}</span></div>
-                            <div className="flex justify-between"><span>SGST:</span> <span>+ ₹{totals.sgst.toFixed(2)}</span></div>
                             <div className="flex justify-between font-bold border-t border-gray-400"><span>Gross Sale:</span> <span>₹{totals.grossSale.toFixed(2)}</span></div>
                             <div className="flex justify-between"><span>Freight:</span> <span>- ₹{freight.toFixed(2)}</span></div>
                             <div className="flex justify-between"><span>Labour:</span> <span>- ₹{totals.labour.toFixed(2)}</span></div>
