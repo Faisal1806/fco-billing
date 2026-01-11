@@ -8,8 +8,6 @@ import { sidebarSections } from '@/components/Sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { TrendingUp, ShoppingCart, Users, DollarSign, Calendar, BarChart, FileText, BookOpen, PlusCircle, Award } from 'lucide-react';
 import { WatakEntry } from '@/app/watak-register/page';
-import { PurchaseEntry } from '@/app/purchase-register/page';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -251,7 +249,7 @@ export default function DashboardPage() {
         
         <div className="space-y-4">
              <div className="flex justify-between items-center">
-                 <h2 className="text-xl font-bold text-white/80">SUMMARY FOR {selectedYear}</h2>
+                 <h2 className="text-xl font-bold text-white/80">THIS YEAR'S SUMMARY ({selectedYear})</h2>
                  <Select onValueChange={(value) => setSelectedYear(Number(value))} defaultValue={String(selectedYear)}>
                      <SelectTrigger className="w-[180px] bg-card/60 border-white/10">
                         <SelectValue placeholder="Select a year" />
