@@ -16,19 +16,20 @@ const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.Eleme
 
     return (
         <motion.li
-            className="social-tile"
+            className="w-full"
             onClick={() => router.push(href)}
-            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-             variants={{
+            variants={{
                 hidden: { y: 20, opacity: 0 },
                 visible: {
                     y: 0,
                     opacity: 1
                 }
             }}
+             whileHover={{ y: -4, scale: 1.02 }}
+             transition={{ type: 'spring', stiffness: 400, damping: 20 }}
         >
-            <a href={href} className="w-full">
-                <Icon className="icon h-5 w-5" />
+            <a href={href} className="flex items-center justify-start text-left p-3 w-full bg-card/60 backdrop-blur-sm border border-white/10 rounded-lg text-card-foreground no-underline font-medium shadow-md transition-shadow hover:shadow-xl">
+                <Icon className="icon h-5 w-5 mr-3 text-primary" />
                 {title}
             </a>
         </motion.li>
@@ -250,7 +251,12 @@ export default function DashboardPage() {
 
 
   return (
-    <div className="space-y-8">
+    <motion.div 
+        className="space-y-8"
+        initial="hidden"
+        animate="visible"
+        variants={listContainerVariants}
+    >
         <Card className="text-center bg-transparent border-none">
             <CardHeader>
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1, transition: { delay: 0.2, type: 'spring' }}} className="mx-auto w-fit p-4 mb-2">
@@ -263,8 +269,6 @@ export default function DashboardPage() {
         </Card>
 
         <motion.div
-            initial="hidden"
-            animate="visible"
             variants={listContainerVariants}
         >
              <Card className="bg-card/60 backdrop-blur-sm border-white/10">
@@ -275,8 +279,6 @@ export default function DashboardPage() {
                      <motion.ul 
                         className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 justify-center"
                         variants={listContainerVariants}
-                        initial="hidden"
-                        animate="visible"
                     >
                          {allNavItems.map((item, index) => (
                             <NavTile 
@@ -293,8 +295,6 @@ export default function DashboardPage() {
         
         <motion.div 
             className="space-y-4"
-            initial="hidden"
-            animate="visible"
             variants={listContainerVariants}
         >
              <div className="flex justify-between items-center">
@@ -322,8 +322,6 @@ export default function DashboardPage() {
 
          <motion.div 
             className="space-y-4"
-            initial="hidden"
-            animate="visible"
             variants={listContainerVariants}
         >
              <h2 className="text-xl font-bold text-white/80">QUICK ACTIONS</h2>
@@ -340,8 +338,6 @@ export default function DashboardPage() {
         
          <motion.div 
             className="space-y-4"
-            initial="hidden"
-            animate="visible"
             variants={listContainerVariants}
         >
             <h2 className="text-xl font-bold text-white/80">LOYALTY & GROWERS ({selectedYear})</h2>
@@ -349,37 +345,41 @@ export default function DashboardPage() {
                 className="grid grid-cols-1 md:grid-cols-2 gap-6"
                 variants={listContainerVariants}
             >
-                <Card className="bg-card/60 backdrop-blur-sm border-white/10">
-                     <CardHeader>
-                        <CardTitle>Loyalty Program Summary</CardTitle>
-                        <CardDescription>A quick overview of your grower rewards program.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-1 gap-4">
-                        <StatCard title="Total Points Distributed" value={loyaltyStats.totalPoints.toLocaleString()} description="This season" icon={Users} />
-                        <StatCard title="Redeemed This Month" value={`₹${loyaltyStats.redeemedMonth.toLocaleString()}`} description="As discounts" icon={DollarSign} />
-                        <StatCard title="Top Grower" value={loyaltyStats.topGrower.name} description={`${loyaltyStats.topGrower.points.toLocaleString()} pts`} icon={Award} />
-                    </CardContent>
-                </Card>
-                 <Card className="bg-card/60 backdrop-blur-sm border-white/10">
-                    <CardHeader>
-                        <CardTitle>Top Growers by Net Sales</CardTitle>
-                        <CardDescription>This session's growers ranked by their total net sales.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <ul className="space-y-3">
-                            {topGrowers.map((grower, i) => (
-                                <li key={grower.name} className="flex items-center gap-4">
-                                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/20 font-bold">{i + 1}</div>
-                                    <p className="flex-1 font-semibold">{grower.name}</p>
-                                    <p className="font-mono text-green-400">₹{grower.netSales.toLocaleString()}</p>
-                                </li>
-                            ))}
-                        </ul>
-                    </CardContent>
-                 </Card>
+                <motion.div whileHover={{y: -5, scale: 1.02}}>
+                    <Card className="bg-card/60 backdrop-blur-sm border-white/10 h-full">
+                        <CardHeader>
+                            <CardTitle>Loyalty Program Summary</CardTitle>
+                            <CardDescription>A quick overview of your grower rewards program.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-1 gap-4">
+                            <StatCard title="Total Points Distributed" value={loyaltyStats.totalPoints.toLocaleString()} description="This season" icon={Users} />
+                            <StatCard title="Redeemed This Month" value={`₹${loyaltyStats.redeemedMonth.toLocaleString()}`} description="As discounts" icon={DollarSign} />
+                            <StatCard title="Top Grower" value={loyaltyStats.topGrower.name} description={`${loyaltyStats.topGrower.points.toLocaleString()} pts`} icon={Award} />
+                        </CardContent>
+                    </Card>
+                </motion.div>
+                 <motion.div whileHover={{y: -5, scale: 1.02}}>
+                    <Card className="bg-card/60 backdrop-blur-sm border-white/10 h-full">
+                        <CardHeader>
+                            <CardTitle>Top Growers by Net Sales</CardTitle>
+                            <CardDescription>This session's growers ranked by their total net sales.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ul className="space-y-3">
+                                {topGrowers.map((grower, i) => (
+                                    <li key={grower.name} className="flex items-center gap-4">
+                                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/20 font-bold">{i + 1}</div>
+                                        <p className="flex-1 font-semibold">{grower.name}</p>
+                                        <p className="font-mono text-green-400">₹{grower.netSales.toLocaleString()}</p>
+                                    </li>
+                                ))}
+                            </ul>
+                        </CardContent>
+                    </Card>
+                </motion.div>
             </motion.div>
         </motion.div>
 
-    </div>
+    </motion.div>
   );
 }

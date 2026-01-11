@@ -78,45 +78,6 @@
             0 0 10px hsl(var(--accent)),
             0 0 15px hsl(var(--accent));
     }
-    
-    .social-tile {
-        list-style: none;
-        height: auto;
-        display: flex;
-    }
-
-    .social-tile a {
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        text-align: left;
-        padding: 0.75rem;
-        width: 100%;
-        background-color: hsl(var(--card));
-        border: 1px solid hsl(var(--border));
-        border-radius: 0.5rem;
-        color: hsl(var(--card-foreground));
-        text-decoration: none;
-        font-weight: 500;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.05);
-        transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
-    }
-    
-    .social-tile a:hover {
-        transform: translateY(-4px) scale(1.02);
-        box-shadow: 0 8px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
-    }
-    
-    .social-tile a:active {
-        transform: translateY(1px) scale(0.98);
-        box-shadow: 0 1px 2px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
-    }
-
-    .social-tile a .icon {
-        margin-right: 0.75rem;
-        font-size: 1.2em;
-        color: hsl(var(--primary));
-    }
 }
 
 @media print {
