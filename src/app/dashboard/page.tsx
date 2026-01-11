@@ -11,6 +11,8 @@ import { WatakEntry } from '@/app/watak-register/page';
 import { PurchaseEntry } from '@/app/purchase-register/page';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 
 const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.ElementType, href: string }) => {
     const router = useRouter();
@@ -61,6 +63,8 @@ const QuickActionButton = ({ title, icon: Icon, href }: { title: string, icon: R
 
 export default function DashboardPage() {
   const allNavItems = sidebarSections.flatMap(section => section.items);
+  const [selectedYear, setSelectedYear] = React.useState(new Date().getFullYear());
+  const [availableYears, setAvailableYears] = React.useState<number[]>([]);
   const [stats, setStats] = React.useState<any>({ 
     todaySales: 0,
     todayPatti: 0,
@@ -88,11 +92,16 @@ export default function DashboardPage() {
     if (typeof window !== 'undefined') {
         const today = new Date();
         const currentMonth = today.getMonth();
-        const currentYear = today.getFullYear();
         
-        let newStats = { ...stats };
-        let newLoyaltyStats = { ...loyaltyStats };
+        let newStats = { 
+            todaySales: 0, todayPatti: 0, todayDabba: 0, monthSales: 0,
+            yearGrossSales: 0, yearNetSales: 0, yearExpenses: 0,
+            pattiReceived: 0, dabbaReceived: 0, pattiSold: 0, dabbaSold: 0,
+            pattiSent: 0, dabbaSent: 0
+        };
+        let newLoyaltyStats = { totalPoints: 0, redeemedMonth: 0, topGrower: { name: 'N/A', points: 0 } };
         const growerSales: {[key: string]: number} = {};
+        const years = new Set<number>();
 
         const allInvoices: WatakEntry[] = [];
         const allReceipts: any[] = [];
@@ -101,22 +110,37 @@ export default function DashboardPage() {
 
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if(key?.startsWith('invoice-')) allInvoices.push(JSON.parse(localStorage.getItem(key)!));
-            if(key?.startsWith('receipt-')) allReceipts.push(JSON.parse(localStorage.getItem(key)!));
-            if(key?.startsWith('challan-')) allChallans.push(JSON.parse(localStorage.getItem(key)!));
-            if(key?.startsWith('advance-')) allAdvances.push(JSON.parse(localStorage.getItem(key)!));
+            if (!key) continue;
+
+            let data;
+            try {
+                data = JSON.parse(localStorage.getItem(key)!);
+            } catch {
+                continue;
+            }
+
+            if(data.date) {
+                years.add(new Date(data.date).getFullYear());
+            }
+
+            if(key?.startsWith('invoice-')) allInvoices.push(data);
+            if(key?.startsWith('receipt-')) allReceipts.push(data);
+            if(key?.startsWith('challan-')) allChallans.push(data);
+            if(key?.startsWith('advance-')) allAdvances.push(data);
         }
+
+        setAvailableYears(Array.from(years).sort((a,b) => b-a));
 
         allInvoices.forEach(inv => {
             const invDate = new Date(inv.date);
-            if (invDate.getFullYear() === currentYear) {
+            if (invDate.getFullYear() === selectedYear) {
                 newStats.yearGrossSales += inv.totals.grossSale || 0;
                 newStats.yearNetSales += inv.totals.netSale || 0;
                 newStats.yearExpenses += inv.totals.totalExpenses || 0;
                 newStats.pattiSold += inv.totals.pattiQty || 0;
                 newStats.dabbaSold += inv.totals.dabbaQty || 0;
                 
-                 if(invDate.toDateString() === today.toDateString()) {
+                if(invDate.toDateString() === today.toDateString()) {
                     newStats.todaySales += inv.totals.netSale || 0;
                     newStats.todayPatti += inv.totals.pattiQty || 0;
                     newStats.todayDabba += inv.totals.dabbaQty || 0;
@@ -124,13 +148,12 @@ export default function DashboardPage() {
                 if (invDate.getMonth() === currentMonth) {
                     newStats.monthSales += inv.totals.netSale || 0;
                 }
-
                 growerSales[inv.customerName] = (growerSales[inv.customerName] || 0) + (inv.totals.netSale || 0);
             }
         });
 
         allReceipts.forEach(rec => {
-             if (new Date(rec.date).getFullYear() === currentYear) {
+             if (new Date(rec.date).getFullYear() === selectedYear) {
                  const patti = rec.entries.reduce((acc: number, e: any) => acc + (Number(e.peti) || 0), 0);
                  const dabba = rec.entries.reduce((acc: number, e: any) => acc + (Number(e.daba) || 0), 0);
                  newStats.pattiReceived += patti;
@@ -139,16 +162,16 @@ export default function DashboardPage() {
         });
 
         allChallans.forEach(ch => {
-            if (new Date(ch.date).getFullYear() === currentYear) {
+            if (new Date(ch.date).getFullYear() === selectedYear) {
                 newStats.pattiSent += ch.totalPetti || 0;
                 newStats.dabbaSent += ch.totalDabba || 0;
             }
         });
 
-        // Loyalty Calculation
         newLoyaltyStats.totalPoints = Math.floor(Object.values(growerSales).reduce((acc, sale) => acc + sale, 0) * 0.01);
         allAdvances.forEach(adv => {
-            if (adv.type === 'Discount' && new Date(adv.date).getMonth() === currentMonth && new Date(adv.date).getFullYear() === currentYear) {
+            const advDate = new Date(adv.date);
+            if (adv.type === 'Discount' && advDate.getMonth() === currentMonth && advDate.getFullYear() === selectedYear) {
                 newLoyaltyStats.redeemedMonth += adv.amount || 0;
             }
         });
@@ -166,7 +189,7 @@ export default function DashboardPage() {
         setStats(newStats);
         setLoyaltyStats(newLoyaltyStats);
     }
-  }, []);
+  }, [selectedYear]);
 
   const grossProfitMargin = stats.yearGrossSales > 0 ? ((stats.yearNetSales / stats.yearGrossSales) * 100).toFixed(0) : 0;
   
@@ -227,7 +250,19 @@ export default function DashboardPage() {
         </motion.div>
         
         <div className="space-y-4">
-             <h2 className="text-xl font-bold text-white/80">THIS YEAR'S SUMMARY</h2>
+             <div className="flex justify-between items-center">
+                 <h2 className="text-xl font-bold text-white/80">SUMMARY FOR {selectedYear}</h2>
+                 <Select onValueChange={(value) => setSelectedYear(Number(value))} defaultValue={String(selectedYear)}>
+                     <SelectTrigger className="w-[180px] bg-card/60 border-white/10">
+                        <SelectValue placeholder="Select a year" />
+                     </SelectTrigger>
+                     <SelectContent>
+                        {availableYears.map(year => (
+                            <SelectItem key={year} value={String(year)}>{year}</SelectItem>
+                        ))}
+                     </SelectContent>
+                 </Select>
+             </div>
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {summaryCards.map((card, i) => (
                     <StatCard key={i} {...card} />
@@ -246,7 +281,7 @@ export default function DashboardPage() {
         </div>
         
          <div className="space-y-4">
-            <h2 className="text-xl font-bold text-white/80">LOYALTY & GROWERS</h2>
+            <h2 className="text-xl font-bold text-white/80">LOYALTY & GROWERS ({selectedYear})</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card className="bg-card/60 backdrop-blur-sm border-white/10">
                      <CardHeader>
@@ -261,7 +296,7 @@ export default function DashboardPage() {
                 </Card>
                  <Card className="bg-card/60 backdrop-blur-sm border-white/10">
                     <CardHeader>
-                        <CardTitle>All Growers by Net Sales</CardTitle>
+                        <CardTitle>Top Growers by Net Sales</CardTitle>
                         <CardDescription>This session's growers ranked by their total net sales.</CardDescription>
                     </CardHeader>
                     <CardContent>
