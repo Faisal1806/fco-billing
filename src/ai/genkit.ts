@@ -55,7 +55,7 @@ Here are the available data collections and their queryable fields:
 const smartSearchPrompt = ai.definePrompt(
     {
         name: 'smartSearchPrompt',
-        model: 'googleai/gemini-1.5-flash-latest',
+        model: 'googleai/gemini-1.5-flash',
         input: { schema: SmartSearchInputSchema },
         output: { schema: SmartSearchOutputSchema },
         prompt: `You are an expert at converting natural language queries into structured data filters.
@@ -81,7 +81,7 @@ const smartSearchPrompt = ai.definePrompt(
 const categorizePesticidePrompt = ai.definePrompt(
     {
         name: 'categorizePesticidePrompt',
-        model: 'googleai/gemini-1.5-flash-latest',
+        model: 'googleai/gemini-1.5-flash',
         input: { schema: PesticideCategoryInputSchema },
         output: { schema: PesticideCategoryOutputSchema },
         prompt: `You are an expert in agricultural products. Your task is to categorize the given product name into one of the following categories: Fungicide, Insecticide, Herbicide, Fertilizer, Plant Growth Regulator, or Other.
