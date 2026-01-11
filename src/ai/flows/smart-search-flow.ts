@@ -18,4 +18,3 @@ export async function queryData(input: SmartSearchInput): Promise<SmartSearchOut
       return { collection: 'invoices', filters: [], error: `An unexpected error occurred while processing your query: ${e.message}` };
   }
 }
-
