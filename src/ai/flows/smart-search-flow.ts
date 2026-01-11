@@ -7,7 +7,7 @@
  */
 
 import { smartSearchFlow } from '@/ai/genkit';
-import { SmartSearchInput, SmartSearchOutput } from '@/ai/schemas/smart-search-schemas';
+import type { SmartSearchInput, SmartSearchOutput } from '@/ai/schemas/smart-search-schemas';
 
 
 export async function queryData(input: SmartSearchInput): Promise<SmartSearchOutput> {

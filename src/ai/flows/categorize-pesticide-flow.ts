@@ -7,7 +7,7 @@
  */
 
 import { categorizePesticideFlow } from '@/ai/genkit';
-import { PesticideCategoryInput, PesticideCategoryOutput } from '@/ai/schemas/pesticide-category-schemas';
+import type { PesticideCategoryInput, PesticideCategoryOutput } from '@/ai/schemas/pesticide-category-schemas';
 
 export async function categorizePesticide(input: PesticideCategoryInput): Promise<PesticideCategoryOutput> {
     return categorizePesticideFlow(input);
