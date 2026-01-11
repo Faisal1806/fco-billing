@@ -8,13 +8,13 @@
 
 import { z } from 'zod';
 
-const FilterSchema = z.object({
+export const FilterSchema = z.object({
   field: z.string().describe('The field to filter on (e.g., "date", "customerName", "totals.netSale").'),
   operator: z.enum(['==', '!=', '<', '<=', '>', '>=', 'contains']).describe('The comparison operator.'),
   value: z.union([z.string(), z.number(), z.boolean()]).describe('The value to compare against.'),
 });
 
-const SortSchema = z.object({
+export const SortSchema = z.object({
     field: z.string().describe('The field to sort by.'),
     direction: z.enum(['asc', 'desc']).describe('The sort direction.'),
 });
