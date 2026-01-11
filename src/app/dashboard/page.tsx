@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { sidebarSections } from '@/components/Sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { TrendingUp, ShoppingCart, Users, DollarSign, Calendar, BarChart, FileText, BookOpen, PlusCircle, Award } from 'lucide-react';
+import { TrendingUp, ShoppingCart, Users, DollarSign, Calendar, BarChart, FileText, BookOpen, PlusCircle } from 'lucide-react';
 import { WatakEntry } from '@/app/watak-register/page';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -19,8 +19,7 @@ const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.Eleme
         <motion.li
             className="social-tile"
             onClick={() => router.push(href)}
-            whileHover={{ y: -5, scale: 1.05, boxShadow: '0 8px 25px rgba(0,0,0,0.3)'}}
-            transition={{ type: 'spring', stiffness: 300 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
         >
             <a href={href} className="w-full">
                 <Icon className="icon h-5 w-5" />
@@ -243,7 +242,7 @@ export default function DashboardPage() {
                     <CardTitle>App Sections</CardTitle>
                 </CardHeader>
                 <CardContent>
-                     <ul className="social-tiles-container grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 justify-center">
+                     <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 justify-center">
                          {allNavItems.map((item, index) => (
                             <NavTile 
                                 key={item.name} 
@@ -299,7 +298,7 @@ export default function DashboardPage() {
                     <CardContent className="grid grid-cols-3 gap-4">
                         <StatCard title="Total Points Distributed" value={loyaltyStats.totalPoints.toLocaleString()} description="This season" icon={Users} />
                         <StatCard title="Redeemed This Month" value={`₹${loyaltyStats.redeemedMonth.toLocaleString()}`} description="As discounts" icon={DollarSign} />
-                        <StatCard title="Top Grower" value={loyaltyStats.topGrower.name} description={`${loyaltyStats.topGrower.points.toLocaleString()} pts`} icon={Award} />
+                        <StatCard title="Top Grower" value={loyaltyStats.topGrower.name} description={`${loyaltyStats.topGrower.points.toLocaleString()} pts`} icon={Users} />
                     </CardContent>
                 </Card>
                  <Card className="bg-card/60 backdrop-blur-sm border-white/10">
