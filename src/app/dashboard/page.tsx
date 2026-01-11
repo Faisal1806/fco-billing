@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -6,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { sidebarSections } from '@/components/Sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { TrendingUp, ShoppingCart, Users, DollarSign, Calendar, BarChart, FileText, BookOpen, PlusCircle } from 'lucide-react';
+import { TrendingUp, ShoppingCart, Users, DollarSign, Calendar, BarChart, FileText, BookOpen, PlusCircle, Award } from 'lucide-react';
 import { WatakEntry } from '@/app/watak-register/page';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -20,6 +19,13 @@ const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.Eleme
             className="social-tile"
             onClick={() => router.push(href)}
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+             variants={{
+                hidden: { y: 20, opacity: 0 },
+                visible: {
+                    y: 0,
+                    opacity: 1
+                }
+            }}
         >
             <a href={href} className="w-full">
                 <Icon className="icon h-5 w-5" />
@@ -32,6 +38,13 @@ const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.Eleme
 const StatCard = ({ title, value, icon: Icon, description, color = 'text-primary' }: { title: string, value: string, icon: React.ElementType, description: string, color?: string }) => (
     <motion.div
         whileHover={{ y: -5, scale: 1.03 }}
+         variants={{
+            hidden: { y: 20, opacity: 0 },
+            visible: {
+              y: 0,
+              opacity: 1
+            }
+        }}
         className="bg-card/60 backdrop-blur-sm border border-white/10 p-4 rounded-xl shadow-lg flex items-start gap-4"
     >
         <div className={`p-2 bg-primary/10 rounded-lg ${color}`}>
@@ -48,7 +61,16 @@ const StatCard = ({ title, value, icon: Icon, description, color = 'text-primary
 const QuickActionButton = ({ title, icon: Icon, href }: { title: string, icon: React.ElementType, href: string }) => {
     const router = useRouter();
     return (
-        <motion.div whileHover={{ y: -5, scale: 1.05 }}>
+        <motion.div 
+            whileHover={{ y: -5, scale: 1.05 }}
+             variants={{
+                hidden: { y: 20, opacity: 0 },
+                visible: {
+                y: 0,
+                opacity: 1
+                }
+            }}
+        >
             <Button
                 variant="secondary"
                 className="w-full h-16 text-base bg-card/80 backdrop-blur-sm border-white/10 shadow-lg"
@@ -59,6 +81,15 @@ const QuickActionButton = ({ title, icon: Icon, href }: { title: string, icon: R
         </motion.div>
     );
 }
+
+const listContainerVariants = {
+    visible: {
+        transition: {
+            staggerChildren: 0.05
+        }
+    },
+    hidden: {}
+};
 
 export default function DashboardPage() {
   const allNavItems = sidebarSections.flatMap(section => section.items);
@@ -102,7 +133,6 @@ export default function DashboardPage() {
         let newLoyaltyStats = { totalPoints: 0, redeemedMonth: 0, topGrower: { name: 'N/A', points: 0 } };
         const growerSales: {[key: string]: number} = {};
         
-        // Start with future years, current year, then add past years from data.
         const years = new Set<number>([currentYear + 2, currentYear + 1, currentYear]);
 
         const allInvoices: WatakEntry[] = [];
@@ -233,16 +263,21 @@ export default function DashboardPage() {
         </Card>
 
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
+            initial="hidden"
+            animate="visible"
+            variants={listContainerVariants}
         >
              <Card className="bg-card/60 backdrop-blur-sm border-white/10">
                 <CardHeader>
                     <CardTitle>App Sections</CardTitle>
                 </CardHeader>
                 <CardContent>
-                     <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 justify-center">
+                     <motion.ul 
+                        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 justify-center"
+                        variants={listContainerVariants}
+                        initial="hidden"
+                        animate="visible"
+                    >
                          {allNavItems.map((item, index) => (
                             <NavTile 
                                 key={item.name} 
@@ -251,12 +286,17 @@ export default function DashboardPage() {
                                 href={item.href}
                             />
                         ))}
-                    </ul>
+                    </motion.ul>
                 </CardContent>
             </Card>
         </motion.div>
         
-        <div className="space-y-4">
+        <motion.div 
+            className="space-y-4"
+            initial="hidden"
+            animate="visible"
+            variants={listContainerVariants}
+        >
              <div className="flex justify-between items-center">
                  <h2 className="text-xl font-bold text-white/80">SUMMARY FOR {selectedYear}</h2>
                  <Select onValueChange={(value) => setSelectedYear(Number(value))} defaultValue={String(selectedYear)}>
@@ -270,35 +310,54 @@ export default function DashboardPage() {
                      </SelectContent>
                  </Select>
              </div>
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+             <motion.div 
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                variants={listContainerVariants}
+            >
                 {summaryCards.map((card, i) => (
                     <StatCard key={i} {...card} />
                 ))}
-            </div>
-        </div>
+            </motion.div>
+        </motion.div>
 
-         <div className="space-y-4">
+         <motion.div 
+            className="space-y-4"
+            initial="hidden"
+            animate="visible"
+            variants={listContainerVariants}
+        >
              <h2 className="text-xl font-bold text-white/80">QUICK ACTIONS</h2>
-             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+             <motion.div 
+                className="grid grid-cols-2 md:grid-cols-4 gap-4"
+                variants={listContainerVariants}
+             >
                 <QuickActionButton title="Sales Entry" icon={PlusCircle} href="/sales" />
                 <QuickActionButton title="Watak Register" icon={FileText} href="/watak-register" />
                 <QuickActionButton title="Purchases" icon={ShoppingCart} href="/purchases" />
                 <QuickActionButton title="Khata Ledger" icon={BookOpen} href="/khata" />
-            </div>
-        </div>
+            </motion.div>
+        </motion.div>
         
-         <div className="space-y-4">
+         <motion.div 
+            className="space-y-4"
+            initial="hidden"
+            animate="visible"
+            variants={listContainerVariants}
+        >
             <h2 className="text-xl font-bold text-white/80">LOYALTY & GROWERS ({selectedYear})</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <motion.div 
+                className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                variants={listContainerVariants}
+            >
                 <Card className="bg-card/60 backdrop-blur-sm border-white/10">
                      <CardHeader>
                         <CardTitle>Loyalty Program Summary</CardTitle>
                         <CardDescription>A quick overview of your grower rewards program.</CardDescription>
                     </CardHeader>
-                    <CardContent className="grid grid-cols-3 gap-4">
+                    <CardContent className="grid grid-cols-1 gap-4">
                         <StatCard title="Total Points Distributed" value={loyaltyStats.totalPoints.toLocaleString()} description="This season" icon={Users} />
                         <StatCard title="Redeemed This Month" value={`₹${loyaltyStats.redeemedMonth.toLocaleString()}`} description="As discounts" icon={DollarSign} />
-                        <StatCard title="Top Grower" value={loyaltyStats.topGrower.name} description={`${loyaltyStats.topGrower.points.toLocaleString()} pts`} icon={Users} />
+                        <StatCard title="Top Grower" value={loyaltyStats.topGrower.name} description={`${loyaltyStats.topGrower.points.toLocaleString()} pts`} icon={Award} />
                     </CardContent>
                 </Card>
                  <Card className="bg-card/60 backdrop-blur-sm border-white/10">
@@ -318,8 +377,8 @@ export default function DashboardPage() {
                         </ul>
                     </CardContent>
                  </Card>
-            </div>
-        </div>
+            </motion.div>
+        </motion.div>
 
     </div>
   );
