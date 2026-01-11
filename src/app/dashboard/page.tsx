@@ -16,15 +16,17 @@ const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.Eleme
     const router = useRouter();
 
     return (
-        <li
+        <motion.li
             className="social-tile"
             onClick={() => router.push(href)}
+            whileHover={{ y: -5, scale: 1.05, boxShadow: '0 8px 25px rgba(0,0,0,0.3)'}}
+            transition={{ type: 'spring', stiffness: 300 }}
         >
             <a href={href} className="w-full">
                 <Icon className="icon h-5 w-5" />
                 {title}
             </a>
-        </li>
+        </motion.li>
     );
 };
 
@@ -90,6 +92,7 @@ export default function DashboardPage() {
     if (typeof window !== 'undefined') {
         const today = new Date();
         const currentMonth = today.getMonth();
+        const currentYear = today.getFullYear();
         
         let newStats = { 
             todaySales: 0, todayPatti: 0, todayDabba: 0, monthSales: 0,
@@ -99,7 +102,9 @@ export default function DashboardPage() {
         };
         let newLoyaltyStats = { totalPoints: 0, redeemedMonth: 0, topGrower: { name: 'N/A', points: 0 } };
         const growerSales: {[key: string]: number} = {};
-        const years = new Set<number>();
+        
+        // Start with future years, current year, then add past years from data.
+        const years = new Set<number>([currentYear + 2, currentYear + 1, currentYear]);
 
         const allInvoices: WatakEntry[] = [];
         const allReceipts: any[] = [];
@@ -118,7 +123,12 @@ export default function DashboardPage() {
             }
 
             if(data.date) {
-                years.add(new Date(data.date).getFullYear());
+                try {
+                    const dateObj = new Date(data.date);
+                    if (!isNaN(dateObj.getTime())) {
+                        years.add(dateObj.getFullYear());
+                    }
+                } catch(e) {/* ignore invalid dates */}
             }
 
             if(key?.startsWith('invoice-')) allInvoices.push(data);
@@ -233,7 +243,7 @@ export default function DashboardPage() {
                     <CardTitle>App Sections</CardTitle>
                 </CardHeader>
                 <CardContent>
-                     <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 gap-y-8 justify-center">
+                     <ul className="social-tiles-container grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 justify-center">
                          {allNavItems.map((item, index) => (
                             <NavTile 
                                 key={item.name} 
@@ -249,7 +259,7 @@ export default function DashboardPage() {
         
         <div className="space-y-4">
              <div className="flex justify-between items-center">
-                 <h2 className="text-xl font-bold text-white/80">THIS YEAR'S SUMMARY ({selectedYear})</h2>
+                 <h2 className="text-xl font-bold text-white/80">SUMMARY FOR {selectedYear}</h2>
                  <Select onValueChange={(value) => setSelectedYear(Number(value))} defaultValue={String(selectedYear)}>
                      <SelectTrigger className="w-[180px] bg-card/60 border-white/10">
                         <SelectValue placeholder="Select a year" />
