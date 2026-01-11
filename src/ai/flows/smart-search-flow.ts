@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A smart search AI agent for querying business data.
@@ -8,6 +7,11 @@
 
 import { ai } from '@/ai/genkit';
 import { SmartSearchInput, SmartSearchInputSchema, SmartSearchOutput, SmartSearchOutputSchema } from '@/ai/schemas/smart-search-schemas';
+import {Flow} from 'genkit/flow';
+
+// Simple in-memory cache for the flow
+let smartSearchFlow: Flow<typeof SmartSearchInputSchema, typeof SmartSearchOutputSchema> | null = null;
+
 
 const collectionsSchema = `
 Here are the available data collections and their queryable fields:
@@ -43,53 +47,67 @@ Here are the available data collections and their queryable fields:
     - Fields: bikriNo (string), date (string, YYYY-MM-DD), market (string), growerName (string), bikriType (string, "fcoStock" or "growerForwarding"), calculation.netProfitOrLoss (number), calculation.netSalePayableToGrower (number)
 `;
 
-const smartSearchPrompt = ai.definePrompt(
-    {
-        name: 'smartSearchPrompt',
-        input: { schema: SmartSearchInputSchema },
-        output: { schema: SmartSearchOutputSchema },
-        prompt: `You are an expert at converting natural language queries into structured data filters.
-    The user wants to search their business data. Your task is to determine the correct data collection and construct a set of filters based on their query.
-
-    Today's date is ${new Date().toISOString().split('T')[0]}.
-
-    ${collectionsSchema}
-
-    - When filtering by date, convert relative terms like "today", "last week", "this month" into specific YYYY-MM-DD dates or date ranges.
-    - If a user asks for "unpaid" or "paid" wataks, there is no status field. You should return an error message explaining that this feature is not yet available.
-    - If you cannot determine the collection or filters, set the 'error' field with a helpful message. Do not guess.
-    - For queries like "show me sales", default to the 'invoices' collection.
-    - For queries about profit or loss from outside sales, use the 'bikris' collection.
-    - For "top N" or "bottom N" queries, add a 'limit' and 'sort' property to the output. For example, "top 5 sales" should be collection: 'invoices', sort: { field: 'totals.netSale', direction: 'desc' }, limit: 5.
-    - The 'sort' field should have 'field' and 'direction' ('asc' or 'desc').
-    - Do not invent fields. Only use the fields listed in the schemas.
-
-    User Query: "{{query}}"`,
+function defineSmartSearchFlow() {
+    if (smartSearchFlow) {
+        return smartSearchFlow;
     }
-);
 
-const smartSearchFlow = ai.defineFlow(
-  {
-    name: 'smartSearchFlow',
-    inputSchema: SmartSearchInputSchema,
-    outputSchema: SmartSearchOutputSchema,
-  },
-  async (input) => {
-    try {
-      const { output } = await smartSearchPrompt(input);
+    const smartSearchPrompt = ai.definePrompt(
+        {
+            name: 'smartSearchPrompt',
+            input: { schema: SmartSearchInputSchema },
+            output: { schema: SmartSearchOutputSchema },
+            prompt: `You are an expert at converting natural language queries into structured data filters.
+        The user wants to search their business data. Your task is to determine the correct data collection and construct a set of filters based on their query.
 
-      if (!output) {
-        return { collection: 'invoices', filters: [], error: 'The AI could not process the query. Please try rephrasing.' };
+        Today's date is ${new Date().toISOString().split('T')[0]}.
+
+        ${collectionsSchema}
+
+        - When filtering by date, convert relative terms like "today", "last week", "this month" into specific YYYY-MM-DD dates or date ranges.
+        - If a user asks for "unpaid" or "paid" wataks, there is no status field. You should return an error message explaining that this feature is not yet available.
+        - If you cannot determine the collection or filters, set the 'error' field with a helpful message. Do not guess.
+        - For queries like "show me sales", default to the 'invoices' collection.
+        - For queries about profit or loss from outside sales, use the 'bikris' collection.
+        - For "top N" or "bottom N" queries, add a 'limit' and 'sort' property to the output. For example, "top 5 sales" should be collection: 'invoices', sort: { field: 'totals.netSale', direction: 'desc' }, limit: 5.
+        - The 'sort' field should have 'field' and 'direction' ('asc' or 'desc').
+        - Do not invent fields. Only use the fields listed in the schemas.
+
+        User Query: "{{query}}"`,
+        }
+    );
+
+    smartSearchFlow = ai.defineFlow(
+      {
+        name: 'smartSearchFlow',
+        inputSchema: SmartSearchInputSchema,
+        outputSchema: SmartSearchOutputSchema,
+      },
+      async (input) => {
+        try {
+          const { output } = await smartSearchPrompt(input);
+
+          if (!output) {
+            return { collection: 'invoices', filters: [], error: 'The AI could not process the query. Please try rephrasing.' };
+          }
+          return output;
+        } catch (e: any) {
+          console.error("Error in AI prompt execution:", e);
+          return { collection: 'invoices', filters: [], error: `AI model failed to respond: ${e.message || 'Please check your API key and model availability.'}` };
+        }
       }
-      return output;
-    } catch (e) {
-      console.error(e);
-      return { collection: 'invoices', filters: [], error: 'An unexpected error occurred while processing your query.' };
-    }
-  }
-);
+    );
+
+    return smartSearchFlow;
+}
 
 
 export async function queryData(input: SmartSearchInput): Promise<SmartSearchOutput> {
-  return smartSearchFlow(input);
+  const flow = defineSmartSearchFlow();
+  try {
+      return await flow(input);
+  } catch (e: any) {
+      console.error("Error executing smartSearchFlow:", e);
+      return { collection: 'invoices', filters: [], error: `An unexpected error occurred while processing your query: ${e.message}` };
+  }
 }
