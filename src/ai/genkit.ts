@@ -1,12 +1,12 @@
 
-import { genkit } from 'genkit';
+import { genkit, type Genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
 import { z } from 'zod';
 import { SmartSearchInputSchema, SmartSearchOutputSchema } from './schemas/smart-search-schemas';
 import { PesticideCategoryInputSchema, PesticideCategoryOutputSchema } from './schemas/pesticide-category-schemas';
 
 // Initialize the AI plugin
-export const ai = genkit({
+export const ai: Genkit = genkit({
   plugins: [
     googleAI({
       // The API key is passed in the flow itself,
