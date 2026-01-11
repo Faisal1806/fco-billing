@@ -134,7 +134,7 @@ export default function DashboardPage() {
         let newLoyaltyStats = { totalPoints: 0, redeemedMonth: 0, topGrower: { name: 'N/A', points: 0 } };
         const growerSales: {[key: string]: number} = {};
         
-        const years = new Set<number>([currentYear + 2, currentYear + 1, currentYear]);
+        const years = new Set<number>([currentYear, currentYear + 1, currentYear + 2]);
 
         const allInvoices: WatakEntry[] = [];
         const allReceipts: any[] = [];
@@ -183,7 +183,7 @@ export default function DashboardPage() {
                     newStats.todayPatti += inv.totals.pattiQty || 0;
                     newStats.todayDabba += inv.totals.dabbaQty || 0;
                 }
-                if (invDate.getMonth() === currentMonth) {
+                if (invDate.getMonth() === currentMonth && invDate.getFullYear() === currentYear) {
                     newStats.monthSales += inv.totals.netSale || 0;
                 }
                 growerSales[inv.customerName] = (growerSales[inv.customerName] || 0) + (inv.totals.netSale || 0);
