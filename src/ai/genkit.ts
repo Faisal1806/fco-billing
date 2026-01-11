@@ -1,5 +1,5 @@
 
-import { genkit, ai as aiCore } from 'genkit';
+import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
 import { z } from 'zod';
 import { SmartSearchInputSchema, SmartSearchOutputSchema } from './schemas/smart-search-schemas';
@@ -55,6 +55,7 @@ Here are the available data collections and their queryable fields:
 const smartSearchPrompt = ai.definePrompt(
     {
         name: 'smartSearchPrompt',
+        model: 'googleai/gemini-1.5-flash-latest',
         input: { schema: SmartSearchInputSchema },
         output: { schema: SmartSearchOutputSchema },
         prompt: `You are an expert at converting natural language queries into structured data filters.
@@ -80,6 +81,7 @@ const smartSearchPrompt = ai.definePrompt(
 const categorizePesticidePrompt = ai.definePrompt(
     {
         name: 'categorizePesticidePrompt',
+        model: 'googleai/gemini-1.5-flash-latest',
         input: { schema: PesticideCategoryInputSchema },
         output: { schema: PesticideCategoryOutputSchema },
         prompt: `You are an expert in agricultural products. Your task is to categorize the given product name into one of the following categories: Fungicide, Insecticide, Herbicide, Fertilizer, Plant Growth Regulator, or Other.
