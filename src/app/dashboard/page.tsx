@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -5,10 +6,11 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { sidebarSections } from '@/components/Sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { TrendingUp, ShoppingCart, Users } from 'lucide-react';
+import { TrendingUp, ShoppingCart, Users, DollarSign, Calendar, BarChart, FileText, BookOpen, PlusCircle } from 'lucide-react';
 import { WatakEntry } from '@/app/watak-register/page';
 import { PurchaseEntry } from '@/app/purchase-register/page';
-
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 
 const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.ElementType, href: string }) => {
     const router = useRouter();
@@ -18,7 +20,7 @@ const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.Eleme
             className="social-tile"
             onClick={() => router.push(href)}
         >
-            <a href="#" className="w-full">
+            <a href={href} className="w-full">
                 <Icon className="icon h-5 w-5" />
                 {title}
             </a>
@@ -26,57 +28,166 @@ const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.Eleme
     );
 };
 
-const StatCard = ({ title, value, icon: Icon, description }: { title: string, value: string, icon: React.ElementType, description: string }) => (
-  <Card>
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-sm font-medium">{title}</CardTitle>
-      <Icon className="h-4 w-4 text-muted-foreground" />
-    </CardHeader>
-    <CardContent>
-      <div className="text-2xl font-bold">{value}</div>
-      <p className="text-xs text-muted-foreground">{description}</p>
-    </CardContent>
-  </Card>
+const StatCard = ({ title, value, icon: Icon, description, color = 'text-primary' }: { title: string, value: string, icon: React.ElementType, description: string, color?: string }) => (
+    <motion.div
+        whileHover={{ y: -5, scale: 1.03 }}
+        className="bg-card/60 backdrop-blur-sm border border-white/10 p-4 rounded-xl shadow-lg flex items-start gap-4"
+    >
+        <div className={`p-2 bg-primary/10 rounded-lg ${color}`}>
+            <Icon className="h-6 w-6" />
+        </div>
+        <div>
+            <p className="text-sm text-muted-foreground">{title}</p>
+            <p className="text-2xl font-bold">{value}</p>
+            <p className="text-xs text-muted-foreground">{description}</p>
+        </div>
+    </motion.div>
 );
 
+const QuickActionButton = ({ title, icon: Icon, href }: { title: string, icon: React.ElementType, href: string }) => {
+    const router = useRouter();
+    return (
+        <motion.div whileHover={{ y: -5, scale: 1.05 }}>
+            <Button
+                variant="secondary"
+                className="w-full h-16 text-base bg-card/80 backdrop-blur-sm border-white/10 shadow-lg"
+                onClick={() => router.push(href)}
+            >
+                <Icon className="h-5 w-5 mr-2" /> {title}
+            </Button>
+        </motion.div>
+    );
+}
 
 export default function DashboardPage() {
   const allNavItems = sidebarSections.flatMap(section => section.items);
-  const [stats, setStats] = React.useState({ sales: 0, purchases: 0, growers: 0 });
+  const [stats, setStats] = React.useState<any>({ 
+    todaySales: 0,
+    todayPatti: 0,
+    todayDabba: 0,
+    monthSales: 0,
+    yearGrossSales: 0,
+    yearNetSales: 0,
+    yearExpenses: 0,
+    pattiReceived: 0,
+    dabbaReceived: 0,
+    pattiSold: 0,
+    dabbaSold: 0,
+    pattiSent: 0,
+    dabbaSent: 0,
+  });
+  const [loyaltyStats, setLoyaltyStats] = React.useState({
+      totalPoints: 0,
+      redeemedMonth: 0,
+      topGrower: { name: 'N/A', points: 0 }
+  });
+   const [topGrowers, setTopGrowers] = React.useState<{name: string, netSales: number}[]>([]);
+
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
-      const currentYear = new Date().getFullYear();
-      let totalSales = 0;
-      let totalPurchases = 0;
-      const growerNames = new Set<string>();
+        const today = new Date();
+        const currentMonth = today.getMonth();
+        const currentYear = today.getFullYear();
+        
+        let newStats = { ...stats };
+        let newLoyaltyStats = { ...loyaltyStats };
+        const growerSales: {[key: string]: number} = {};
 
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key) {
-          if (key.startsWith('invoice-')) {
-            const watak: WatakEntry = JSON.parse(localStorage.getItem(key)!);
-            if (new Date(watak.date).getFullYear() === currentYear) {
-              totalSales += watak.totals.netSale || 0;
-            }
-          }
-          if (key.startsWith('purchase-')) {
-            const purchase: PurchaseEntry = JSON.parse(localStorage.getItem(key)!);
-            if (new Date(purchase.date).getFullYear() === currentYear) {
-                totalPurchases += purchase.totals.grandTotal || 0;
-            }
-          }
-           if (key.startsWith('party-')) {
-             const party = JSON.parse(localStorage.getItem(key)!);
-             if(party.type === 'Grower' || party.type === 'Both') {
-                growerNames.add(party.name);
-             }
-           }
+        const allInvoices: WatakEntry[] = [];
+        const allReceipts: any[] = [];
+        const allChallans: any[] = [];
+        const allAdvances: any[] = [];
+
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if(key?.startsWith('invoice-')) allInvoices.push(JSON.parse(localStorage.getItem(key)!));
+            if(key?.startsWith('receipt-')) allReceipts.push(JSON.parse(localStorage.getItem(key)!));
+            if(key?.startsWith('challan-')) allChallans.push(JSON.parse(localStorage.getItem(key)!));
+            if(key?.startsWith('advance-')) allAdvances.push(JSON.parse(localStorage.getItem(key)!));
         }
-      }
-      setStats({ sales: totalSales, purchases: totalPurchases, growers: growerNames.size });
+
+        allInvoices.forEach(inv => {
+            const invDate = new Date(inv.date);
+            if (invDate.getFullYear() === currentYear) {
+                newStats.yearGrossSales += inv.totals.grossSale || 0;
+                newStats.yearNetSales += inv.totals.netSale || 0;
+                newStats.yearExpenses += inv.totals.totalExpenses || 0;
+                newStats.pattiSold += inv.totals.pattiQty || 0;
+                newStats.dabbaSold += inv.totals.dabbaQty || 0;
+                
+                 if(invDate.toDateString() === today.toDateString()) {
+                    newStats.todaySales += inv.totals.netSale || 0;
+                    newStats.todayPatti += inv.totals.pattiQty || 0;
+                    newStats.todayDabba += inv.totals.dabbaQty || 0;
+                }
+                if (invDate.getMonth() === currentMonth) {
+                    newStats.monthSales += inv.totals.netSale || 0;
+                }
+
+                growerSales[inv.customerName] = (growerSales[inv.customerName] || 0) + (inv.totals.netSale || 0);
+            }
+        });
+
+        allReceipts.forEach(rec => {
+             if (new Date(rec.date).getFullYear() === currentYear) {
+                 const patti = rec.entries.reduce((acc: number, e: any) => acc + (Number(e.peti) || 0), 0);
+                 const dabba = rec.entries.reduce((acc: number, e: any) => acc + (Number(e.daba) || 0), 0);
+                 newStats.pattiReceived += patti;
+                 newStats.dabbaReceived += dabba;
+             }
+        });
+
+        allChallans.forEach(ch => {
+            if (new Date(ch.date).getFullYear() === currentYear) {
+                newStats.pattiSent += ch.totalPetti || 0;
+                newStats.dabbaSent += ch.totalDabba || 0;
+            }
+        });
+
+        // Loyalty Calculation
+        newLoyaltyStats.totalPoints = Math.floor(Object.values(growerSales).reduce((acc, sale) => acc + sale, 0) * 0.01);
+        allAdvances.forEach(adv => {
+            if (adv.type === 'Discount' && new Date(adv.date).getMonth() === currentMonth && new Date(adv.date).getFullYear() === currentYear) {
+                newLoyaltyStats.redeemedMonth += adv.amount || 0;
+            }
+        });
+
+        const sortedGrowers = Object.entries(growerSales).sort(([,a],[,b]) => b-a);
+        if(sortedGrowers.length > 0) {
+            const topGrowerName = sortedGrowers[0][0];
+            newLoyaltyStats.topGrower = {
+                name: topGrowerName,
+                points: Math.floor(sortedGrowers[0][1] * 0.01),
+            }
+        }
+        setTopGrowers(sortedGrowers.slice(0, 5).map(([name, netSales]) => ({name, netSales})));
+
+        setStats(newStats);
+        setLoyaltyStats(newLoyaltyStats);
     }
   }, []);
+
+  const grossProfitMargin = stats.yearGrossSales > 0 ? ((stats.yearNetSales / stats.yearGrossSales) * 100).toFixed(0) : 0;
+  
+  const summaryCards = [
+    { title: "Today's Sales (Net)", value: `₹${stats.todaySales.toLocaleString()}`, description: `From ${stats.todayPatti} Patti / ${stats.todayDabba} Dabba`, icon: DollarSign },
+    { title: "This Month's Sales (Net)", value: `₹${stats.monthSales.toLocaleString()}`, description: "Current calendar month", icon: Calendar },
+    { title: "This Year's Gross Sales", value: `₹${stats.yearGrossSales.toLocaleString()}`, description: "Total sale value this year", icon: TrendingUp },
+    { title: "This Year's Net Sales", value: `₹${stats.yearNetSales.toLocaleString()}`, description: "After all expenses", icon: TrendingUp, color: 'text-green-500' },
+    { title: "Total Yearly Expenses", value: `₹${stats.yearExpenses.toLocaleString()}`, description: "From all sales invoices", icon: TrendingUp, color: 'text-red-500' },
+    { title: "Gross Profit Margin", value: `${grossProfitMargin}%`, description: "Net / Gross Sales", icon: BarChart },
+    { title: "Total Patti Received", value: stats.pattiReceived.toLocaleString(), description: "This year via Goods Receipt", icon: FileText },
+    { title: "Total Dabba Received", value: stats.dabbaReceived.toLocaleString(), description: "This year via Goods Receipt", icon: FileText },
+    { title: "Total Nugs Received", value: (stats.pattiReceived + stats.dabbaReceived).toLocaleString(), description: "Patti + Dabba this year", icon: FileText },
+    { title: "Total Patti Sold (Local)", value: stats.pattiSold.toLocaleString(), description: "This year in Sopore Mandi", icon: ShoppingCart },
+    { title: "Total Dabba Sold (Local)", value: stats.dabbaSold.toLocaleString(), description: "This year in Sopore Mandi", icon: ShoppingCart },
+    { title: "Total Nugs Sold (Local)", value: (stats.pattiSold + stats.dabbaSold).toLocaleString(), description: "Patti + Dabba this year", icon: ShoppingCart },
+    { title: "Total Patti Sent Outside", value: stats.pattiSent.toLocaleString(), description: "This year via Challan", icon: Users },
+    { title: "Total Dabba Sent Outside", value: stats.dabbaSent.toLocaleString(), description: "This year via Challan", icon: Users },
+    { title: "Total Nugs Sent Outside", value: (stats.pattiSent + stats.dabbaSent).toLocaleString(), description: "Patti + Dabba this year", icon: Users },
+  ];
+
 
   return (
     <div className="space-y-8">
@@ -91,31 +202,6 @@ export default function DashboardPage() {
             </CardHeader>
         </Card>
 
-        <motion.div 
-          className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0, transition: { duration: 0.5, delay: 0.3, staggerChildren: 0.1 } }}
-        >
-          <StatCard 
-            title="This Year's Sales" 
-            value={`₹${(stats.sales / 100000).toFixed(2)} L`} 
-            icon={TrendingUp} 
-            description="Total net sales recorded this year" 
-          />
-          <StatCard 
-            title="This Year's Purchases" 
-            value={`₹${(stats.purchases / 100000).toFixed(2)} L`} 
-            icon={ShoppingCart}
-            description="Total purchases recorded this year" 
-          />
-          <StatCard 
-            title="Total Growers" 
-            value={`${stats.growers}`} 
-            icon={Users}
-            description="Total number of unique growers" 
-          />
-        </motion.div>
-        
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -126,8 +212,8 @@ export default function DashboardPage() {
                     <CardTitle>App Sections</CardTitle>
                 </CardHeader>
                 <CardContent>
-                     <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-x-4 gap-y-8 justify-center">
-                         {allNavItems.map((item) => (
+                     <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 gap-y-8 justify-center">
+                         {allNavItems.map((item, index) => (
                             <NavTile 
                                 key={item.name} 
                                 title={item.name} 
@@ -139,6 +225,60 @@ export default function DashboardPage() {
                 </CardContent>
             </Card>
         </motion.div>
+        
+        <div className="space-y-4">
+             <h2 className="text-xl font-bold text-white/80">THIS YEAR'S SUMMARY</h2>
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {summaryCards.map((card, i) => (
+                    <StatCard key={i} {...card} />
+                ))}
+            </div>
+        </div>
+
+         <div className="space-y-4">
+             <h2 className="text-xl font-bold text-white/80">QUICK ACTIONS</h2>
+             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <QuickActionButton title="Sales Entry" icon={PlusCircle} href="/sales" />
+                <QuickActionButton title="Watak Register" icon={FileText} href="/watak-register" />
+                <QuickActionButton title="Purchases" icon={ShoppingCart} href="/purchases" />
+                <QuickActionButton title="Khata Ledger" icon={BookOpen} href="/khata" />
+            </div>
+        </div>
+        
+         <div className="space-y-4">
+            <h2 className="text-xl font-bold text-white/80">LOYALTY & GROWERS</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="bg-card/60 backdrop-blur-sm border-white/10">
+                     <CardHeader>
+                        <CardTitle>Loyalty Program Summary</CardTitle>
+                        <CardDescription>A quick overview of your grower rewards program.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-3 gap-4">
+                        <StatCard title="Total Points Distributed" value={loyaltyStats.totalPoints.toLocaleString()} description="This season" icon={Users} />
+                        <StatCard title="Redeemed This Month" value={`₹${loyaltyStats.redeemedMonth.toLocaleString()}`} description="As discounts" icon={DollarSign} />
+                        <StatCard title="Top Grower" value={loyaltyStats.topGrower.name} description={`${loyaltyStats.topGrower.points.toLocaleString()} pts`} icon={Award} />
+                    </CardContent>
+                </Card>
+                 <Card className="bg-card/60 backdrop-blur-sm border-white/10">
+                    <CardHeader>
+                        <CardTitle>All Growers by Net Sales</CardTitle>
+                        <CardDescription>This session's growers ranked by their total net sales.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ul className="space-y-3">
+                            {topGrowers.map((grower, i) => (
+                                <li key={grower.name} className="flex items-center gap-4">
+                                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/20 font-bold">{i + 1}</div>
+                                    <p className="flex-1 font-semibold">{grower.name}</p>
+                                    <p className="font-mono text-green-400">₹{grower.netSales.toLocaleString()}</p>
+                                </li>
+                            ))}
+                        </ul>
+                    </CardContent>
+                 </Card>
+            </div>
+        </div>
+
     </div>
   );
 }
