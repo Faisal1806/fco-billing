@@ -54,7 +54,7 @@ Here are the available data collections and their queryable fields:
 `;
 
 // Define Prompts
-const smartSearchPrompt = aiCore.definePrompt(
+const smartSearchPrompt = ai.definePrompt(
     {
         name: 'smartSearchPrompt',
         input: { schema: SmartSearchInputSchema },
@@ -79,7 +79,7 @@ const smartSearchPrompt = aiCore.definePrompt(
     }
 );
 
-const categorizePesticidePrompt = aiCore.definePrompt(
+const categorizePesticidePrompt = ai.definePrompt(
     {
         name: 'categorizePesticidePrompt',
         input: { schema: PesticideCategoryInputSchema },
@@ -92,7 +92,7 @@ Product Name: {{{name}}}`,
 
 
 // Define Flows
-export const smartSearchFlow = aiCore.defineFlow(
+export const smartSearchFlow = ai.defineFlow(
   {
     name: 'smartSearchFlow',
     inputSchema: SmartSearchInputSchema,
@@ -114,7 +114,7 @@ export const smartSearchFlow = aiCore.defineFlow(
 );
 
 
-export const categorizePesticideFlow = aiCore.defineFlow(
+export const categorizePesticideFlow = ai.defineFlow(
     {
         name: 'categorizePesticideFlow',
         inputSchema: PesticideCategoryInputSchema,
