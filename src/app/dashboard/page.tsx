@@ -63,12 +63,16 @@ const QuickActionButton = ({ title, icon: Icon, href }: { title: string, icon: R
 }
 
 const listContainerVariants = {
-    visible: {
-        transition: {
-            staggerChildren: 0.05
-        }
-    },
-    hidden: {}
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.05 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20, scale: 0.95 },
+  visible: { opacity: 1, y: 0, scale: 1 }
 };
 
 export default function DashboardPage() {
@@ -258,14 +262,17 @@ export default function DashboardPage() {
                      <motion.ul 
                         className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 justify-center"
                         variants={listContainerVariants}
+                        initial="hidden"
+                        animate="visible"
                     >
                          {allNavItems.map((item, index) => (
-                            <NavTile 
-                                key={item.name} 
-                                title={item.name} 
-                                icon={item.icon} 
-                                href={item.href}
-                            />
+                            <motion.div variants={itemVariants} key={item.name}>
+                                <NavTile 
+                                    title={item.name} 
+                                    icon={item.icon} 
+                                    href={item.href}
+                                />
+                            </motion.div>
                         ))}
                     </motion.ul>
                 </CardContent>
