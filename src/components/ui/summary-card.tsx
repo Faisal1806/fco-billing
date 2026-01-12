@@ -28,7 +28,7 @@ export const SummaryCard = ({
                 <Icon className="h-5 w-5 text-primary" />
             </div>
             <div className="mt-auto">
-                <h3 className="text-3xl font-bold text-primary-foreground">{value}</h3>
+                <h3 className="text-3xl font-bold text-primary">{value}</h3>
                 <p className="text-xs text-muted-foreground mt-1">{description}</p>
             </div>
         </Card>
