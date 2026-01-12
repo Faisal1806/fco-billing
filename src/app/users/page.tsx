@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { motion } from 'framer-motion';
+import PageHeader from '@/components/PageHeader';
 
 const placeholderUsers = [
     { name: 'Firdous Ahmad Lone', email: 'firdous@fco.com', role: 'Admin', avatar: 'https://i.pravatar.cc/150?u=firdous' },
@@ -63,13 +64,12 @@ const PermissionToggle = ({ permission }: { permission: { id: string, label: str
 export default function UsersAndRolesPage() {
     return (
         <div className="space-y-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-3 text-3xl"><UserCheck className="h-8 w-8 text-primary"/> Users & Roles</CardTitle>
-                    <CardDescription>Manage staff access and permissions for the application. (This is a placeholder UI).</CardDescription>
-                </CardHeader>
-            </Card>
-
+            <PageHeader
+                title="Users & Roles"
+                description="Manage staff access and permissions for the application. (This is a placeholder UI)."
+                icon={<UserCheck className="h-8 w-8" />}
+                imageUrl="/assets/3d/users.png"
+            />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <Card className="lg:col-span-1">
                     <CardHeader>

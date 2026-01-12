@@ -8,6 +8,7 @@ import { ActivityLog, fetchLogs } from '@/lib/logger';
 import { Loader2, History, Trash2, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import PageHeader from '@/components/PageHeader';
 
 export default function ActivityLogPage() {
     const [logs, setLogs] = useState<ActivityLog[]>([]);
@@ -39,55 +40,57 @@ export default function ActivityLogPage() {
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                        <History className="h-8 w-8 text-primary" />
-                        <div>
-                            <CardTitle className="text-3xl">Customer Portal Activity Log</CardTitle>
-                            <CardDescription>Monitor customer logins and actions within the portal.</CardDescription>
+        <div className="space-y-6">
+            <PageHeader
+                title="Customer Portal Activity Log"
+                description="Monitor customer logins and actions within the portal."
+                icon={<History className="h-8 w-8" />}
+                imageUrl="/assets/3d/activity.png"
+            />
+            <Card>
+                <CardHeader>
+                    <div className="flex justify-between items-center">
+                        <CardTitle>Log History</CardTitle>
+                        <Button variant="destructive" size="sm" onClick={handleClearLogs} className="gap-2">
+                            <Trash2 className="h-4 w-4" /> Clear All Logs
+                        </Button>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    {isLoading ? (
+                        <div className="flex justify-center items-center h-48">
+                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                         </div>
-                    </div>
-                    <Button variant="destructive" size="sm" onClick={handleClearLogs} className="gap-2">
-                        <Trash2 className="h-4 w-4" /> Clear All Logs
-                    </Button>
-                </div>
-            </CardHeader>
-            <CardContent>
-                {isLoading ? (
-                    <div className="flex justify-center items-center h-48">
-                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                    </div>
-                ) : logs.length > 0 ? (
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Timestamp</TableHead>
-                                <TableHead>Activity Type</TableHead>
-                                <TableHead>Details</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {logs.map((log) => (
-                                <TableRow key={log.id}>
-                                    <TableCell>{new Date(log.timestamp).toLocaleString()}</TableCell>
-                                    <TableCell>
-                                        <Badge variant={getBadgeVariant(log.type)}>{log.type}</Badge>
-                                    </TableCell>
-                                    <TableCell className="font-mono text-xs">{log.details}</TableCell>
+                    ) : logs.length > 0 ? (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Timestamp</TableHead>
+                                    <TableHead>Activity Type</TableHead>
+                                    <TableHead>Details</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                ) : (
-                    <div className="text-center py-16 text-muted-foreground border-2 border-dashed rounded-lg">
-                        <ShieldAlert className="mx-auto h-12 w-12" />
-                        <h3 className="mt-4 text-lg font-semibold">No Activity Recorded Yet</h3>
-                        <p className="mt-1 text-sm">Customer actions from the portal will appear here.</p>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
+                            </TableHeader>
+                            <TableBody>
+                                {logs.map((log) => (
+                                    <TableRow key={log.id}>
+                                        <TableCell>{new Date(log.timestamp).toLocaleString()}</TableCell>
+                                        <TableCell>
+                                            <Badge variant={getBadgeVariant(log.type)}>{log.type}</Badge>
+                                        </TableCell>
+                                        <TableCell className="font-mono text-xs">{log.details}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    ) : (
+                        <div className="text-center py-16 text-muted-foreground border-2 border-dashed rounded-lg">
+                            <ShieldAlert className="mx-auto h-12 w-12" />
+                            <h3 className="mt-4 text-lg font-semibold">No Activity Recorded Yet</h3>
+                            <p className="mt-1 text-sm">Customer actions from the portal will appear here.</p>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
     );
 }

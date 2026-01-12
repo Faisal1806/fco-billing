@@ -25,6 +25,7 @@ import { PlusCircle, Trash2, Box, ArrowRight, Truck, Warehouse, Building } from 
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PartySelector } from '@/components/party-selector';
+import PageHeader from '@/components/PageHeader';
 
 const TRANSFER_STORAGE_PREFIX = 'stock-transfer-';
 
@@ -171,15 +172,15 @@ export default function StockTransferPage() {
   }
 
   return (
-    <>
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-start">
-            <div>
-                 <CardTitle className="flex items-center gap-3 text-3xl"><Truck className="h-8 w-8 text-blue-400"/> Stock Transfer</CardTitle>
-                 <CardDescription>Log the movement of goods between different locations, warehouses, or stores.</CardDescription>
-            </div>
-             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+    <div className="space-y-6">
+        <PageHeader
+            title="Stock Transfer"
+            description="Log the movement of goods between different locations, warehouses, or stores."
+            icon={<Truck className="h-8 w-8" />}
+            imageUrl="/assets/3d/logistics.png"
+        />
+        <div className="flex justify-end">
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="gap-2"><PlusCircle className="h-4 w-4" /> Log New Transfer</Button>
               </DialogTrigger>
@@ -224,8 +225,7 @@ export default function StockTransferPage() {
               </DialogContent>
             </Dialog>
         </div>
-      </CardHeader>
-      <CardContent>
+      
          {transfers.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <AnimatePresence>
@@ -239,8 +239,6 @@ export default function StockTransferPage() {
                 <p className="mt-1 text-sm">Use the "Log New Transfer" button to record your first stock movement.</p>
             </div>
          )}
-      </CardContent>
-    </Card>
-    </>
+    </div>
   );
 }

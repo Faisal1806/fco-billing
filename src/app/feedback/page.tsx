@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { LifeBuoy, Smile } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { motion } from 'framer-motion';
+import PageHeader from '@/components/PageHeader';
 
 const faqs = [
     {
@@ -60,15 +61,12 @@ export default function FeedbackPage() {
 
   return (
     <div className="space-y-8">
-        <Card className="text-center">
-            <CardHeader>
-                <motion.div initial={{ scale: 0 }} animate={{ scale: 1, transition: { delay: 0.2, type: 'spring' }}} className="mx-auto bg-primary/10 rounded-full w-fit p-4 mb-2 border-4 border-primary/20">
-                     <LifeBuoy className="h-12 w-12 text-primary" />
-                </motion.div>
-                <CardTitle className="text-3xl">Help & Support</CardTitle>
-                <CardDescription>Find answers to common questions or send us your feedback.</CardDescription>
-            </CardHeader>
-        </Card>
+        <PageHeader
+            title="Help & Support"
+            description="Find answers to common questions or send us your feedback."
+            icon={<LifeBuoy className="h-8 w-8" />}
+            imageUrl="/assets/3d/support.png"
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <Card>

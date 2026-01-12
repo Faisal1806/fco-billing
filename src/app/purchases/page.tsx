@@ -12,11 +12,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, FileText, Search } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, FilePenLine, FilePlus, FileText, Search, ShoppingBasket } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { saveDocument, deleteDocument } from '@/lib/actions';
 import { Badge } from '@/components/ui/badge';
 import { PartySelector } from '@/components/party-selector';
+import PageHeader from '@/components/PageHeader';
 
 type PurchaseRow = {
   type: 'Patti' | 'Dabba';
@@ -231,221 +232,208 @@ export default function PurchasesPage() {
     }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
-            <CardHeader>
-                <div className="flex justify-between items-center">
-                    <div className="text-sm font-bold">🍎 F.Co</div>
-                    <div className="text-center flex-1">
-                        <h2 className="text-2xl font-bold">Record New Purchase</h2>
-                        <p className="text-muted-foreground">Enter details for apples purchased from growers at the mandi.</p>
-                    </div>
-                    <div className="text-sm font-bold">🍎 F.Co</div>
-                    {isEditing && (
-                        <Button variant="outline" size="sm" onClick={resetForm} className="gap-2 ml-4">
-                            <FilePlus className="h-4 w-4" />
-                            New Purchase
-                        </Button>
-                    )}
-                </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                        <Label htmlFor="billNo">Bill No</Label>
-                        <Input id="billNo" value={billNo} onChange={e => setBillNo(e.target.value)} disabled={isEditing} />
-                    </div>
-                     <div>
-                        <Label htmlFor="date">Date</Label>
-                        <Input id="date" type="date" value={date} onChange={e => setDate(e.target.value)} />
-                    </div>
-                     <div>
-                        <Label htmlFor="purchaseFor">Purchase For</Label>
-                        <Select value={purchaseFor} onValueChange={(value: 'Customer' | 'Own Stock (F.Co)') => setPurchaseFor(value)}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Customer">Customer</SelectItem>
-                                <SelectItem value="Own Stock (F.Co)">Own Stock (F.Co)</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div>
-                        <Label htmlFor="growerName">
-                            {purchaseFor === 'Customer' ? 'Customer Name' : 'Company Name'}
-                        </Label>
-                         {purchaseFor === 'Customer' ? (
-                            <PartySelector value={growerName} onChange={setGrowerName} filter="customer" />
-                        ) : (
-                            <Input 
-                                id="growerName" 
-                                value="F.Co (Own Stock)"
-                                disabled
-                            />
-                        )}
-                    </div>
-                </div>
-
-                <Separator />
-                
-                <div>
-                    <Table>
-                        <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-12">#</TableHead>
-                            <TableHead>Type</TableHead>
-                            <TableHead>Variety</TableHead>
-                            <TableHead className="text-right">Qty</TableHead>
-                            <TableHead className="text-right">Rate</TableHead>
-                            <TableHead className="text-right">Total</TableHead>
-                            <TableHead className="w-12"></TableHead>
-                        </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                        {rows.map((r, i) => (
-                            <TableRow key={i}>
-                            <TableCell>{i + 1}</TableCell>
-                            <TableCell>
-                                <Select value={r.type} onValueChange={(value: PurchaseRow['type']) => updateRow(i, { type: value })}>
-                                <SelectTrigger className="w-28">
-                                    <SelectValue />
-                                </SelectTrigger>
+    <div className="space-y-6">
+        <PageHeader
+            title="Record New Purchase"
+            description="Enter details for apples purchased from growers at the mandi."
+            icon={<ShoppingBasket className="h-8 w-8" />}
+            imageUrl="/assets/3d/purchases.png"
+        />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card className="lg:col-span-2">
+                <CardContent className="space-y-6 pt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <Label htmlFor="billNo">Bill No</Label>
+                            <Input id="billNo" value={billNo} onChange={e => setBillNo(e.target.value)} disabled={isEditing} />
+                        </div>
+                        <div>
+                            <Label htmlFor="date">Date</Label>
+                            <Input id="date" type="date" value={date} onChange={e => setDate(e.target.value)} />
+                        </div>
+                        <div>
+                            <Label htmlFor="purchaseFor">Purchase For</Label>
+                            <Select value={purchaseFor} onValueChange={(value: 'Customer' | 'Own Stock (F.Co)') => setPurchaseFor(value)}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="Patti">Patti</SelectItem>
-                                    <SelectItem value="Dabba">Dabba</SelectItem>
+                                    <SelectItem value="Customer">Customer</SelectItem>
+                                    <SelectItem value="Own Stock (F.Co)">Own Stock (F.Co)</SelectItem>
                                 </SelectContent>
-                                </Select>
-                            </TableCell>
-                            <TableCell>
-                                <Input
-                                placeholder="e.g., American, Red Delicious"
-                                value={r.variety}
-                                onChange={e => updateRow(i, { variety: e.target.value })}
+                            </Select>
+                        </div>
+                        <div>
+                            <Label htmlFor="growerName">
+                                {purchaseFor === 'Customer' ? 'Customer Name' : 'Company Name'}
+                            </Label>
+                            {purchaseFor === 'Customer' ? (
+                                <PartySelector value={growerName} onChange={setGrowerName} filter="customer" />
+                            ) : (
+                                <Input 
+                                    id="growerName" 
+                                    value="F.Co (Own Stock)"
+                                    disabled
                                 />
-                            </TableCell>
-                            <TableCell>
-                                <Input
-                                type="number"
-                                className="w-24 text-right"
-                                placeholder="0"
-                                value={r.qty || ''}
-                                onChange={e => updateRow(i, { qty: Number(e.target.value) || 0 })}
-                                />
-                            </TableCell>
-                            <TableCell>
-                                <Input
-                                type="number"
-                                className="w-24 text-right"
-                                placeholder="0.00"
-                                value={r.rate || ''}
-                                onChange={e => updateRow(i, { rate: Number(e.target.value) || 0 })}
-                                />
-                            </TableCell>
-                            <TableCell className="text-right font-medium">₹{(totals.rowTotals[i] || 0).toFixed(2)}</TableCell>
-                            <TableCell className="text-right">
-                                <Button variant="ghost" size="icon" onClick={() => removeRow(i)}>
-                                    <Trash2 className="text-red-600 h-4 w-4" />
-                                </Button>
-                            </TableCell>
-                            </TableRow>
-                        ))}
-                        </TableBody>
-                        <TableFooter>
+                            )}
+                        </div>
+                    </div>
+
+                    <Separator />
+                    
+                    <div>
+                        <Table>
+                            <TableHeader>
                             <TableRow>
-                                <TableCell colSpan={7}>
-                                     <Button onClick={addRow} variant="outline" size="sm" className="mt-2">
-                                        <PlusCircle className="h-4 w-4 mr-2" />
-                                        Add Item
+                                <TableHead className="w-12">#</TableHead>
+                                <TableHead>Type</TableHead>
+                                <TableHead>Variety</TableHead>
+                                <TableHead className="text-right">Qty</TableHead>
+                                <TableHead className="text-right">Rate</TableHead>
+                                <TableHead className="text-right">Total</TableHead>
+                                <TableHead className="w-12"></TableHead>
+                            </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                            {rows.map((r, i) => (
+                                <TableRow key={i}>
+                                <TableCell>{i + 1}</TableCell>
+                                <TableCell>
+                                    <Select value={r.type} onValueChange={(value: PurchaseRow['type']) => updateRow(i, { type: value })}>
+                                    <SelectTrigger className="w-28">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Patti">Patti</SelectItem>
+                                        <SelectItem value="Dabba">Dabba</SelectItem>
+                                    </SelectContent>
+                                    </Select>
+                                </TableCell>
+                                <TableCell>
+                                    <Input
+                                    placeholder="e.g., American, Red Delicious"
+                                    value={r.variety}
+                                    onChange={e => updateRow(i, { variety: e.target.value })}
+                                    />
+                                </TableCell>
+                                <TableCell>
+                                    <Input
+                                    type="number"
+                                    className="w-24 text-right"
+                                    placeholder="0"
+                                    value={r.qty || ''}
+                                    onChange={e => updateRow(i, { qty: Number(e.target.value) || 0 })}
+                                    />
+                                </TableCell>
+                                <TableCell>
+                                    <Input
+                                    type="number"
+                                    className="w-24 text-right"
+                                    placeholder="0.00"
+                                    value={r.rate || ''}
+                                    onChange={e => updateRow(i, { rate: Number(e.target.value) || 0 })}
+                                    />
+                                </TableCell>
+                                <TableCell className="text-right font-medium">₹{(totals.rowTotals[i] || 0).toFixed(2)}</TableCell>
+                                <TableCell className="text-right">
+                                    <Button variant="ghost" size="icon" onClick={() => removeRow(i)}>
+                                        <Trash2 className="text-red-600 h-4 w-4" />
                                     </Button>
                                 </TableCell>
-                            </TableRow>
-                        </TableFooter>
-                    </Table>
-                </div>
-                 <Separator />
-                <div className="flex justify-end items-center gap-6 p-4 bg-muted rounded-lg">
-                    <div className="text-right">
-                        <p className="text-muted-foreground">Total Quantity</p>
-                        <p className="text-2xl font-bold">{totals.totalQty}</p>
+                                </TableRow>
+                            ))}
+                            </TableBody>
+                            <TableFooter>
+                                <TableRow>
+                                    <TableCell colSpan={7}>
+                                        <Button onClick={addRow} variant="outline" size="sm" className="mt-2">
+                                            <PlusCircle className="h-4 w-4 mr-2" />
+                                            Add Item
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            </TableFooter>
+                        </Table>
                     </div>
-                     <div className="text-right">
-                        <p className="text-muted-foreground">Grand Total</p>
-                        <p className="text-2xl font-bold">₹{totals.grandTotal.toFixed(2)}</p>
+                    <Separator />
+                    <div className="flex justify-end items-center gap-6 p-4 bg-muted rounded-lg">
+                        <div className="text-right">
+                            <p className="text-muted-foreground">Total Quantity</p>
+                            <p className="text-2xl font-bold">{totals.totalQty}</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-muted-foreground">Grand Total</p>
+                            <p className="text-2xl font-bold">₹{totals.grandTotal.toFixed(2)}</p>
+                        </div>
                     </div>
-                </div>
 
-            </CardContent>
-            <CardFooter>
-                <div className="flex w-full justify-center gap-4">
-                    <Button onClick={savePurchase} className="w-full max-w-xs" disabled={isSubmitting}>
-                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                        {isEditing ? 'Update Purchase' : 'Save Purchase'}
-                    </Button>
-                    <Button onClick={viewPurchase} variant="secondary" className="w-full max-w-xs gap-2" disabled={!isEditing}>
-                        <FileText className="h-4 w-4" /> View Bill
-                    </Button>
-                </div>
-            </CardFooter>
-        </Card>
-        <Card className="lg:col-span-1 h-fit">
-            <CardHeader>
-                 <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-medium">Saved Purchases</h3>
-                      {!isLoading && <Badge variant="secondary">{yearlyCount} This Year</Badge>}
+                </CardContent>
+                <CardFooter>
+                    <div className="flex w-full justify-center gap-4">
+                        <Button onClick={savePurchase} className="w-full max-w-xs" disabled={isSubmitting}>
+                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            {isEditing ? 'Update Purchase' : 'Save Purchase'}
+                        </Button>
+                        <Button onClick={viewPurchase} variant="secondary" className="w-full max-w-xs gap-2" disabled={!isEditing}>
+                            <FileText className="h-4 w-4" /> View Bill
+                        </Button>
                     </div>
-                    <div className="relative w-full max-w-[150px]">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                            placeholder="Search..." 
-                            className="pl-8"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
+                </CardFooter>
+            </Card>
+            <Card className="lg:col-span-1 h-fit">
+                <CardHeader>
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-medium">Recent Purchases</h3>
+                        {!isLoading && <Badge variant="secondary">{yearlyCount} This Year</Badge>}
+                        </div>
+                        <div className="relative w-full max-w-[150px]">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input 
+                                placeholder="Search..." 
+                                className="pl-8"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
                     </div>
-                </div>
-                 <div className="text-sm text-muted-foreground mt-2">
-                    Total Nugs Purchased This Year: <span className="font-bold text-foreground">{yearlyNugs.toLocaleString()}</span>
-                </div>
-            </CardHeader>
-            <CardContent>
-                <ScrollArea className="h-96">
-                    <div className="space-y-2">
-                        {isLoading ? (
-                             <div className="flex items-center justify-center p-4">
-                                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                             </div>
-                        ) : filteredPurchases.length > 0 ? (
-                            filteredPurchases.map(purchase => (
-                            <div key={purchase.billNo} className="flex justify-between items-center p-2 border rounded-md hover:bg-muted">
-                                <div>
-                                    <p className="font-medium">Bill #{purchase.billNo}</p>
-                                    <p className="text-sm text-muted-foreground">{purchase.growerName}</p>
-                                    <p className="text-xs text-muted-foreground">{new Date(purchase.date).toLocaleDateString()}</p>
+                    <div className="text-sm text-muted-foreground mt-2">
+                        Total Nugs Purchased This Year: <span className="font-bold text-foreground">{yearlyNugs.toLocaleString()}</span>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <ScrollArea className="h-96">
+                        <div className="space-y-2">
+                            {isLoading ? (
+                                <div className="flex items-center justify-center p-4">
+                                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                                 </div>
-                                <div className="flex items-center">
-                                    <Button variant="ghost" size="icon" onClick={() => loadPurchaseForEdit(purchase)}>
-                                        <FilePenLine className="h-4 w-4" />
-                                    </Button>
-                                    {userRole === 'admin' && (
-                                     <Button variant="ghost" size="icon" onClick={() => handleDeletePurchase(purchase.billNo)}>
-                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                    </Button>
-                                    )}
+                            ) : filteredPurchases.length > 0 ? (
+                                filteredPurchases.map(purchase => (
+                                <div key={purchase.id} className="flex justify-between items-center p-2 border rounded-md hover:bg-muted">
+                                    <div>
+                                        <p className="font-medium">Bill #{purchase.billNo}</p>
+                                        <p className="text-sm text-muted-foreground">{purchase.growerName}</p>
+                                        <p className="text-xs text-muted-foreground">{new Date(purchase.date).toLocaleDateString()}</p>
+                                    </div>
+                                    <div className="flex items-center">
+                                        <Button variant="ghost" size="icon" onClick={() => loadPurchaseForEdit(purchase)}>
+                                            <FilePenLine className="h-4 w-4" />
+                                        </Button>
+                                        {userRole === 'admin' && (
+                                        <Button variant="ghost" size="icon" onClick={() => handleDeletePurchase(purchase.billNo)}>
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                            ))
-                        ) : (
-                           <p className="text-sm text-muted-foreground text-center p-4">No purchases saved yet.</p>
-                        )}
-                    </div>
-                </ScrollArea>
-            </CardContent>
-        </Card>
+                                ))
+                            ) : (
+                            <p className="text-sm text-muted-foreground text-center p-4">No purchases saved yet.</p>
+                            )}
+                        </div>
+                    </ScrollArea>
+                </CardContent>
+            </Card>
+        </div>
     </div>
   );
 }
-
-
-
-
-    

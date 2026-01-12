@@ -29,6 +29,7 @@ import { PartySelector } from '@/components/party-selector';
 import { saveDocument, deleteDocument, sendPushNotification, getDocuments } from '@/lib/actions';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import PageHeader from '@/components/PageHeader';
 
 const STORAGE_PREFIX = 'advance-';
 
@@ -208,12 +209,14 @@ export default function AdvancesPage() {
 
   return (
     <div className="space-y-6">
+        <PageHeader
+            title="Advances & Payments"
+            description="Record money given to growers/farmers as an advance or log any repayments received from them."
+            icon={<Banknote className="h-8 w-8" />}
+            imageUrl="/assets/3d/finance.png"
+        />
         <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-3xl"><Banknote className="h-8 w-8 text-primary"/> Advances & Payments</CardTitle>
-                <CardDescription>Record money given to growers/farmers as an advance or log any repayments received from them.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 pt-6">
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <TransactionTypeTile 
                         value="Advance Given" 

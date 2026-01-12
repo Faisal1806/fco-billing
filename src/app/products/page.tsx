@@ -33,6 +33,7 @@ import { saveDocument, deleteDocument, sendPushNotification, getDocuments } from
 import { motion } from 'framer-motion';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import PageHeader from '@/components/PageHeader';
 
 
 interface Product {
@@ -278,16 +279,16 @@ export default function ProductsPage() {
 
 
   return (
-    <>
-    <Card className="bg-transparent border-none shadow-none">
+    <div className="space-y-6">
+    <PageHeader
+        title="Products & Inventory"
+        description="Manage your product inventory, track stock levels, and receive low-stock alerts here."
+        icon={<Package className="h-8 w-8" />}
+        imageUrl="/assets/3d/products.png"
+    />
+    <Card>
       <CardHeader>
         <div className="flex justify-between items-center flex-wrap gap-4">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-3xl"><Package className="h-8 w-8"/> Products & Inventory</CardTitle>
-            <CardDescription>
-              Manage your product inventory, track stock levels, and receive low-stock alerts here.
-            </CardDescription>
-          </div>
           <div className="flex items-center gap-2">
              <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -309,6 +310,8 @@ export default function ProductsPage() {
                     <SelectItem value="accessories">Accessories</SelectItem>
                 </SelectContent>
             </Select>
+          </div>
+          <div className="flex items-center gap-2">
             <Button onClick={exportToPDF} variant="outline" size="sm" className="gap-1"><FileDown className="h-4 w-4"/>PDF</Button>
             <Button onClick={exportToExcel} variant="outline" size="sm" className="gap-1"><FileDown className="h-4 w-4"/>Excel</Button>
             <Dialog open={isDialogOpen} onOpenChange={(isOpen) => {
@@ -392,6 +395,6 @@ export default function ProductsPage() {
         )}
       </CardContent>
     </Card>
-    </>
+    </div>
   );
 }

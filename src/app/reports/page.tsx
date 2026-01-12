@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Loader2, TrendingUp, DollarSign, ShoppingCart } from 'lucide-react';
 import { motion } from 'framer-motion';
+import PageHeader from '@/components/PageHeader';
 
 const cardVariants = {
     initial: { opacity: 0, y: 50, scale: 0.9 },
@@ -85,19 +86,12 @@ export default function ReportsPage() {
 
     return (
         <div className="space-y-8">
-             <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
-                <Card className="bg-transparent border-none shadow-none">
-                    <CardHeader className="text-center">
-                        <CardTitle className="text-4xl font-bold flex items-center justify-center gap-3">
-                            <TrendingUp className="h-10 w-10 text-primary" />
-                            Business Analytics & Reports
-                        </CardTitle>
-                        <CardDescription className="text-lg">
-                            An overview of your company's financial performance.
-                        </CardDescription>
-                    </CardHeader>
-                </Card>
-            </motion.div>
+            <PageHeader
+                title="Business Analytics & Reports"
+                description="An overview of your company's financial performance."
+                icon={<TrendingUp className="h-8 w-8" />}
+                imageUrl="/assets/3d/reports.png"
+            />
 
             <motion.div
                 variants={cardVariants}

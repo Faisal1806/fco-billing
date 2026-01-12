@@ -31,6 +31,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import PageHeader from '@/components/PageHeader';
 
 type BikriType = 'fcoStock' | 'growerForwarding';
 
@@ -357,281 +358,286 @@ export default function OutsideSalesPage() {
     const usedChallanIds = useMemo(() => new Set(savedBikris.map(b => b.challanId)), [savedBikris]);
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2">
-                <CardHeader>
-                    <div className='flex justify-between items-center'>
-                        <CardTitle className="flex items-center gap-2"><Globe className="h-6 w-6" /> Outside Sales Register (Bikri)</CardTitle>
-                        {isEditing && <Button variant="outline" size="sm" onClick={resetForm}><FilePlus className="h-4 w-4 mr-2" />Enter New Bikri</Button>}
-                    </div>
-                    <CardDescription>Enter the purchase cost and sales invoice (Bikri) received from outside markets to calculate your profit/loss.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    {/* Header */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
-                        <div>
-                            <Label htmlFor="bikriType">Bikri Type</Label>
-                            <Select value={bikriType} onValueChange={(v: BikriType) => setBikriType(v)} disabled={isEditing}>
-                                <SelectTrigger id="bikriType"><SelectValue/></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="fcoStock">F.Co Stock (Profit/Loss)</SelectItem>
-                                    <SelectItem value="growerForwarding">Grower Forwarding (Net Sale)</SelectItem>
-                                </SelectContent>
-                            </Select>
+        <div className="space-y-6">
+            <PageHeader
+                title="Outside Sales Register (Bikri)"
+                description="Calculate profit/loss from sales in outside markets by entering purchase costs and sales invoices."
+                icon={<Globe className="h-8 w-8" />}
+                imageUrl="/assets/3d/bikri.png"
+            />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <Card className="lg:col-span-2">
+                    <CardHeader>
+                        <div className='flex justify-between items-center'>
+                            <CardTitle>Bikri Calculation Form</CardTitle>
+                            {isEditing && <Button variant="outline" size="sm" onClick={resetForm}><FilePlus className="h-4 w-4 mr-2" />Enter New Bikri</Button>}
                         </div>
-                        <div>
-                            <Label htmlFor="challanId">Original Challan No.</Label>
-                            <Popover open={challanPopoverOpen} onOpenChange={setChallanPopoverOpen}>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                    variant="outline"
-                                    role="combobox"
-                                    aria-expanded={challanPopoverOpen}
-                                    className="w-full justify-between"
-                                    disabled={isEditing}
-                                    >
-                                    {(selectedChallanId && availableChallans.find(c => c.id === selectedChallanId))
-                                        ? `${availableChallans.find(c => c.id === selectedChallanId).challanNo} - ${availableChallans.find(c => c.id === selectedChallanId).toMs}`
-                                        : "Select Challan"}
-                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                    <Command>
-                                    <CommandInput placeholder="Search challan..." />
-                                    <CommandList>
-                                        <CommandEmpty>No challan found.</CommandEmpty>
-                                        <CommandGroup>
-                                        {availableChallans.map((c) => {
-                                            const isUsed = usedChallanIds.has(c.id) && c.id !== selectedChallanId;
-                                            return (
-                                                <CommandItem
-                                                    key={c.id}
-                                                    value={c.id}
-                                                    onSelect={(currentValue) => {
-                                                        setSelectedChallanId(currentValue === selectedChallanId ? '' : currentValue)
-                                                        setChallanPopoverOpen(false)
-                                                    }}
-                                                    disabled={isUsed}
-                                                    className={cn('cursor-pointer', isUsed && 'opacity-50 cursor-not-allowed')}
-                                                >
-                                                <Check
-                                                className={cn(
-                                                    "mr-2 h-4 w-4",
-                                                    selectedChallanId === c.id ? "opacity-100" : "opacity-0"
-                                                )}
-                                                />
-                                                {c.challanNo} - {c.toMs}
-                                                {isUsed && <Badge variant="secondary" className="ml-auto">Used</Badge>}
-                                            </CommandItem>
-                                        )})}
-                                        </CommandGroup>
-                                    </CommandList>
-                                    </Command>
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-                         <div>
-                            <Label htmlFor="bikriNo">Bikri No.</Label>
-                            <Input id="bikriNo" value={bikriNo} onChange={e => setBikriNo(e.target.value)} />
-                        </div>
-                        <div>
-                            <Label htmlFor="bikriDate">Bikri Date</Label>
-                            <Input id="bikriDate" type="date" value={date} onChange={e => setDate(e.target.value)} />
-                        </div>
-
-                         {bikriType === 'fcoStock' ? (
-                            <div className="md:col-span-2">
-                                <Label htmlFor="market">Market / Outside Party</Label>
-                                <PartySelector value={market} onChange={setMarket} filter="outside" />
-                            </div>
-                        ) : (
-                            <div className="md:col-span-2">
-                                <Label htmlFor="growerName">Grower Name</Label>
-                                <PartySelector value={growerName} onChange={setGrowerName} filter="grower" />
-                            </div>
-                        )}
-                    </div>
-                    
-                    {selectedChallan && (
-                        <Card className="bg-muted/50 p-4">
-                            <CardHeader className="p-2">
-                                <CardTitle className="text-lg">Challan Summary</CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-2 grid grid-cols-2 gap-4 text-sm">
-                                <p><strong>To:</strong> {selectedChallan.toMs}</p>
-                                <p><strong>Items Sent:</strong> {selectedChallan.totalNugs}</p>
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    <Separator />
-                    
-                    <div className="space-y-6">
-                        {bikriType === 'fcoStock' && (
-                            <EntryTable 
-                                title="Original Purchase Cost (in Sopore)" 
-                                rows={purchaseRows} 
-                                icon={<ShoppingCart className="h-5 w-5 text-blue-500" />}
-                                onUpdate={updatePurchaseRow}
-                                onAdd={addPurchaseRow}
-                                onRemove={removePurchaseRow}
-                            />
-                        )}
-                         <EntryTable
-                            title="Bikri Sale Entries" 
-                            rows={saleRows} 
-                            icon={<Package className="h-5 w-5 text-green-500" />}
-                            onUpdate={updateSaleRow}
-                            onAdd={addSaleRow}
-                            onRemove={removeSaleRow}
-                            showStorageOption={true}
-                        />
-                    </div>
-
-                    <Separator />
-                    
-                    {/* Calculation */}
-                    <div className="grid md:grid-cols-2 gap-6">
-                        <div className="space-y-4">
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        {/* Header */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
                             <div>
-                                <Label htmlFor="freightPerPatti">Freight Rate per Patti</Label>
-                                <div className="relative">
-                                    <Truck className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    <Input id="freightPerPatti" type="number" className="pl-8" placeholder="e.g., 250" value={freightPerPatti || ''} onChange={e => setFreightPerPatti(Number(e.target.value))} />
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-1">Dabba freight is calculated as half of the Patti rate.</p>
-                            </div>
-                             <div>
-                                <Label htmlFor="commissionRate">Commission Rate (%)</Label>
-                                <div className="relative">
-                                     <Percent className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                     <Input id="commissionRate" type="number" className="pl-8" placeholder="e.g., 8 for 8%" value={commissionRate || ''} onChange={e => setCommissionRate(Number(e.target.value))} />
-                                </div>
+                                <Label htmlFor="bikriType">Bikri Type</Label>
+                                <Select value={bikriType} onValueChange={(v: BikriType) => setBikriType(v)} disabled={isEditing}>
+                                    <SelectTrigger id="bikriType"><SelectValue/></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="fcoStock">F.Co Stock (Profit/Loss)</SelectItem>
+                                        <SelectItem value="growerForwarding">Grower Forwarding (Net Sale)</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
                             <div>
-                                <Label htmlFor="expenses">Other Expenses from Bikri (Labour, etc.)</Label>
-                                 <div className="relative">
-                                    <Minus className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    <Input id="expenses" type="number" className="pl-8" value={expenses || ''} onChange={e => setExpenses(Number(e.target.value))} />
-                                </div>
+                                <Label htmlFor="challanId">Original Challan No.</Label>
+                                <Popover open={challanPopoverOpen} onOpenChange={setChallanPopoverOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                        variant="outline"
+                                        role="combobox"
+                                        aria-expanded={challanPopoverOpen}
+                                        className="w-full justify-between"
+                                        disabled={isEditing}
+                                        >
+                                        {(selectedChallanId && availableChallans.find(c => c.id === selectedChallanId))
+                                            ? `${availableChallans.find(c => c.id === selectedChallanId).challanNo} - ${availableChallans.find(c => c.id === selectedChallanId).toMs}`
+                                            : "Select Challan"}
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                        <Command>
+                                        <CommandInput placeholder="Search challan..." />
+                                        <CommandList>
+                                            <CommandEmpty>No challan found.</CommandEmpty>
+                                            <CommandGroup>
+                                            {availableChallans.map((c) => {
+                                                const isUsed = usedChallanIds.has(c.id) && c.id !== selectedChallanId;
+                                                return (
+                                                    <CommandItem
+                                                        key={c.id}
+                                                        value={c.id}
+                                                        onSelect={(currentValue) => {
+                                                            setSelectedChallanId(currentValue === selectedChallanId ? '' : currentValue)
+                                                            setChallanPopoverOpen(false)
+                                                        }}
+                                                        disabled={isUsed}
+                                                        className={cn('cursor-pointer', isUsed && 'opacity-50 cursor-not-allowed')}
+                                                    >
+                                                    <Check
+                                                    className={cn(
+                                                        "mr-2 h-4 w-4",
+                                                        selectedChallanId === c.id ? "opacity-100" : "opacity-0"
+                                                    )}
+                                                    />
+                                                    {c.challanNo} - {c.toMs}
+                                                    {isUsed && <Badge variant="secondary" className="ml-auto">Used</Badge>}
+                                                </CommandItem>
+                                            )})}
+                                            </CommandGroup>
+                                        </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
                             </div>
-                        </div>
-                        <Card className="p-4 bg-muted">
-                            <h3 className="font-bold text-lg mb-2">{bikriType === 'fcoStock' ? 'Profit / Loss Calculation' : 'Net Sale Calculation'}</h3>
-                             {bikriType === 'fcoStock' ? (
-                                <div className="space-y-2 text-sm">
-                                    <div className="flex justify-between"><span>Gross Sale from Bikri:</span> <span className="font-medium">₹{calculation.grossSale.toFixed(2)}</span></div>
-                                    <div className="flex justify-between text-destructive"><span>(-) Total Purchase Cost:</span> <span className="font-medium">₹{calculation.totalPurchaseCost.toFixed(2)}</span></div>
-                                    <div className="flex justify-between text-destructive"><span>(-) Total Expenses:</span> <span className="font-medium">₹{calculation.totalExpenses.toFixed(2)}</span></div>
-                                    <Separator className="my-1"/>
-                                    <div className={`flex justify-between font-bold text-lg ${calculation.netProfitOrLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                        <span>Net Profit / Loss:</span>
-                                        <span>₹{calculation.netProfitOrLoss.toFixed(2)}</span>
-                                    </div>
+                            <div>
+                                <Label htmlFor="bikriNo">Bikri No.</Label>
+                                <Input id="bikriNo" value={bikriNo} onChange={e => setBikriNo(e.target.value)} />
+                            </div>
+                            <div>
+                                <Label htmlFor="bikriDate">Bikri Date</Label>
+                                <Input id="bikriDate" type="date" value={date} onChange={e => setDate(e.target.value)} />
+                            </div>
+
+                            {bikriType === 'fcoStock' ? (
+                                <div className="md:col-span-2">
+                                    <Label htmlFor="market">Market / Outside Party</Label>
+                                    <PartySelector value={market} onChange={setMarket} filter="outside" />
                                 </div>
                             ) : (
-                                <div className="space-y-2 text-sm">
-                                    <div className="flex justify-between"><span>Gross Sale from Bikri:</span> <span className="font-medium">₹{calculation.grossSale.toFixed(2)}</span></div>
-                                    <div className="flex justify-between text-destructive"><span>(-) Total Expenses:</span> <span className="font-medium">₹{calculation.totalExpenses.toFixed(2)}</span></div>
-                                    <Separator className="my-1"/>
-                                    <div className="flex justify-between font-bold text-lg text-green-600">
-                                        <span>Net Sale Payable to Grower:</span>
-                                        <span>₹{calculation.netSalePayableToGrower.toFixed(2)}</span>
-                                    </div>
+                                <div className="md:col-span-2">
+                                    <Label htmlFor="growerName">Grower Name</Label>
+                                    <PartySelector value={growerName} onChange={setGrowerName} filter="grower" />
                                 </div>
                             )}
-                        </Card>
-                    </div>
+                        </div>
+                        
+                        {selectedChallan && (
+                            <Card className="bg-muted/50 p-4">
+                                <CardHeader className="p-2">
+                                    <CardTitle className="text-lg">Challan Summary</CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-2 grid grid-cols-2 gap-4 text-sm">
+                                    <p><strong>To:</strong> {selectedChallan.toMs}</p>
+                                    <p><strong>Items Sent:</strong> {selectedChallan.totalNugs}</p>
+                                </CardContent>
+                            </Card>
+                        )}
 
-                </CardContent>
-                <CardFooter>
-                     <div className="flex w-full justify-center gap-4">
-                        <Button onClick={handleSave} className="w-full max-w-xs" disabled={isSubmitting}>
-                            {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                            {isEditing ? 'Update Bikri Record' : 'Save Bikri Record'}
-                        </Button>
-                        <Button onClick={viewBikri} variant="secondary" className="w-full max-w-xs gap-2" disabled={!isEditing}>
-                            <FileText className="h-4 w-4" /> View Bikri
-                        </Button>
-                    </div>
-                </CardFooter>
-            </Card>
-
-            <Card className="lg:col-span-1 h-fit">
-                <CardHeader>
-                    <div className="flex items-center justify-between gap-4">
-                        <CardTitle className="flex items-center gap-2">
-                            Saved Bikris
-                            {!isLoading && <Badge variant="secondary">{yearlyCount} This Year</Badge>}
-                        </CardTitle>
-                         <div className="relative w-full max-w-xs">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input 
-                                placeholder="Search bikris..." 
-                                className="pl-8"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                        <Separator />
+                        
+                        <div className="space-y-6">
+                            {bikriType === 'fcoStock' && (
+                                <EntryTable 
+                                    title="Original Purchase Cost (in Sopore)" 
+                                    rows={purchaseRows} 
+                                    icon={<ShoppingCart className="h-5 w-5 text-blue-500" />}
+                                    onUpdate={updatePurchaseRow}
+                                    onAdd={addPurchaseRow}
+                                    onRemove={removePurchaseRow}
+                                />
+                            )}
+                            <EntryTable
+                                title="Bikri Sale Entries" 
+                                rows={saleRows} 
+                                icon={<Package className="h-5 w-5 text-green-500" />}
+                                onUpdate={updateSaleRow}
+                                onAdd={addSaleRow}
+                                onRemove={removeSaleRow}
+                                showStorageOption={true}
                             />
                         </div>
-                    </div>
-                     <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="sm" className="gap-2 mt-2">
-                                <Trash2 className="h-4 w-4" /> Clear All Bikris
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                This will permanently delete all Bikri records from this device. This action cannot be undone.
-                            </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleClearAllBikris}>Yes, Delete All</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </CardHeader>
-                <CardContent>
-                    <ScrollArea className="h-[500px]">
-                        {isLoading ? <Loader2 className="mx-auto h-6 w-6 animate-spin" /> :
-                         filteredBikris.length > 0 ? (
-                            <div className="space-y-2">
-                                {filteredBikris.map(bikri => (
-                                    <Card key={bikri.id} className="p-3">
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <p className="font-semibold">{bikri.market || bikri.growerName}</p>
-                                                <p className="text-sm text-muted-foreground">Challan #{bikri.challanNo} &rarr; Bikri #{bikri.bikriNo}</p>
-                                                 {bikri.bikriType === 'growerForwarding' ? (
-                                                    <p className="text-lg font-bold text-blue-600">Net Sale: ₹{bikri.calculation.netSalePayableToGrower.toFixed(2)}</p>
-                                                 ) : (
-                                                    <p className={`text-lg font-bold ${bikri.calculation.netProfitOrLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                        {bikri.calculation.netProfitOrLoss >= 0 ? 'Profit' : 'Loss'}: ₹{Math.abs(bikri.calculation.netProfitOrLoss).toFixed(2)}
-                                                    </p>
-                                                 )}
-                                            </div>
-                                            <div className="flex flex-col items-end">
-                                                <div className="flex">
-                                                    <Button variant="ghost" size="icon" onClick={() => loadBikriForEdit(bikri)}><FilePenLine className="h-4 w-4"/></Button>
-                                                    {userRole === 'admin' && <Button variant="ghost" size="icon" onClick={() => handleDelete(bikri.id)}><Trash2 className="h-4 w-4 text-destructive"/></Button>}
-                                                </div>
-                                                 <p className="text-xs text-muted-foreground mt-2">{new Date(bikri.date).toLocaleDateString()}</p>
-                                            </div>
-                                        </div>
-                                    </Card>
-                                ))}
+
+                        <Separator />
+                        
+                        {/* Calculation */}
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <div className="space-y-4">
+                                <div>
+                                    <Label htmlFor="freightPerPatti">Freight Rate per Patti</Label>
+                                    <div className="relative">
+                                        <Truck className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input id="freightPerPatti" type="number" className="pl-8" placeholder="e.g., 250" value={freightPerPatti || ''} onChange={e => setFreightPerPatti(Number(e.target.value))} />
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-1">Dabba freight is calculated as half of the Patti rate.</p>
+                                </div>
+                                <div>
+                                    <Label htmlFor="commissionRate">Commission Rate (%)</Label>
+                                    <div className="relative">
+                                        <Percent className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input id="commissionRate" type="number" className="pl-8" placeholder="e.g., 8 for 8%" value={commissionRate || ''} onChange={e => setCommissionRate(Number(e.target.value))} />
+                                    </div>
+                                </div>
+                                <div>
+                                    <Label htmlFor="expenses">Other Expenses from Bikri (Labour, etc.)</Label>
+                                    <div className="relative">
+                                        <Minus className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input id="expenses" type="number" className="pl-8" value={expenses || ''} onChange={e => setExpenses(Number(e.target.value))} />
+                                    </div>
+                                </div>
                             </div>
-                         ) : <p className="text-sm text-center text-muted-foreground">No outside sales records found.</p>
-                        }
-                    </ScrollArea>
-                </CardContent>
-            </Card>
+                            <Card className="p-4 bg-muted">
+                                <h3 className="font-bold text-lg mb-2">{bikriType === 'fcoStock' ? 'Profit / Loss Calculation' : 'Net Sale Calculation'}</h3>
+                                {bikriType === 'fcoStock' ? (
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between"><span>Gross Sale from Bikri:</span> <span className="font-medium">₹{calculation.grossSale.toFixed(2)}</span></div>
+                                        <div className="flex justify-between text-destructive"><span>(-) Total Purchase Cost:</span> <span className="font-medium">₹{calculation.totalPurchaseCost.toFixed(2)}</span></div>
+                                        <div className="flex justify-between text-destructive"><span>(-) Total Expenses:</span> <span className="font-medium">₹{calculation.totalExpenses.toFixed(2)}</span></div>
+                                        <Separator className="my-1"/>
+                                        <div className={`flex justify-between font-bold text-lg ${calculation.netProfitOrLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                            <span>Net Profit / Loss:</span>
+                                            <span>₹{calculation.netProfitOrLoss.toFixed(2)}</span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between"><span>Gross Sale from Bikri:</span> <span className="font-medium">₹{calculation.grossSale.toFixed(2)}</span></div>
+                                        <div className="flex justify-between text-destructive"><span>(-) Total Expenses:</span> <span className="font-medium">₹{calculation.totalExpenses.toFixed(2)}</span></div>
+                                        <Separator className="my-1"/>
+                                        <div className="flex justify-between font-bold text-lg text-green-600">
+                                            <span>Net Sale Payable to Grower:</span>
+                                            <span>₹{calculation.netSalePayableToGrower.toFixed(2)}</span>
+                                        </div>
+                                    </div>
+                                )}
+                            </Card>
+                        </div>
+
+                    </CardContent>
+                    <CardFooter>
+                        <div className="flex w-full justify-center gap-4">
+                            <Button onClick={handleSave} className="w-full max-w-xs" disabled={isSubmitting}>
+                                {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                                {isEditing ? 'Update Bikri Record' : 'Save Bikri Record'}
+                            </Button>
+                            <Button onClick={viewBikri} variant="secondary" className="w-full max-w-xs gap-2" disabled={!isEditing}>
+                                <FileText className="h-4 w-4" /> View Bikri
+                            </Button>
+                        </div>
+                    </CardFooter>
+                </Card>
+
+                <Card className="lg:col-span-1 h-fit">
+                    <CardHeader>
+                        <div className="flex items-center justify-between gap-4">
+                            <CardTitle className="flex items-center gap-2">
+                                Saved Bikris
+                                {!isLoading && <Badge variant="secondary">{yearlyCount} This Year</Badge>}
+                            </CardTitle>
+                            <div className="relative w-full max-w-xs">
+                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input 
+                                    placeholder="Search bikris..." 
+                                    className="pl-8"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="sm" className="gap-2 mt-2">
+                                    <Trash2 className="h-4 w-4" /> Clear All Bikris
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This will permanently delete all Bikri records from this device. This action cannot be undone.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleClearAllBikris}>Yes, Delete All</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </CardHeader>
+                    <CardContent>
+                        <ScrollArea className="h-[500px]">
+                            {isLoading ? <Loader2 className="mx-auto h-6 w-6 animate-spin" /> :
+                            filteredBikris.length > 0 ? (
+                                <div className="space-y-2">
+                                    {filteredBikris.map(bikri => (
+                                        <Card key={bikri.id} className="p-3">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <p className="font-semibold">{bikri.market || bikri.growerName}</p>
+                                                    <p className="text-sm text-muted-foreground">Challan #{bikri.challanNo} &rarr; Bikri #{bikri.bikriNo}</p>
+                                                    {bikri.bikriType === 'growerForwarding' ? (
+                                                        <p className="text-lg font-bold text-blue-600">Net Sale: ₹{bikri.calculation.netSalePayableToGrower.toFixed(2)}</p>
+                                                    ) : (
+                                                        <p className={`text-lg font-bold ${bikri.calculation.netProfitOrLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                            {bikri.calculation.netProfitOrLoss >= 0 ? 'Profit' : 'Loss'}: ₹{Math.abs(bikri.calculation.netProfitOrLoss).toFixed(2)}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <div className="flex flex-col items-end">
+                                                    <div className="flex">
+                                                        <Button variant="ghost" size="icon" onClick={() => loadBikriForEdit(bikri)}><FilePenLine className="h-4 w-4"/></Button>
+                                                        {userRole === 'admin' && <Button variant="ghost" size="icon" onClick={() => handleDelete(bikri.id)}><Trash2 className="h-4 w-4 text-destructive"/></Button>}
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground mt-2">{new Date(bikri.date).toLocaleDateString()}</p>
+                                                </div>
+                                            </div>
+                                        </Card>
+                                    ))}
+                                </div>
+                            ) : <p className="text-sm text-center text-muted-foreground">No outside sales records found.</p>
+                            }
+                        </ScrollArea>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     );
 }
-
-

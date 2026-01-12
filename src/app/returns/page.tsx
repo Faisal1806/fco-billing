@@ -26,6 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PartySelector } from '@/components/party-selector';
+import PageHeader from '@/components/PageHeader';
 
 const RETURN_STORAGE_PREFIX = 'return-';
 
@@ -84,7 +85,7 @@ const ReturnCard = ({ item, onDelete, userRole }: { item: ReturnItem, onDelete: 
             </p>
             {item.reason && <p className="text-xs text-white/60 italic">Reason: {item.reason}</p>}
         </CardContent>
-        <CardFooter className="bg-black/20 p-2 flex justify-end">
+        <CardFooter className="bg-black/20 p-1 flex justify-end">
             {userRole === 'admin' && (
                 <Button variant="ghost" size="icon" onClick={() => onDelete(item.id)}>
                     <Trash2 className="h-4 w-4 text-red-400" />
@@ -178,15 +179,15 @@ export default function ReturnsPage() {
 
 
   return (
-    <>
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-start">
-            <div>
-                 <CardTitle className="flex items-center gap-3 text-3xl"><RotateCcw className="h-8 w-8 text-orange-400"/> Sales & Purchase Returns</CardTitle>
-                 <CardDescription>Track items returned from customers (Sales Return) or items you return to your suppliers (Purchase Return).</CardDescription>
-            </div>
-             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+    <div className="space-y-6">
+        <PageHeader
+            title="Sales & Purchase Returns"
+            description="Track items returned from customers (Sales Return) or items you return to your suppliers (Purchase Return)."
+            icon={<RotateCcw className="h-8 w-8" />}
+            imageUrl="/assets/3d/returns.png"
+        />
+        <div className="flex justify-end">
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="gap-2"><PlusCircle className="h-4 w-4" /> Log New Return</Button>
               </DialogTrigger>
@@ -237,8 +238,7 @@ export default function ReturnsPage() {
               </DialogContent>
             </Dialog>
         </div>
-      </CardHeader>
-      <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
             <h3 className="text-xl font-semibold mb-4 flex items-center gap-2"><CornerUpLeft className="h-5 w-5 text-red-400" /> Sales Returns (From Customers)</h3>
              {salesReturns.length > 0 ? (
@@ -269,8 +269,7 @@ export default function ReturnsPage() {
                 </div>
              )}
         </div>
-      </CardContent>
-    </Card>
-    </>
+      </div>
+    </div>
   );
 }

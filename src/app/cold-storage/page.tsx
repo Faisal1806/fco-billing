@@ -28,6 +28,7 @@ import { Badge } from '@/components/ui/badge';
 import { saveDocument, deleteDocument, sendPushNotification, getDocuments } from '@/lib/actions';
 import { motion } from 'framer-motion';
 import { Progress } from '@/components/ui/progress';
+import PageHeader from '@/components/PageHeader';
 
 const STORAGE_PREFIX = 'cs-';
 
@@ -251,39 +252,39 @@ export default function ColdStoragePage() {
   }
 
   return (
-    <>
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-start">
-            <div>
-                 <CardTitle className="flex items-center gap-2 text-3xl"><Snowflake className="h-8 w-8 text-blue-400"/> Cold Storage Register</CardTitle>
-                 <CardDescription>Manage stock placed in Sopore cold storages. Track inward and outward movements.</CardDescription>
-            </div>
-             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
+    <div className="space-y-6">
+        <PageHeader
+            title="Cold Storage Register"
+            description="Manage stock placed in Sopore cold storages. Track inward and outward movements."
+            icon={<Snowflake className="h-8 w-8" />}
+            imageUrl="/assets/3d/cold_storage.png"
+        />
+        <div className="flex justify-end">
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
                 <Button className="gap-2"><PlusCircle className="h-4 w-4" /> Add Stock (Inward)</Button>
-              </DialogTrigger>
-              <DialogContent>
+                </DialogTrigger>
+                <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Log New Stock Inward</DialogTitle>
+                    <DialogTitle>Log New Stock Inward</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="dateIn">Date In</Label>
-                      <Input id="dateIn" name="dateIn" type="date" value={formState.dateIn} onChange={handleInputChange} />
+                        <Label htmlFor="dateIn">Date In</Label>
+                        <Input id="dateIn" name="dateIn" type="date" value={formState.dateIn} onChange={handleInputChange} />
                     </div>
-                     <div className="space-y-2">
+                    <div className="space-y-2">
                         <Label htmlFor="item">Item/Produce Name</Label>
                         <Input id="item" name="item" value={formState.item} onChange={handleInputChange} placeholder="e.g., Red Delicious Apples" />
                     </div>
-                  </div>
-                   <div className="space-y-2">
+                    </div>
+                    <div className="space-y-2">
                         <Label htmlFor="grower">Grower/Party Name</Label>
                         <Input id="grower" name="grower" value={formState.grower} onChange={handleInputChange} />
                     </div>
-                   <div className="grid grid-cols-2 gap-4">
-                     <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
                         <Label htmlFor="chamberNo">Chamber No.</Label>
                         <Input id="chamberNo" name="chamberNo" value={formState.chamberNo} onChange={handleInputChange} placeholder="e.g., C-14" />
                     </div>
@@ -291,17 +292,16 @@ export default function ColdStoragePage() {
                         <Label htmlFor="initialQty">Quantity (Boxes)</Label>
                         <Input id="initialQty" name="initialQty" type="number" value={formState.initialQty} onChange={handleInputChange} placeholder="0" />
                     </div>
-                  </div>
+                    </div>
                 </div>
                 <DialogFooter>
                     <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                  <Button onClick={handleSaveStock}>Save Stock</Button>
+                    <Button onClick={handleSaveStock}>Save Stock</Button>
                 </DialogFooter>
-              </DialogContent>
+                </DialogContent>
             </Dialog>
         </div>
-      </CardHeader>
-      <CardContent>
+        
         {isLoading ? (
             <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : stock.length > 0 ? (
@@ -323,8 +323,6 @@ export default function ColdStoragePage() {
                 <p className="mt-1 text-sm">Use the "Add Stock" button to log your first inward entry.</p>
             </div>
         )}
-      </CardContent>
-    </Card>
     
      <Dialog open={isOutwardDialogOpen} onOpenChange={setIsOutwardDialogOpen}>
         <DialogContent>
@@ -349,6 +347,6 @@ export default function ColdStoragePage() {
             </DialogFooter>
         </DialogContent>
      </Dialog>
-    </>
+    </div>
   );
 }

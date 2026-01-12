@@ -22,10 +22,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, Trash2, Receipt, Users, Building, Percent, Truck, Handshake } from 'lucide-react';
+import { PlusCircle, Trash2, Receipt, Users, Building, Percent, Truck, Handshake, DollarSign } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { PartySelector } from '@/components/party-selector';
+import PageHeader from '@/components/PageHeader';
 
 type ExpenseEntry = {
     id: string;
@@ -334,6 +335,12 @@ export default function ExpensesPage() {
 
     return (
         <div className="space-y-8">
+            <PageHeader
+                title="Expenses & Income"
+                description="Track income from commissions and expenses from labor, freight, and other company costs."
+                icon={<DollarSign className="h-8 w-8" />}
+                imageUrl="/assets/3d/finance.png"
+            />
              <ExpenseTable 
                 title="Commission Earned"
                 icon={<Percent className="h-6 w-6 text-primary"/>}

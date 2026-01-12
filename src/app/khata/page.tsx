@@ -23,6 +23,7 @@ import Lottie from 'lottie-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { motion } from 'framer-motion';
+import PageHeader from '@/components/PageHeader';
 
 type TransactionType = 'Sale' | 'Purchase' | 'Advance' | 'Repayment' | 'Bikri' | 'Discount';
 
@@ -186,73 +187,79 @@ export default function KhataDirectoryPage() {
     };
 
     return (
-        <Card>
-            <CardHeader>
-                 <CardTitle className="flex items-center gap-3 text-3xl"><BookOpen className="h-8 w-8 text-primary"/> Grower Khata Directory</CardTitle>
-                <CardDescription>A list of all growers with their current account balance. Click "View Statement" to open the manual statement generator.</CardDescription>
-                <div className="pt-2">
-                    <Input
-                        placeholder="Search for a grower..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="max-w-sm"
-                    />
-                </div>
-            </CardHeader>
-            <CardContent>
-                {isLoading ? (
-                     <div className="flex justify-center items-center h-64 print-hidden">
-                        {loaderAnimation && <Lottie animationData={loaderAnimation} loop={true} style={{ width: 100, height: 100 }} />}
+        <div className="space-y-6">
+             <PageHeader
+                title="Grower Khata Directory"
+                description="A list of all growers with their current account balance. Click 'View Statement' to open the manual statement generator."
+                icon={<BookOpen className="h-8 w-8" />}
+                imageUrl="/assets/3d/khata.png"
+            />
+            <Card>
+                <CardHeader>
+                    <div className="pt-2">
+                        <Input
+                            placeholder="Search for a grower..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="max-w-sm"
+                        />
                     </div>
-                ) : (
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Grower Name</TableHead>
-                                <TableHead>Last Activity</TableHead>
-                                <TableHead className="text-right">Balance</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredParties.length > 0 ? filteredParties.map(([name, data]) => {
-                                const balanceText = data.balance >= 0 ? 'Payable' : 'Receivable';
-                                const balanceColor = data.balance >= 0 ? 'text-red-500' : 'text-green-500';
-                                return (
-                                    <motion.tr 
-                                        key={name}
-                                        className="hover:shadow-lg transition-shadow duration-300"
-                                        whileHover={{ y: -5, scale: 1.02 }}
-                                    >
-                                        <TableCell className="font-medium flex items-center gap-2">
-                                            <User className="h-4 w-4 text-muted-foreground" /> {name}
-                                        </TableCell>
-                                        <TableCell>
-                                            {data.lastActivity ? new Date(data.lastActivity).toLocaleDateString('en-GB') : 'N/A'}
-                                        </TableCell>
-                                        <TableCell className={`text-right font-mono font-semibold ${balanceColor}`}>
-                                            ₹{Math.abs(data.balance).toFixed(2)}
-                                            <Badge variant="outline" className="ml-2">{balanceText}</Badge>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Button onClick={() => handleViewStatement(name)} size="sm" className="gap-2">
-                                                <Eye className="h-4 w-4" />
-                                                View Statement
-                                            </Button>
-                                        </TableCell>
-                                    </motion.tr>
-                                );
-                            }) : (
+                </CardHeader>
+                <CardContent>
+                    {isLoading ? (
+                        <div className="flex justify-center items-center h-64 print-hidden">
+                            {loaderAnimation && <Lottie animationData={loaderAnimation} loop={true} style={{ width: 100, height: 100 }} />}
+                        </div>
+                    ) : (
+                        <Table>
+                            <TableHeader>
                                 <TableRow>
-                                    <TableCell colSpan={4} className="text-center h-24">
-                                        No growers found.
-                                    </TableCell>
+                                    <TableHead>Grower Name</TableHead>
+                                    <TableHead>Last Activity</TableHead>
+                                    <TableHead className="text-right">Balance</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                )}
-            </CardContent>
-        </Card>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredParties.length > 0 ? filteredParties.map(([name, data]) => {
+                                    const balanceText = data.balance >= 0 ? 'Payable' : 'Receivable';
+                                    const balanceColor = data.balance >= 0 ? 'text-red-500' : 'text-green-500';
+                                    return (
+                                        <motion.tr 
+                                            key={name}
+                                            className="hover:shadow-lg transition-shadow duration-300"
+                                            whileHover={{ y: -5, scale: 1.02 }}
+                                        >
+                                            <TableCell className="font-medium flex items-center gap-2">
+                                                <User className="h-4 w-4 text-muted-foreground" /> {name}
+                                            </TableCell>
+                                            <TableCell>
+                                                {data.lastActivity ? new Date(data.lastActivity).toLocaleDateString('en-GB') : 'N/A'}
+                                            </TableCell>
+                                            <TableCell className={`text-right font-mono font-semibold ${balanceColor}`}>
+                                                ₹{Math.abs(data.balance).toFixed(2)}
+                                                <Badge variant="outline" className="ml-2">{balanceText}</Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <Button onClick={() => handleViewStatement(name)} size="sm" className="gap-2">
+                                                    <Eye className="h-4 w-4" />
+                                                    View Statement
+                                                </Button>
+                                            </TableCell>
+                                        </motion.tr>
+                                    );
+                                }) : (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="text-center h-24">
+                                            No growers found.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
     );
 }

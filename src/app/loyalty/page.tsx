@@ -24,6 +24,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { saveDocument, sendPushNotification, getDocuments } from '@/lib/actions';
 import { Input } from '@/components/ui/input';
+import PageHeader from '@/components/PageHeader';
 
 type TransactionType = 'Sale' | 'Bikri' | 'Discount';
 
@@ -221,10 +222,15 @@ export default function LoyaltyPage() {
 
     return (
         <div className="space-y-6">
+            <PageHeader
+                title="F.Co Loyalty & Rewards"
+                description="Earn points for sales and trade activities. (1 Point = ₹1)"
+                icon={<Award className="h-8 w-8" />}
+                imageUrl="/assets/3d/loyalty.png"
+            />
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-3 text-3xl text-yellow-400">🏆 F.Co Loyalty & Rewards</CardTitle>
-                    <CardDescription>Earn points for sales and trade activities. (1 Point = ₹1)</CardDescription>
+                    <CardTitle>Program Summary</CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <StatCard title="Total Points Earned" value={globalStats.totalEarned} icon={TrendingUp} />

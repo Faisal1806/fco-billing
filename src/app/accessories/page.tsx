@@ -30,6 +30,7 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import '../khata/print.css';
 import { saveDocument, deleteDocument } from '@/lib/actions';
+import PageHeader from '@/components/PageHeader';
 
 const STORAGE_PREFIX = 'accessory-ledger-';
 
@@ -201,12 +202,14 @@ export default function SuppliesPage() {
 
   return (
     <div className="space-y-6 printable-area">
+        <PageHeader
+            title="Accessories & Cashbook"
+            description="Log sales of fertilizers, packaging, and other farm inputs. This section acts as the daily cashbook."
+            icon={<SprayCan className="h-8 w-8" />}
+            imageUrl="/assets/3d/expenses.png"
+        />
         <Card className="print-hidden">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-3xl"><SprayCan className="h-8 w-8 text-primary"/> Accessories & Cashbook</CardTitle>
-            <CardDescription>Log sales of fertilizers, packaging, and other farm inputs. This section acts as the daily cashbook.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <CardContent className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 pt-6">
             <div className="space-y-2">
                 <Label htmlFor="date">Date</Label>
                 <Input id="date" name="date" type="date" value={formState.date} onChange={(e) => handleInputChange(e, 'date')} />
