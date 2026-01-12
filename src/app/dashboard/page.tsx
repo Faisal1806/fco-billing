@@ -17,7 +17,7 @@ const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.Eleme
     const router = useRouter();
 
     return (
-        <motion.li
+        <motion.div
             className="w-full"
             onClick={() => router.push(href)}
             variants={{
@@ -35,7 +35,7 @@ const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.Eleme
                 <Icon className="neon-glow-icon icon h-5 w-5 mr-3 text-primary transition-all duration-300" />
                 {title}
             </a>
-        </motion.li>
+        </motion.div>
     );
 };
 
@@ -268,13 +268,12 @@ export default function DashboardPage() {
                         animate="visible"
                     >
                          {allNavItems.map((item, index) => (
-                            <motion.div variants={itemVariants} key={item.name}>
-                                <NavTile 
-                                    title={item.name} 
-                                    icon={item.icon} 
-                                    href={item.href}
-                                />
-                            </motion.div>
+                            <NavTile 
+                                key={index}
+                                title={item.name} 
+                                icon={item.icon} 
+                                href={item.href}
+                            />
                         ))}
                     </motion.ul>
                 </CardContent>
