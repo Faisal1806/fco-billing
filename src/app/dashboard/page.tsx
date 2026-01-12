@@ -26,7 +26,7 @@ const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.Eleme
                     opacity: 1
                 }
             }}
-             whileHover={{ y: -4, scale: 1.05, rotate: -1, boxShadow: '0 10px 20px rgba(var(--accent), 0.2)' }}
+             whileHover={{ y: -8, scale: 1.05, boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.4)" }}
              transition={{ type: 'spring', stiffness: 400, damping: 15 }}
         >
             <a href={href} className="neon-glow-container flex items-center justify-start text-left p-3 w-full bg-card/60 backdrop-blur-sm border border-white/10 rounded-lg text-card-foreground no-underline font-medium shadow-md transition-shadow hover:shadow-xl">
@@ -39,7 +39,7 @@ const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.Eleme
 
 const StatCard = ({ title, value, icon: Icon, description, color = 'text-primary' }: { title: string, value: string, icon: React.ElementType, description: string, color?: string }) => (
     <motion.div
-        whileHover={{ y: -5, scale: 1.03 }}
+        whileHover={{ y: -8, scale: 1.05, boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.4)" }}
          variants={{
             hidden: { y: 20, opacity: 0 },
             visible: {
@@ -64,7 +64,7 @@ const QuickActionButton = ({ title, icon: Icon, href }: { title: string, icon: R
     const router = useRouter();
     return (
         <motion.div 
-            whileHover={{ y: -5, scale: 1.05 }}
+            whileHover={{ y: -8, scale: 1.05, boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.4)" }}
              variants={{
                 hidden: { y: 20, opacity: 0 },
                 visible: {
@@ -346,7 +346,7 @@ export default function DashboardPage() {
                 className="grid grid-cols-1 md:grid-cols-2 gap-6"
                 variants={listContainerVariants}
             >
-                <motion.div whileHover={{y: -5, scale: 1.02}}>
+                <motion.div whileHover={{y: -8, scale: 1.05, boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.4)"}}>
                     <Card className="bg-card/60 backdrop-blur-sm border-white/10 h-full">
                         <CardHeader>
                             <CardTitle>Loyalty Program Summary</CardTitle>
@@ -359,7 +359,7 @@ export default function DashboardPage() {
                         </CardContent>
                     </Card>
                 </motion.div>
-                 <motion.div whileHover={{y: -5, scale: 1.02}}>
+                 <motion.div whileHover={{y: -8, scale: 1.05, boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.4)"}}>
                     <Card className="bg-card/60 backdrop-blur-sm border-white/10 h-full">
                         <CardHeader>
                             <CardTitle>Top Growers by Net Sales</CardTitle>
