@@ -32,6 +32,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import PageHeader from '@/components/PageHeader';
+import { useAppState } from '@/contexts/app-state-context';
 
 type BikriType = 'fcoStock' | 'growerForwarding';
 
@@ -40,6 +41,7 @@ const CS_STORAGE_PREFIX = 'cs-';
 export default function OutsideSalesPage() {
     const { toast } = useToast();
     const router = useRouter();
+    const { selectedYear } = useAppState();
 
     // Form State
     const [id, setId] = useState<string | null>(null); // To store the unique ID of the record being edited
@@ -84,21 +86,27 @@ export default function OutsideSalesPage() {
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key?.startsWith('challan-')) {
-                    allChallans.push(JSON.parse(localStorage.getItem(key)!));
+                    const challan = JSON.parse(localStorage.getItem(key)!);
+                    if (new Date(challan.date).getFullYear() === selectedYear) {
+                      allChallans.push(challan);
+                    }
                 }
                 if (key?.startsWith('bikri-')) {
-                    allBikris.push(JSON.parse(localStorage.getItem(key)!));
+                    const bikri = JSON.parse(localStorage.getItem(key)!);
+                     if (new Date(bikri.date).getFullYear() === selectedYear) {
+                      allBikris.push(bikri);
+                    }
                 }
             }
             setAvailableChallans(allChallans.sort((a,b) => (a.challanNo > b.challanNo) ? 1 : -1));
             setSavedBikris(allBikris.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         }
         setIsLoading(false);
-    }, []);
+    }, [selectedYear]);
     
     useEffect(() => {
         fetchData();
-    }, [fetchData]);
+    }, [fetchData, selectedYear]);
 
     const handleClearAllBikris = () => {
         if (typeof window !== 'undefined') {
@@ -133,8 +141,7 @@ export default function OutsideSalesPage() {
 
     const yearlyCount = useMemo(() => {
         if(!savedBikris) return 0;
-        const currentYear = new Date().getFullYear();
-        return savedBikris.filter(b => new Date(b.date).getFullYear() === currentYear).length;
+        return savedBikris.length;
     }, [savedBikris]);
     
     const selectedChallan = useMemo(() => {
@@ -570,7 +577,7 @@ export default function OutsideSalesPage() {
                         <div className="flex items-center justify-between gap-4">
                             <CardTitle className="flex items-center gap-2">
                                 Saved Bikris
-                                {!isLoading && <Badge variant="secondary">{yearlyCount} This Year</Badge>}
+                                {!isLoading && <Badge variant="secondary">{yearlyCount} This Year ({selectedYear})</Badge>}
                             </CardTitle>
                             <div className="relative w-full max-w-xs">
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -632,7 +639,7 @@ export default function OutsideSalesPage() {
                                         </Card>
                                     ))}
                                 </div>
-                            ) : <p className="text-sm text-center text-muted-foreground">No outside sales records found.</p>
+                            ) : <p className="text-sm text-center text-muted-foreground">No outside sales records found for {selectedYear}.</p>
                             }
                         </ScrollArea>
                     </CardContent>

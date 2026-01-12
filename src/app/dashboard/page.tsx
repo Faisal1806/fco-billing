@@ -11,6 +11,7 @@ import { WatakEntry } from '@/app/watak-register/page';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SummaryCard } from '@/components/ui/summary-card';
+import { useAppState } from '@/contexts/app-state-context';
 
 
 const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.ElementType, href: string }) => {
@@ -79,7 +80,7 @@ const itemVariants = {
 
 export default function DashboardPage() {
   const allNavItems = sidebarSections.flatMap(section => section.items);
-  const [selectedYear, setSelectedYear] = React.useState(new Date().getFullYear());
+  const { selectedYear, setSelectedYear } = useAppState();
   const [availableYears, setAvailableYears] = React.useState<number[]>([]);
   const [stats, setStats] = React.useState<any>({ 
     todaySales: 0,

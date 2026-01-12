@@ -40,6 +40,7 @@ import { Logo } from '@/components/logo';
 import BusinessCardQR from '@/components/BusinessCardQR';
 import html2canvas from 'html2canvas';
 import { motion } from 'framer-motion';
+import { useAppState } from '@/contexts/app-state-context';
 
 export interface PurchaseEntry {
     billNo: string;
@@ -161,6 +162,7 @@ const A4PurchaseBillLayout = ({ billData }: { billData: PurchaseEntry }) => {
 export default function PurchaseRegisterPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { selectedYear } = useAppState();
 
   const [purchases, setPurchases] = React.useState<PurchaseEntry[]>([]);
   const [customers, setCustomers] = React.useState<string[]>([]);
@@ -187,7 +189,9 @@ export default function PurchaseRegisterPage() {
             if (key && key.startsWith('purchase-')) {
                 try {
                     const purchase = JSON.parse(localStorage.getItem(key)!);
-                    loadedPurchases.push(purchase);
+                    if (new Date(purchase.date).getFullYear() === selectedYear) {
+                      loadedPurchases.push(purchase);
+                    }
                 } catch(e) { console.error("Failed to parse purchase:", e)}
             }
         }
@@ -196,16 +200,15 @@ export default function PurchaseRegisterPage() {
         setCustomers(uniqueCustomers);
     }
     setIsLoading(false);
-  }, []);
+  }, [selectedYear]);
 
   React.useEffect(() => {
     fetchPurchases();
-  }, [fetchPurchases]);
+  }, [fetchPurchases, selectedYear]);
   
   const yearlyCount = React.useMemo(() => {
     if(!purchases) return 0;
-    const currentYear = new Date().getFullYear();
-    return purchases.filter(p => new Date(p.date).getFullYear() === currentYear).length;
+    return purchases.length;
   }, [purchases]);
 
   const filteredPurchases = purchases
@@ -323,7 +326,7 @@ export default function PurchaseRegisterPage() {
 
   const exportToPDF = () => {
     const doc = new jsPDF();
-    doc.text(`Purchase Register - ${selectedCustomer}`, 14, 15);
+    doc.text(`Purchase Register - ${selectedCustomer} (${selectedYear})`, 14, 15);
     doc.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, 14, 22);
 
     const tableData = filteredPurchases.map(p => [
@@ -346,7 +349,7 @@ export default function PurchaseRegisterPage() {
         headStyles: { fillColor: [22, 163, 74] }
     });
 
-    doc.save(`Purchase-Register-${selectedCustomer}.pdf`);
+    doc.save(`Purchase-Register-${selectedCustomer}-${selectedYear}.pdf`);
   };
 
   const exportToExcel = () => {
@@ -366,7 +369,7 @@ export default function PurchaseRegisterPage() {
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Purchases');
-    XLSX.writeFile(workbook, `Purchase-Register-${selectedCustomer}.xlsx`);
+    XLSX.writeFile(workbook, `Purchase-Register-${selectedCustomer}-${selectedYear}.xlsx`);
   };
     
   const handleShare = () => {
@@ -396,7 +399,7 @@ export default function PurchaseRegisterPage() {
             <div className="flex items-center gap-4">
                 <CardTitle className="flex items-center gap-2">
                     Purchase Register
-                    {!isLoading && <Badge variant="outline">{yearlyCount} This Year</Badge>}
+                    {!isLoading && <Badge variant="outline">{yearlyCount} This Year ({selectedYear})</Badge>}
                 </CardTitle>
                  <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -541,4 +544,3 @@ export default function PurchaseRegisterPage() {
 
 
     
-

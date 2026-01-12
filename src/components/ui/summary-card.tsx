@@ -46,21 +46,21 @@ export const SummaryCard = ({
         rotateY,
         transformStyle: "preserve-3d",
       }}
-      className="relative h-40 w-full rounded-xl bg-gradient-to-br from-card/70 to-card/90 border border-white/10 p-6 shadow-2xl"
+      className="relative h-40 w-full rounded-xl bg-gradient-to-br from-card/70 to-card/90 border border-white/10 p-4 shadow-2xl"
     >
       <div
         style={{
           transform: "translateZ(50px)",
           transformStyle: "preserve-3d",
         }}
-        className="absolute inset-4 flex flex-col justify-between"
+        className="absolute inset-4 flex flex-col justify-between h-full"
       >
         <div className="flex justify-between items-start">
             <p className="text-sm text-muted-foreground">{title}</p>
             <Icon className="h-6 w-6 text-primary" style={{transform: "translateZ(20px)"}} />
         </div>
-        <div>
-            <h3 className="text-3xl font-bold text-primary-foreground mt-1">{value}</h3>
+        <div className="mt-auto">
+            <h3 className="text-3xl font-bold text-primary-foreground">{value}</h3>
             <p className="text-xs text-muted-foreground mt-1">{description}</p>
         </div>
       </div>

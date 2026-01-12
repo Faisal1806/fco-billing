@@ -39,6 +39,7 @@ import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
 import { ClassicA4Layout } from '@/components/invoice-templates/classic-a4';
 import html2canvas from 'html2canvas';
+import { useAppState } from '@/contexts/app-state-context';
 
 export interface WatakEntry {
     id: string;
@@ -106,7 +107,6 @@ const defaultGrowers: { name: string, address: string }[] = [
     { name: 'Mohd. Subhan Parry', address: 'R/o Nadihal Bla.' },
     { name: 'GH. Mohiuddin Lone (Poltry)', address: 'R/o Nadihal Bla.' },
     { name: 'Majoor Ahmad Lone ®', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Akbar Lone (Lama)', address: 'R/o Nadihal Bla.' },
     { name: 'Jaana ® B/P', address: 'R/o Nadihal Bla.' },
     { name: 'Rayees Rajab ®', address: 'R/o Nadihal Bla.' },
     { name: 'Hilal Ahmad Wani', address: 'R/o Nadihal Bla.' },
@@ -127,6 +127,7 @@ export default function SalesRegisterPage() {
   const { t } = useLanguage();
   const router = useRouter();
   const { toast } = useToast();
+  const { selectedYear } = useAppState();
 
   const [wataks, setWataks] = React.useState<WatakEntry[]>([]);
   const [growers, setGrowers] = React.useState<string[]>([]);
@@ -143,7 +144,7 @@ export default function SalesRegisterPage() {
       setUserRole(localStorage.getItem('userRole'));
     }
     fetchWataks();
-  }, []);
+  }, [selectedYear]);
 
   const fetchWataks = () => {
     setIsLoading(true);
@@ -174,10 +175,10 @@ export default function SalesRegisterPage() {
             if (key?.startsWith('invoice-')) {
                 try {
                     const watak = JSON.parse(localStorage.getItem(key)!);
-                    items.push(watak);
-                    // Also ensure any name from an invoice is considered for mapping,
-                    // in case it wasn't in the parties list
-                    addPartyToMap(watak.customerName);
+                    if (new Date(watak.date).getFullYear() === selectedYear) {
+                      items.push(watak);
+                      addPartyToMap(watak.customerName);
+                    }
                 } catch(e) {
                     console.error("Failed to parse watak from local storage", e);
                 }
@@ -193,14 +194,13 @@ export default function SalesRegisterPage() {
 
   const yearlyCount = React.useMemo(() => {
     if(!wataks) return 0;
-    const currentYear = new Date().getFullYear();
-    return wataks.filter(w => new Date(w.date).getFullYear() === currentYear).length;
+    return wataks.length;
   }, [wataks]);
 
 
   React.useEffect(() => {
     fetchWataks();
-  }, [toast]);
+  }, [toast, selectedYear]);
 
   const filteredWataks = wataks
     .filter(w => {
@@ -229,7 +229,7 @@ export default function SalesRegisterPage() {
 
   const exportToPDF = () => {
     const doc = new jsPDF();
-    doc.text(`Sales Register - ${selectedGrower}`, 14, 15);
+    doc.text(`Sales Register - ${selectedGrower} (${selectedYear})`, 14, 15);
     doc.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, 14, 22);
 
     const tableData = filteredWataks.map(w => {
@@ -258,7 +258,7 @@ export default function SalesRegisterPage() {
         headStyles: { fillColor: [22, 163, 74] }
     });
 
-    doc.save(`Sales-Register-${selectedGrower}.pdf`);
+    doc.save(`Sales-Register-${selectedGrower}-${selectedYear}.pdf`);
   };
 
   const exportAllToPDFs = async () => {
@@ -354,7 +354,7 @@ export default function SalesRegisterPage() {
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Sales');
-    XLSX.writeFile(workbook, `Sales-Register-${selectedGrower}.xlsx`);
+    XLSX.writeFile(workbook, `Sales-Register-${selectedGrower}-${selectedYear}.xlsx`);
   };
 
   const handleShare = () => {
@@ -404,7 +404,7 @@ export default function SalesRegisterPage() {
               <div className="flex items-center gap-4">
                   <CardTitle className="flex items-center gap-2">
                       Sales Register
-                      {!isLoading && <Badge variant="outline">{yearlyCount} This Year</Badge>}
+                      {!isLoading && <Badge variant="outline">{yearlyCount} This Year ({selectedYear})</Badge>}
                   </CardTitle>
                   <div className="relative">
                       <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -596,7 +596,7 @@ export default function SalesRegisterPage() {
                 </Table>
             ) : (
                 <div className="text-center text-muted-foreground mt-6 py-12 border-2 border-dashed rounded-lg">
-                    <p>No sales have been recorded yet.</p>
+                    <p>No sales have been recorded yet for {selectedYear}.</p>
                     <p className="text-sm">Your recent wataks will appear here once you create them.</p>
                 </div>
             )}
