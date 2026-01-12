@@ -10,6 +10,7 @@ import { TrendingUp, ShoppingCart, Users, DollarSign, Calendar, BarChart, FileTe
 import { WatakEntry } from '@/app/watak-register/page';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SummaryCard } from '@/components/ui/summary-card';
 
 
 const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.ElementType, href: string }) => {
@@ -36,29 +37,6 @@ const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.Eleme
         </motion.li>
     );
 };
-
-const StatCard = ({ title, value, icon: Icon, description, color = 'text-primary' }: { title: string, value: string, icon: React.ElementType, description: string, color?: string }) => (
-    <motion.div
-        whileHover={{ y: -8, scale: 1.05, boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.4)" }}
-         variants={{
-            hidden: { y: 20, opacity: 0 },
-            visible: {
-              y: 0,
-              opacity: 1
-            }
-        }}
-        className="bg-card/60 backdrop-blur-sm border border-white/10 p-4 rounded-xl shadow-lg flex items-start gap-4"
-    >
-        <div className={`p-2 bg-primary/10 rounded-lg ${color}`}>
-            <Icon className="h-6 w-6" />
-        </div>
-        <div>
-            <p className="text-sm text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold">{value}</p>
-            <p className="text-xs text-muted-foreground">{description}</p>
-        </div>
-    </motion.div>
-);
 
 const QuickActionButton = ({ title, icon: Icon, href }: { title: string, icon: React.ElementType, href: string }) => {
     const router = useRouter();
@@ -236,8 +214,8 @@ export default function DashboardPage() {
     { title: "Today's Sales (Net)", value: `₹${stats.todaySales.toLocaleString()}`, description: `From ${stats.todayPatti} Patti / ${stats.todayDabba} Dabba`, icon: DollarSign },
     { title: "This Month's Sales (Net)", value: `₹${stats.monthSales.toLocaleString()}`, description: "Current calendar month", icon: Calendar },
     { title: "This Year's Gross Sales", value: `₹${stats.yearGrossSales.toLocaleString()}`, description: "Total sale value this year", icon: TrendingUp },
-    { title: "This Year's Net Sales", value: `₹${stats.yearNetSales.toLocaleString()}`, description: "After all expenses", icon: TrendingUp, color: 'text-green-500' },
-    { title: "Total Yearly Expenses", value: `₹${stats.yearExpenses.toLocaleString()}`, description: "From all sales invoices", icon: TrendingUp, color: 'text-red-500' },
+    { title: "This Year's Net Sales", value: `₹${stats.yearNetSales.toLocaleString()}`, description: "After all expenses", icon: TrendingUp },
+    { title: "Total Yearly Expenses", value: `₹${stats.yearExpenses.toLocaleString()}`, description: "From all sales invoices", icon: TrendingUp },
     { title: "Gross Profit Margin", value: `${grossProfitMargin}%`, description: "Net / Gross Sales", icon: BarChart },
     { title: "Total Patti Received", value: stats.pattiReceived.toLocaleString(), description: "This year via Goods Receipt", icon: FileText },
     { title: "Total Dabba Received", value: stats.dabbaReceived.toLocaleString(), description: "This year via Goods Receipt", icon: FileText },
@@ -312,11 +290,12 @@ export default function DashboardPage() {
                  </Select>
              </div>
              <motion.div 
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                style={{ perspective: "1000px" }}
                 variants={listContainerVariants}
             >
                 {summaryCards.map((card, i) => (
-                    <StatCard key={i} {...card} />
+                    <SummaryCard key={i} {...card} />
                 ))}
             </motion.div>
         </motion.div>
@@ -352,10 +331,10 @@ export default function DashboardPage() {
                             <CardTitle>Loyalty Program Summary</CardTitle>
                             <CardDescription>A quick overview of your grower rewards program.</CardDescription>
                         </CardHeader>
-                        <CardContent className="grid grid-cols-1 gap-4">
-                            <StatCard title="Total Points Distributed" value={loyaltyStats.totalPoints.toLocaleString()} description="This season" icon={Users} />
-                            <StatCard title="Redeemed This Month" value={`₹${loyaltyStats.redeemedMonth.toLocaleString()}`} description="As discounts" icon={DollarSign} />
-                            <StatCard title="Top Grower" value={loyaltyStats.topGrower.name} description={`${loyaltyStats.topGrower.points.toLocaleString()} pts`} icon={Award} />
+                        <CardContent className="grid grid-cols-1 gap-4" style={{ perspective: "1000px" }}>
+                            <SummaryCard title="Total Points Distributed" value={loyaltyStats.totalPoints.toLocaleString()} description="This season" icon={Users} />
+                            <SummaryCard title="Redeemed This Month" value={`₹${loyaltyStats.redeemedMonth.toLocaleString()}`} description="As discounts" icon={DollarSign} />
+                            <SummaryCard title="Top Grower" value={loyaltyStats.topGrower.name} description={`${loyaltyStats.topGrower.points.toLocaleString()} pts`} icon={Award} />
                         </CardContent>
                     </Card>
                 </motion.div>
