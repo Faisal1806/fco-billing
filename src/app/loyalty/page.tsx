@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -225,7 +224,7 @@ export default function LoyaltyPage() {
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-3 text-3xl text-yellow-400">🏆 F.Co Loyalty & Rewards</CardTitle>
-                    <CardDescription>Earn points every time you sell or trade with F.Co. (1 Point = ₹1)</CardDescription>
+                    <CardDescription>Earn points for sales and trade activities. (1 Point = ₹1)</CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <StatCard title="Total Points Earned" value={globalStats.totalEarned} icon={TrendingUp} />

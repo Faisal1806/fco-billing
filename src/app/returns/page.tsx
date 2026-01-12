@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -139,7 +138,7 @@ export default function ReturnsPage() {
   const handleSaveReturn = () => {
     const { date, type, partyName, itemName, quantity } = formState;
     if (!date || !partyName || !itemName || !quantity || Number(quantity) <= 0) {
-      toast({ variant: 'destructive', title: 'Missing Fields', description: 'Please fill out all fields with valid data.' });
+      toast({ variant: 'destructive', title: 'Missing Fields', description: 'Please fill out all required fields with valid data.' });
       return;
     }
     
@@ -275,4 +274,3 @@ export default function ReturnsPage() {
     </>
   );
 }
-

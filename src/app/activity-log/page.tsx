@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -44,9 +43,9 @@ export default function ActivityLogPage() {
             <CardHeader>
                 <div className="flex justify-between items-center">
                     <div className="flex items-center gap-3">
-                        <History className="h-6 w-6" />
+                        <History className="h-8 w-8 text-primary" />
                         <div>
-                            <CardTitle>Customer Portal Activity Log</CardTitle>
+                            <CardTitle className="text-3xl">Customer Portal Activity Log</CardTitle>
                             <CardDescription>Monitor customer logins and actions within the portal.</CardDescription>
                         </div>
                     </div>

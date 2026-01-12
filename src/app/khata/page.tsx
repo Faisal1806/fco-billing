@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -18,7 +17,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, User, Eye } from 'lucide-react';
+import { Loader2, User, Eye, BookOpen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Lottie from 'lottie-react';
 import { Badge } from '@/components/ui/badge';
@@ -189,7 +188,7 @@ export default function KhataDirectoryPage() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Grower Khata Directory</CardTitle>
+                 <CardTitle className="flex items-center gap-3 text-3xl"><BookOpen className="h-8 w-8 text-primary"/> Grower Khata Directory</CardTitle>
                 <CardDescription>A list of all growers with their current account balance. Click "View Statement" to open the manual statement generator.</CardDescription>
                 <div className="pt-2">
                     <Input

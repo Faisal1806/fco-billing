@@ -1,4 +1,3 @@
-
 'use client'
 
 import React, { useState, useEffect } from 'react';
@@ -23,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Trash2, FileSignature, Printer, FileDown } from 'lucide-react';
+import { PlusCircle, Trash2, FileSignature, Printer, FileDown, SprayCan } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Lottie from 'lottie-react';
 import { jsPDF } from 'jspdf';
@@ -204,8 +203,8 @@ export default function SuppliesPage() {
     <div className="space-y-6 printable-area">
         <Card className="print-hidden">
           <CardHeader>
-            <CardTitle>Add to Daily Supplies Ledger (Cashbook)</CardTitle>
-            <CardDescription>Log sales of fertilizers, packaging materials, and other farm inputs. This is also referred to as a Cashbook.</CardDescription>
+            <CardTitle className="flex items-center gap-2 text-3xl"><SprayCan className="h-8 w-8 text-primary"/> Accessories & Cashbook</CardTitle>
+            <CardDescription>Log sales of fertilizers, packaging, and other farm inputs. This section acts as the daily cashbook.</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
