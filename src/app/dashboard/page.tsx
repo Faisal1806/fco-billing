@@ -26,11 +26,11 @@ const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.Eleme
                     opacity: 1
                 }
             }}
-             whileHover={{ y: -4, scale: 1.02 }}
-             transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+             whileHover={{ y: -4, scale: 1.05, rotate: -1, boxShadow: '0 10px 20px rgba(var(--accent), 0.2)' }}
+             transition={{ type: 'spring', stiffness: 400, damping: 15 }}
         >
-            <a href={href} className="flex items-center justify-start text-left p-3 w-full bg-card/60 backdrop-blur-sm border border-white/10 rounded-lg text-card-foreground no-underline font-medium shadow-md transition-shadow hover:shadow-xl">
-                <Icon className="icon h-5 w-5 mr-3 text-primary" />
+            <a href={href} className="neon-glow-container flex items-center justify-start text-left p-3 w-full bg-card/60 backdrop-blur-sm border border-white/10 rounded-lg text-card-foreground no-underline font-medium shadow-md transition-shadow hover:shadow-xl">
+                <Icon className="neon-glow-icon icon h-5 w-5 mr-3 text-primary transition-all duration-300" />
                 {title}
             </a>
         </motion.li>

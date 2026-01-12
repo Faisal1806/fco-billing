@@ -24,7 +24,8 @@ export default function FCo3DHome() {
       .then(data => setLogoAnimationData(data))
       .catch(() => console.error("Could not load 3D logo animation."));
     
-    fetch('/animations/extras/fco_particle_glow.json')
+    // Updated to use the new professional 3D background
+    fetch('/animations/extras/fco_3d_bg.json')
       .then(res => res.json())
       .then(data => setBgAnimationData(data))
       .catch(() => console.error("Could not load background animation."));

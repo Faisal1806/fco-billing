@@ -6,10 +6,10 @@ import { FaFacebookF, FaTwitter, FaTiktok, FaInstagram } from 'react-icons/fa';
 
 export default function SocialTilesPage() {
   const socialLinks = [
-    { name: 'Facebook', icon: <FaFacebookF /> },
-    { name: 'Twitter', icon: <FaTwitter /> },
-    { name: 'TikTok', icon: <FaTiktok /> },
-    { name: 'Instagram', icon: <FaInstagram /> },
+    { name: 'Facebook', icon: <FaFacebookF />, href: 'https://facebook.com' },
+    { name: 'Twitter', icon: <FaTwitter />, href: 'https://twitter.com' },
+    { name: 'TikTok', icon: <FaTiktok />, href: 'https://tiktok.com' },
+    { name: 'Instagram', icon: <FaInstagram />, href: 'https://instagram.com' },
   ];
 
   return (
@@ -21,11 +21,11 @@ export default function SocialTilesPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center justify-center bg-muted/40 p-10 rounded-lg">
-          <ul className="social-tiles-container flex gap-8">
+        <div className="flex items-center justify-center bg-muted/40 p-10 rounded-lg min-h-[300px]">
+          <ul className="social-tiles-container flex flex-wrap gap-8 justify-center">
             {socialLinks.map((social, index) => (
               <li key={index} className={`social-tile tile-${index + 1}`}>
-                <a href="#">
+                <a href={social.href} target="_blank" rel="noopener noreferrer">
                   <i className="icon">{social.icon}</i>
                   {social.name}
                 </a>

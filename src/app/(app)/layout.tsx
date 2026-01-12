@@ -18,8 +18,8 @@ export default function AppLayout({
 
   useEffect(() => {
     // This animation file is assumed to be in the public directory.
-    // If it's not present, the background will be a solid gradient.
-    fetch('/animations/extras/fco_particle_glow.json')
+    // Replaced with the new professional 3D background asset.
+    fetch('/animations/extras/fco_3d_bg.json')
       .then(res => res.json())
       .then(data => setAnimationData(data))
       .catch(() => console.log("Background animation not found, using fallback."));
