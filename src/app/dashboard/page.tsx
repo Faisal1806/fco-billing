@@ -28,6 +28,7 @@ const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.Eleme
                 }
             }}
              whileHover={{ y: -8, scale: 1.05, boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.4)" }}
+             whileTap={{ scale: 0.95 }}
              transition={{ type: 'spring', stiffness: 400, damping: 15 }}
         >
             <a href={href} className="neon-glow-container flex items-center justify-start text-left p-3 w-full bg-card/60 backdrop-blur-sm border border-white/10 rounded-lg text-card-foreground no-underline font-medium shadow-md transition-shadow hover:shadow-xl">
@@ -43,6 +44,7 @@ const QuickActionButton = ({ title, icon: Icon, href }: { title: string, icon: R
     return (
         <motion.div 
             whileHover={{ y: -8, scale: 1.05, boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.4)" }}
+             whileTap={{ scale: 0.95 }}
              variants={{
                 hidden: { y: 20, opacity: 0 },
                 visible: {
