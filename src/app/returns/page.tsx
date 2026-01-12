@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -61,7 +62,7 @@ const ReturnCard = ({ item, onDelete, userRole }: { item: ReturnItem, onDelete: 
       initial={{ opacity: 0, y: 50, scale: 0.8 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -20, scale: 0.9 }}
-      whileHover={{ y: -8, scale: 1.05, zIndex: 10, boxShadow: '0px 10px 20px rgba(0,0,0,0.4)' }}
+      whileHover={{ y: -8, scale: 1.05, zIndex: 10, boxShadow: '0px 20px 40px rgba(0, 0, 0, 0.4)' }}
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
       className={`relative rounded-xl overflow-hidden shadow-lg h-full flex flex-col ${cardColor}`}
     >

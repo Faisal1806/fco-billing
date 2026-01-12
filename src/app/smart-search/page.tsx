@@ -143,7 +143,7 @@ export default function SmartSearchPage() {
                 hidden: { opacity: 0, y: 20 },
                 visible: { opacity: 1, y: 0 }
             }}
-            whileHover={{ scale: 1.05, y: -5, boxShadow: '0 10px 20px rgba(0,0,0,0.2)' }}
+            whileHover={{ scale: 1.05, y: -5, boxShadow: '0px 20px 40px rgba(0, 0, 0, 0.4)' }}
             className="bg-card/60 backdrop-blur-sm border border-white/10 p-4 rounded-lg shadow-md"
         >
             <h4 className="font-bold text-primary-foreground truncate">{title}</h4>

@@ -241,9 +241,9 @@ export default function ProductsPage() {
 
       return (
         <motion.div
-            whileHover={{ y: -8, scale: 1.05 }}
+            whileHover={{ y: -8, scale: 1.05, boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.4)" }}
             transition={{ type: 'spring', stiffness: 300 }}
-            className="bg-card/70 backdrop-blur-sm border border-white/10 rounded-xl overflow-hidden shadow-lg h-full flex flex-col"
+            className="bg-card/60 backdrop-blur-sm border border-white/10 rounded-xl overflow-hidden shadow-lg h-full flex flex-col"
         >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-lg font-bold truncate">{product.name}</CardTitle>
