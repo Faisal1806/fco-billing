@@ -26,6 +26,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -162,7 +169,7 @@ const A4PurchaseBillLayout = ({ billData }: { billData: PurchaseEntry }) => {
 export default function PurchaseRegisterPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { selectedYear } = useAppState();
+  const { selectedYear, setSelectedYear } = useAppState();
 
   const [purchases, setPurchases] = React.useState<PurchaseEntry[]>([]);
   const [customers, setCustomers] = React.useState<string[]>([]);
@@ -172,6 +179,7 @@ export default function PurchaseRegisterPage() {
   const [isDownloading, setIsDownloading] = React.useState(false);
   const [viewMode, setViewMode] = React.useState<'grid' | 'table'>('grid');
   const [userRole, setUserRole] = React.useState<string | null>(null);
+  const [availableYears, setAvailableYears] = React.useState<number[]>([]);
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -184,17 +192,22 @@ export default function PurchaseRegisterPage() {
     setIsLoading(true);
     if (typeof window !== 'undefined') {
         const loadedPurchases = [];
+        const years = new Set<number>([new Date().getFullYear()]);
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             if (key && key.startsWith('purchase-')) {
                 try {
                     const purchase = JSON.parse(localStorage.getItem(key)!);
+                    if (purchase.date) {
+                        years.add(new Date(purchase.date).getFullYear());
+                    }
                     if (new Date(purchase.date).getFullYear() === selectedYear) {
                       loadedPurchases.push(purchase);
                     }
                 } catch(e) { console.error("Failed to parse purchase:", e)}
             }
         }
+        setAvailableYears(Array.from(years).sort((a,b) => b-a));
         setPurchases(loadedPurchases.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         const uniqueCustomers = ['All Customers', ...new Set(loadedPurchases.map(p => p.growerName))];
         setCustomers(uniqueCustomers);
@@ -399,8 +412,18 @@ export default function PurchaseRegisterPage() {
             <div className="flex items-center gap-4">
                 <CardTitle className="flex items-center gap-2">
                     Purchase Register
-                    {!isLoading && <Badge variant="outline">{yearlyCount} This Year ({selectedYear})</Badge>}
                 </CardTitle>
+                <Select onValueChange={(value) => setSelectedYear(Number(value))} defaultValue={String(selectedYear)}>
+                    <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select a year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {availableYears.map(year => (
+                            <SelectItem key={year} value={String(year)}>{year}</SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                {!isLoading && <Badge variant="outline">{yearlyCount} This Year ({selectedYear})</Badge>}
                  <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -542,5 +565,7 @@ export default function PurchaseRegisterPage() {
   );
 }
 
+
+    
 
     

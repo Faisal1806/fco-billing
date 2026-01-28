@@ -41,7 +41,7 @@ const CS_STORAGE_PREFIX = 'cs-';
 export default function OutsideSalesPage() {
     const { toast } = useToast();
     const router = useRouter();
-    const { selectedYear } = useAppState();
+    const { selectedYear, setSelectedYear } = useAppState();
 
     // Form State
     const [id, setId] = useState<string | null>(null); // To store the unique ID of the record being edited
@@ -71,6 +71,7 @@ export default function OutsideSalesPage() {
     const [userRole, setUserRole] = useState<string | null>(null);
     const [challanPopoverOpen, setChallanPopoverOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [availableYears, setAvailableYears] = React.useState<number[]>([]);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -83,21 +84,25 @@ export default function OutsideSalesPage() {
         if (typeof window !== 'undefined') {
             const allChallans = [];
             const allBikris = [];
+            const years = new Set<number>([new Date().getFullYear()]);
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key?.startsWith('challan-')) {
                     const challan = JSON.parse(localStorage.getItem(key)!);
+                    if (challan.date) years.add(new Date(challan.date).getFullYear());
                     if (new Date(challan.date).getFullYear() === selectedYear) {
                       allChallans.push(challan);
                     }
                 }
                 if (key?.startsWith('bikri-')) {
                     const bikri = JSON.parse(localStorage.getItem(key)!);
+                    if (bikri.date) years.add(new Date(bikri.date).getFullYear());
                      if (new Date(bikri.date).getFullYear() === selectedYear) {
                       allBikris.push(bikri);
                     }
                 }
             }
+            setAvailableYears(Array.from(years).sort((a,b) => b-a));
             setAvailableChallans(allChallans.sort((a,b) => (a.challanNo > b.challanNo) ? 1 : -1));
             setSavedBikris(allBikris.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         }
@@ -577,17 +582,27 @@ export default function OutsideSalesPage() {
                         <div className="flex items-center justify-between gap-4">
                             <CardTitle className="flex items-center gap-2">
                                 Saved Bikris
-                                {!isLoading && <Badge variant="secondary">{yearlyCount} This Year ({selectedYear})</Badge>}
                             </CardTitle>
-                            <div className="relative w-full max-w-xs">
-                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input 
-                                    placeholder="Search bikris..." 
-                                    className="pl-8"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
-                            </div>
+                             <Select onValueChange={(value) => setSelectedYear(Number(value))} defaultValue={String(selectedYear)}>
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Select a year" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {availableYears.map(year => (
+                                        <SelectItem key={year} value={String(year)}>{year}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                              </Select>
+                            {!isLoading && <Badge variant="secondary">{yearlyCount} This Year ({selectedYear})</Badge>}
+                        </div>
+                         <div className="relative w-full max-w-xs">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input 
+                                placeholder="Search bikris..." 
+                                className="pl-8"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
                         </div>
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
@@ -648,3 +663,5 @@ export default function OutsideSalesPage() {
         </div>
     );
 }
+
+    

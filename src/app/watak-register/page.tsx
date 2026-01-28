@@ -28,6 +28,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -127,7 +134,7 @@ export default function SalesRegisterPage() {
   const { t } = useLanguage();
   const router = useRouter();
   const { toast } = useToast();
-  const { selectedYear } = useAppState();
+  const { selectedYear, setSelectedYear } = useAppState();
 
   const [wataks, setWataks] = React.useState<WatakEntry[]>([]);
   const [growers, setGrowers] = React.useState<string[]>([]);
@@ -138,20 +145,15 @@ export default function SalesRegisterPage() {
   const [viewMode, setViewMode] = React.useState<'table' | 'grid'>('grid');
   const [userRole, setUserRole] = React.useState<string | null>(null);
   const [partyNameMap, setPartyNameMap] = React.useState<Map<string, string>>(new Map());
+  const [availableYears, setAvailableYears] = React.useState<number[]>([]);
 
-  React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setUserRole(localStorage.getItem('userRole'));
-    }
-    fetchWataks();
-  }, [selectedYear]);
-
-  const fetchWataks = () => {
+  const fetchWataks = React.useCallback(() => {
     setIsLoading(true);
     if(typeof window !== 'undefined') {
         const items = [];
         const growerMap = new Map<string, string>(); // Map from canonical name -> canonical name
-        
+        const years = new Set<number>([new Date().getFullYear()]);
+
         const addPartyToMap = (name: string) => {
              const canonical = getCanonicalName(name);
              if (!growerMap.has(canonical)) {
@@ -175,6 +177,9 @@ export default function SalesRegisterPage() {
             if (key?.startsWith('invoice-')) {
                 try {
                     const watak = JSON.parse(localStorage.getItem(key)!);
+                    if (watak.date) {
+                        years.add(new Date(watak.date).getFullYear());
+                    }
                     if (new Date(watak.date).getFullYear() === selectedYear) {
                       items.push(watak);
                       addPartyToMap(watak.customerName);
@@ -184,23 +189,27 @@ export default function SalesRegisterPage() {
                 }
             }
         }
+        setAvailableYears(Array.from(years).sort((a,b) => b-a));
         setWataks(items.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         setPartyNameMap(growerMap);
         const uniqueGrowers = ['All Growers', ...Array.from(growerMap.values())].sort();
         setGrowers(uniqueGrowers);
     }
     setIsLoading(false);
-  }
+  }, [selectedYear]);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setUserRole(localStorage.getItem('userRole'));
+    }
+    fetchWataks();
+  }, [fetchWataks]);
 
   const yearlyCount = React.useMemo(() => {
     if(!wataks) return 0;
     return wataks.length;
   }, [wataks]);
 
-
-  React.useEffect(() => {
-    fetchWataks();
-  }, [toast, selectedYear]);
 
   const filteredWataks = wataks
     .filter(w => {
@@ -404,8 +413,18 @@ export default function SalesRegisterPage() {
               <div className="flex items-center gap-4">
                   <CardTitle className="flex items-center gap-2">
                       Sales Register
-                      {!isLoading && <Badge variant="outline">{yearlyCount} This Year ({selectedYear})</Badge>}
                   </CardTitle>
+                  <Select onValueChange={(value) => setSelectedYear(Number(value))} defaultValue={String(selectedYear)}>
+                    <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select a year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {availableYears.map(year => (
+                            <SelectItem key={year} value={String(year)}>{year}</SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  {!isLoading && <Badge variant="outline">{yearlyCount} This Year ({selectedYear})</Badge>}
                   <div className="relative">
                       <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -607,5 +626,7 @@ export default function SalesRegisterPage() {
   );
 }
 
+
+    
 
     
