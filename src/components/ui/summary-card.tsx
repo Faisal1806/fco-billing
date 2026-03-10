@@ -27,13 +27,13 @@ const AnimatedNumber = ({ value }: { value: string }) => {
     React.useEffect(() => {
         const controls = animate(count, numericValue, {
             duration: 2.5,
-            ease: [0.22, 1, 0.36, 1],
+            ease: [0.22, 1, 0.36, 1], // Custom cinematic easing
         });
         return controls.stop;
-    }, [numericValue]);
+    }, [numericValue, count]);
 
     React.useEffect(() => {
-        return rounded.onChange(v => setDisplayValue(v));
+        return rounded.on("change", v => setDisplayValue(v));
     }, [rounded]);
 
     return <span>{displayValue}</span>;
@@ -52,8 +52,8 @@ export const SummaryCard = ({
   const mouseXSpring = useSpring(x, { stiffness: 150, damping: 25 });
   const mouseYSpring = useSpring(y, { stiffness: 150, damping: 25 });
 
-  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["10deg", "-10deg"]);
-  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-10deg", "10deg"]);
+  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["12deg", "-12deg"]);
+  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-12deg", "12deg"]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -81,13 +81,13 @@ export const SummaryCard = ({
             transformStyle: "preserve-3d",
         }}
         variants={{
-            hidden: { y: 30, opacity: 0, scale: 0.9 },
-            visible: { y: 0, opacity: 1, scale: 1 }
+            hidden: { y: 30, opacity: 0, scale: 0.9, filter: "blur(10px)" },
+            visible: { y: 0, opacity: 1, scale: 1, filter: "blur(0px)" }
         }}
         className={cn("group h-full", className)}
     >
         <Card className="relative glass-panel h-full p-8 flex flex-col justify-between transition-all duration-700 hover:border-accent/50 hover:bg-white/[0.05] overflow-hidden rounded-[2.5rem] shadow-2xl">
-            {/* Dynamic Interactive Spotlight */}
+            {/* Dynamic RIM Lighting Effect */}
             <motion.div 
                 className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
                 style={{ 
@@ -98,7 +98,7 @@ export const SummaryCard = ({
                 }}
             />
             
-            <div className="flex justify-between items-start relative z-10" style={{ transform: "translateZ(40px)" }}>
+            <div className="flex justify-between items-start relative z-10" style={{ transform: "translateZ(50px)" }}>
                 <div className="space-y-1">
                     <p className="text-[11px] font-black uppercase tracking-[0.3em] text-muted-foreground group-hover:text-accent transition-colors duration-700">
                         {title}
@@ -109,7 +109,7 @@ export const SummaryCard = ({
                 </div>
             </div>
             
-            <div className="mt-12 relative z-10" style={{ transform: "translateZ(60px)" }}>
+            <div className="mt-12 relative z-10" style={{ transform: "translateZ(80px)" }}>
                 <h3 className="text-5xl font-black text-white tracking-tighter drop-shadow-[0_15px_30px_rgba(0,0,0,0.6)] group-hover:scale-105 transition-transform duration-700 origin-left">
                     <AnimatedNumber value={value} />
                 </h3>
