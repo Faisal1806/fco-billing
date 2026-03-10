@@ -1,7 +1,7 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
-import { motion, HTMLMotionProps } from "framer-motion"
+import { motion } from "framer-motion"
 
 import { cn } from "@/lib/utils"
 
@@ -10,11 +10,11 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_4px_14px_0_rgba(255,255,255,0.1)]",
+        default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_4px_14px_0_rgba(30,127,79,0.3)]",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-[0_4px_14px_0_rgba(239,68,68,0.3)]",
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-[0_4px_14px_0_rgba(229,57,53,0.3)]",
         outline:
-          "border border-white/10 bg-background hover:bg-accent hover:text-accent-foreground",
+          "border border-white/10 bg-background hover:bg-white/5 hover:text-accent-foreground",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-white/5 hover:text-accent-foreground",
@@ -44,7 +44,6 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : motion.button
     
-    // If it's a motion component, we add our premium tap effect
     const motionProps: any = !asChild ? {
       whileTap: { scale: 0.96 },
       whileHover: { y: -1 }

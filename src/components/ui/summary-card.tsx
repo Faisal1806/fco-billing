@@ -27,7 +27,7 @@ const AnimatedNumber = ({ value }: { value: string }) => {
     React.useEffect(() => {
         const controls = animate(count, numericValue, {
             duration: 2.5,
-            ease: [0.22, 1, 0.36, 1], // Custom cinematic easing
+            ease: [0.22, 1, 0.36, 1],
         });
         return controls.stop;
     }, [numericValue, count]);
@@ -86,25 +86,24 @@ export const SummaryCard = ({
         }}
         className={cn("group h-full", className)}
     >
-        <Card className="relative glass-panel h-full p-8 flex flex-col justify-between transition-all duration-700 hover:border-accent/50 hover:bg-white/[0.05] overflow-hidden rounded-[2.5rem] shadow-2xl">
-            {/* Dynamic RIM Lighting Effect */}
+        <Card className="relative glass-panel h-full p-8 flex flex-col justify-between transition-all duration-700 hover:border-primary/50 hover:bg-white/[0.05] overflow-hidden rounded-[2.5rem] shadow-2xl">
             <motion.div 
                 className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
                 style={{ 
                     background: useTransform(
                         [mouseXSpring, mouseYSpring],
-                        ([mx, my]) => `radial-gradient(circle at ${(mx + 0.5) * 100}% ${(my + 0.5) * 100}%, rgba(34,197,94,0.15) 0%, transparent 70%)`
+                        ([mx, my]) => `radial-gradient(circle at ${(mx + 0.5) * 100}% ${(my + 0.5) * 100}%, rgba(30,127,79,0.15) 0%, transparent 70%)`
                     )
                 }}
             />
             
             <div className="flex justify-between items-start relative z-10" style={{ transform: "translateZ(50px)" }}>
                 <div className="space-y-1">
-                    <p className="text-[11px] font-black uppercase tracking-[0.3em] text-muted-foreground group-hover:text-accent transition-colors duration-700">
+                    <p className="text-[11px] font-black uppercase tracking-[0.3em] text-muted-foreground group-hover:text-primary transition-colors duration-700">
                         {title}
                     </p>
                 </div>
-                <div className="p-4 bg-white/5 rounded-2xl group-hover:bg-accent/20 group-hover:text-accent transition-all duration-700 border border-white/5 group-hover:border-accent/40 shadow-xl">
+                <div className="p-4 bg-white/5 rounded-2xl group-hover:bg-primary/20 group-hover:text-primary transition-all duration-700 border border-white/5 group-hover:border-primary/40 shadow-xl">
                     <Icon className="h-6 w-6 transition-transform duration-700 group-hover:scale-125 group-hover:rotate-12" />
                 </div>
             </div>
@@ -118,8 +117,7 @@ export const SummaryCard = ({
                 </p>
             </div>
 
-            {/* Kinetic Energy Bar */}
-            <div className="absolute bottom-0 left-0 h-[4px] w-0 bg-gradient-to-r from-accent/0 via-accent to-accent/0 transition-all duration-1000 group-hover:w-full" />
+            <div className="absolute bottom-0 left-0 h-[4px] w-0 bg-gradient-to-r from-primary/0 via-primary to-primary/0 transition-all duration-1000 group-hover:w-full" />
         </Card>
     </motion.div>
   );

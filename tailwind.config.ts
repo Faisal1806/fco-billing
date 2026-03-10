@@ -1,4 +1,3 @@
-
 import type {Config} from 'tailwindcss';
 
 const config: Config = {
@@ -17,7 +16,7 @@ const config: Config = {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        sans: ['Poppins', 'Inter', 'sans-serif'],
         urdu: ['Noto Nastaliq Urdu', 'serif'],
       },
       colors: {

@@ -40,7 +40,7 @@ const PageHeader = ({ title, description, icon, imageUrl, className }: PageHeade
                     initial={{ scale: 0, rotate: -90 }}
                     animate={{ scale: 1, rotate: 0 }}
                     transition={{ delay: 0.4, type: 'spring', stiffness: 150, damping: 15 }}
-                    className="bg-accent/20 p-6 rounded-3xl border border-accent/40 text-accent shadow-[0_0_40px_rgba(34,197,94,0.3)] backdrop-blur-xl"
+                    className="bg-primary/20 p-6 rounded-3xl border border-primary/40 text-primary shadow-[0_0_40px_rgba(30,127,79,0.3)] backdrop-blur-xl"
                 >
                     <div className="h-12 w-12 flex items-center justify-center">
                         {icon}
@@ -73,7 +73,7 @@ const PageHeader = ({ title, description, icon, imageUrl, className }: PageHeade
                     opacity: [0.1, 0.2, 0.1]
                 }}
                 transition={{ duration: 10, repeat: Infinity }}
-                className="absolute top-[-50%] right-[-10%] w-[80%] h-[150%] bg-accent/10 blur-[120px] rounded-full" 
+                className="absolute top-[-50%] right-[-10%] w-[80%] h-[150%] bg-primary/10 blur-[120px] rounded-full" 
             />
         </motion.div>
     );
