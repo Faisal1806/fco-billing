@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { FaFacebookF, FaTwitter, FaTiktok, FaInstagram } from 'react-icons/fa';
+import { FaFacebookF, FaTwitter, FaYoutube, FaInstagram } from 'react-icons/fa';
 import PageHeader from '@/components/PageHeader';
 import { GitBranch } from 'lucide-react';
 
@@ -15,16 +15,16 @@ export default function SocialTilesPage() {
         color: '#1877F2' 
     },
     { 
+        name: 'YouTube', 
+        icon: <FaYoutube />, 
+        href: 'https://youtube.com/@faisal_ahmad_fa?si=B5003YSTnOnAcgt-', 
+        color: '#FF0000' 
+    },
+    { 
         name: 'Twitter', 
         icon: <FaTwitter />, 
         href: 'https://twitter.com/fco_apples', 
         color: '#1DA1F2' 
-    },
-    { 
-        name: 'TikTok', 
-        icon: <FaTiktok />, 
-        href: 'https://tiktok.com/@fco_apples', 
-        color: '#FFFFFF' 
     },
     { 
         name: 'Instagram', 
