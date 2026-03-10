@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { SummaryCard } from '@/components/ui/summary-card';
 import { useAppState } from '@/contexts/app-state-context';
 import { Badge } from '@/components/ui/badge';
+import { MarketInsights } from '@/components/MarketInsights';
 
 const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.ElementType, href: string }) => {
     const router = useRouter();
@@ -243,6 +244,9 @@ export default function DashboardPage() {
                 <SummaryCard key={i} {...card} />
             ))}
         </motion.div>
+
+        {/* Market Insights Integration */}
+        <MarketInsights selectedYear={selectedYear} />
 
         {/* Global Context Bar */}
         <div className="flex justify-between items-center glass-panel p-10 rounded-[3.5rem] border-accent/10">
