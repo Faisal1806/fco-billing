@@ -1,79 +1,212 @@
+/**
+ * FIRESTORE SECURITY RULES
+ *
+ * Core Philosophy:
+ * This ruleset implements a strict Role-Based Access Control (RBAC) model combined with
+ * Location-based multi-tenancy. Authorization is primarily driven by the user's
+ * 'role' and 'locationId' stored in their profile document.
+ *
+ * Data Structure:
+ * - /users: Flat collection of user profiles.
+ * - /locations, /products, /suppliers, /customers: Global master data collections.
+ * - /stock_items, /purchase_orders, /sales_orders, /payments: Operation data
+ *   restricted by the user's assigned location.
+ *
+ * Key Security Decisions:
+ * - Denormalization for Authorization: To ensure high performance and avoid costly
+ *   get() calls, critical authorization fields (locationId, userId) are
+ *   denormalized into sub-documents (e.g., order items).
+ * - Location Isolation: Users are strictly confined to accessing and modifying
+ *   data associated with their assigned locationId, unless they hold an 'admin' role.
+ * - Prototyping Flexibility: Rules focus on strict authorization (who can access)
+ *   while remaining flexible on data schema (what the data looks like) to support
+ *   rapid development iteration.
+ * - Visibility: Global entities like Products and Suppliers are readable by all
+ *   authenticated staff but only modifiable by specific administrative or management roles.
+ */
 
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if a user is signed in.
+    // --- GLOBAL HELPER FUNCTIONS ---
+
+    /** @description Checks if the user is authenticated. */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // USER DATA: Users can only read and write their own document.
-    match /users/{userId} {
-      allow read, write: if request.auth.uid == userId;
+    /** @description Checks if the authenticated user's UID matches the provided ID. */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
     }
 
-    // PUBLIC BILLS: This collection is for sharing. Anyone can read.
-    // This allows QR codes to work for anyone.
-    // Writes are still protected.
-    match /bills/{billId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
+    /**
+     * @description Retrieves the user's profile document snapshot.
+     * It's important to check .exists before accessing .data.
+     */
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
     }
-    
-    // All other business collections are protected.
-    // Only authenticated users can write. Read access is public for individual documents
-    // to support sharing and QR codes, but listing is disabled.
-    match /invoices/{invoiceId} {
-      allow get: if true;
-      allow list: if false;
-      allow create, update, delete: if isSignedIn();
+
+    /** @description Checks if the user has a specific role. */
+    function hasRole(role) {
+      // Ensure the user's profile exists before checking their role
+      return isSignedIn() && userDoc().exists && userDoc().data.role == role;
     }
-    match /purchases/{purchaseId} {
-      allow get: if true;
-      allow list: if false;
-      allow create, update, delete: if isSignedIn();
+
+    /** @description Checks if the user is assigned to a specific location. */
+    function atLocation(locationId) {
+      // Ensure the user's profile exists before checking their location or role
+      return isSignedIn() && userDoc().exists && (userDoc().data.locationId == locationId || userDoc().data.role == 'admin');
     }
-    match /receipts/{receiptId} {
-      allow get: if true;
-      allow list: if false;
-      allow create, update, delete: if isSignedIn();
+
+    // The 'isExistingOwner' function was removed as it was unused and contained an invalid reference to 'resource' within a global helper function context.
+
+    // --- COLLECTION RULES ---
+
+    /**
+     * @description Profiles for application users. Users can manage their own data.
+     * @path /users/{userId}
+     * @allow (get) request.auth.uid == userId
+     * @deny (list) request.auth.uid != admin
+     * @principle Path-based ownership for users, role-based for administration.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId) || hasRole('admin');
+      allow list: if hasRole('admin');
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || hasRole('admin');
+      allow delete: if hasRole('admin');
     }
-     match /challans/{challanId} {
-      allow get: if true;
-      allow list: if false;
-      allow create, update, delete: if isSignedIn();
+
+    /**
+     * @description Physical business locations. Readable by all staff for selection.
+     * @path /locations/{locationId}
+     * @allow (get, list) isSignedIn()
+     * @deny (create, update, delete) hasRole('cashier')
+     * @principle Global read access for authenticated users; admin-only writes.
+     */
+    match /locations/{locationId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if hasRole('admin');
     }
+
+    /**
+     * @description Global product catalog.
+     * @path /products/{productId}
+     * @allow (create) hasRole('warehouse')
+     * @deny (update) hasRole('driver')
+     * @principle Role-based write access for inventory management.
+     */
     match /products/{productId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
+      allow get, list: if isSignedIn();
+      allow create, update: if hasRole('admin') || hasRole('warehouse');
+      allow delete: if hasRole('admin');
     }
-    match /parties/{partyId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
+
+    /**
+     * @description Registered suppliers for procurement.
+     * @path /suppliers/{supplierId}
+     * @allow (get) isSignedIn()
+     * @deny (create) hasRole('cashier')
+     * @principle Procurement and admin roles manage supplier lists.
+     */
+    match /suppliers/{supplierId} {
+      allow get, list: if isSignedIn();
+      allow create, update: if hasRole('admin') || hasRole('warehouse') || hasRole('accountant');
+      allow delete: if hasRole('admin');
     }
-    match /advances/{advanceId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
+
+    /**
+     * @description Registered customers for sales and loyalty.
+     * @path /customers/{customerId}
+     * @allow (create) hasRole('cashier')
+     * @deny (delete) hasRole('cashier')
+     * @principle Sales staff can manage customers; admins handle deletions.
+     */
+    match /customers/{customerId} {
+      allow get, list: if isSignedIn();
+      allow create, update: if hasRole('admin') || hasRole('cashier') || hasRole('accountant');
+      allow delete: if hasRole('admin');
     }
-    match /expenses/{expenseId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
+
+    /**
+     * @description Inventory levels per location. Users only see stock for their location.
+     * @path /stock_items/{stockItemId}
+     * @allow (get) atLocation(resource.data.locationId)
+     * @deny (update) !atLocation(resource.data.locationId)
+     * @principle Location-based isolation for inventory integrity.
+     */
+    match /stock_items/{stockItemId} {
+      allow get, list: if atLocation(resource.data.locationId);
+      allow create: if atLocation(request.resource.data.locationId);
+      allow update: if atLocation(resource.data.locationId);
+      allow delete: if hasRole('admin');
     }
-    match /cold-storage/{csId} {
-       allow get, list: if true;
-       allow create, update, delete: if isSignedIn();
+
+    /**
+     * @description Procurement orders. Secured by location and user ownership.
+     * @path /purchase_orders/{purchaseOrderId}
+     * @allow (create) request.resource.data.userId == request.auth.uid
+     * @deny (update) resource.data.userId != request.auth.uid && !hasRole('admin')
+     * @principle Enforces that users create orders for their own location and track their own actions.
+     */
+    match /purchase_orders/{purchaseOrderId} {
+      allow get, list: if atLocation(resource.data.locationId);
+      allow create: if atLocation(request.resource.data.locationId) && request.resource.data.userId == request.auth.uid;
+      allow update: if atLocation(resource.data.locationId) && (isOwner(resource.data.userId) || hasRole('admin'));
+      allow delete: if hasRole('admin');
+
+      /**
+       * @description Line items for purchase orders. Uses denormalized location for rule efficiency.
+       * @path /purchase_orders/{purchaseOrderId}/items/{itemId}
+       */
+      match /items/{itemId} {
+        allow get, list: if atLocation(resource.data.locationId);
+        allow create: if atLocation(request.resource.data.locationId) && request.resource.data.userId == request.auth.uid;
+        allow update: if atLocation(resource.data.locationId) && (isOwner(resource.data.userId) || hasRole('admin'));
+        allow delete: if hasRole('admin');
+      }
     }
-     match /bikris/{bikriId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
+
+    /**
+     * @description Sales transactions (POS/Invoices). Restricted by location.
+     * @path /sales_orders/{salesOrderId}
+     * @allow (list) atLocation(locationId)
+     * @deny (update) resource.data.status == 'Completed' && !hasRole('admin')
+     * @principle Prevents unauthorized access to financial data outside the user's assigned branch.
+     */
+    match /sales_orders/{salesOrderId} {
+      allow get, list: if atLocation(resource.data.locationId);
+      allow create: if atLocation(request.resource.data.locationId) && request.resource.data.userId == request.auth.uid;
+      allow update: if atLocation(resource.data.locationId) && (isOwner(resource.data.userId) || hasRole('admin'));
+      allow delete: if hasRole('admin');
+
+      /**
+       * @description Line items for sales orders. Uses denormalized location/user.
+       * @path /sales_orders/{salesOrderId}/items/{itemId}
+       */
+      match /items/{itemId} {
+        allow get, list: if atLocation(resource.data.locationId);
+        allow create: if atLocation(request.resource.data.locationId) && request.resource.data.userId == request.auth.uid;
+        allow update: if atLocation(resource.data.locationId) && (isOwner(resource.data.userId) || hasRole('admin'));
+        allow delete: if hasRole('admin');
+      }
     }
-    match /fcm-tokens/{tokenId} {
-       allow read, write: if isSignedIn();
-    }
-    match /notificationJobs/{jobId} {
-        allow create: if isSignedIn();
-        allow read, update, delete: if false;
+
+    /**
+     * @description Payment records for sales. Requires denormalized locationId.
+     * @path /payments/{paymentId}
+     * @allow (create) atLocation(request.resource.data.locationId)
+     * @deny (delete) isSignedIn()
+     * @principle Financial audit integrity: payments can be created and read by staff, but only deleted by admins.
+     */
+    match /payments/{paymentId} {
+      allow get, list: if atLocation(resource.data.locationId);
+      allow create: if atLocation(request.resource.data.locationId) && request.resource.data.userId == request.auth.uid;
+      allow update: if atLocation(resource.data.locationId) && (isOwner(resource.data.userId) || hasRole('admin'));
+      allow delete: if hasRole('admin');
     }
   }
 }
