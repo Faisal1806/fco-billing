@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -6,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { sidebarSections } from '@/components/Sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { TrendingUp, ShoppingCart, Users, DollarSign, Calendar, BarChart, FileText, BookOpen, PlusCircle, Award, Loader2, CloudSync, AlertCircle } from 'lucide-react';
+import { TrendingUp, ShoppingCart, Users, DollarSign, Calendar, BarChart, FileText, BookOpen, PlusCircle, Award, Loader2, RefreshCw, Cloud, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SummaryCard } from '@/components/ui/summary-card';
@@ -222,11 +221,11 @@ export default function DashboardPage() {
                 <div className="absolute right-4 top-4 flex items-center gap-2">
                     {isSyncing ? (
                         <Badge variant="outline" className="bg-primary/10 animate-pulse text-primary border-primary/20 gap-1">
-                            <CloudSync className="h-3 w-3 animate-spin" /> Auto-Syncing
+                            <RefreshCw className="h-3 w-3 animate-spin" /> Auto-Syncing
                         </Badge>
                     ) : (
                         <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 gap-1">
-                            <CloudSync className="h-3 w-3" /> Data Safe
+                            <Cloud className="h-3 w-3" /> Data Safe
                         </Badge>
                     )}
                 </div>

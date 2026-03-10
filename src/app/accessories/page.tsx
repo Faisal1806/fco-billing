@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Trash2, FileSignature, Printer, FileDown, SprayCan } from 'lucide-react';
+import { PlusCircle, Trash2, FileSignature, Printer, FileDown, Droplets } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Lottie from 'lottie-react';
 import { jsPDF } from 'jspdf';
@@ -205,7 +205,7 @@ export default function SuppliesPage() {
         <PageHeader
             title="Accessories & Cashbook"
             description="Log sales of fertilizers, packaging, and other farm inputs. This section acts as the daily cashbook."
-            icon={<SprayCan className="h-8 w-8" />}
+            icon={<Droplets className="h-8 w-8" />}
             imageUrl="/assets/3d/expenses.png"
         />
         <Card className="print-hidden">

@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -32,7 +31,7 @@ import {
   Globe,
   MoreVertical,
   Activity,
-  SprayCan,
+  Droplets,
   GitBranch,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -89,7 +88,7 @@ export const sidebarSections = [
       items: [
         { name: "Cold Storage", href: "/cold-storage", icon: Snowflake },
         { name: "Activity Log", href: "/activity-log", icon: Activity },
-        { name: "Accessories", href: "/accessories", icon: SprayCan },
+        { name: "Accessories", href: "/accessories", icon: Droplets },
         { name: "Receipts", href: "/receipts", icon: Receipt },
         { name: "Returns", href: "/returns", icon: RotateCcw },
         { name: "Stock Transfer", href: "/stock-transfer", icon: Truck },
