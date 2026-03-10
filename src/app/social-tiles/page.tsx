@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -44,18 +43,41 @@ export default function SocialTilesPage() {
     <div className="space-y-10">
        <style jsx>{`
         .social-grid {
-          display: flex;
-          flex-wrap: wrap;
-          justify-content: center;
-          gap: 4rem;
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+          gap: 2rem;
+          width: 100%;
+          max-width: 1000px;
           perspective: 2000px;
+          place-items: center;
+        }
+
+        @media (min-width: 640px) {
+          .social-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 3rem;
+          }
+        }
+
+        @media (min-width: 1024px) {
+          .social-grid {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 4rem;
+          }
         }
 
         .tile-wrapper {
           position: relative;
-          width: 180px;
-          height: 180px;
+          width: 140px;
+          height: 140px;
           transform-style: preserve-3d;
+        }
+
+        @media (min-width: 768px) {
+          .tile-wrapper {
+            width: 180px;
+            height: 180px;
+          }
         }
 
         .tile-link {
@@ -75,7 +97,7 @@ export default function SocialTilesPage() {
           box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
-        /* 3D Depth Layer (The Side/Bottom of the Button) */
+        /* 3D Depth Layer */
         .tile-link::after {
           content: '';
           position: absolute;
@@ -115,12 +137,19 @@ export default function SocialTilesPage() {
         }
 
         .icon-node {
-          font-size: 52px;
-          margin-bottom: 12px;
+          font-size: 42px;
+          margin-bottom: 8px;
           color: rgba(255, 255, 255, 0.6);
           transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
           transform: translateZ(20px);
           filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3));
+        }
+
+        @media (min-width: 768px) {
+          .icon-node {
+            font-size: 52px;
+            margin-bottom: 12px;
+          }
         }
 
         .tile-wrapper:hover .icon-node {
@@ -131,13 +160,20 @@ export default function SocialTilesPage() {
 
         .text-node {
           font-weight: 900;
-          font-size: 11px;
+          font-size: 10px;
           text-transform: uppercase;
-          letter-spacing: 3px;
+          letter-spacing: 2px;
           color: white;
           transform: translateZ(15px);
           opacity: 0.7;
           transition: all 0.5s ease;
+        }
+
+        @media (min-width: 768px) {
+          .text-node {
+            font-size: 11px;
+            letter-spacing: 3px;
+          }
         }
 
         .tile-wrapper:hover .text-node {
@@ -148,8 +184,8 @@ export default function SocialTilesPage() {
 
         .label-node {
           position: absolute;
-          bottom: 24px;
-          font-size: 8px;
+          bottom: 16px;
+          font-size: 7px;
           font-weight: 900;
           color: var(--social-color);
           text-transform: uppercase;
@@ -157,6 +193,13 @@ export default function SocialTilesPage() {
           opacity: 0;
           transform: translateZ(10px) translateY(10px);
           transition: all 0.5s ease;
+        }
+
+        @media (min-width: 768px) {
+          .label-node {
+            bottom: 24px;
+            font-size: 8px;
+          }
         }
 
         .tile-wrapper:hover .label-node {
@@ -172,8 +215,8 @@ export default function SocialTilesPage() {
         imageUrl="/assets/3d/social.png"
       />
 
-      <Card className="glass-panel rounded-[4rem] border-white/5 overflow-hidden">
-        <CardContent className="p-20 py-40 flex items-center justify-center min-h-[600px]">
+      <Card className="glass-panel rounded-[3rem] md:rounded-[4rem] border-white/5 overflow-hidden">
+        <CardContent className="p-8 md:p-20 py-20 md:py-40 flex items-center justify-center min-h-[500px]">
             <div className="social-grid">
               {socialLinks.map((social, index) => (
                 <motion.div 
@@ -199,7 +242,7 @@ export default function SocialTilesPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 0.3 }}
         transition={{ delay: 1 }}
-        className="flex flex-col items-center gap-4 mt-12"
+        className="flex flex-col items-center gap-4 mt-12 pb-12"
       >
           <div className="h-16 w-[1px] bg-gradient-to-b from-white to-transparent" />
           <p className="text-[10px] font-black uppercase tracking-[0.6em] text-white">Hyper-Spatial Digital Node</p>
