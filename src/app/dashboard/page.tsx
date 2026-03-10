@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -24,12 +23,12 @@ const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.Eleme
                 hidden: { y: 20, opacity: 0 },
                 visible: { y: 0, opacity: 1 }
             }}
-             whileHover={{ y: -5, scale: 1.02 }}
-             whileTap={{ scale: 0.98 }}
+             whileHover={{ y: -8, scale: 1.02 }}
+             whileTap={{ scale: 0.97 }}
         >
-            <div className="neon-glow-container cursor-pointer h-full flex items-center justify-start p-4 w-full glass-panel rounded-xl text-card-foreground font-semibold transition-all duration-300 hover:bg-white/5 group border-white/5 hover:border-accent/30">
-                <Icon className="neon-glow-icon h-5 w-5 mr-3 text-muted-foreground group-hover:text-accent transition-all duration-300" />
-                <span className="text-sm tracking-tight">{title}</span>
+            <div className="neon-glow-container cursor-pointer h-full flex items-center justify-start p-5 w-full glass-panel rounded-2xl text-card-foreground font-bold transition-all duration-500 hover:bg-white/5 group border-white/5 hover:border-accent/40">
+                <Icon className="neon-glow-icon h-5 w-5 mr-4 text-muted-foreground group-hover:text-accent transition-all duration-500" />
+                <span className="text-xs tracking-wider uppercase">{title}</span>
             </div>
         </motion.div>
     );
@@ -48,10 +47,10 @@ const QuickActionButton = ({ title, icon: Icon, href }: { title: string, icon: R
         >
             <Button
                 variant="secondary"
-                className="w-full h-16 text-sm font-bold glass-panel border-white/5 hover:bg-white/10 hover:border-accent/30 shadow-xl"
+                className="w-full h-16 text-xs font-black tracking-widest glass-panel border-white/5 hover:bg-accent hover:text-black hover:border-accent/50 shadow-2xl transition-all duration-500 rounded-2xl"
                 onClick={() => router.push(href)}
             >
-                <Icon className="h-5 w-5 mr-3 text-accent" /> {title}
+                <Icon className="h-5 w-5 mr-3" /> {title}
             </Button>
         </motion.div>
     );
@@ -61,14 +60,9 @@ const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.05, delayChildren: 0.2 }
+    transition: { staggerChildren: 0.08, delayChildren: 0.3 }
   }
 };
-
-const AnimatedValue = ({ value }: { value: string | number }) => {
-    // Simple spring-based count-up could be added here, but for now we focus on visual stability
-    return <span>{value}</span>;
-}
 
 export default function DashboardPage() {
   const allNavItems = sidebarSections.flatMap(section => section.items);
@@ -206,62 +200,65 @@ export default function DashboardPage() {
 
   return (
     <motion.div 
-        className="space-y-10 pb-24 max-w-[1600px] mx-auto"
+        className="space-y-12 pb-32 max-w-[1600px] mx-auto"
         initial="hidden"
         animate="visible"
         variants={containerVariants}
     >
-        {/* Cinematic Header Section */}
-        <section className="text-center py-12 relative overflow-hidden rounded-[2.5rem] bg-gradient-to-b from-white/5 to-transparent border border-white/5">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(34,197,94,0.15)_0%,transparent_70%)]" />
+        {/* Futuristic Cinematic Header */}
+        <section className="text-center py-20 relative overflow-hidden rounded-[3rem] bg-gradient-to-b from-white/[0.03] to-transparent border border-white/5 shadow-2xl">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(34,197,94,0.2)_0%,transparent_70%)] opacity-50" />
             
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.8 }} className="relative z-10">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs font-bold uppercase tracking-widest mb-6">
-                    <Sparkles className="h-3 w-3" /> Sopore Mandi Intelligence
+            <motion.div initial={{ scale: 0.9, opacity: 0, filter: "blur(10px)" }} animate={{ scale: 1, opacity: 1, filter: "blur(0px)" }} transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }} className="relative z-10">
+                <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-accent/10 border border-accent/20 text-accent text-[10px] font-black uppercase tracking-[0.3em] mb-8">
+                    <Sparkles className="h-3 w-3" /> F.CO Intelligent Terminal
                 </div>
-                <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter mb-4 drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
-                    FCO BILLING <span className="text-accent">OS</span>
+                <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter mb-6 drop-shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
+                    F.CO BILLING <span className="text-accent underline decoration-accent/20 underline-offset-8">OS</span>
                 </h1>
-                <p className="text-xl text-muted-foreground font-medium max-w-2xl mx-auto opacity-80 leading-relaxed">
-                    The modern command center for Firdous Ahmad & Company. Complete control over your Mandi operations.
+                <p className="text-xl text-muted-foreground font-semibold max-w-2xl mx-auto opacity-70 leading-relaxed text-balance">
+                    Advanced Mandi operations engine for Firdous Ahmad & Company. Streamlining growth through data-driven decisions.
                 </p>
             </motion.div>
 
-            <div className="absolute right-8 top-8 flex items-center gap-3">
+            <div className="absolute right-10 top-10 flex items-center gap-4">
                 {isSyncing ? (
-                    <Badge variant="outline" className="bg-accent/10 animate-pulse text-accent border-accent/20 py-1.5 px-3 rounded-full">
-                        <RefreshCw className="h-3 w-3 animate-spin mr-2" /> Auto-Syncing
+                    <Badge variant="outline" className="bg-accent/10 animate-pulse text-accent border-accent/20 py-2 px-4 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                        <RefreshCw className="h-3 w-3 animate-spin mr-2" /> Syncing Node
                     </Badge>
                 ) : (
-                    <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 py-1.5 px-3 rounded-full">
-                        <Cloud className="h-3 w-3 mr-2" /> Local Data Safe
+                    <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 py-2 px-4 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                        <Cloud className="h-3 w-3 mr-2" /> Local Engine Secure
                     </Badge>
                 )}
             </div>
         </section>
 
-        {/* Global Year Filter Bar */}
-        <div className="flex justify-between items-center glass-panel p-6 rounded-2xl">
-             <div className="flex items-center gap-4">
-                <div className="h-10 w-1 bg-accent rounded-full" />
-                <h2 className="text-xl font-black text-white tracking-tight">FINANCIAL OVERVIEW</h2>
+        {/* Dynamic Context Bar */}
+        <div className="flex justify-between items-center glass-panel p-8 rounded-[2.5rem]">
+             <div className="flex items-center gap-6">
+                <div className="h-12 w-1.5 bg-accent rounded-full shadow-[0_0_15px_rgba(34,197,94,0.5)]" />
+                <div>
+                    <h2 className="text-2xl font-black text-white tracking-tight leading-none mb-1">FINANCIAL CORE</h2>
+                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Real-time performance metrics</p>
+                </div>
              </div>
              <Select onValueChange={(value) => setSelectedYear(Number(value))} defaultValue={String(selectedYear)}>
-                 <SelectTrigger className="w-[160px] h-12 bg-white/5 border-white/10 rounded-xl font-bold">
-                    <Calendar className="h-4 w-4 mr-2 text-accent" />
-                    <SelectValue placeholder="Year" />
+                 <SelectTrigger className="w-[180px] h-14 bg-white/5 border-white/10 rounded-2xl font-black text-xs tracking-widest hover:bg-white/10 transition-all">
+                    <Calendar className="h-4 w-4 mr-3 text-accent" />
+                    <SelectValue placeholder="YEAR" />
                  </SelectTrigger>
-                 <SelectContent className="glass-panel">
+                 <SelectContent className="glass-panel rounded-2xl border-white/10">
                     {availableYears.map(year => (
-                        <SelectItem key={year} value={String(year)} className="font-bold">{year}</SelectItem>
+                        <SelectItem key={year} value={String(year)} className="font-black text-xs py-3">{year}</SelectItem>
                     ))}
                  </SelectContent>
              </Select>
         </div>
 
-        {/* 3D Summary Cards Grid */}
+        {/* Spatial Summary Grid */}
         <motion.div 
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
             variants={containerVariants}
         >
             {summaryCards.map((card, i) => (
@@ -269,18 +266,18 @@ export default function DashboardPage() {
             ))}
         </motion.div>
 
-        {/* Application Navigation & Quick Actions */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-            {/* Nav Grid */}
-            <Card className="xl:col-span-2 glass-panel border-white/5 rounded-3xl overflow-hidden">
-                <CardHeader className="border-b border-white/5 bg-white/5">
-                    <CardTitle className="text-lg font-black tracking-tight flex items-center gap-2">
-                        <LayoutDashboard className="h-5 w-5 text-accent" /> SYSTEM MODULES
+        {/* Operations Hub */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
+            {/* Modular Nav Grid */}
+            <Card className="xl:col-span-2 glass-panel border-white/5 rounded-[3rem] overflow-hidden shadow-2xl">
+                <CardHeader className="border-b border-white/5 bg-white/[0.02] p-8">
+                    <CardTitle className="text-sm font-black tracking-[0.2em] flex items-center gap-3 text-muted-foreground uppercase">
+                        <LayoutDashboard className="h-4 w-4 text-accent" /> System Modules
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="p-8">
+                <CardContent className="p-10">
                      <motion.div 
-                        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"
+                        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5"
                         variants={containerVariants}
                     >
                          {allNavItems.map((item, index) => (
@@ -295,50 +292,55 @@ export default function DashboardPage() {
                 </CardContent>
             </Card>
 
-            {/* Quick Actions */}
-            <div className="space-y-6">
-                <div className="glass-panel p-6 rounded-3xl flex flex-col gap-4">
-                    <h3 className="text-xs font-black text-muted-foreground uppercase tracking-widest pl-1">Quick Terminal</h3>
-                    <div className="grid grid-cols-1 gap-3">
-                        <QuickActionButton title="NEW SALE" icon={PlusCircle} href="/sales" />
+            {/* Quick Terminal */}
+            <div className="space-y-8">
+                <div className="glass-panel p-8 rounded-[3rem] flex flex-col gap-6 shadow-2xl">
+                    <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] pl-1">Primary Actions</h3>
+                    <div className="grid grid-cols-1 gap-4">
+                        <QuickActionButton title="NEW SALE INVOICE" icon={PlusCircle} href="/sales" />
                         <QuickActionButton title="WATAK REGISTER" icon={FileText} href="/watak-register" />
-                        <QuickActionButton title="PURCHASE ENTRY" icon={ShoppingCart} href="/purchases" />
-                        <QuickActionButton title="KHATA LEDGER" icon={BookOpen} href="/khata" />
+                        <QuickActionButton title="PURCHASE TERMINAL" icon={ShoppingCart} href="/purchases" />
+                        <QuickActionButton title="ACCOUNT LEDGERS" icon={BookOpen} href="/khata" />
                     </div>
                 </div>
 
-                {/* Loyalty Mini Highlight */}
-                <Card className="glass-panel border-accent/20 rounded-3xl bg-gradient-to-br from-accent/10 to-transparent">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-black flex items-center gap-2">
-                            <Award className="h-4 w-4 text-accent" /> PREMIER PARTNER
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-2">
-                        <div className="flex items-center gap-4">
-                            <div className="h-12 w-12 rounded-full bg-accent/20 flex items-center justify-center border border-accent/30">
-                                <Users className="h-6 w-6 text-accent" />
-                            </div>
-                            <div>
-                                <p className="text-lg font-black text-white tracking-tight">{loyaltyStats.topGrower.name}</p>
-                                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
-                                    {loyaltyStats.topGrower.points.toLocaleString()} Points Accumulated
-                                </p>
-                            </div>
+                {/* Premier Highlight */}
+                <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    className="glass-panel p-8 rounded-[3rem] border-accent/20 bg-gradient-to-br from-accent/10 via-transparent to-transparent relative overflow-hidden"
+                >
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                        <Users className="h-24 w-24" />
+                    </div>
+                    <h3 className="text-[10px] font-black flex items-center gap-2 text-accent uppercase tracking-widest mb-6">
+                        <Award className="h-4 w-4" /> Leading Partner
+                    </h3>
+                    <div className="flex items-center gap-5">
+                        <div className="h-16 w-16 rounded-[1.5rem] bg-accent/20 flex items-center justify-center border border-accent/30 shadow-2xl shadow-accent/20">
+                            <Users className="h-8 w-8 text-accent" />
                         </div>
-                    </CardContent>
-                </Card>
+                        <div>
+                            <p className="text-xl font-black text-white tracking-tight">{loyaltyStats.topGrower.name}</p>
+                            <p className="text-[10px] text-accent font-black uppercase tracking-widest mt-1">
+                                {loyaltyStats.topGrower.points.toLocaleString()} Loyalty Nodes
+                            </p>
+                        </div>
+                    </div>
+                </motion.div>
             </div>
         </div>
         
-        {/* Premier Growers List */}
-        <section className="space-y-6">
-            <div className="flex items-center gap-4">
-                <div className="h-10 w-1 bg-accent rounded-full" />
-                <h2 className="text-xl font-black text-white tracking-tight uppercase">GROWER RANKINGS ({selectedYear})</h2>
+        {/* Performance Rankings */}
+        <section className="space-y-8">
+            <div className="flex items-center gap-6">
+                <div className="h-12 w-1.5 bg-accent rounded-full shadow-[0_0_15px_rgba(34,197,94,0.5)]" />
+                <div>
+                    <h2 className="text-2xl font-black text-white tracking-tight uppercase leading-none mb-1">GROWER HIERARCHY ({selectedYear})</h2>
+                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Top producers by net yield</p>
+                </div>
             </div>
             
-            <Card className="glass-panel border-white/5 rounded-[2rem] overflow-hidden">
+            <Card className="glass-panel border-white/5 rounded-[3rem] overflow-hidden shadow-2xl">
                 <CardContent className="p-0">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 divide-y md:divide-y-0 md:divide-x divide-white/5">
                         {topGrowers.map((grower, i) => (
@@ -348,18 +350,19 @@ export default function DashboardPage() {
                                     hidden: { opacity: 0, scale: 0.9 },
                                     visible: { opacity: 1, scale: 1 }
                                 }}
-                                className="p-8 hover:bg-white/5 transition-all group"
+                                className="p-10 hover:bg-white/[0.03] transition-all group relative"
                             >
-                                <div className="text-[10px] font-black text-muted-foreground mb-4 flex items-center gap-2 group-hover:text-accent transition-colors">
-                                    <span className="h-4 w-4 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-accent group-hover:text-black transition-all">
+                                <div className="text-[9px] font-black text-muted-foreground mb-6 flex items-center gap-3 group-hover:text-accent transition-colors">
+                                    <span className="h-6 w-6 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-accent group-hover:text-black transition-all font-black text-xs shadow-lg">
                                         {i + 1}
                                     </span>
-                                    RANKING
+                                    INDEX RANK
                                 </div>
-                                <p className="text-lg font-black text-white mb-1 group-hover:translate-x-1 transition-transform">{grower.name}</p>
-                                <p className="text-2xl font-black text-accent drop-shadow-[0_0_15px_rgba(34,197,94,0.3)]">
+                                <p className="text-lg font-black text-white mb-2 group-hover:translate-x-2 transition-transform duration-500">{grower.name}</p>
+                                <p className="text-2xl font-black text-accent drop-shadow-[0_0_20px_rgba(34,197,94,0.4)]">
                                     ₹{grower.netSales.toLocaleString()}
                                 </p>
+                                <div className="absolute bottom-0 left-0 h-1 w-0 bg-accent group-hover:w-full transition-all duration-700" />
                             </motion.div>
                         ))}
                     </div>
