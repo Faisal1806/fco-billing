@@ -5,7 +5,7 @@ import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { Paintbrush, Palette, Upload, Rocket, Cog, DownloadCloud, Factory, BellRing, UploadCloud, FileDown, Trash2, DatabaseZap, Cloud, ShieldCheck } from 'lucide-react';
+import { Paintbrush, Palette, Upload, Rocket, Cog, DownloadCloud, Factory, BellRing, UploadCloud, FileDown, Trash2, DatabaseZap, Cloud, ShieldCheck, Sun, Moon, Monitor, Pipette, Key, Lock, Bell } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CompanyInfoForm } from "@/components/profile-form";
 import {
@@ -29,6 +29,8 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageHeader from '@/components/PageHeader';
+import { useTheme } from 'next-themes';
+import { Switch } from '@/components/ui/switch';
 
 const InvoicePreview = ({ title, colors, children }: {
     title: string,
@@ -54,13 +56,24 @@ const InvoicePreview = ({ title, colors, children }: {
 
 const MotionCard = motion(Card);
 
+const accentColors = [
+    { name: 'F.Co Emerald', value: '142 76% 45%', class: 'bg-[#22c55e]' },
+    { name: 'Mandi Ruby', value: '0 84% 60%', class: 'bg-[#ef4444]' },
+    { name: 'Sapphire Blue', value: '221 83% 53%', class: 'bg-[#3b82f6]' },
+    { name: 'Amber Gold', value: '38 92% 50%', class: 'bg-[#f59e0b]' },
+    { name: 'Royal Violet', value: '262 83% 58%', class: 'bg-[#8b5cf6]' },
+];
+
 export default function SettingsPage() {
     const { toast } = useToast();
+    const { theme, setTheme } = useTheme();
     const [invoiceStyle, setInvoiceStyle] = React.useState('classic');
     const [fcmTokens, setFcmTokens] = React.useState<any[]>([]);
-     const [isSending, setIsSending] = React.useState(false);
-     const [isUploading, setIsUploading] = React.useState(false);
-     const [uploadProgress, setUploadProgress] = React.useState(0);
+    const [isSending, setIsSending] = React.useState(false);
+    const [isUploading, setIsUploading] = React.useState(false);
+    const [uploadProgress, setUploadProgress] = React.useState(0);
+    const [dailySummaryEnabled, setDailySummaryEnabled] = React.useState(true);
+    const [activeAccent, setActiveAccent] = React.useState('142 76% 45%');
 
      const fetchTokens = async () => {
         const { success, data } = await getDocuments('fcm-tokens');
@@ -74,6 +87,11 @@ export default function SettingsPage() {
         if (savedStyle) {
             setInvoiceStyle(savedStyle);
         }
+        const savedAccent = localStorage.getItem('fco_accent_color');
+        if (savedAccent) {
+            setActiveAccent(savedAccent);
+            document.documentElement.style.setProperty('--accent', savedAccent);
+        }
         fetchTokens();
     }, []);
 
@@ -84,6 +102,16 @@ export default function SettingsPage() {
             title: "Style Updated",
             description: `Invoice style set to ${style}.`,
         })
+    };
+
+    const handleAccentChange = (color: string) => {
+        setActiveAccent(color);
+        localStorage.setItem('fco_accent_color', color);
+        document.documentElement.style.setProperty('--accent', color);
+        toast({
+            title: "Accent Color Updated",
+            description: "System highlights have been synchronized.",
+        });
     };
     
     const handleFactoryReset = () => {
@@ -468,15 +496,65 @@ export default function SettingsPage() {
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
-                <CompanyInfoForm />
-
-                {/* Appearance & Themes */}
+                {/* Theme & Accent Customization */}
                 <MotionCard className="glass-panel rounded-[2.5rem]">
                     <CardHeader className="p-8">
                         <CardTitle className="text-xl font-black flex items-center gap-3">
-                            <Paintbrush className="h-6 w-6 text-primary" /> VISUAL IDENTITY
+                            <Palette className="h-6 w-6 text-primary" /> THEME & ACCENT
                         </CardTitle>
-                        <CardDescription className="text-sm font-semibold opacity-70">Customize terminal output and interface styling.</CardDescription>
+                        <CardDescription className="text-sm font-semibold opacity-70">Customize the interface color and dark/light modes.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-8 pt-0 space-y-10">
+                        <div className="space-y-4">
+                            <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Interface Mode</Label>
+                            <Tabs value={theme} onValueChange={setTheme} className="w-full">
+                                <TabsList className="grid w-full grid-cols-3 bg-white/5 h-14 rounded-2xl p-1">
+                                    <TabsTrigger value="light" className="rounded-xl font-black text-[10px] tracking-widest uppercase gap-2">
+                                        <Sun className="h-3 w-3" /> LIGHT
+                                    </TabsTrigger>
+                                    <TabsTrigger value="dark" className="rounded-xl font-black text-[10px] tracking-widest uppercase gap-2">
+                                        <Moon className="h-3 w-3" /> DARK
+                                    </TabsTrigger>
+                                    <TabsTrigger value="system" className="rounded-xl font-black text-[10px] tracking-widest uppercase gap-2">
+                                        <Monitor className="h-3 w-3" /> SYSTEM
+                                    </TabsTrigger>
+                                </TabsList>
+                            </Tabs>
+                        </div>
+
+                        <div className="space-y-4">
+                            <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Signature Accent Color</Label>
+                            <div className="flex flex-wrap gap-4">
+                                {accentColors.map((color) => (
+                                    <button
+                                        key={color.value}
+                                        onClick={() => handleAccentChange(color.value)}
+                                        className={cn(
+                                            "h-12 w-12 rounded-xl transition-all relative flex items-center justify-center border-2 border-transparent",
+                                            color.class,
+                                            activeAccent === color.value ? "scale-110 border-white shadow-[0_0_15px_rgba(255,255,255,0.3)]" : "opacity-60 hover:opacity-100"
+                                        )}
+                                        title={color.name}
+                                    >
+                                        {activeAccent === color.value && <Pipette className="h-4 w-4 text-white" />}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </CardContent>
+                </MotionCard>
+
+                <CompanyInfoForm />
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
+                {/* Visual Identity Styles */}
+                <MotionCard className="glass-panel rounded-[2.5rem]">
+                    <CardHeader className="p-8">
+                        <CardTitle className="text-xl font-black flex items-center gap-3">
+                            <Paintbrush className="h-6 w-6 text-primary" /> DOCUMENT IDENTITY
+                        </CardTitle>
+                        <CardDescription className="text-sm font-semibold opacity-70">Customize terminal output and invoice layouts.</CardDescription>
                     </CardHeader>
                     <CardContent className="p-8 pt-0">
                         <Tabs value={invoiceStyle} onValueChange={handleStyleChange} className="w-full">
@@ -513,18 +591,28 @@ export default function SettingsPage() {
                         </Tabs>
                     </CardContent>
                 </MotionCard>
-            </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
-                {/* Notifications */}
+                {/* Notifications & Push */}
                 <MotionCard className="glass-panel rounded-[2.5rem]">
                     <CardHeader className="p-8">
                         <CardTitle className="text-xl font-black flex items-center gap-3">
                             <BellRing className="h-6 w-6 text-yellow-400" /> PUSH INFRASTRUCTURE
                         </CardTitle>
-                        <CardDescription className="text-sm font-semibold opacity-70">Manage push notifications and registered terminal nodes.</CardDescription>
+                        <CardDescription className="text-sm font-semibold opacity-70">Manage notifications and registered terminal nodes.</CardDescription>
                     </CardHeader>
                     <CardContent className="p-8 pt-0 space-y-8">
+                        <div className="p-6 bg-white/5 border border-white/5 rounded-2xl space-y-4">
+                            <div className="flex items-center justify-between">
+                                <div className="space-y-1">
+                                    <p className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                                        <Bell className="h-4 w-4 text-accent" /> Daily Sales Summary
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground font-bold">Receive a push summary of total Mandi volume at 8:00 PM.</p>
+                                </div>
+                                <Switch checked={dailySummaryEnabled} onCheckedChange={setDailySummaryEnabled} />
+                            </div>
+                        </div>
+
                         <div className="grid grid-cols-2 gap-4">
                             <Button onClick={handleEnableNotifications} className="h-14 rounded-2xl font-black text-xs tracking-widest gap-2">
                                 <ShieldCheck className="h-4 w-4" /> ACTIVATE NODE
@@ -546,6 +634,32 @@ export default function SettingsPage() {
                                     </div>
                                 )) : <div className="text-center py-10 opacity-30 text-xs font-bold uppercase tracking-widest">No nodes registered</div>}
                             </div>
+                        </div>
+                    </CardContent>
+                </MotionCard>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
+                {/* Security Section */}
+                <MotionCard className="glass-panel border-accent/10 rounded-[2.5rem]">
+                    <CardHeader className="p-8">
+                        <CardTitle className="text-xl font-black flex items-center gap-3">
+                            <Lock className="h-6 w-6 text-accent" /> SECURITY CREDENTIALS
+                        </CardTitle>
+                        <CardDescription className="text-sm font-semibold opacity-70">Update your terminal access key and encryption settings.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-8 pt-0 space-y-6">
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Master Security Key</Label>
+                                <div className="relative">
+                                    <Key className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input type="password" placeholder="ENTER NEW KEY" className="h-14 pl-12 rounded-2xl bg-white/5 border-white/10 font-mono tracking-widest" />
+                                </div>
+                            </div>
+                            <Button className="w-full h-14 rounded-2xl font-black tracking-widest uppercase bg-accent text-black hover:bg-accent/90">
+                                UPDATE SECURITY NODE
+                            </Button>
                         </div>
                     </CardContent>
                 </MotionCard>
