@@ -5,7 +5,7 @@ import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { Paintbrush, Palette, Upload, Rocket, Cog, DownloadCloud, Factory, BellRing, UploadCloud, FileDown, Trash2 } from 'lucide-react';
+import { Paintbrush, Palette, Upload, Rocket, Cog, DownloadCloud, Factory, BellRing, UploadCloud, FileDown, Trash2, DatabaseZap, Cloud, ShieldCheck } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CompanyInfoForm } from "@/components/profile-form";
 import {
@@ -27,25 +27,26 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import * as XLSX from 'xlsx';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import PageHeader from '@/components/PageHeader';
 
 const InvoicePreview = ({ title, colors, children }: {
     title: string,
     colors: string,
     children: React.ReactNode,
 }) => (
-    <Card className="w-full h-full flex flex-col">
+    <Card className="w-full h-full flex flex-col glass-panel">
         <CardHeader>
-            <CardTitle>{title}</CardTitle>
-            <CardDescription>{children}</CardDescription>
+            <CardTitle className="text-sm font-bold">{title}</CardTitle>
+            <CardDescription className="text-xs">{children}</CardDescription>
         </CardHeader>
         <CardContent className="flex-grow">
-            <div className={`relative w-full h-48 rounded-md border-2 border-dashed p-2 flex flex-col ${colors}`}>
-                 <div className="text-center font-bold text-lg">INVOICE</div>
-                 <div className="flex-grow flex items-center justify-center text-xs">
-                    <p>...content...</p>
+            <div className={`relative w-full h-32 rounded-lg border border-white/10 p-2 flex flex-col ${colors}`}>
+                 <div className="text-center font-black text-[10px] tracking-widest">INVOICE</div>
+                 <div className="flex-grow flex items-center justify-center text-[8px] opacity-50">
+                    <p>F.CO DUMMY DATA</p>
                 </div>
-                <div className="text-center text-[8px] p-1 bg-black/10 rounded-b-md">Footer Text</div>
+                <div className="text-center text-[6px] p-1 bg-black/10 rounded-b-lg">COMPUTER GENERATED</div>
             </div>
         </CardContent>
     </Card>
@@ -96,7 +97,6 @@ export default function SettingsPage() {
                 title: "Factory Reset Successful",
                 description: "All application data has been cleared.",
             })
-            // A short delay before reload can help ensure the toast is visible
             setTimeout(() => window.location.reload(), 1000);
         } catch (error) {
             toast({
@@ -115,7 +115,6 @@ export default function SettingsPage() {
                 const key = localStorage.key(i);
                 if (key) {
                     try {
-                        // Attempt to parse JSON, if it fails, store as string
                         backupData[key] = JSON.parse(localStorage.getItem(key)!);
                     } catch {
                         backupData[key] = localStorage.getItem(key)!;
@@ -128,20 +127,20 @@ export default function SettingsPage() {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `FCO-Backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.download = `FCo-Terminal-Backup-${new Date().toISOString().split('T')[0]}.json`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            toast({ title: 'Backup Successful', description: 'Your data has been saved to a JSON file.' });
+            toast({ title: 'Backup Successful', description: 'Your database has been exported to JSON.' });
         } catch (error) {
             console.error("JSON Backup failed:", error);
-            toast({ variant: 'destructive', title: 'Backup Failed', description: 'Could not generate JSON backup.' });
+            toast({ variant: 'destructive', title: 'Backup Failed', description: 'Could not generate backup.' });
         }
     };
     
     const handleBackupDataExcel = () => {
-        toast({ title: 'Generating Excel Backup', description: 'Please wait...' });
+        toast({ title: 'Generating Excel Master-File', description: 'Please wait...' });
         try {
             const data: { [key: string]: any[] } = {
                 'Invoices': [], 'Purchases': [], 'Receipts': [], 'Challans': [], 'Pesticide_Invoices': [],
@@ -172,7 +171,6 @@ export default function SettingsPage() {
 
             for (const sheetName in data) {
                 if (data[sheetName].length > 0) {
-                    // Flatten nested objects like 'totals' and 'entries'
                     const flatData = data[sheetName].map(item => {
                         const flatItem: {[key:string]: any} = {};
                         for (const prop in item) {
@@ -195,13 +193,12 @@ export default function SettingsPage() {
                 }
             }
 
-            XLSX.writeFile(wb, `FCO-Excel-Backup-${new Date().toISOString().split('T')[0]}.xlsx`);
-
-            toast({ title: 'Excel Backup Successful', description: 'Your data has been saved to an Excel file.' });
+            XLSX.writeFile(wb, `FCo-Master-Ledger-${new Date().toISOString().split('T')[0]}.xlsx`);
+            toast({ title: 'Excel Export Successful', description: 'Archival record created.' });
 
         } catch (error) {
             console.error("Excel Backup failed:", error);
-            toast({ variant: 'destructive', title: 'Excel Backup Failed', description: 'Could not generate Excel file.' });
+            toast({ variant: 'destructive', title: 'Excel Export Failed', description: 'Could not generate archival file.' });
         }
     };
 
@@ -235,7 +232,7 @@ export default function SettingsPage() {
                     }
                 }
 
-                toast({ title: "Import Successful", description: "All data has been restored. The app will now reload." });
+                toast({ title: "Import Successful", description: "Terminal database restored. Reloading..." });
                 setTimeout(() => window.location.reload(), 2000);
 
             } catch (error) {
@@ -268,10 +265,10 @@ export default function SettingsPage() {
                     fetchTokens();
                     toast({
                         title: 'Notifications Enabled',
-                        description: 'You will now receive push notifications on this device.',
+                        description: 'This terminal is now receiving real-time push updates.',
                     });
                 } else {
-                     toast({ variant: 'destructive', title: 'Token Error', description: 'Could not get notification token. Is your service worker set up?' });
+                     toast({ variant: 'destructive', title: 'Token Error', description: 'Could not register FCM node.' });
                 }
             } else {
                  toast({ variant: 'destructive', title: 'Permission Denied', description: 'Please enable notifications in your browser settings.' });
@@ -285,20 +282,20 @@ export default function SettingsPage() {
     const handleSendTestNotification = async () => {
         setIsSending(true);
         if (fcmTokens.length === 0) {
-            toast({ variant: 'destructive', title: 'No Tokens', description: 'No devices have enabled notifications yet. Enable them first.'});
+            toast({ variant: 'destructive', title: 'No Registered Nodes', description: 'Enable notifications on at least one device first.'});
             setIsSending(false);
             return;
         }
         try {
             await sendPushNotification({
-                title: 'F.Co Test Notification',
-                body: 'If you can see this, your notifications are working correctly!',
+                title: 'F.Co Terminal Signal',
+                body: 'Push communication node verified and operational.',
                 tokens: fcmTokens.map(t => t.token),
                 url: '/dashboard'
             });
-            toast({ title: 'Test Sent', description: 'Check your device for a notification.'});
+            toast({ title: 'Signal Dispatched', description: 'Test notification sent to all nodes.'});
         } catch (error) {
-             toast({ variant: 'destructive', title: 'Test Failed', description: 'Could not send test notification.'});
+             toast({ variant: 'destructive', title: 'Transmission Failed', description: 'Could not send test signal.'});
         } finally {
             setIsSending(false);
         }
@@ -308,16 +305,16 @@ export default function SettingsPage() {
         try {
             await deleteDocument('fcm-tokens', tokenId);
             fetchTokens();
-            toast({ title: 'Device Unregistered', description: 'The device will no longer receive notifications.'});
+            toast({ title: 'Node Unregistered', description: 'The device has been disconnected from push services.'});
         } catch (error) {
-            toast({ variant: 'destructive', title: 'Unregister Failed', description: 'Could not remove the device token.'});
+            toast({ variant: 'destructive', title: 'Removal Failed', description: 'Could not remove device node.'});
         }
     }
     
     const handleUploadToCloud = async () => {
         setIsUploading(true);
         setUploadProgress(0);
-        toast({ title: "Starting Cloud Sync", description: "Uploading all local data to Firebase..." });
+        toast({ title: "Master Sync Initiated", description: "Uploading terminal database to F.Co Cloud Infrastructure..." });
     
         const collectionMap: { [key: string]: string } = {
             'invoice-': 'bills',
@@ -331,7 +328,6 @@ export default function SettingsPage() {
             'cs-': 'cold-storage',
             'bikri-': 'bikris',
             'accessory-ledger-': 'accessory-ledger',
-            'fcm-tokens-': 'fcm-tokens',
         };
     
         let successCount = 0;
@@ -351,6 +347,11 @@ export default function SettingsPage() {
         }
         
         const totalItems = itemsToUpload.length;
+        if (totalItems === 0) {
+            toast({ title: "Database Empty", description: "No local records found to sync." });
+            setIsUploading(false);
+            return;
+        }
 
         for (let i = 0; i < totalItems; i++) {
             const { key, prefix } = itemsToUpload[i];
@@ -360,17 +361,11 @@ export default function SettingsPage() {
             try {
                 const data = JSON.parse(localStorage.getItem(key)!);
                 const result = await saveDocument(collectionName, data.id || docId, data);
-                if (result.success) {
-                    successCount++;
-                } else {
-                    errorCount++;
-                }
+                if (result.success) successCount++;
+                else errorCount++;
             } catch (e) {
                 errorCount++;
-                console.error(`Failed to parse or upload item: ${key}`, e);
             }
-
-            // Update progress after each item
             setUploadProgress(((i + 1) / totalItems) * 100);
         }
     
@@ -378,202 +373,215 @@ export default function SettingsPage() {
         if (errorCount > 0) {
             toast({
                 variant: "destructive",
-                title: "Sync Partially Failed",
-                description: `${successCount} records synced, but ${errorCount} records failed. Check console for details.`,
+                title: "Partial Sync Error",
+                description: `${successCount} synced, ${errorCount} failed.`,
             });
         } else {
             toast({
-                title: "Cloud Sync Complete",
-                description: `Successfully synced ${successCount} records to the cloud.`,
+                title: "Cloud Backup Complete",
+                description: `Successfully backed up ${successCount} records to the cloud.`,
                 isSuccess: true,
             });
         }
     };
     
     return (
-        <div className="space-y-6">
-             <MotionCard whileHover={{ y: -5, scale: 1.02, boxShadow: '0 10px 20px rgba(0,0,0,0.1)' }} transition={{type: 'spring', stiffness: 300}}>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-3"><Rocket className="h-6 w-6 text-blue-500" /> Deploy to Web</CardTitle>
-                    <CardDescription>Publish your application to a permanent URL on the web.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <p className="mb-4">Click the button below to start the deployment process. This will publish your app to a live, shareable URL. This is an alternative to using the command-line interface.</p>
-                     <a href="https://apphosting.dev/onboarding/swiftsale-ewd7o/us-central1/main" target="_blank" rel="noopener noreferrer">
-                        <Button className="w-full gap-2 bg-blue-600 hover:bg-blue-700 text-white">
-                            <Rocket className="h-4 w-4" /> Deploy to Firebase App Hosting
-                        </Button>
-                    </a>
-                </CardContent>
-                 <CardFooter>
-                    <p className="text-xs text-muted-foreground">This will open a new tab to guide you through the final authentication and deployment steps.</p>
-                 </CardFooter>
-            </MotionCard>
+        <div className="space-y-10 pb-20">
+            <PageHeader
+                title="System Configuration"
+                description="Manage your F.Co terminal node, cloud backups, and appearance settings."
+                icon={<Cog className="h-8 w-8" />}
+                imageUrl="/assets/3d/settings.png"
+            />
 
-             <MotionCard whileHover={{ y: -5, scale: 1.02, boxShadow: '0 10px 20px rgba(0,0,0,0.1)' }} transition={{type: 'spring', stiffness: 300}}>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-3"><Paintbrush className="h-6 w-6" /> Appearance &amp; Customization</CardTitle>
-                    <CardDescription>Customize the look and feel of your documents and application.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Accordion type="single" collapsible defaultValue="styles" className="w-full">
-                        <AccordionItem value="styles">
-                            <AccordionTrigger className="text-lg font-semibold">Invoice & Bill Styles</AccordionTrigger>
-                            <AccordionContent>
-                                <Tabs value={invoiceStyle} onValueChange={handleStyleChange} className="w-full mt-2">
-                                    <TabsList className="grid w-full grid-cols-3">
-                                        <TabsTrigger value="classic">Classic</TabsTrigger>
-                                        <TabsTrigger value="modern-dark">Modern Dark</TabsTrigger>
-                                        <TabsTrigger value="modern-light">Modern Light</TabsTrigger>
-                                    </TabsList>
-                                    <TabsContent value="classic" className="mt-4">
-                                        <InvoicePreview title="Classic Style" colors="bg-amber-50 text-black border-green-700">
-                                            A traditional, clean look perfect for formal record-keeping.
-                                        </InvoicePreview>
-                                    </TabsContent>
-                                    <TabsContent value="modern-dark" className="mt-4">
-                                         <InvoicePreview title="Modern Dark Style" colors="bg-gray-800 text-white border-gray-600">
-                                            A sleek, stylish dark-mode theme, great for digital sharing.
-                                        </InvoicePreview>
-                                    </TabsContent>
-                                     <TabsContent value="modern-light" className="mt-4">
-                                         <InvoicePreview title="Modern Light Style" colors="bg-gray-100 text-black border-gray-300">
-                                            A clean and professional light-mode theme for a contemporary feel.
-                                        </InvoicePreview>
-                                    </TabsContent>
-                                </Tabs>
-                            </AccordionContent>
-                        </AccordionItem>
-                        <AccordionItem value="branding">
-                             <AccordionTrigger className="text-lg font-semibold">Branding</AccordionTrigger>
-                             <AccordionContent className="pt-4 space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                     <div className="space-y-4">
-                                        <div>
-                                            <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><Palette className="h-5 w-5 text-primary" /> App Theme</h3>
-                                            <p className="text-sm text-muted-foreground mb-4">Change the primary color scheme of the application.</p>
-                                            <p className="text-sm text-muted-foreground">Theme switching is handled by the toggle in the sidebar.</p>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-4">
-                                        <div>
-                                            <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><Upload className="h-5 w-5 text-primary" /> Company Logo</h3>
-                                            <p className="text-sm text-muted-foreground mb-2">Upload your company logo. Appears on bills and headers. (Coming Soon)</p>
-                                            <Input type="file" disabled />
-                                        </div>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
+                {/* Deployment Card */}
+                <MotionCard 
+                    whileHover={{ y: -5 }} 
+                    className="glass-panel border-accent/20 bg-gradient-to-br from-accent/5 via-transparent to-transparent rounded-[2.5rem] overflow-hidden"
+                >
+                    <CardHeader className="p-8 pb-4">
+                        <CardTitle className="text-xl font-black flex items-center gap-3">
+                            <Rocket className="h-6 w-6 text-accent" /> DEPLOY TO INFRASTRUCTURE
+                        </CardTitle>
+                        <CardDescription className="text-sm font-semibold opacity-70">Push your terminal logic to a permanent, public cloud URL.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-8 pt-0 space-y-6">
+                        <p className="text-sm text-muted-foreground leading-relaxed">Publish your local terminal as a global web application accessible from any device. This enables multi-device access and persistent cloud hosting.</p>
+                        <a href="https://apphosting.dev/onboarding/swiftsale-ewd7o/us-central1/main" target="_blank" rel="noopener noreferrer">
+                            <Button className="w-full h-14 rounded-2xl gap-2 bg-accent text-black font-black tracking-widest hover:bg-accent/90 shadow-[0_0_20px_rgba(34,197,94,0.3)]">
+                                <Rocket className="h-5 w-5" /> INITIALIZE CLOUD DEPLOYMENT
+                            </Button>
+                        </a>
+                    </CardContent>
+                </MotionCard>
+
+                {/* Cloud Sync & Backup Card */}
+                <MotionCard 
+                    whileHover={{ y: -5 }} 
+                    className="glass-panel border-blue-500/20 bg-gradient-to-br from-blue-500/5 via-transparent to-transparent rounded-[2.5rem] overflow-hidden"
+                >
+                    <CardHeader className="p-8 pb-4">
+                        <CardTitle className="text-xl font-black flex items-center gap-3">
+                            <DatabaseZap className="h-6 w-6 text-blue-400" /> MASTER CLOUD SYNC
+                        </CardTitle>
+                        <CardDescription className="text-sm font-semibold opacity-70">Manual database synchronization and archival backups.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-8 pt-0 space-y-6">
+                        <div className="flex flex-col gap-4">
+                            <div className="p-4 bg-blue-500/10 rounded-2xl border border-blue-500/20 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <Cloud className="h-5 w-5 text-blue-400" />
+                                    <div>
+                                        <p className="text-xs font-black uppercase tracking-widest">Database Backup</p>
+                                        <p className="text-[10px] opacity-60">Push all local records to F.Co Cloud</p>
                                     </div>
                                 </div>
-                             </AccordionContent>
-                        </AccordionItem>
-                    </Accordion>
-                </CardContent>
-            </MotionCard>
-
-            <CompanyInfoForm />
-
-            <MotionCard whileHover={{ y: -5, scale: 1.02, boxShadow: '0 10px 20px rgba(0,0,0,0.1)' }} transition={{type: 'spring', stiffness: 300}}>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-3"><Cog className="h-6 w-6" /> General Settings</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Tabs defaultValue="data">
-                        <TabsList className="grid w-full grid-cols-3">
-                            <TabsTrigger value="data">Data Sync &amp; Backup</TabsTrigger>
-                            <TabsTrigger value="notifications">Notifications</TabsTrigger>
-                            <TabsTrigger value="reset">Factory Reset</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="data" className="pt-6">
-                             <h3 className="font-semibold text-lg mb-2">Data Portability & Backup</h3>
-                            <p className="text-sm text-muted-foreground mb-4">Use the JSON option to transfer data between devices. Use the Excel option for archival records. The "Upload to Cloud" button manually syncs all local data to Firebase.</p>
-                             <div className="space-y-4">
-                                <div className="flex flex-wrap gap-4">
-                                    <Button onClick={handleUploadToCloud} className="gap-2 bg-green-600 hover:bg-green-700" disabled={isUploading}>
-                                        <UploadCloud className="h-4 w-4" />
-                                        {isUploading ? 'Syncing...' : 'Upload Local Data to Cloud'}
-                                    </Button>
-                                    <Button onClick={handleBackupDataJson} className="gap-2">
-                                        <DownloadCloud className="h-4 w-4" />
-                                        Download JSON Backup
-                                    </Button>
-                                    <div className="flex items-center gap-2">
-                                        <Label htmlFor="import-file-json" className="cursor-pointer">
-                                            <Button asChild>
-                                                <span className="gap-2"><UploadCloud className="h-4 w-4" /> Import from JSON</span>
-                                            </Button>
-                                        </Label>
-                                        <Input id="import-file-json" type="file" className="hidden" accept=".json" onChange={handleImportDataJson}/>
-                                    </div>
-                                    <Button onClick={handleBackupDataExcel} variant="outline" className="gap-2">
-                                        <FileDown className="h-4 w-4" />
-                                        Backup to Excel
-                                    </Button>
-                                </div>
+                                <Button onClick={handleUploadToCloud} disabled={isUploading} className="bg-blue-500 hover:bg-blue-600 rounded-xl px-6 h-10 font-bold text-xs uppercase tracking-widest">
+                                    {isUploading ? 'SYNCING...' : 'SYNC NOW'}
+                                </Button>
+                            </div>
+                            
+                            <AnimatePresence>
                                 {isUploading && (
-                                    <div className="space-y-2">
-                                        <Progress value={uploadProgress} className="w-full h-3 bg-primary/20" />
-                                        <p className="text-xs text-muted-foreground text-center">Syncing progress: {Math.round(uploadProgress)}%</p>
-                                    </div>
-                                )}
-                            </div>
-                        </TabsContent>
-                         <TabsContent value="notifications" className="pt-6 space-y-4">
-                            <div>
-                                <h3 className="font-semibold text-lg mb-2">Push Notifications</h3>
-                                <p className="text-sm text-muted-foreground mb-4">Enable push notifications to receive real-time updates from the app, such as low stock alerts or new sale notifications.</p>
-                                <div className="flex items-center gap-4">
-                                    <Button onClick={handleEnableNotifications} className="gap-2">
-                                        <BellRing className="h-4 w-4" />
-                                        Enable Notifications
-                                    </Button>
-                                    <Button onClick={handleSendTestNotification} variant="secondary" className="gap-2" disabled={isSending}>
-                                        <BellRing className="h-4 w-4" />
-                                        {isSending ? 'Sending...' : 'Send Test Notification'}
-                                    </Button>
-                                </div>
-                            </div>
-                             <div>
-                                <h3 className="font-semibold text-lg mb-2">Registered Devices</h3>
-                                <p className="text-sm text-muted-foreground mb-4">These devices have enabled notifications. You can remove them if they are no longer in use.</p>
-                                <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                                    {fcmTokens.length > 0 ? fcmTokens.map((token: any) => (
-                                        <div key={token.id} className="flex justify-between items-center bg-muted p-2 rounded-md">
-                                            <p className="text-xs font-mono break-all pr-4">{token.id}</p>
-                                            <Button variant="ghost" size="icon" onClick={() => handleDeleteToken(token.id)}>
-                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                            </Button>
+                                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="space-y-2">
+                                        <div className="flex justify-between text-[10px] font-black uppercase tracking-widest px-1">
+                                            <span>Transferring Data...</span>
+                                            <span>{Math.round(uploadProgress)}%</span>
                                         </div>
-                                    )) : <p className="text-sm text-muted-foreground">No devices registered for notifications yet.</p>}
-                                </div>
-                            </div>
-                        </TabsContent>
-                        <TabsContent value="reset" className="pt-6">
-                            <h3 className="font-semibold text-lg text-destructive mb-2">Factory Reset</h3>
-                            <p className="text-sm text-muted-foreground mb-4">This will permanently delete all your data from this device's local storage. This action cannot be undone and should be used with extreme caution.</p>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="destructive" className="gap-2">
-                                        <Factory className="h-4 w-4" />
-                                        Perform Factory Reset
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This action cannot be undone. This will permanently delete all your application data from your browser's local storage.
-                                    </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleFactoryReset}>Continue</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        </TabsContent>
-                    </Tabs>
-                </CardContent>
-            </MotionCard>
+                                        <Progress value={uploadProgress} className="h-2 bg-blue-500/20" />
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
 
+                            <div className="grid grid-cols-2 gap-4">
+                                <Button onClick={handleBackupDataJson} variant="secondary" className="h-14 rounded-2xl font-bold text-xs uppercase tracking-widest gap-2 bg-white/5 border border-white/5 hover:bg-white/10">
+                                    <DownloadCloud className="h-4 w-4" /> JSON BACKUP
+                                </Button>
+                                <Button onClick={handleBackupDataExcel} variant="secondary" className="h-14 rounded-2xl font-bold text-xs uppercase tracking-widest gap-2 bg-white/5 border border-white/5 hover:bg-white/10">
+                                    <FileDown className="h-4 w-4" /> EXCEL ARCHIVE
+                                </Button>
+                            </div>
+                        </div>
+                    </CardContent>
+                </MotionCard>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
+                <CompanyInfoForm />
+
+                {/* Appearance & Themes */}
+                <MotionCard className="glass-panel rounded-[2.5rem]">
+                    <CardHeader className="p-8">
+                        <CardTitle className="text-xl font-black flex items-center gap-3">
+                            <Paintbrush className="h-6 w-6 text-primary" /> VISUAL IDENTITY
+                        </CardTitle>
+                        <CardDescription className="text-sm font-semibold opacity-70">Customize terminal output and interface styling.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-8 pt-0">
+                        <Tabs value={invoiceStyle} onValueChange={handleStyleChange} className="w-full">
+                            <TabsList className="grid w-full grid-cols-3 bg-white/5 h-14 rounded-2xl p-1 mb-8">
+                                <TabsTrigger value="classic" className="rounded-xl font-black text-[10px] tracking-widest uppercase">CLASSIC</TabsTrigger>
+                                <TabsTrigger value="modern-dark" className="rounded-xl font-black text-[10px] tracking-widest uppercase">DARK UI</TabsTrigger>
+                                <TabsTrigger value="modern-light" className="rounded-xl font-black text-[10px] tracking-widest uppercase">LIGHT UI</TabsTrigger>
+                            </TabsList>
+                            <AnimatePresence mode="wait">
+                                <motion.div 
+                                    key={invoiceStyle}
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    transition={{ duration: 0.3 }}
+                                >
+                                    {invoiceStyle === 'classic' && (
+                                        <InvoicePreview title="TRADITIONAL MANDI LEDGER" colors="bg-amber-50 text-black border-green-700/30">
+                                            High-fidelity print format mirroring classic manual bookkeeping records.
+                                        </InvoicePreview>
+                                    )}
+                                    {invoiceStyle === 'modern-dark' && (
+                                        <InvoicePreview title="CYBER TERMINAL DARK" colors="bg-gray-900 text-white border-white/10">
+                                            Ultra-modern digital style optimized for sharing via WhatsApp and OLED screens.
+                                        </InvoicePreview>
+                                    )}
+                                    {invoiceStyle === 'modern-light' && (
+                                        <InvoicePreview title="PROFESSIONAL WHITE" colors="bg-white text-gray-900 border-gray-200">
+                                            Clean, professional layout with high contrast for standard document printers.
+                                        </InvoicePreview>
+                                    )}
+                                </motion.div>
+                            </AnimatePresence>
+                        </Tabs>
+                    </CardContent>
+                </MotionCard>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
+                {/* Notifications */}
+                <MotionCard className="glass-panel rounded-[2.5rem]">
+                    <CardHeader className="p-8">
+                        <CardTitle className="text-xl font-black flex items-center gap-3">
+                            <BellRing className="h-6 w-6 text-yellow-400" /> PUSH INFRASTRUCTURE
+                        </CardTitle>
+                        <CardDescription className="text-sm font-semibold opacity-70">Manage push notifications and registered terminal nodes.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-8 pt-0 space-y-8">
+                        <div className="grid grid-cols-2 gap-4">
+                            <Button onClick={handleEnableNotifications} className="h-14 rounded-2xl font-black text-xs tracking-widest gap-2">
+                                <ShieldCheck className="h-4 w-4" /> ACTIVATE NODE
+                            </Button>
+                            <Button onClick={handleSendTestNotification} variant="secondary" className="h-14 rounded-2xl font-black text-xs tracking-widest gap-2 bg-white/5 hover:bg-white/10" disabled={isSending}>
+                                {isSending ? 'TESTING...' : 'VERIFY SIGNAL'}
+                            </Button>
+                        </div>
+                        
+                        <div className="space-y-4">
+                            <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Active Device Nodes</h4>
+                            <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                                {fcmTokens.length > 0 ? fcmTokens.map((token: any) => (
+                                    <div key={token.id} className="flex justify-between items-center bg-white/5 border border-white/5 p-3 rounded-xl">
+                                        <p className="text-[9px] font-mono opacity-50 truncate pr-4">{token.id}</p>
+                                        <Button variant="ghost" size="icon" onClick={() => handleDeleteToken(token.id)} className="h-8 w-8 hover:bg-destructive/20 text-destructive">
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                        </Button>
+                                    </div>
+                                )) : <div className="text-center py-10 opacity-30 text-xs font-bold uppercase tracking-widest">No nodes registered</div>}
+                            </div>
+                        </div>
+                    </CardContent>
+                </MotionCard>
+
+                {/* System Reset */}
+                <MotionCard className="glass-panel border-destructive/20 rounded-[2.5rem]">
+                    <CardHeader className="p-8">
+                        <CardTitle className="text-xl font-black flex items-center gap-3 text-destructive">
+                            <Factory className="h-6 w-6" /> FACTORY OVERRIDE
+                        </CardTitle>
+                        <CardDescription className="text-sm font-semibold opacity-70">Wipe entire local terminal database.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-8 pt-0 space-y-6">
+                        <p className="text-sm text-muted-foreground leading-relaxed">This action will permanently erase all local records, configuration settings, and themes. Use only when preparing a fresh terminal installation.</p>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" className="w-full h-14 rounded-2xl font-black tracking-widest uppercase shadow-[0_0_20px_rgba(239,68,68,0.2)]">
+                                    <Trash2 className="h-5 w-5 mr-2" /> EXECUTE MASTER WIPE
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="glass-panel rounded-[2rem] border-destructive/30">
+                                <AlertDialogHeader>
+                                <AlertDialogTitle className="text-2xl font-black tracking-tighter">CONFIRM DESTRUCTION</AlertDialogTitle>
+                                <AlertDialogDescription className="font-medium text-muted-foreground">
+                                    This will delete every single record stored on this device. This process cannot be reversed. Ensure you have a cloud backup.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter className="gap-3">
+                                <AlertDialogCancel className="rounded-xl font-bold border-white/10">CANCEL</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleFactoryReset} className="rounded-xl font-bold bg-destructive text-white">PROCEED WITH WIPE</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </CardContent>
+                </MotionCard>
+            </div>
         </div>
     );
 }

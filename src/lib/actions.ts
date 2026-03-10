@@ -6,8 +6,6 @@ import { collection, getDocs, doc, setDoc, deleteDoc, getDoc, addDoc, serverTime
 
 /**
  * Sends push notifications to specified FCM tokens.
- * This function now correctly queues a job in Firestore which a separate service
- * (not part of this codebase) would listen to for sending notifications via FCM.
  */
 export async function sendPushNotification(notification: {
     title: string;
@@ -16,7 +14,6 @@ export async function sendPushNotification(notification: {
     url?: string;
 }) {
     if (notification.tokens.length === 0) {
-        console.log("No FCM tokens found. Skipping notification.");
         return { success: true, message: "No tokens provided." };
     }
 
@@ -35,12 +32,16 @@ export async function sendPushNotification(notification: {
     }
 }
 
-
-// Generic function to save a document
+/**
+ * Generic function to save a document to the cloud (Firestore).
+ * Used for the "Sync to Cloud" feature.
+ */
 export async function saveDocument(collectionName: string, id: string, data: any) {
   try {
     const db = getClientDb();
-    await setDoc(doc(db, collectionName, id), data, { merge: true });
+    // Ensure we don't save UI state or functions
+    const cleanData = JSON.parse(JSON.stringify(data));
+    await setDoc(doc(db, collectionName, id), cleanData, { merge: true });
     return { success: true, id };
   } catch (error) {
     console.error(`Error saving document to ${collectionName}:`, error);
@@ -48,7 +49,9 @@ export async function saveDocument(collectionName: string, id: string, data: any
   }
 }
 
-// Generic function to delete a document
+/**
+ * Generic function to delete a document from the cloud.
+ */
 export async function deleteDocument(collectionName: string, id: string) {
     try {
         const db = getClientDb();
@@ -60,7 +63,9 @@ export async function deleteDocument(collectionName: string, id: string) {
     }
 }
 
-// Generic function to get a single document from a collection
+/**
+ * Generic function to get a single document from a collection.
+ */
 export async function getDocument(collectionName: string, id: string): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
         const db = getClientDb();
@@ -78,8 +83,10 @@ export async function getDocument(collectionName: string, id: string): Promise<{
     }
 }
 
-
-// Generic function to get documents from a collection
+/**
+ * Generic function to get all documents from a collection.
+ * Useful for restoring from a cloud backup.
+ */
 export async function getDocuments(collectionName: string): Promise<{ success: boolean; data?: any[]; error?: string }> {
     try {
         const db = getClientDb();

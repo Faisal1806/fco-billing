@@ -1,3 +1,4 @@
+
 'use client'
 
 import * as React from 'react';
@@ -77,7 +78,6 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             setLoading(true);
 
             let data: BillData | null = null;
-            // The internal page can just use the local copy
             const localData = localStorage.getItem(`invoice-${params.id}`);
             if (localData) {
                 try {
@@ -86,7 +86,6 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                     toast({ variant: "destructive", title: "Local Data Corrupted" });
                 }
             } else {
-                // As a fallback, try fetching from the public collection if local is missing
                 const { success, data: firestoreData, error } = await getDocument('bills', params.id);
                  if (success && firestoreData) {
                     data = firestoreData as BillData;
@@ -103,7 +102,6 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             if (data) {
                 setBillData(data);
                 if(typeof window !== 'undefined'){
-                  // The QR link points to the new public page and includes the style
                   setPageUrl(`${window.location.origin}/bill/view/${params.id}?style=${invoiceStyle}`);
                 }
             }
@@ -116,7 +114,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
     const handleShare = () => {
         if (billData) {
-            const message = `Check out this Invoice (#${billData.sNo}) for ${billData.customerName}: ${pageUrl}`;
+            const message = `F.Co Official Invoice (#${billData.sNo}) for ${billData.customerName}: ${pageUrl}`;
             const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
             window.open(whatsappUrl, '_blank');
         } else {
@@ -126,8 +124,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     
     const handleDownloadPdf = async () => {
         toast({
-            title: "Generating PDF...",
-            description: "Your PDF is being created. This might take a moment.",
+            title: "Generating High-Res PDF",
+            description: "Preparing your document for local storage...",
         });
 
         const activeLayout = printRef.current;
@@ -143,55 +141,65 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
         if (!content) return;
 
-        const canvas = await html2canvas(content as HTMLElement, {
-            scale: 2, // Higher scale for better quality
-            useCORS: true,
-            backgroundColor: invoiceStyle === 'modern-dark' ? '#1f2937' : '#ffffff',
-        });
+        try {
+            const canvas = await html2canvas(content as HTMLElement, {
+                scale: 3, // Ultra high resolution for "Save to Device"
+                useCORS: true,
+                backgroundColor: invoiceStyle === 'modern-dark' ? '#1f2937' : '#ffffff',
+                logging: false
+            });
 
-        const pdf = new jsPDF({
-            orientation,
-            unit: 'mm',
-            format,
-        });
-        
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-        
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save(`Invoice-${billData.sNo}_${billData.customerName}.pdf`);
+            const pdf = new jsPDF({
+                orientation,
+                unit: 'mm',
+                format,
+            });
+            
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            
+            pdf.addImage(canvas.toDataURL('image/png', 1.0), 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save(`FCo-Invoice-${billData.sNo}_${billData.customerName}.pdf`);
+            
+            toast({ title: "Document Saved", description: "The invoice has been downloaded to your device.", isSuccess: true });
+        } catch (e) {
+            toast({ variant: 'destructive', title: "Save Failed", description: "An error occurred while generating the PDF." });
+        }
     };
 
 
 
     const Controls = () => (
-        <div className="flex flex-col gap-4 print:hidden p-4 bg-card rounded-lg border">
+        <div className="flex flex-col gap-4 print:hidden p-6 glass-panel rounded-[2rem] border-white/10">
+            <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground text-center">Output Options</h3>
             <div className="flex items-center gap-2">
-                <Button onClick={() => setPrintStyle('a4')} variant={printStyle === 'a4' ? 'default' : 'outline'} size="sm" className="flex-1 gap-2">
-                    <FileText className="h-4 w-4" /> A5
+                <Button onClick={() => setPrintStyle('a4')} variant={printStyle === 'a4' ? 'default' : 'outline'} size="sm" className="flex-1 h-12 rounded-xl gap-2 font-bold">
+                    <FileText className="h-4 w-4" /> A5 MASTER
                 </Button>
-                <Button onClick={() => setPrintStyle('thermal')} variant={printStyle === 'thermal' ? 'default' : 'outline'} size="sm" className="flex-1 gap-2">
-                    <Receipt className="h-4 w-4" /> Thermal
+                <Button onClick={() => setPrintStyle('thermal')} variant={printStyle === 'thermal' ? 'default' : 'outline'} size="sm" className="flex-1 h-12 rounded-xl gap-2 font-bold">
+                    <Receipt className="h-4 w-4" /> THERMAL
                 </Button>
             </div>
              <div className="flex flex-col gap-2">
-                <Button onClick={handleShare} variant="outline" size="sm" className="gap-2 bg-green-500/10 border-green-500/30 text-green-300 hover:bg-green-500/20 hover:text-green-200">
+                <Button onClick={handleShare} variant="outline" size="sm" className="h-12 rounded-xl gap-2 bg-green-500/10 border-green-500/20 text-green-400 font-bold hover:bg-green-500/20">
                     <FaWhatsapp className="h-4 w-4" />
-                    Share on WhatsApp
+                    WHATSAPP SHARE
                 </Button>
-                <Button onClick={() => window.print()} variant="outline" size="sm" className="gap-2">
+                <Button onClick={() => window.print()} variant="outline" size="sm" className="h-12 rounded-xl gap-2 border-white/10 font-bold">
                     <Printer className="h-4 w-4" />
-                    Print
+                    PRINT NOW
                 </Button>
             </div>
-            <Button onClick={handleDownloadPdf} size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700 text-white">
-                <Download className="h-4 w-4" />
-                Save to Device
+            <Button onClick={handleDownloadPdf} size="sm" className="h-14 rounded-xl gap-2 bg-blue-600 hover:bg-blue-700 text-white font-black tracking-widest">
+                <Download className="h-5 w-5" />
+                SAVE TO DEVICE
             </Button>
              {billData && pageUrl && (
-                <div className="p-4 border bg-muted rounded-md flex flex-col items-center gap-2">
-                    <QRCode value={pageUrl} size={128} bgColor="transparent" fgColor="hsl(var(--foreground))" />
-                    <p className="text-xs font-semibold text-muted-foreground mt-1">Scan to View Bill</p>
+                <div className="p-4 bg-white/5 border border-white/5 rounded-2xl flex flex-col items-center gap-3">
+                    <div className="p-2 bg-white rounded-xl">
+                        <QRCode value={pageUrl} size={120} bgColor="#ffffff" fgColor="#000000" level="H" />
+                    </div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground text-center">Verification QR Code</p>
                 </div>
             )}
         </div>
@@ -201,8 +209,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         return (
             <div className="bg-muted min-h-screen p-8 flex items-center justify-center">
                  <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="h-16 w-16 animate-spin text-primary" />
-                    <p className="text-lg text-muted-foreground">Loading Invoice...</p>
+                    <Loader2 className="h-16 w-16 animate-spin text-accent" />
+                    <p className="text-lg font-black tracking-tighter opacity-50">INITIALIZING SECURE RENDER...</p>
                  </div>
             </div>
         )
@@ -211,9 +219,10 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     if (!billData) {
         return (
             <div className="bg-background min-h-screen p-8 flex items-center justify-center">
-                <div className="text-center p-8 border rounded-lg shadow-lg bg-card text-card-foreground">
-                    <h2 className="text-2xl font-bold text-destructive">Invoice Not Found</h2>
-                    <p className="text-muted-foreground mt-2">The invoice you are looking for does not exist or has been deleted.</p>
+                <div className="text-center p-12 glass-panel rounded-[3rem] border-destructive/20 text-card-foreground">
+                    <h2 className="text-3xl font-black tracking-tighter text-destructive uppercase">Invoice Null</h2>
+                    <p className="text-muted-foreground mt-4 font-semibold">The specified document node could not be located in local or cloud storage.</p>
+                    <Button onClick={() => router.push('/watak-register')} className="mt-8 rounded-xl font-bold">BACK TO REGISTER</Button>
                 </div>
             </div>
         );
@@ -230,7 +239,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
 
     return (
-        <div className="bg-muted/40 font-sans print:bg-white flex flex-col md:flex-row gap-8 justify-center p-4 md:p-8">
+        <div className="bg-background font-sans print:bg-white flex flex-col md:flex-row gap-10 justify-center p-4 md:p-12">
              <style jsx global>{`
                 @media print {
                     body {
@@ -258,7 +267,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 }
             `}</style>
             
-            <div className="print:hidden w-full max-w-[250px] space-y-4 sticky top-4 self-start">
+            <div className="print:hidden w-full max-w-[300px] space-y-4 sticky top-10 self-start">
                 <Controls />
             </div>
 
