@@ -1,10 +1,12 @@
+
 'use client';
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { FaFacebookF, FaTwitter, FaYoutube, FaInstagram } from 'react-icons/fa';
 import PageHeader from '@/components/PageHeader';
-import { GitBranch } from 'lucide-react';
+import { Share2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function SocialTilesPage() {
   const socialLinks = [
@@ -12,131 +14,196 @@ export default function SocialTilesPage() {
         name: 'Facebook', 
         icon: <FaFacebookF />, 
         href: 'https://www.facebook.com/share/14WtZoPPVoZ/', 
-        color: '#1877F2' 
+        color: '#1877F2',
+        label: 'Community'
     },
     { 
         name: 'YouTube', 
         icon: <FaYoutube />, 
         href: 'https://youtube.com/@faisal_ahmad_fa?si=B5003YSTnOnAcgt-', 
-        color: '#FF0000' 
+        color: '#FF0000',
+        label: 'Channel'
     },
     { 
         name: 'Twitter', 
         icon: <FaTwitter />, 
         href: 'https://twitter.com/fco_apples', 
-        color: '#1DA1F2' 
+        color: '#1DA1F2',
+        label: 'Updates'
     },
     { 
         name: 'Instagram', 
         icon: <FaInstagram />, 
         href: 'https://instagram.com/fco_apples', 
-        color: '#E4405F' 
+        color: '#E4405F',
+        label: 'Gallery'
     },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
        <style jsx>{`
-        .social-tiles-container {
-          list-style: none;
-          padding: 0;
-          margin: 0;
+        .social-grid {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 4rem;
+          perspective: 2000px;
         }
-        .social-tile {
+
+        .tile-wrapper {
           position: relative;
-          width: 140px;
-          height: 140px;
-          perspective: 1000px;
+          width: 180px;
+          height: 180px;
+          transform-style: preserve-3d;
         }
-        .social-tile a {
+
+        .tile-link {
+          position: absolute;
+          inset: 0;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          width: 100%;
-          height: 100%;
-          background: rgba(255, 255, 255, 0.03);
-          backdrop-filter: blur(10px);
-          color: #fff;
           text-decoration: none;
-          font-weight: 900;
-          font-size: 10px;
-          text-transform: uppercase;
-          letter-spacing: 2px;
-          border-radius: 24px;
-          transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+          background: rgba(255, 255, 255, 0.03);
+          backdrop-filter: blur(15px);
+          border-radius: 32px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
           transform-style: preserve-3d;
-          box-shadow: 0 15px 35px rgba(0,0,0,0.5);
-          border: 1px solid rgba(255,255,255,0.05);
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
-        /* The 3D Depth Layer */
-        .social-tile a::before {
+
+        /* 3D Depth Layer (The Side/Bottom of the Button) */
+        .tile-link::after {
           content: '';
           position: absolute;
           inset: 0;
           background: var(--social-color);
-          border-radius: 24px;
-          transform: translateZ(-12px);
-          transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-          opacity: 0.3;
+          border-radius: 32px;
+          transform: translateZ(-20px);
+          filter: brightness(0.4);
+          transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+          opacity: 0.4;
         }
-        .social-tile a:hover {
-          transform: translateY(8px) rotateX(15deg);
+
+        /* Hover States */
+        .tile-wrapper:hover .tile-link {
+          transform: translateZ(30px) rotateX(10deg) rotateY(-10deg);
           background: rgba(255, 255, 255, 0.08);
           border-color: var(--social-color);
-          box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+          box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.8),
+                      0 0 30px var(--social-color);
         }
-        .social-tile a:hover::before {
-          transform: translateZ(-6px);
+
+        .tile-wrapper:hover .tile-link::after {
+          transform: translateZ(-10px);
           opacity: 0.8;
-          box-shadow: 0 0 30px var(--social-color);
+          filter: brightness(0.6);
         }
-        .social-tile a:active {
-          transform: translateY(12px) rotateX(0deg);
-          box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+
+        /* Active/Press State */
+        .tile-wrapper:active .tile-link {
+          transform: translateZ(-5px) rotateX(0deg) rotateY(0deg);
+          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
         }
-        .social-tile a:active::before {
+
+        .tile-wrapper:active .tile-link::after {
           transform: translateZ(-2px);
+          opacity: 1;
         }
-        .social-tile .icon {
-          font-size: 40px;
+
+        .icon-node {
+          font-size: 52px;
           margin-bottom: 12px;
-          transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-          color: rgba(255,255,255,0.6);
+          color: rgba(255, 255, 255, 0.6);
+          transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+          transform: translateZ(20px);
+          filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3));
         }
-        .social-tile a:hover .icon {
-          transform: scale(1.2) translateZ(30px);
+
+        .tile-wrapper:hover .icon-node {
           color: var(--social-color);
-          filter: drop-shadow(0 0 10px var(--social-color));
+          transform: translateZ(50px) scale(1.1);
+          filter: drop-shadow(0 0 20px var(--social-color));
+        }
+
+        .text-node {
+          font-weight: 900;
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 3px;
+          color: white;
+          transform: translateZ(15px);
+          opacity: 0.7;
+          transition: all 0.5s ease;
+        }
+
+        .tile-wrapper:hover .text-node {
+          opacity: 1;
+          letter-spacing: 4px;
+          transform: translateZ(35px);
+        }
+
+        .label-node {
+          position: absolute;
+          bottom: 24px;
+          font-size: 8px;
+          font-weight: 900;
+          color: var(--social-color);
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          opacity: 0;
+          transform: translateZ(10px) translateY(10px);
+          transition: all 0.5s ease;
+        }
+
+        .tile-wrapper:hover .label-node {
+          opacity: 1;
+          transform: translateZ(25px) translateY(0);
         }
       `}</style>
 
       <PageHeader
-        title="3D Social Presence"
-        description="Connect with the F.Co digital network. Click any tile to visit our official profiles and channel updates."
-        icon={<GitBranch className="h-8 w-8" />}
+        title="Digital Presence"
+        description="Interact with the F.Co 3D social nodes. Every tile is a gateway to our official digital infrastructure."
+        icon={<Share2 className="h-8 w-8" />}
         imageUrl="/assets/3d/social.png"
       />
 
       <Card className="glass-panel rounded-[4rem] border-white/5 overflow-hidden">
-        <CardContent className="p-20 py-32 flex items-center justify-center min-h-[500px]">
-            <ul className="social-tiles-container flex flex-wrap gap-16 justify-center">
+        <CardContent className="p-20 py-40 flex items-center justify-center min-h-[600px]">
+            <div className="social-grid">
               {socialLinks.map((social, index) => (
-                <li key={index} className="social-tile" style={{ '--social-color': social.color } as React.CSSProperties}>
-                  <a href={social.href} target="_blank" rel="noopener noreferrer">
-                    <span className="icon">{social.icon}</span>
-                    <span>{social.name}</span>
+                <motion.div 
+                    key={index} 
+                    className="tile-wrapper" 
+                    style={{ '--social-color': social.color } as React.CSSProperties}
+                    initial={{ opacity: 0, scale: 0.5, rotateY: 90 }}
+                    animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                    transition={{ delay: index * 0.1, duration: 0.8, type: 'spring' }}
+                >
+                  <a href={social.href} target="_blank" rel="noopener noreferrer" className="tile-link">
+                    <span className="icon-node">{social.icon}</span>
+                    <span className="text-node">{social.name}</span>
+                    <span className="label-node">{social.label}</span>
                   </a>
-                </li>
+                </motion.div>
               ))}
-            </ul>
+            </div>
         </CardContent>
       </Card>
 
-      <div className="flex flex-col items-center gap-4 opacity-30 mt-12">
-          <div className="h-12 w-[1px] bg-gradient-to-b from-white to-transparent" />
-          <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white">Digital Infrastructure Node</p>
-      </div>
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.3 }}
+        transition={{ delay: 1 }}
+        className="flex flex-col items-center gap-4 mt-12"
+      >
+          <div className="h-16 w-[1px] bg-gradient-to-b from-white to-transparent" />
+          <p className="text-[10px] font-black uppercase tracking-[0.6em] text-white">Hyper-Spatial Digital Node</p>
+      </motion.div>
     </div>
   );
 }
