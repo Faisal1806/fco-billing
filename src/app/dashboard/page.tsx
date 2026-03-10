@@ -6,11 +6,13 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { sidebarSections } from '@/components/Sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { TrendingUp, ShoppingCart, Users, DollarSign, Calendar, BarChart, FileText, BookOpen, PlusCircle, Award, Loader2 } from 'lucide-react';
+import { TrendingUp, ShoppingCart, Users, DollarSign, Calendar, BarChart, FileText, BookOpen, PlusCircle, Award, Loader2, CloudSync, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SummaryCard } from '@/components/ui/summary-card';
 import { useAppState } from '@/contexts/app-state-context';
+import { getDocuments } from '@/lib/actions';
+import { Badge } from '@/components/ui/badge';
 
 const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.ElementType, href: string }) => {
     const router = useRouter();
@@ -70,6 +72,7 @@ export default function DashboardPage() {
   const { selectedYear, setSelectedYear } = useAppState();
   const [isMounted, setIsMounted] = React.useState(false);
   const [availableYears, setAvailableYears] = React.useState<number[]>([]);
+  const [isSyncing, setIsSyncing] = React.useState(false);
   const [stats, setStats] = React.useState<any>({ 
     todaySales: 0,
     todayPatti: 0,
@@ -215,7 +218,18 @@ export default function DashboardPage() {
         variants={listContainerVariants}
     >
         <Card className="text-center bg-transparent border-none">
-            <CardHeader>
+            <CardHeader className="relative">
+                <div className="absolute right-4 top-4 flex items-center gap-2">
+                    {isSyncing ? (
+                        <Badge variant="outline" className="bg-primary/10 animate-pulse text-primary border-primary/20 gap-1">
+                            <CloudSync className="h-3 w-3 animate-spin" /> Auto-Syncing
+                        </Badge>
+                    ) : (
+                        <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 gap-1">
+                            <CloudSync className="h-3 w-3" /> Data Safe
+                        </Badge>
+                    )}
+                </div>
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1, transition: { delay: 0.2, type: 'spring' }}} className="mx-auto w-fit p-4 mb-2">
                     <h1 className="text-4xl md:text-6xl font-black text-white drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]">FCO BILLING SYSTEM</h1>
                 </motion.div>

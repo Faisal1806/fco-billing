@@ -26,6 +26,7 @@ import { saveDocument, deleteDocument, sendPushNotification, getDocuments } from
 import { Checkbox } from './ui/checkbox';
 import { Progress } from './ui/progress';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import CameraScanner from './camera-scanner';
 
 
 type Row = {
@@ -194,44 +195,36 @@ export function BillMakingTab() {
             .then(data => setLoaderAnimation(data));
 
         fetchBillsAndReceipts();
-
-        const scannedDataJSON = localStorage.getItem('scannedWatakData');
-        if (scannedDataJSON) {
-            try {
-                const scannedData = JSON.parse(scannedDataJSON);
-                
-                const newRows = scannedData.entries.map((e: any) => ({
-                    type: e.type,
-                    qty: e.qty,
-                    variety: e.variety,
-                    rate: e.rate,
-                    isForwarded: false,
-                    taxRate: e.taxRate || 0,
-                }));
-                
-                setSNo(scannedData.sNo);
-                setDate(scannedData.date);
-                setMs(scannedData.customerName);
-                setWatakNo(scannedData.watakNo);
-                setKhata(scannedData.khata || '');
-                setFreight(scannedData.freight || 0);
-                setRows(newRows.length > 0 ? newRows : initialRows);
-                
-                toast({
-                    title: "Data Populated from Scan",
-                    description: "Review the extracted data and save the invoice.",
-                });
-                
-                setIsEditing(false); 
-            } catch (e) {
-                console.error("Error parsing scanned data", e);
-                toast({ variant: 'destructive', title: "Error", description: "Could not parse the scanned data." });
-            } finally {
-                localStorage.removeItem('scannedWatakData');
-            }
-        }
     }
   }, [isMounted, toast]);
+
+  const handleScanComplete = (scannedData: any) => {
+    if (scannedData) {
+        try {
+            const newRows = scannedData.entries.map((e: any) => ({
+                type: e.type,
+                qty: e.qty,
+                variety: e.variety,
+                rate: e.rate,
+                isForwarded: false,
+                taxRate: 0,
+            }));
+            
+            if (scannedData.sNo) setSNo(scannedData.sNo);
+            if (scannedData.date) setDate(scannedData.date);
+            if (scannedData.customerName) setMs(scannedData.customerName);
+            if (scannedData.watakNo) setWatakNo(scannedData.watakNo);
+            if (scannedData.khata) setKhata(scannedData.khata);
+            if (scannedData.freight) setFreight(scannedData.freight);
+            setRows(newRows.length > 0 ? newRows : initialRows);
+            
+            setIsEditing(false); 
+        } catch (e) {
+            console.error("Error applying scanned data", e);
+            toast({ variant: 'destructive', title: "Apply Error", description: "Could not apply some of the scanned fields." });
+        }
+    }
+  };
 
   const selectedReceipt = useMemo(() => {
     return availableReceipts.find(r => r.no === selectedReceiptNo);
@@ -354,6 +347,38 @@ export function BillMakingTab() {
         setPartyCredit(null);
         fetchBillsAndReceipts();
     };
+
+  const loadWatakForEdit = (watak: any) => {
+    setSNo(watak.sNo);
+    setMs(watak.customerName);
+    setKhata(watak.khata || '');
+    setWatakNo(watak.watakNo || '');
+    setDate(watak.date);
+    setDate2(watak.date2 || '');
+    setFreight(watak.freight || 0);
+    setRows(watak.entries.length > 0 ? watak.entries : initialRows);
+    setSelectedReceiptNo(watak.linkedReceiptNo || '');
+    setIsEditing(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDeleteWatak = async (sNo: string) => {
+    if(userRole !== 'admin') {
+      toast({ variant: "destructive", title: "Permission Denied", description: "You do not have permission to delete invoices."});
+      return;
+    }
+    if(!window.confirm(`Are you sure you want to delete Invoice #${sNo}? This cannot be undone.`)) return;
+    
+    localStorage.removeItem(`invoice-${sNo}`);
+    try {
+        await deleteDocument('bills', sNo);
+        toast({ title: "Invoice Deleted", description: `Invoice #${sNo} has been deleted locally and from cloud.`});
+    } catch (e) {
+        toast({ title: "Invoice Deleted Locally", description: `Bill removed from device but cloud sync failed.`});
+    }
+    fetchBillsAndReceipts();
+    if (sNo === sNo) resetForm();
+  }
 
 
   const saveBill = async () => {
@@ -481,8 +506,8 @@ export function BillMakingTab() {
             </div>
         </CardHeader>
         <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end p-4 border rounded-md bg-muted/50">
-                <div className="md:col-span-2">
+            <div className="flex flex-wrap gap-4 items-end p-4 border rounded-md bg-muted/50">
+                <div className="flex-1 min-w-[300px]">
                     <Label>Load Details from Goods Receipt</Label>
                     <Popover open={receiptPopoverOpen} onOpenChange={setReceiptPopoverOpen}>
                       <PopoverTrigger asChild>
@@ -533,12 +558,20 @@ export function BillMakingTab() {
                         </Command>
                       </PopoverContent>
                     </Popover>
-                     {isReceiptUsed && (
-                        <Badge variant="destructive" className="mt-2">
+                </div>
+                <div className="flex-shrink-0">
+                    <span className="text-sm font-bold text-muted-foreground px-2">OR</span>
+                </div>
+                <div className="flex-shrink-0">
+                    <CameraScanner onScanComplete={handleScanComplete} />
+                </div>
+                 {isReceiptUsed && (
+                    <div className="w-full mt-2">
+                        <Badge variant="destructive">
                             Watak already made for Invoice #{usedReceiptsMap.get(selectedReceiptNo)}. Form is in view-only mode.
                         </Badge>
-                    )}
-                </div>
+                    </div>
+                )}
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4 items-end">
@@ -722,7 +755,7 @@ export function BillMakingTab() {
             <div className="flex w-full justify-center flex-wrap gap-3">
                 <Button onClick={saveBill} className="flex-1 min-w-[150px]" disabled={isSubmitting || formDisabled || (creditLimitExceeded && !isEditing)}>
                     {isSubmitting && loaderAnimation ? (
-                      <Lottie animationData={loaderAnimation} loop={true} style={{ width: 24, height: 24 }} className="mr-2"/>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     ) : null}
                     {isEditing ? 'Update Invoice' : 'Save Invoice'}
                 </Button>
