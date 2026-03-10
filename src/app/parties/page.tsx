@@ -33,14 +33,16 @@ import { saveDocument, deleteDocument } from '@/lib/actions';
 import { Progress } from '@/components/ui/progress';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import PageHeader from '@/components/PageHeader';
 
 
 const PARTY_STORAGE_PREFIX = 'party-';
 
 interface Party {
-  id: string; // Unique ID, can be derived from name for existing, or new for added
+  id: string; 
   name: string;
-  type: 'Grower' | 'Customer' | 'Both' | 'Outside Party' | 'Both (Outside & Customer)';
+  type: 'Grower' | 'Customer' | 'Outside Party' | 'Both' | 'Both (Outside & Customer)';
   address?: string;
   phone?: string;
   email?: string;
@@ -114,6 +116,7 @@ export default function PartiesPage() {
   const { toast } = useToast();
   const [parties, setParties] = useState<Party[]>([]);
   const [partyStats, setPartyStats] = useState<{[key: string]: any}>({});
+  const [isMounted, setIsMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
   // Form state
@@ -125,7 +128,11 @@ export default function PartiesPage() {
 
   // Filter and search state
   const [searchTerm, setSearchTerm] = useState('');
-  const [typeFilter, setTypeFilter] = useState('all');
+  const [activeTab, setActiveTab] = useState('all');
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const fetchPartiesAndTransactions = () => {
     setIsLoading(true);
@@ -227,21 +234,20 @@ export default function PartiesPage() {
                     stats.balance += tx.amount || 0;
                 }
                  if (tx.type === 'Discount') {
-                    stats.lastRedemptionDate = tx.date; // Tracks the most recent discount date
+                    stats.lastRedemptionDate = tx.date; 
                 }
             } else if (txId.startsWith('bikri-')) {
                 if (tx.bikriType === 'growerForwarding' && tx.growerName && getCanonicalName(tx.growerName) === canonical) {
                     const payable = tx.calculation?.netSalePayableToGrower || 0;
                     stats.balance += payable;
                     saleAmount = payable;
-                } else if (party.type === 'Outside Party' && tx.bikriType === 'fcoStock'){ // Profit/loss for outside parties
+                } else if (party.type === 'Outside Party' && tx.bikriType === 'fcoStock'){ 
                     stats.balance += tx.calculation?.netProfitOrLoss || 0;
                 }
             }
             stats.netSales += saleAmount;
         });
 
-        // Tier-based Loyalty Points Calculation
         if (stats.netSales > 150000) {
             stats.tier = 'Gold';
             stats.loyaltyPoints = Math.floor(stats.netSales * 0.02);
@@ -253,7 +259,6 @@ export default function PartiesPage() {
             stats.loyaltyPoints = Math.floor(stats.netSales * 0.01);
         }
 
-        // Credit Used is the current balance if it's positive (money owed to F.Co)
         if (stats.balance > 0) {
             stats.creditUsed = stats.balance;
         }
@@ -270,26 +275,26 @@ export default function PartiesPage() {
   };
   
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (isMounted) {
         setUserRole(localStorage.getItem('userRole'));
         fetchPartiesAndTransactions();
     }
-  }, []);
+  }, [isMounted]);
 
   const filteredParties = useMemo(() => {
     return parties
         .filter(p => {
-            if (typeFilter === 'all') return true;
-            if (typeFilter === 'grower') return p.type === 'Grower' || p.type === 'Both';
-            if (typeFilter === 'customer') return p.type === 'Customer' || p.type === 'Both' || p.type === 'Both (Outside & Customer)';
-            if (typeFilter === 'outsideparty') return p.type === 'Outside Party' || p.type === 'Both (Outside & Customer)';
-            return p.type.toLowerCase().replace(/\s/g, '') === typeFilter;
+            if (activeTab === 'all') return true;
+            if (activeTab === 'growers') return p.type === 'Grower' || p.type === 'Both';
+            if (activeTab === 'customers') return p.type === 'Customer' || p.type === 'Both' || p.type === 'Both (Outside & Customer)';
+            if (activeTab === 'outside') return p.type === 'Outside Party' || p.type === 'Both (Outside & Customer)';
+            return true;
         })
         .filter(p => {
             const lowerCaseSearch = searchTerm.toLowerCase();
             return p.name.toLowerCase().includes(lowerCaseSearch) || (p.phone && p.phone.includes(lowerCaseSearch));
         });
-  }, [parties, searchTerm, typeFilter]);
+  }, [parties, searchTerm, activeTab]);
 
   const resetForm = () => setFormState(emptyFormState);
 
@@ -405,7 +410,6 @@ export default function PartiesPage() {
                 animate={{ rotateY: isFlipped ? 180 : 0 }}
                 transition={{ duration: 0.6, ease: 'easeInOut' }}
             >
-                {/* Front Side */}
                 <div className="absolute w-full h-full [backface-visibility:hidden] bg-card/60 backdrop-blur-sm border border-white/10 rounded-2xl p-4 flex flex-col justify-between shadow-lg">
                     <div>
                         <div className="flex justify-between items-start">
@@ -420,7 +424,6 @@ export default function PartiesPage() {
                     </div>
                 </div>
 
-                {/* Back Side */}
                 <div className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] bg-card/80 backdrop-blur-sm border border-white/10 rounded-2xl p-4 flex flex-col justify-center items-center text-center shadow-xl">
                     <h4 className="font-bold text-lg text-primary-foreground">Financials</h4>
                     <Separator className="my-2 bg-white/10" />
@@ -440,267 +443,191 @@ export default function PartiesPage() {
     );
   };
   
-  const PartyProfileDialog = () => {
-    const [redemptionAmount, setRedemptionAmount] = useState(0);
-
-    if (!selectedParty) return null;
-    const stats = partyStats[getCanonicalName(selectedParty.name)];
-    if (!stats) return null;
-
-    const loyaltyPoints = stats.loyaltyPoints || 0;
-    const balance = stats.balance || 0;
-    const netSales = stats.netSales || 0;
-    const creditLimit = selectedParty.creditLimit || 0;
-    const creditUsed = stats.creditUsed || 0;
-    const creditUsagePercent = creditLimit > 0 ? (creditUsed / creditLimit) * 100 : 0;
-    
-    let balanceText, balanceColor;
-    if (selectedParty.type === 'Grower' || selectedParty.type === 'Both') {
-        balanceText = balance >= 0 ? 'Payable to Grower' : 'Advance to Grower';
-        balanceColor = balance >= 0 ? 'text-red-500' : 'text-green-500';
-    } else {
-        balanceText = balance >= 0 ? 'Receivable from Customer' : 'Customer Credit';
-        balanceColor = balance >= 0 ? 'text-green-500' : 'text-red-500';
-    }
-
-    const handleRedeem = async () => {
-        if (redemptionAmount <= 0) {
-            toast({ variant: 'destructive', title: 'Invalid Amount', description: 'Please enter a positive amount to redeem.' });
-            return;
-        }
-        if (redemptionAmount > loyaltyPoints) {
-            toast({ variant: 'destructive', title: 'Not Enough Points', description: `You cannot redeem more than the available ${loyaltyPoints} points.` });
-            return;
-        }
-
-        const discountTransaction = {
-            id: `advance-discount-${Date.now()}`,
-            date: new Date().toISOString().split('T')[0],
-            partyName: selectedParty.name,
-            type: 'Discount',
-            amount: redemptionAmount,
-            notes: `Redeemed ${redemptionAmount} loyalty points as discount.`
-        };
-
-        try {
-            await saveDocument('advances', discountTransaction.id, discountTransaction);
-            localStorage.setItem(discountTransaction.id, JSON.stringify(discountTransaction));
-            toast({ title: 'Points Redeemed!', description: `${redemptionAmount} points have been applied as a discount.` });
-            fetchPartiesAndTransactions(); // Re-fetch to update stats
-            setIsProfileDialogOpen(false); // Close dialog on success
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Redemption Failed', description: 'Could not save the discount transaction.' });
-        }
-    };
-
-    const hasPointsToRedeem = loyaltyPoints > 0;
-
-
-    return (
-        <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
-            <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                    <DialogTitle className="text-2xl flex items-center gap-2">{selectedParty.name} <PartyTypeBadge type={selectedParty.type} /></DialogTitle>
-                    <p className="text-muted-foreground">{selectedParty.address} &bull; {selectedParty.phone}</p>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-4 rounded-lg border bg-muted/30 p-4 md:col-span-2">
-                            <h4 className="font-semibold text-lg flex items-center gap-2">
-                                <Info className="h-5 w-5 text-blue-500" /> Account Summary
-                            </h4>
-                            <div className="space-y-2">
-                                <div className="flex justify-between"><span>Total Net Sales:</span> <span className="font-bold">₹{netSales.toLocaleString('en-IN')}</span></div>
-                                <div className="flex justify-between"><span>Current Dues:</span> <span className={`font-bold ${balanceColor}`}>₹{Math.abs(balance).toLocaleString('en-IN')}</span></div>
-                                <p className="text-xs text-muted-foreground text-right">{balanceText}</p>
-                            </div>
-                            <Separator />
-                            <h4 className="font-semibold text-lg flex items-center gap-2 pt-2">
-                                <AlertCircle className="h-5 w-5 text-orange-500" /> Credit Status
-                            </h4>
-                             <div className="space-y-2">
-                                {creditLimit > 0 ? (
-                                    <>
-                                        <Progress value={creditUsagePercent} />
-                                        <div className="flex justify-between text-xs">
-                                            <span className="text-green-500">Used: ₹{creditUsed.toLocaleString('en-IN')}</span>
-                                            <span className="text-muted-foreground">Limit: ₹{creditLimit.toLocaleString('en-IN')}</span>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <p className="text-sm text-muted-foreground">No credit limit set.</p>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="space-y-4 rounded-lg border p-4">
-                            <h4 className="font-semibold text-lg flex items-center gap-2">
-                                <Award className="h-5 w-5 text-yellow-500" /> Loyalty
-                                <Badge variant="secondary">{stats?.tier} Tier</Badge>
-                            </h4>
-                            <div className="space-y-2 text-sm">
-                                <div className="flex justify-between"><span>Points:</span> <span className="font-bold">{loyaltyPoints.toLocaleString('en-IN')}</span></div>
-                                <div className="flex justify-between"><span>Value (₹):</span> <span className="font-bold">₹{loyaltyPoints.toLocaleString('en-IN')}</span></div>
-                                <div className="flex justify-between"><span>Next Due Date:</span> <span className="font-bold">N/A</span></div>
-                                <div className="flex justify-between"><span>Risk Score:</span> <span className="font-bold">Low</span></div>
-                                <div className="flex justify-between"><span>Last Redemption:</span> <span className="font-bold">{stats?.lastRedemptionDate ? new Date(stats.lastRedemptionDate).toLocaleDateString('en-GB') : 'N/A'}</span></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {hasPointsToRedeem && (
-                        <div className="pt-4 border-t">
-                            <Label className="font-semibold">Redeem Points as Discount</Label>
-                            <div className="flex items-center gap-2 mt-2">
-                                <Input type="number" className="w-40" placeholder="Points to redeem" value={redemptionAmount || ''} onChange={e => setRedemptionAmount(Number(e.target.value))} max={loyaltyPoints} />
-                                <Button onClick={handleRedeem} disabled={redemptionAmount <= 0 || redemptionAmount > loyaltyPoints}>Redeem</Button>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">This creates a "Discount" transaction, reducing their dues.</p>
-                        </div>
-                    )}
-                </div>
-            </DialogContent>
-        </Dialog>
-    );
-  };
-
-  if (isLoading) {
-    return (
-        <div className="flex justify-center items-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <p className="ml-4">Consolidating Parties...</p>
-        </div>
-    )
-  }
-
-  const PartyTypeBadge = ({type}: {type: Party['type']}) => {
-    switch (type) {
-        case 'Grower': return <Badge variant="default" className="bg-green-600 hover:bg-green-700">Grower</Badge>;
-        case 'Customer': return <Badge variant="secondary">Customer</Badge>;
-        case 'Both': return <Badge variant="outline">Both (Grower & Customer)</Badge>;
-        case 'Outside Party': return <Badge variant="destructive" className="bg-orange-500 hover:bg-orange-600">Outside Party</Badge>;
-        case 'Both (Outside & Customer)': return <Badge variant="outline" className="bg-purple-500 text-white hover:bg-purple-600">Both (Outside & Customer)</Badge>;
-        default: return <Badge>{type}</Badge>;
-    }
-  }
-
+  if (!isMounted) return null;
 
   return (
-    <>
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center flex-wrap gap-4">
-          <div>
-            <CardTitle className="flex items-center gap-2"><Users className="h-6 w-6" /> Parties Master Directory</CardTitle>
-            <CardDescription>A unified directory for all your Growers, Customers, and Outside Parties.</CardDescription>
-          </div>
-          <div className="flex items-center gap-2">
-             <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                    type="search"
-                    placeholder="Search by name or phone..."
-                    className="pl-8 sm:w-[200px] lg:w-[250px]"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-            </div>
-             <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Filter by type" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="grower">Growers</SelectItem>
-                    <SelectItem value="customer">Customers</SelectItem>
-                    <SelectItem value="both">Both (Grower & Customer)</SelectItem>
-                    <SelectItem value="outsideparty">Outside Parties</SelectItem>
-                    <SelectItem value="both(outside&customer)">Both (Outside & Customer)</SelectItem>
-                </SelectContent>
-            </Select>
-            <Button onClick={exportToPDF} variant="outline" size="sm" className="gap-1"><FileDown className="h-4 w-4"/>PDF</Button>
-            <Button onClick={exportToExcel} variant="outline" size="sm" className="gap-1"><FileDown className="h-4 w-4"/>Excel</Button>
-            <Dialog open={isFormDialogOpen} onOpenChange={(isOpen) => {
-                setIsFormDialogOpen(isOpen);
-                if (!isOpen) resetForm();
-            }}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="gap-1">
-                  <PlusCircle className="h-3.5 w-3.5" />
-                  Add Party
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-lg">
-                <DialogHeader>
-                  <DialogTitle>{'id' in formState ? 'Edit Party' : 'Add New Party'}</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2 md:col-span-2">
-                          <Label htmlFor="name">Name (M/s)</Label>
-                          <Input id="name" name="name" value={formState.name} onChange={handleInputChange} />
-                      </div>
-                       <div className="space-y-2">
-                          <Label htmlFor="type">Type</Label>
-                          <Select name="type" value={formState.type} onValueChange={(v: Party['type']) => handleSelectChange('type', v)}>
-                              <SelectTrigger><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Grower">Grower (Sells to you)</SelectItem>
-                                <SelectItem value="Customer">Customer (Buys from you)</SelectItem>
-                                <SelectItem value="Both">Both (Grower & Customer)</SelectItem>
-                                <SelectItem value="Outside Party">Outside Party (e.g., Labour, Transport)</SelectItem>
-                                <SelectItem value="Both (Outside & Customer)">Both (Outside & Customer)</SelectItem>
-                              </SelectContent>
-                          </Select>
-                      </div>
-                      <div className="space-y-2">
-                          <Label htmlFor="phone">Phone / WhatsApp</Label>
-                          <Input id="phone" name="phone" value={formState.phone || ''} onChange={handleInputChange} />
-                      </div>
-                       <div className="space-y-2">
-                          <Label htmlFor="creditLimit">Credit Limit (₹)</Label>
-                          <Input id="creditLimit" name="creditLimit" type="number" value={formState.creditLimit || ''} onChange={handleInputChange} />
-                      </div>
-                       <div className="space-y-2 md:col-span-2">
-                          <Label htmlFor="address">Address</Label>
-                          <Input id="address" name="address" value={formState.address || ''} onChange={handleInputChange} />
-                      </div>
-                      <div className="space-y-2 md:col-span-2">
-                          <Label htmlFor="email">Email (Optional)</Label>
-                          <Input id="email" name="email" type="email" value={formState.email || ''} onChange={handleInputChange} />
-                      </div>
-                      <div className="space-y-2 md:col-span-2">
-                          <Label htmlFor="notes">Notes / Extra Info</Label>
-                          <Textarea id="notes" name="notes" value={formState.notes || ''} onChange={handleInputChange} />
-                      </div>
+    <div className="space-y-6">
+        <PageHeader
+            title="Parties Master Directory"
+            description="Manage your Growers, Customers, and Outside Parties from a single intelligence center."
+            icon={<Users className="h-8 w-8" />}
+            imageUrl="/assets/3d/users.png"
+        />
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <div className="flex justify-between items-center flex-wrap gap-4 mb-4">
+                <TabsList className="bg-card/60 backdrop-blur-sm border-white/10">
+                    <TabsTrigger value="all">All Parties</TabsTrigger>
+                    <TabsTrigger value="growers">Growers</TabsTrigger>
+                    <TabsTrigger value="customers">Customers</TabsTrigger>
+                    <TabsTrigger value="outside">Outside Parties</TabsTrigger>
+                </TabsList>
+
+                <div className="flex items-center gap-2">
+                    <div className="relative">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            type="search"
+                            placeholder="Search names or phone..."
+                            className="pl-8 sm:w-[200px] lg:w-[250px] bg-card/60 border-white/10"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
                     </div>
+                    <Button onClick={exportToPDF} variant="outline" size="sm" className="gap-1"><FileDown className="h-4 w-4"/>PDF</Button>
+                    <Button onClick={exportToExcel} variant="outline" size="sm" className="gap-1"><FileDown className="h-4 w-4"/>Excel</Button>
+                    <Dialog open={isFormDialogOpen} onOpenChange={(isOpen) => {
+                        setIsFormDialogOpen(isOpen);
+                        if (!isOpen) resetForm();
+                    }}>
+                    <DialogTrigger asChild>
+                        <Button size="sm" className="gap-1 bg-primary">
+                        <PlusCircle className="h-3.5 w-3.5" />
+                        Add Party
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-lg">
+                        <DialogHeader>
+                        <DialogTitle>{'id' in formState ? 'Edit Party' : 'Add New Party'}</DialogTitle>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2 md:col-span-2">
+                                <Label htmlFor="name">Name (M/s)</Label>
+                                <Input id="name" name="name" value={formState.name} onChange={handleInputChange} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="type">Type</Label>
+                                <Select name="type" value={formState.type} onValueChange={(v: Party['type']) => handleSelectChange('type', v)}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Grower">Grower (Supplier)</SelectItem>
+                                        <SelectItem value="Customer">Customer (Buyer)</SelectItem>
+                                        <SelectItem value="Outside Party">Outside Party (Labour/Transport)</SelectItem>
+                                        <SelectItem value="Both">Both (Grower & Customer)</SelectItem>
+                                        <SelectItem value="Both (Outside & Customer)">Both (Outside & Customer)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="phone">Phone / WhatsApp</Label>
+                                <Input id="phone" name="phone" value={p.phone || ''} onChange={handleInputChange} />
+                            </div>
+                            <div className="space-y-2 md:col-span-2">
+                                <Label htmlFor="address">Address</Label>
+                                <Input id="address" name="address" value={formState.address || ''} onChange={handleInputChange} />
+                            </div>
+                            <div className="space-y-2 md:col-span-2">
+                                <Label htmlFor="notes">Notes / Details</Label>
+                                <Textarea id="notes" name="notes" value={formState.notes || ''} onChange={handleInputChange} />
+                            </div>
+                            </div>
+                        </div>
+                        <DialogFooter>
+                        <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                        <Button onClick={handleSaveParty}>Save Party Record</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                    </Dialog>
                 </div>
-                <DialogFooter>
-                  <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                  <Button onClick={handleSaveParty}>Save Party</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-         {filteredParties.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredParties.map(party => (
-                  <PartyCard key={party.id} party={party} />
-              ))}
             </div>
-         ) : (
-          <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
-            <Users className="mx-auto h-12 w-12" />
-            <h3 className="mt-4 text-lg font-semibold">No parties found.</h3>
-            <p className="mt-1 text-sm">Get started by adding your first grower or customer.</p>
-          </div>
+
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={activeTab + searchTerm}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                >
+                    {filteredParties.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {filteredParties.map(party => (
+                            <PartyCard key={party.id} party={party} />
+                        ))}
+                        </div>
+                    ) : (
+                    <div className="text-center py-24 text-muted-foreground border-2 border-dashed rounded-xl bg-card/40 border-white/10">
+                        <Users className="mx-auto h-16 w-16 opacity-20" />
+                        <h3 className="mt-4 text-xl font-semibold">No parties found in this category.</h3>
+                        <p className="mt-1">Try adjusting your search or adding a new record.</p>
+                    </div>
+                    )}
+                </motion.div>
+            </AnimatePresence>
+        </Tabs>
+
+        {/* Profile Dialog */}
+        {selectedParty && (
+            <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
+                <DialogContent className="max-w-2xl bg-card/90 backdrop-blur-md border-white/10">
+                    <DialogHeader>
+                        <DialogTitle className="text-3xl flex items-center gap-3">
+                            {selectedParty.name} 
+                            <Badge variant="outline" className="bg-primary/10">{selectedParty.type}</Badge>
+                        </DialogTitle>
+                        <p className="text-muted-foreground">{selectedParty.address} &bull; {selectedParty.phone}</p>
+                    </DialogHeader>
+                    <div className="py-6 space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <Card className="md:col-span-2 bg-black/20 border-white/5">
+                                <CardHeader>
+                                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
+                                        <Info className="h-5 w-5" /> Account Statistics
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-muted-foreground">Total Life-time Sales</span>
+                                        <span className="text-xl font-bold font-mono">₹{partyStats[getCanonicalName(selectedParty.name)]?.netSales?.toLocaleString()}</span>
+                                    </div>
+                                    <Separator className="bg-white/5" />
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-muted-foreground">Current Outstanding</span>
+                                        <span className={`text-2xl font-black font-mono ${partyStats[getCanonicalName(selectedParty.name)]?.balance >= 0 ? 'text-red-400' : 'text-green-400'}`}>
+                                            ₹{Math.abs(partyStats[getCanonicalName(selectedParty.name)]?.balance || 0).toLocaleString()}
+                                        </span>
+                                    </div>
+                                    <p className="text-[10px] text-right uppercase tracking-widest text-muted-foreground opacity-50">
+                                        Last Activity: {partyStats[getCanonicalName(selectedParty.name)]?.lastActivityDate ? new Date(partyStats[getCanonicalName(selectedParty.name)].lastActivityDate).toLocaleDateString() : 'N/A'}
+                                    </p>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="bg-black/20 border-white/5">
+                                <CardHeader>
+                                    <CardTitle className="text-lg flex items-center gap-2 text-yellow-400">
+                                        <Award className="h-5 w-5" /> Loyalty
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="text-center space-y-2">
+                                    <p className="text-3xl font-black">{partyStats[getCanonicalName(selectedParty.name)]?.loyaltyPoints?.toLocaleString()}</p>
+                                    <p className="text-xs text-muted-foreground uppercase tracking-tighter">Season Points</p>
+                                    <Badge className="bg-yellow-500/20 text-yellow-200 border-yellow-500/50">{partyStats[getCanonicalName(selectedParty.name)]?.tier} Tier</Badge>
+                                </CardContent>
+                            </Card>
+                        </div>
+                        
+                        {selectedParty.notes && (
+                            <div className="p-4 bg-black/20 rounded-lg border border-white/5">
+                                <p className="text-sm font-semibold mb-1 opacity-70">Internal Notes:</p>
+                                <p className="text-sm text-muted-foreground italic">"{selectedParty.notes}"</p>
+                            </div>
+                        )}
+                    </div>
+                    <DialogFooter className="gap-2">
+                        <Button variant="outline" onClick={() => { setFormState(selectedParty); setIsFormDialogOpen(true); setIsProfileDialogOpen(false); }}>
+                            <Edit className="h-4 w-4 mr-2" /> Edit Details
+                        </Button>
+                        {userRole === 'admin' && (
+                            <Button variant="destructive" onClick={() => { handleDeleteParty(selectedParty.id); setIsProfileDialogOpen(false); }}>
+                                <Trash2 className="h-4 w-4 mr-2" /> Delete Record
+                            </Button>
+                        )}
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         )}
-      </CardContent>
-    </Card>
-    <PartyProfileDialog />
-    </>
+    </div>
   );
 }

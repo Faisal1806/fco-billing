@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Separator } from './ui/separator';
-import { PlusCircle, Trash2, FilePenLine, FilePlus, Share, FileText, ChevronsUpDown, Check, Search, AlertCircle } from 'lucide-react';
+import { PlusCircle, Trash2, FilePenLine, FilePlus, Share, FileText, ChevronsUpDown, Check, Search, AlertCircle, Loader2 } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { ScrollArea } from './ui/scroll-area';
 import Lottie from 'lottie-react';
@@ -43,9 +43,9 @@ const initialRows: Row[] = Array.from({ length: 5 }, () => ({ ...emptyRow }));
 
 export function BillMakingTab() {
   const [sNo, setSNo] = useState('');
-  const [ms, setMs] = useState('');                 // M/S (customer)
-  const [khata, setKhata] = useState('');           // Khata Name
-  const [watakNo, setWatakNo] = useState('');   // Watak No
+  const [ms, setMs] = useState('');                 
+  const [khata, setKhata] = useState('');           
+  const [watakNo, setWatakNo] = useState('');   
   const [date, setDate] = useState('');
   const [date2, setDate2] = useState('');
   const [freight, setFreight] = useState<number>(0);
@@ -56,6 +56,7 @@ export function BillMakingTab() {
   // App State
   const { toast } = useToast();
   const router = useRouter();
+  const [isMounted, setIsMounted] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [availableReceipts, setAvailableReceipts] = useState<any[]>([]);
@@ -69,9 +70,12 @@ export function BillMakingTab() {
   const [partyCredit, setPartyCredit] = useState<{ limit: number, used: number} | null>(null);
 
 
-  // Voice Input State
   const { apiKey, isApiKeySet } = useApiKey();
   
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const fetchBillsAndReceipts = () => {
       const bills = [];
       const receipts = [];
@@ -147,12 +151,12 @@ export function BillMakingTab() {
     };
 
     useEffect(() => {
-        if(ms) {
+        if(ms && isMounted) {
             fetchPartyCreditInfo(ms);
         } else {
             setPartyCredit(null);
         }
-    }, [ms]);
+    }, [ms, isMounted]);
 
 
   const yearlyCount = useMemo(() => {
@@ -173,62 +177,61 @@ export function BillMakingTab() {
 
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (isMounted) {
         setUserRole(localStorage.getItem('userRole'));
-    }
+        setDate(new Date().toISOString().split('T')[0]);
 
-    const fetchTokens = async () => {
-        const { success, data } = await getDocuments('fcm-tokens');
-        if (success && data) {
-            setFcmTokens(data.map(t => t.token));
+        const fetchTokens = async () => {
+            const { success, data } = await getDocuments('fcm-tokens');
+            if (success && data) {
+                setFcmTokens(data.map(t => t.token));
+            }
+        };
+        fetchTokens();
+
+        fetch('/animations/forms/fco_loader.json')
+            .then(res => res.json())
+            .then(data => setLoaderAnimation(data));
+
+        fetchBillsAndReceipts();
+
+        const scannedDataJSON = localStorage.getItem('scannedWatakData');
+        if (scannedDataJSON) {
+            try {
+                const scannedData = JSON.parse(scannedDataJSON);
+                
+                const newRows = scannedData.entries.map((e: any) => ({
+                    type: e.type,
+                    qty: e.qty,
+                    variety: e.variety,
+                    rate: e.rate,
+                    isForwarded: false,
+                    taxRate: e.taxRate || 0,
+                }));
+                
+                setSNo(scannedData.sNo);
+                setDate(scannedData.date);
+                setMs(scannedData.customerName);
+                setWatakNo(scannedData.watakNo);
+                setKhata(scannedData.khata || '');
+                setFreight(scannedData.freight || 0);
+                setRows(newRows.length > 0 ? newRows : initialRows);
+                
+                toast({
+                    title: "Data Populated from Scan",
+                    description: "Review the extracted data and save the invoice.",
+                });
+                
+                setIsEditing(false); 
+            } catch (e) {
+                console.error("Error parsing scanned data", e);
+                toast({ variant: 'destructive', title: "Error", description: "Could not parse the scanned data." });
+            } finally {
+                localStorage.removeItem('scannedWatakData');
+            }
         }
-    };
-    fetchTokens();
-
-    fetch('/animations/forms/fco_loader.json')
-        .then(res => res.json())
-        .then(data => setLoaderAnimation(data));
-
-    fetchBillsAndReceipts();
-
-    // Check for scanned data
-    const scannedDataJSON = localStorage.getItem('scannedWatakData');
-    if (scannedDataJSON) {
-        try {
-            const scannedData = JSON.parse(scannedDataJSON);
-            
-            const newRows = scannedData.entries.map((e: any) => ({
-                type: e.type,
-                qty: e.qty,
-                variety: e.variety,
-                rate: e.rate,
-                isForwarded: false,
-                taxRate: e.taxRate || 0,
-            }));
-            
-            setSNo(scannedData.sNo);
-            setDate(scannedData.date);
-            setMs(scannedData.customerName);
-            setWatakNo(scannedData.watakNo);
-            setKhata(scannedData.khata || '');
-            setFreight(scannedData.freight || 0);
-            setRows(newRows.length > 0 ? newRows : initialRows);
-            
-            toast({
-                title: "Data Populated from Scan",
-                description: "Review the extracted data and save the invoice.",
-            });
-            
-            setIsEditing(false); // Treat as new bill
-        } catch (e) {
-            console.error("Error parsing scanned data", e);
-            toast({ variant: 'destructive', title: "Error", description: "Could not parse the scanned data." });
-        } finally {
-            localStorage.removeItem('scannedWatakData');
-        }
     }
-
-  }, [toast]);
+  }, [isMounted, toast]);
 
   const selectedReceipt = useMemo(() => {
     return availableReceipts.find(r => r.no === selectedReceiptNo);
@@ -266,7 +269,6 @@ export function BillMakingTab() {
     }
   }, [selectedReceipt, isEditing, isReceiptUsed, toast]);
 
-  // --- Calculations ---
   const totals = useMemo(() => {
     const validRows = rows.filter(r => r.qty > 0 && r.variety);
     const totalQty = validRows.reduce((s, r) => s + (Number(r.qty) || 0), 0);
@@ -316,12 +318,9 @@ export function BillMakingTab() {
 
   const creditLimitExceeded = useMemo(() => {
     if (!partyCredit || partyCredit.limit === 0) return false;
-    // For a new bill, check if current usage + new bill amount exceeds limit.
-    // For an existing bill being edited, we don't block, as it's already recorded.
     if (!isEditing) {
         return partyCredit.used + totals.netSale > partyCredit.limit;
     }
-    // If editing, only show alert if they are already over the limit.
     return partyCredit.used > partyCredit.limit;
   }, [partyCredit, totals.netSale, isEditing]);
 
@@ -329,7 +328,6 @@ export function BillMakingTab() {
     setRows(prev => {
       const copy = [...prev];
       copy[i] = { ...copy[i], ...patch };
-      // if forwarded, zero out the rate
       if (patch.isForwarded === true) {
           copy[i].rate = 0;
           copy[i].taxRate = 0;
@@ -347,7 +345,7 @@ export function BillMakingTab() {
         setMs('');
         setKhata('');
         setWatakNo('');
-        setDate('');
+        setDate(new Date().toISOString().split('T')[0]);
         setDate2('');
         setFreight(0);
         setRows(initialRows);
@@ -417,11 +415,9 @@ export function BillMakingTab() {
       linkedReceiptNo: selectedReceiptNo,
     };
     
-    // Save to local storage first for immediate access
     localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
 
     try {
-        // Also save a copy to the public 'bills' collection for QR sharing
         await saveDocument('bills', billId, billData);
 
         toast({
@@ -430,27 +426,24 @@ export function BillMakingTab() {
             isSuccess: true,
         });
 
-        // Send notifications
         if (fcmTokens.length > 0) {
             if (isEditing) {
                 await sendPushNotification({
                     title: 'Bill Updated',
                     body: `Your Bill #${sNo} has been Updated – Check Details Again`,
-                    tokens: fcmTokens, // Assuming we notify all users for simplicity
+                    tokens: fcmTokens, 
                     url: `/invoice/${sNo}`
                 });
             } else {
-                // Admin notification
                 await sendPushNotification({
                     title: 'New Bill Created',
                     body: `New Bill Created for ${ms} – Watak No. ${watakNo || sNo}`,
-                    tokens: fcmTokens, // A real app would differentiate admin/customer tokens
+                    tokens: fcmTokens, 
                 });
-                // Customer notification
                  await sendPushNotification({
                     title: 'Your F.Co Bill is Ready',
                     body: 'Tap to View/Download',
-                    tokens: fcmTokens, // A real app would target the specific customer
+                    tokens: fcmTokens, 
                     url: `/invoice/${sNo}`
                 });
             }
@@ -466,82 +459,12 @@ export function BillMakingTab() {
     }
     
     fetchBillsAndReceipts();
-    setIsEditing(true); // Ensure form stays in editing mode for the current bill
+    setIsEditing(true); 
     setIsSubmitting(false);
   };
 
-  const navigateToPrint = () => {
-    if (!isEditing || !sNo) {
-        toast({ variant: 'destructive', title: 'Cannot View', description: 'Please save the invoice first to generate a printable version.'});
-        return;
-    }
-     // Notify admin on print
-    if (fcmTokens.length > 0) {
-        sendPushNotification({
-            title: 'Bill Printed',
-            body: `Bill #${sNo} Successfully Printed`,
-            tokens: fcmTokens,
-        });
-    }
-    router.push(`/invoice/${sNo}`);
-  };
+  if (!isMounted) return null;
 
-  const handleShare = () => {
-    if (!isEditing || !sNo) {
-      toast({ variant: 'destructive', title: 'Cannot Share', description: 'Please save the invoice first.' });
-      return;
-    }
-    const message = `Dear ${ms}, Invoice No. ${watakNo || sNo}, Net Sale ₹${totals.netSale.toFixed(2)}. Thank you – F.Co`;
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-  };
-  
-    const loadWatakForEdit = (watak: any) => {
-        setSNo(watak.sNo);
-        setMs(watak.customerName);
-        setKhata(watak.khata || '');
-        setWatakNo(watak.watakNo || '');
-        setDate(watak.date);
-        setDate2(watak.date2 || '');
-        setFreight(watak.freight || 0);
-        
-        const loadedRows = Array.isArray(watak.entries) ? watak.entries.map((e: any) => ({
-            type: e.type,
-            qty: e.qty,
-            variety: e.variety,
-            rate: e.rate,
-            isForwarded: e.isForwarded || false,
-            taxRate: e.taxRate || 0,
-        })) : [];
-
-        setRows(loadedRows.length > 0 ? loadedRows : initialRows);
-        setSelectedReceiptNo(watak.linkedReceiptNo || '');
-        setIsEditing(true);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    const handleDeleteWatak = async (sNoToDelete: string) => {
-        if(userRole !== 'admin') {
-            toast({ variant: "destructive", title: "Permission Denied" });
-            return;
-        }
-        if(!window.confirm(`Are you sure you want to delete Invoice #${sNoToDelete}? This cannot be undone.`)) return;
-
-        localStorage.removeItem(`invoice-${sNoToDelete}`);
-        
-        try {
-            await deleteDocument('bills', sNoToDelete);
-            toast({ title: "Invoice Deleted", description: `Invoice #${sNoToDelete} has been deleted from local and cloud storage.`});
-        } catch (error) {
-            toast({ variant: "destructive", title: "Cloud Delete Failed", description: `Invoice #${sNoToDelete} was removed locally but failed to delete from the cloud.`});
-        }
-        
-        fetchBillsAndReceipts();
-        if(sNo === sNoToDelete) { // if the deleted invoice is the one being edited
-            resetForm();
-        }
-    };
-  
   return (
     <>
     <Card>
@@ -558,7 +481,6 @@ export function BillMakingTab() {
             </div>
         </CardHeader>
         <CardContent className="space-y-6">
-             {/* Header fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end p-4 border rounded-md bg-muted/50">
                 <div className="md:col-span-2">
                     <Label>Load Details from Goods Receipt</Label>
@@ -672,7 +594,6 @@ export function BillMakingTab() {
 
             <Separator />
             
-            {/* Table */}
             <div>
                 <Table>
                     <TableHeader>
@@ -704,7 +625,7 @@ export function BillMakingTab() {
                         </TableCell>
                         <TableCell>
                             <Input
-                            placeholder="Variety (e.g., A2/5)"
+                            placeholder="Variety"
                             value={r.variety}
                             onChange={e => updateRow(i, { variety: e.target.value })}
                             disabled={formDisabled}
@@ -761,7 +682,6 @@ export function BillMakingTab() {
 
              <Separator />
 
-            {/* Totals & Expenses */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border rounded-lg">
                 <div className="space-y-1">
                     <h3 className="font-bold mb-2">Quantity</h3>
@@ -806,11 +726,14 @@ export function BillMakingTab() {
                     ) : null}
                     {isEditing ? 'Update Invoice' : 'Save Invoice'}
                 </Button>
-                <Button onClick={navigateToPrint} variant="secondary" className="flex-1 min-w-[150px] gap-2" disabled={!isEditing}>
+                <Button onClick={() => router.push(`/invoice/${sNo}`)} variant="secondary" className="flex-1 min-w-[150px] gap-2" disabled={!isEditing}>
                    <FileText className="h-4 w-4" /> Print/View Invoice
                 </Button>
-                 <Button onClick={handleShare} variant="outline" className="flex-1 min-w-[150px] gap-2" disabled={!isEditing}>
-                   <FaWhatsapp className="h-4 w-4 text-green-500" /> Share on WhatsApp
+                 <Button onClick={() => {
+                    const msg = `Dear ${ms}, Invoice No. ${watakNo || sNo}, Net Sale ₹${totals.netSale.toFixed(2)}. Thank you – F.Co`;
+                    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+                 }} variant="outline" className="flex-1 min-w-[150px] gap-2" disabled={!isEditing}>
+                   <FaWhatsapp className="h-4 w-4 text-green-500" /> WhatsApp
                 </Button>
             </div>
         </CardFooter>
@@ -826,14 +749,13 @@ export function BillMakingTab() {
                <div className="relative w-full max-w-sm">
                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                  <Input 
-                    placeholder="Search by Invoice No, Watak No, or Name..." 
+                    placeholder="Search invoices..." 
                     className="pl-8"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                </div>
             </div>
-            <CardDescription>A list of your most recently created invoices.</CardDescription>
         </CardHeader>
         <CardContent>
             <ScrollArea className="h-96">
@@ -844,8 +766,7 @@ export function BillMakingTab() {
                                 <div>
                                     <p className="font-semibold">Invoice #{watak.sNo} {watak.watakNo && `(Watak #${watak.watakNo})`}</p>
                                     <p className="text-sm text-muted-foreground">{watak.customerName}</p>
-                                    <p className="text-xs text-muted-foreground">{new Date(watak.date).toLocaleDateString()}</p>
-                                    <p className="font-mono mt-1">Net Sale: ₹{watak.totals ? watak.totals.netSale.toFixed(2) : '0.00'}</p>
+                                    <p className="text-xs text-muted-foreground font-mono">Net Sale: ₹{watak.totals?.netSale?.toLocaleString() || '0.00'}</p>
                                 </div>
                                 <div className="flex items-center">
                                     <Button variant="ghost" size="icon" onClick={() => loadWatakForEdit(watak)}>
@@ -860,7 +781,7 @@ export function BillMakingTab() {
                             </div>
                         ))
                     ) : (
-                        <p className="text-center text-muted-foreground py-10">No saved invoices found for your search.</p>
+                        <p className="text-center text-muted-foreground py-10">No invoices found.</p>
                     )}
                 </div>
             </ScrollArea>

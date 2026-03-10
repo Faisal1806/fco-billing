@@ -68,6 +68,7 @@ const listContainerVariants = {
 export default function DashboardPage() {
   const allNavItems = sidebarSections.flatMap(section => section.items);
   const { selectedYear, setSelectedYear } = useAppState();
+  const [isMounted, setIsMounted] = React.useState(false);
   const [availableYears, setAvailableYears] = React.useState<number[]>([]);
   const [stats, setStats] = React.useState<any>({ 
     todaySales: 0,
@@ -92,7 +93,11 @@ export default function DashboardPage() {
    const [topGrowers, setTopGrowers] = React.useState<{name: string, netSales: number}[]>([]);
 
   React.useEffect(() => {
-    if (typeof window !== 'undefined') {
+    setIsMounted(true);
+  }, []);
+
+  React.useEffect(() => {
+    if (isMounted) {
         const today = new Date();
         const currentMonth = today.getMonth();
         
@@ -176,7 +181,7 @@ export default function DashboardPage() {
         setStats(newStats);
         setLoyaltyStats(newLoyaltyStats);
     }
-  }, [selectedYear]);
+  }, [selectedYear, isMounted]);
 
   const grossProfitMargin = stats.yearGrossSales > 0 ? ((stats.yearNetSales / stats.yearGrossSales) * 100).toFixed(0) : 0;
   
@@ -197,6 +202,10 @@ export default function DashboardPage() {
     { title: "Total Dabba Sent Outside", value: stats.dabbaSent.toLocaleString(), description: "This year via Challan", icon: Users },
     { title: "Total Nugs Sent Outside", value: (stats.pattiSent + stats.dabbaSent).toLocaleString(), description: "Patti + Dabba this year", icon: Users },
   ];
+
+  if (!isMounted) {
+      return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
+  }
 
   return (
     <motion.div 
