@@ -42,169 +42,151 @@ export default function SocialTilesPage() {
   return (
     <div className="space-y-10">
        <style jsx>{`
-        .social-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-          gap: 2rem;
+        .social-container {
           width: 100%;
-          max-width: 1000px;
-          perspective: 2000px;
-          place-items: center;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 2rem 0;
         }
 
-        @media (min-width: 640px) {
-          .social-grid {
-            grid-template-columns: repeat(2, 1fr);
-            gap: 3rem;
-          }
+        .social-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 2rem;
+          width: 100%;
+          max-width: 900px;
+          place-items: center;
         }
 
         @media (min-width: 1024px) {
           .social-grid {
             grid-template-columns: repeat(4, 1fr);
-            gap: 4rem;
+            gap: 3rem;
           }
         }
 
         .tile-wrapper {
           position: relative;
-          width: 140px;
-          height: 140px;
-          transform-style: preserve-3d;
+          width: 130px;
+          height: 130px;
+          perspective: 1000px;
         }
 
         @media (min-width: 768px) {
           .tile-wrapper {
-            width: 180px;
-            height: 180px;
+            width: 160px;
+            height: 160px;
           }
         }
 
         .tile-link {
-          position: absolute;
-          inset: 0;
+          position: relative;
+          width: 100%;
+          height: 100%;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
           text-decoration: none;
           background: rgba(255, 255, 255, 0.03);
-          backdrop-filter: blur(15px);
-          border-radius: 32px;
+          backdrop-filter: blur(10px);
+          border-radius: 24px;
           border: 1px solid rgba(255, 255, 255, 0.1);
-          transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+          transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
           transform-style: preserve-3d;
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
         }
 
-        /* 3D Depth Layer */
+        /* 3D Depth Base */
         .tile-link::after {
           content: '';
           position: absolute;
           inset: 0;
           background: var(--social-color);
-          border-radius: 32px;
-          transform: translateZ(-20px);
-          filter: brightness(0.4);
-          transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-          opacity: 0.4;
+          border-radius: 24px;
+          transform: translateZ(-15px);
+          opacity: 0.2;
+          transition: all 0.4s ease;
         }
 
-        /* Hover States */
+        /* Hover Interaction */
         .tile-wrapper:hover .tile-link {
-          transform: translateZ(30px) rotateX(10deg) rotateY(-10deg);
-          background: rgba(255, 255, 255, 0.08);
+          transform: rotateX(10deg) rotateY(-10deg) translateZ(20px);
+          background: rgba(255, 255, 255, 0.07);
           border-color: var(--social-color);
-          box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.8),
-                      0 0 30px var(--social-color);
+          box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), 0 0 20px var(--social-color);
         }
 
         .tile-wrapper:hover .tile-link::after {
+          opacity: 0.6;
           transform: translateZ(-10px);
-          opacity: 0.8;
-          filter: brightness(0.6);
         }
 
-        /* Active/Press State */
+        /* Active Press */
         .tile-wrapper:active .tile-link {
-          transform: translateZ(-5px) rotateX(0deg) rotateY(0deg);
-          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-        }
-
-        .tile-wrapper:active .tile-link::after {
-          transform: translateZ(-2px);
-          opacity: 1;
+          transform: scale(0.95) translateZ(0);
+          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
         }
 
         .icon-node {
-          font-size: 42px;
+          font-size: 32px;
           margin-bottom: 8px;
-          color: rgba(255, 255, 255, 0.6);
-          transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+          color: rgba(255, 255, 255, 0.7);
+          transition: all 0.4s ease;
           transform: translateZ(20px);
-          filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3));
         }
 
         @media (min-width: 768px) {
           .icon-node {
-            font-size: 52px;
-            margin-bottom: 12px;
+            font-size: 42px;
           }
         }
 
         .tile-wrapper:hover .icon-node {
-          color: var(--social-color);
-          transform: translateZ(50px) scale(1.1);
-          filter: drop-shadow(0 0 20px var(--social-color));
+          color: white;
+          transform: translateZ(40px) scale(1.1);
+          filter: drop-shadow(0 0 10px var(--social-color));
         }
 
         .text-node {
           font-weight: 900;
-          font-size: 10px;
+          font-size: 9px;
           text-transform: uppercase;
-          letter-spacing: 2px;
+          letter-spacing: 1.5px;
           color: white;
-          transform: translateZ(15px);
-          opacity: 0.7;
-          transition: all 0.5s ease;
+          transform: translateZ(10px);
+          opacity: 0.6;
+          transition: all 0.4s ease;
         }
 
         @media (min-width: 768px) {
           .text-node {
-            font-size: 11px;
-            letter-spacing: 3px;
+            font-size: 10px;
+            letter-spacing: 2px;
           }
         }
 
         .tile-wrapper:hover .text-node {
           opacity: 1;
-          letter-spacing: 4px;
-          transform: translateZ(35px);
+          transform: translateZ(25px);
         }
 
         .label-node {
           position: absolute;
-          bottom: 16px;
+          bottom: 12px;
           font-size: 7px;
           font-weight: 900;
           color: var(--social-color);
           text-transform: uppercase;
-          letter-spacing: 1px;
           opacity: 0;
-          transform: translateZ(10px) translateY(10px);
-          transition: all 0.5s ease;
-        }
-
-        @media (min-width: 768px) {
-          .label-node {
-            bottom: 24px;
-            font-size: 8px;
-          }
+          transform: translateZ(5px) translateY(5px);
+          transition: all 0.4s ease;
         }
 
         .tile-wrapper:hover .label-node {
           opacity: 1;
-          transform: translateZ(25px) translateY(0);
+          transform: translateZ(15px) translateY(0);
         }
       `}</style>
 
@@ -215,25 +197,27 @@ export default function SocialTilesPage() {
         imageUrl="/assets/3d/social.png"
       />
 
-      <Card className="glass-panel rounded-[3rem] md:rounded-[4rem] border-white/5 overflow-hidden">
-        <CardContent className="p-8 md:p-20 py-20 md:py-40 flex items-center justify-center min-h-[500px]">
-            <div className="social-grid">
-              {socialLinks.map((social, index) => (
-                <motion.div 
-                    key={index} 
-                    className="tile-wrapper" 
-                    style={{ '--social-color': social.color } as React.CSSProperties}
-                    initial={{ opacity: 0, scale: 0.5, rotateY: 90 }}
-                    animate={{ opacity: 1, scale: 1, rotateY: 0 }}
-                    transition={{ delay: index * 0.1, duration: 0.8, type: 'spring' }}
-                >
-                  <a href={social.href} target="_blank" rel="noopener noreferrer" className="tile-link">
-                    <span className="icon-node">{social.icon}</span>
-                    <span className="text-node">{social.name}</span>
-                    <span className="label-node">{social.label}</span>
-                  </a>
-                </motion.div>
-              ))}
+      <Card className="glass-panel rounded-[3rem] border-white/5 overflow-hidden">
+        <CardContent className="p-6 md:p-12 flex items-center justify-center min-h-[400px]">
+            <div className="social-container">
+                <div className="social-grid">
+                {socialLinks.map((social, index) => (
+                    <motion.div 
+                        key={index} 
+                        className="tile-wrapper" 
+                        style={{ '--social-color': social.color } as React.CSSProperties}
+                        initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        transition={{ delay: index * 0.1, duration: 0.5 }}
+                    >
+                    <a href={social.href} target="_blank" rel="noopener noreferrer" className="tile-link">
+                        <span className="icon-node">{social.icon}</span>
+                        <span className="text-node">{social.name}</span>
+                        <span className="label-node">{social.label}</span>
+                    </a>
+                    </motion.div>
+                ))}
+                </div>
             </div>
         </CardContent>
       </Card>
@@ -241,11 +225,11 @@ export default function SocialTilesPage() {
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 0.3 }}
-        transition={{ delay: 1 }}
-        className="flex flex-col items-center gap-4 mt-12 pb-12"
+        transition={{ delay: 0.8 }}
+        className="flex flex-col items-center gap-4 mt-8 pb-12"
       >
-          <div className="h-16 w-[1px] bg-gradient-to-b from-white to-transparent" />
-          <p className="text-[10px] font-black uppercase tracking-[0.6em] text-white">Hyper-Spatial Digital Node</p>
+          <div className="h-12 w-[1px] bg-gradient-to-b from-white to-transparent" />
+          <p className="text-[9px] font-black uppercase tracking-[0.5em] text-white">Secure Digital Ecosystem Node</p>
       </motion.div>
     </div>
   );
