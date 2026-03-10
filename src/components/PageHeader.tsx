@@ -1,4 +1,3 @@
-
 'use client';
 
 import { motion } from 'framer-motion';
@@ -15,61 +14,67 @@ interface PageHeaderProps {
 const PageHeader = ({ title, description, icon, imageUrl, className }: PageHeaderProps) => {
     return (
         <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
+            initial={{ opacity: 0, y: -30, filter: "blur(10px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
             className={cn(
-                "relative overflow-hidden rounded-3xl p-8 md:p-12 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.4)] bg-black/40 mb-8",
+                "relative overflow-hidden rounded-[3rem] p-10 md:p-16 border border-white/10 shadow-[0_25px_60px_rgba(0,0,0,0.5)] bg-black/40 mb-12",
                 className
             )}
         >
-            {/* Parallax Background */}
+            {/* Immersive Parallax Layer */}
             <motion.div
-                initial={{ scale: 1.1, opacity: 0 }}
-                animate={{ scale: 1, opacity: 0.3 }}
-                transition={{ duration: 1.5 }}
+                initial={{ scale: 1.2, opacity: 0 }}
+                animate={{ scale: 1, opacity: 0.4 }}
+                transition={{ duration: 2 }}
                 className="absolute inset-0 bg-cover bg-center"
                 style={{ backgroundImage: `url(${imageUrl})` }}
             />
             
-            {/* Gradients Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-t from-background/40 to-transparent" />
+            {/* Cinematic Gradient Overlays */}
+            <div className="absolute inset-0 bg-gradient-to-r from-background via-background/90 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />
 
-            <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
+            <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-10 text-center md:text-left">
                  <motion.div
-                    initial={{ scale: 0, rotate: -45 }}
+                    initial={{ scale: 0, rotate: -90 }}
                     animate={{ scale: 1, rotate: 0 }}
-                    transition={{ delay: 0.3, type: 'spring', stiffness: 200, damping: 15 }}
-                    className="bg-accent/20 p-5 rounded-2xl border border-accent/30 text-accent shadow-[0_0_30px_rgba(34,197,94,0.2)] backdrop-blur-md"
+                    transition={{ delay: 0.4, type: 'spring', stiffness: 150, damping: 15 }}
+                    className="bg-accent/20 p-6 rounded-3xl border border-accent/40 text-accent shadow-[0_0_40px_rgba(34,197,94,0.3)] backdrop-blur-xl"
                 >
-                    <div className="h-10 w-10 flex items-center justify-center">
+                    <div className="h-12 w-12 flex items-center justify-center">
                         {icon}
                     </div>
                 </motion.div>
-                <div className="space-y-2">
+                <div className="space-y-4">
                     <motion.h1 
-                        initial={{ opacity: 0, x: -20 }}
+                        initial={{ opacity: 0, x: -30 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.4 }}
-                        className="text-4xl md:text-5xl font-black text-white tracking-tighter drop-shadow-lg"
+                        transition={{ delay: 0.5 }}
+                        className="text-5xl md:text-7xl font-black text-white tracking-tighter drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]"
                     >
                         {title}
                     </motion.h1>
                     <motion.p 
-                        initial={{ opacity: 0, x: -20 }}
+                        initial={{ opacity: 0, x: -30 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.5 }}
-                        className="text-lg text-muted-foreground max-w-2xl font-medium leading-relaxed"
+                        transition={{ delay: 0.6 }}
+                        className="text-xl text-muted-foreground max-w-3xl font-semibold leading-relaxed opacity-80"
                     >
                         {description}
                     </motion.p>
                 </div>
             </div>
 
-            {/* Decorative Elements */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 blur-[100px] rounded-full" />
-            <div className="absolute bottom-0 left-0 w-32 h-32 bg-primary/5 blur-[60px] rounded-full" />
+            {/* Kinetic Light Elements */}
+            <motion.div 
+                animate={{ 
+                    scale: [1, 1.2, 1],
+                    opacity: [0.1, 0.2, 0.1]
+                }}
+                transition={{ duration: 10, repeat: Infinity }}
+                className="absolute top-[-50%] right-[-10%] w-[80%] h-[150%] bg-accent/10 blur-[120px] rounded-full" 
+            />
         </motion.div>
     );
 };

@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { sidebarSections } from '@/components/Sidebar';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, ShoppingCart, Users, DollarSign, Calendar, BarChart, FileText, BookOpen, PlusCircle, Award, Loader2, RefreshCw, Cloud, Sparkles, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -26,15 +26,15 @@ const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.Eleme
              whileHover={{ y: -8, scale: 1.02 }}
              whileTap={{ scale: 0.97 }}
         >
-            <div className="neon-glow-container cursor-pointer h-full flex items-center justify-start p-5 w-full glass-panel rounded-2xl text-card-foreground font-bold transition-all duration-500 hover:bg-white/5 group border-white/5 hover:border-accent/40">
-                <Icon className="neon-glow-icon h-5 w-5 mr-4 text-muted-foreground group-hover:text-accent transition-all duration-500" />
-                <span className="text-xs tracking-wider uppercase">{title}</span>
+            <div className="neon-glow-container cursor-pointer h-full flex items-center justify-start p-6 w-full glass-panel rounded-3xl text-card-foreground font-black transition-all duration-500 hover:bg-white/10 group border-white/5 hover:border-accent/50 shadow-xl">
+                <Icon className="neon-glow-icon h-6 w-6 mr-5 text-muted-foreground group-hover:text-accent transition-all duration-500" />
+                <span className="text-[10px] tracking-[0.2em] uppercase font-black">{title}</span>
             </div>
         </motion.div>
     );
 };
 
-const QuickActionButton = ({ title, icon: Icon, href }: { title: string, icon: React.ElementType, href: string }) => {
+const QuickActionButton = ({ title, icon: Icon, href, variant = "secondary" as const }: { title: string, icon: React.ElementType, href: string, variant?: any }) => {
     const router = useRouter();
     return (
         <motion.div 
@@ -46,11 +46,11 @@ const QuickActionButton = ({ title, icon: Icon, href }: { title: string, icon: R
             }}
         >
             <Button
-                variant="secondary"
-                className="w-full h-16 text-xs font-black tracking-widest glass-panel border-white/5 hover:bg-accent hover:text-black hover:border-accent/50 shadow-2xl transition-all duration-500 rounded-2xl"
+                variant={variant}
+                className="w-full h-20 text-xs font-black tracking-[0.2em] glass-panel border-white/5 hover:bg-accent hover:text-black hover:border-accent/60 shadow-2xl transition-all duration-500 rounded-[1.5rem] uppercase"
                 onClick={() => router.push(href)}
             >
-                <Icon className="h-5 w-5 mr-3" /> {title}
+                <Icon className="h-5 w-5 mr-4" /> {title}
             </Button>
         </motion.div>
     );
@@ -60,7 +60,7 @@ const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.08, delayChildren: 0.3 }
+    transition: { staggerChildren: 0.1, delayChildren: 0.4 }
   }
 };
 
@@ -186,79 +186,57 @@ export default function DashboardPage() {
   const grossProfitMargin = stats.yearGrossSales > 0 ? ((stats.yearNetSales / stats.yearGrossSales) * 100).toFixed(0) : 0;
   
   const summaryCards = [
-    { title: "Today's Sales", value: `₹${stats.todaySales.toLocaleString()}`, description: `${stats.todayPatti} Patti / ${stats.todayDabba} Dabba sold today`, icon: DollarSign },
-    { title: "Monthly Performance", value: `₹${stats.monthSales.toLocaleString()}`, description: `Net sales for ${new Date().toLocaleString('default', { month: 'long' })}`, icon: TrendingUp },
-    { title: "YTD Gross Revenue", value: `₹${stats.yearGrossSales.toLocaleString()}`, description: `Total revenue for ${selectedYear}`, icon: BarChart },
-    { title: "YTD Profit Margin", value: `${grossProfitMargin}%`, description: `Current profitability for ${selectedYear}`, icon: Award },
-    { title: "Inventory Inward", value: (stats.pattiReceived + stats.dabbaReceived).toLocaleString(), description: `Total units received this year`, icon: ShoppingCart },
-    { title: "Logistics Outward", value: (stats.pattiSent + stats.dabbaSent).toLocaleString(), description: `Total units sent outside via Challan`, icon: Users },
+    { title: "Today's Yield", value: `₹${stats.todaySales}`, description: `${stats.todayPatti} Patti / ${stats.todayDabba} Dabba transactions finalized today.`, icon: DollarSign },
+    { title: "Monthly Index", value: `₹${stats.monthSales}`, description: `Consolidated net revenue performance for the current calendar month.`, icon: TrendingUp },
+    { title: "YTD Gross", value: `₹${stats.yearGrossSales}`, description: `Aggregated seasonal gross revenue for the entire ${selectedYear} mandate.`, icon: BarChart },
+    { title: "Net Efficiency", value: `${grossProfitMargin}%`, description: `Calculated operational profitability margin after mandated expenses.`, icon: Award },
+    { title: "Inward Nodes", value: (stats.pattiReceived + stats.dabbaReceived).toString(), description: `Total supply units processed into the F.Co mandi network.`, icon: ShoppingCart },
+    { title: "Outward Log", value: (stats.pattiSent + stats.dabbaSent).toString(), description: `Global unit distribution tracked via delivery note protocols.`, icon: Users },
   ];
 
   if (!isMounted) {
-      return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="h-12 w-12 animate-spin text-accent" /></div>;
+      return <div className="min-h-screen flex items-center justify-center bg-[#020205]"><Loader2 className="h-16 w-16 animate-spin text-accent" /></div>;
   }
 
   return (
     <motion.div 
-        className="space-y-12 pb-32 max-w-[1600px] mx-auto"
+        className="space-y-16 pb-40 max-w-[1700px] mx-auto"
         initial="hidden"
         animate="visible"
         variants={containerVariants}
     >
-        {/* Futuristic Cinematic Header */}
-        <section className="text-center py-20 relative overflow-hidden rounded-[3rem] bg-gradient-to-b from-white/[0.03] to-transparent border border-white/5 shadow-2xl">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(34,197,94,0.2)_0%,transparent_70%)] opacity-50" />
+        {/* Cinematic Operational Hero */}
+        <section className="text-center py-24 relative overflow-hidden rounded-[4rem] bg-gradient-to-b from-white/[0.04] to-transparent border border-white/5 shadow-2xl">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(34,197,94,0.25)_0%,transparent_70%)] opacity-60" />
             
-            <motion.div initial={{ scale: 0.9, opacity: 0, filter: "blur(10px)" }} animate={{ scale: 1, opacity: 1, filter: "blur(0px)" }} transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }} className="relative z-10">
-                <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-accent/10 border border-accent/20 text-accent text-[10px] font-black uppercase tracking-[0.3em] mb-8">
-                    <Sparkles className="h-3 w-3" /> F.CO Intelligent Terminal
+            <motion.div initial={{ scale: 0.9, opacity: 0, filter: "blur(15px)" }} animate={{ scale: 1, opacity: 1, filter: "blur(0px)" }} transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }} className="relative z-10">
+                <div className="inline-flex items-center gap-3 px-6 py-2.5 rounded-full bg-accent/15 border border-accent/30 text-accent text-[11px] font-black uppercase tracking-[0.4em] mb-10 shadow-[0_0_30px_rgba(34,197,94,0.2)]">
+                    <Sparkles className="h-4 w-4" /> MANDI TERMINAL SECURE
                 </div>
-                <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter mb-6 drop-shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
-                    F.CO BILLING <span className="text-accent underline decoration-accent/20 underline-offset-8">OS</span>
+                <h1 className="text-7xl md:text-9xl font-black text-white tracking-tighter mb-8 drop-shadow-[0_25px_60px_rgba(0,0,0,0.9)]">
+                    F.CO BILLING <span className="text-accent underline decoration-accent/30 underline-offset-[12px] decoration-8">OS</span>
                 </h1>
-                <p className="text-xl text-muted-foreground font-semibold max-w-2xl mx-auto opacity-70 leading-relaxed text-balance">
-                    Advanced Mandi operations engine for Firdous Ahmad & Company. Streamlining growth through data-driven decisions.
+                <p className="text-2xl text-muted-foreground font-bold max-w-3xl mx-auto opacity-80 leading-relaxed text-balance">
+                    Intelligence-driven operations for Firdous Ahmad & Company. Streamlining seasonal yields through advanced data orchestration.
                 </p>
             </motion.div>
 
-            <div className="absolute right-10 top-10 flex items-center gap-4">
+            <div className="absolute right-12 top-12 flex items-center gap-6">
                 {isSyncing ? (
-                    <Badge variant="outline" className="bg-accent/10 animate-pulse text-accent border-accent/20 py-2 px-4 rounded-full text-[10px] font-bold uppercase tracking-widest">
-                        <RefreshCw className="h-3 w-3 animate-spin mr-2" /> Syncing Node
+                    <Badge variant="outline" className="bg-accent/15 animate-pulse text-accent border-accent/30 py-3 px-6 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em]">
+                        <RefreshCw className="h-4 w-4 animate-spin mr-3" /> SYNCING CORE
                     </Badge>
                 ) : (
-                    <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 py-2 px-4 rounded-full text-[10px] font-bold uppercase tracking-widest">
-                        <Cloud className="h-3 w-3 mr-2" /> Local Engine Secure
+                    <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/25 py-3 px-6 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em]">
+                        <Cloud className="h-4 w-4 mr-3" /> LOCAL ENGINE SAFE
                     </Badge>
                 )}
             </div>
         </section>
 
-        {/* Dynamic Context Bar */}
-        <div className="flex justify-between items-center glass-panel p-8 rounded-[2.5rem]">
-             <div className="flex items-center gap-6">
-                <div className="h-12 w-1.5 bg-accent rounded-full shadow-[0_0_15px_rgba(34,197,94,0.5)]" />
-                <div>
-                    <h2 className="text-2xl font-black text-white tracking-tight leading-none mb-1">FINANCIAL CORE</h2>
-                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Real-time performance metrics</p>
-                </div>
-             </div>
-             <Select onValueChange={(value) => setSelectedYear(Number(value))} defaultValue={String(selectedYear)}>
-                 <SelectTrigger className="w-[180px] h-14 bg-white/5 border-white/10 rounded-2xl font-black text-xs tracking-widest hover:bg-white/10 transition-all">
-                    <Calendar className="h-4 w-4 mr-3 text-accent" />
-                    <SelectValue placeholder="YEAR" />
-                 </SelectTrigger>
-                 <SelectContent className="glass-panel rounded-2xl border-white/10">
-                    {availableYears.map(year => (
-                        <SelectItem key={year} value={String(year)} className="font-black text-xs py-3">{year}</SelectItem>
-                    ))}
-                 </SelectContent>
-             </Select>
-        </div>
-
-        {/* Spatial Summary Grid */}
+        {/* Spatial Intelligence Grid */}
         <motion.div 
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10"
             variants={containerVariants}
         >
             {summaryCards.map((card, i) => (
@@ -266,18 +244,39 @@ export default function DashboardPage() {
             ))}
         </motion.div>
 
-        {/* Operations Hub */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
-            {/* Modular Nav Grid */}
-            <Card className="xl:col-span-2 glass-panel border-white/5 rounded-[3rem] overflow-hidden shadow-2xl">
-                <CardHeader className="border-b border-white/5 bg-white/[0.02] p-8">
-                    <CardTitle className="text-sm font-black tracking-[0.2em] flex items-center gap-3 text-muted-foreground uppercase">
-                        <LayoutDashboard className="h-4 w-4 text-accent" /> System Modules
+        {/* Global Context Bar */}
+        <div className="flex justify-between items-center glass-panel p-10 rounded-[3.5rem] border-accent/10">
+             <div className="flex items-center gap-8">
+                <div className="h-16 w-2 bg-accent rounded-full shadow-[0_0_25px_rgba(34,197,94,0.6)]" />
+                <div>
+                    <h2 className="text-3xl font-black text-white tracking-tight leading-none mb-2 uppercase">Core System Control</h2>
+                    <p className="text-[11px] text-muted-foreground font-black uppercase tracking-[0.3em]">Operational Year: {selectedYear}</p>
+                </div>
+             </div>
+             <Select onValueChange={(value) => setSelectedYear(Number(value))} defaultValue={String(selectedYear)}>
+                 <SelectTrigger className="w-[220px] h-16 bg-white/5 border-white/10 rounded-2xl font-black text-xs tracking-[0.2em] hover:bg-white/10 transition-all uppercase px-6">
+                    <Calendar className="h-5 w-5 mr-4 text-accent" />
+                    <SelectValue placeholder="YEAR" />
+                 </SelectTrigger>
+                 <SelectContent className="glass-panel rounded-2xl border-white/10 p-2">
+                    {availableYears.map(year => (
+                        <SelectItem key={year} value={String(year)} className="font-black text-xs py-4 rounded-xl">{year}</SelectItem>
+                    ))}
+                 </SelectContent>
+             </Select>
+        </div>
+
+        {/* Command & Control Hub */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-12">
+            <Card className="xl:col-span-2 glass-panel border-white/5 rounded-[4rem] overflow-hidden shadow-2xl">
+                <CardHeader className="border-b border-white/5 bg-white/[0.03] p-10">
+                    <CardTitle className="text-xs font-black tracking-[0.3em] flex items-center gap-4 text-muted-foreground uppercase">
+                        <LayoutDashboard className="h-5 w-5 text-accent" /> Infrastructure Modules
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="p-10">
+                <CardContent className="p-12">
                      <motion.div 
-                        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5"
+                        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6"
                         variants={containerVariants}
                     >
                          {allNavItems.map((item, index) => (
@@ -292,37 +291,35 @@ export default function DashboardPage() {
                 </CardContent>
             </Card>
 
-            {/* Quick Terminal */}
-            <div className="space-y-8">
-                <div className="glass-panel p-8 rounded-[3rem] flex flex-col gap-6 shadow-2xl">
-                    <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] pl-1">Primary Actions</h3>
-                    <div className="grid grid-cols-1 gap-4">
-                        <QuickActionButton title="NEW SALE INVOICE" icon={PlusCircle} href="/sales" />
-                        <QuickActionButton title="WATAK REGISTER" icon={FileText} href="/watak-register" />
-                        <QuickActionButton title="PURCHASE TERMINAL" icon={ShoppingCart} href="/purchases" />
-                        <QuickActionButton title="ACCOUNT LEDGERS" icon={BookOpen} href="/khata" />
+            <div className="space-y-10">
+                <div className="glass-panel p-10 rounded-[4rem] flex flex-col gap-8 shadow-2xl">
+                    <h3 className="text-[11px] font-black text-muted-foreground uppercase tracking-[0.4em] pl-2 border-l-2 border-accent">Critical Actions</h3>
+                    <div className="grid grid-cols-1 gap-5">
+                        <QuickActionButton title="INITIATE SALE WATAK" icon={PlusCircle} href="/sales" variant="default" />
+                        <QuickActionButton title="WATAK ARCHIVE" icon={FileText} href="/watak-register" />
+                        <QuickActionButton title="PURCHASE NODE" icon={ShoppingCart} href="/purchases" />
+                        <QuickActionButton title="FINANCIAL LEDGERS" icon={BookOpen} href="/khata" />
                     </div>
                 </div>
 
-                {/* Premier Highlight */}
                 <motion.div
                     whileHover={{ scale: 1.02 }}
-                    className="glass-panel p-8 rounded-[3rem] border-accent/20 bg-gradient-to-br from-accent/10 via-transparent to-transparent relative overflow-hidden"
+                    className="glass-panel p-10 rounded-[4rem] border-accent/25 bg-gradient-to-br from-accent/10 via-transparent to-transparent relative overflow-hidden group shadow-2xl"
                 >
-                    <div className="absolute top-0 right-0 p-4 opacity-10">
-                        <Users className="h-24 w-24" />
+                    <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-1000">
+                        <Users className="h-32 w-32" />
                     </div>
-                    <h3 className="text-[10px] font-black flex items-center gap-2 text-accent uppercase tracking-widest mb-6">
-                        <Award className="h-4 w-4" /> Leading Partner
+                    <h3 className="text-[11px] font-black flex items-center gap-3 text-accent uppercase tracking-[0.25em] mb-8">
+                        <Award className="h-5 w-5" /> PREMIER PARTNER
                     </h3>
-                    <div className="flex items-center gap-5">
-                        <div className="h-16 w-16 rounded-[1.5rem] bg-accent/20 flex items-center justify-center border border-accent/30 shadow-2xl shadow-accent/20">
-                            <Users className="h-8 w-8 text-accent" />
+                    <div className="flex items-center gap-6">
+                        <div className="h-20 w-20 rounded-[2rem] bg-accent/20 flex items-center justify-center border border-accent/40 shadow-2xl shadow-accent/25 group-hover:rotate-12 transition-transform duration-700">
+                            <Users className="h-10 w-10 text-accent" />
                         </div>
                         <div>
-                            <p className="text-xl font-black text-white tracking-tight">{loyaltyStats.topGrower.name}</p>
-                            <p className="text-[10px] text-accent font-black uppercase tracking-widest mt-1">
-                                {loyaltyStats.topGrower.points.toLocaleString()} Loyalty Nodes
+                            <p className="text-2xl font-black text-white tracking-tight group-hover:translate-x-2 transition-transform duration-500">{loyaltyStats.topGrower.name}</p>
+                            <p className="text-[11px] text-accent font-black uppercase tracking-[0.2em] mt-2">
+                                {loyaltyStats.topGrower.points.toLocaleString()} OPERATIONAL NODES
                             </p>
                         </div>
                     </div>
@@ -330,17 +327,17 @@ export default function DashboardPage() {
             </div>
         </div>
         
-        {/* Performance Rankings */}
-        <section className="space-y-8">
-            <div className="flex items-center gap-6">
-                <div className="h-12 w-1.5 bg-accent rounded-full shadow-[0_0_15px_rgba(34,197,94,0.5)]" />
+        {/* Performance Hierarchies */}
+        <section className="space-y-10">
+            <div className="flex items-center gap-8">
+                <div className="h-16 w-2 bg-accent rounded-full shadow-[0_0_25px_rgba(34,197,94,0.6)]" />
                 <div>
-                    <h2 className="text-2xl font-black text-white tracking-tight uppercase leading-none mb-1">GROWER HIERARCHY ({selectedYear})</h2>
-                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Top producers by net yield</p>
+                    <h2 className="text-3xl font-black text-white tracking-tight uppercase leading-none mb-2">SUPPLY HIERARCHY ({selectedYear})</h2>
+                    <p className="text-[11px] text-muted-foreground font-black uppercase tracking-[0.3em]">Top Tier Producers by Seasonal Yield Index</p>
                 </div>
             </div>
             
-            <Card className="glass-panel border-white/5 rounded-[3rem] overflow-hidden shadow-2xl">
+            <Card className="glass-panel border-white/5 rounded-[4rem] overflow-hidden shadow-2xl">
                 <CardContent className="p-0">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 divide-y md:divide-y-0 md:divide-x divide-white/5">
                         {topGrowers.map((grower, i) => (
@@ -350,19 +347,19 @@ export default function DashboardPage() {
                                     hidden: { opacity: 0, scale: 0.9 },
                                     visible: { opacity: 1, scale: 1 }
                                 }}
-                                className="p-10 hover:bg-white/[0.03] transition-all group relative"
+                                className="p-12 hover:bg-white/[0.04] transition-all group relative overflow-hidden"
                             >
-                                <div className="text-[9px] font-black text-muted-foreground mb-6 flex items-center gap-3 group-hover:text-accent transition-colors">
-                                    <span className="h-6 w-6 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-accent group-hover:text-black transition-all font-black text-xs shadow-lg">
+                                <div className="text-[10px] font-black text-muted-foreground mb-8 flex items-center gap-4 group-hover:text-accent transition-colors">
+                                    <span className="h-8 w-8 rounded-2xl bg-white/5 flex items-center justify-center group-hover:bg-accent group-hover:text-black transition-all font-black text-xs shadow-xl">
                                         {i + 1}
                                     </span>
                                     INDEX RANK
                                 </div>
-                                <p className="text-lg font-black text-white mb-2 group-hover:translate-x-2 transition-transform duration-500">{grower.name}</p>
-                                <p className="text-2xl font-black text-accent drop-shadow-[0_0_20px_rgba(34,197,94,0.4)]">
+                                <p className="text-xl font-black text-white mb-3 group-hover:translate-x-3 transition-transform duration-700">{grower.name}</p>
+                                <p className="text-3xl font-black text-accent drop-shadow-[0_0_30px_rgba(34,197,94,0.5)]">
                                     ₹{grower.netSales.toLocaleString()}
                                 </p>
-                                <div className="absolute bottom-0 left-0 h-1 w-0 bg-accent group-hover:w-full transition-all duration-700" />
+                                <div className="absolute bottom-0 left-0 h-1.5 w-0 bg-accent group-hover:w-full transition-all duration-1000" />
                             </motion.div>
                         ))}
                     </div>
