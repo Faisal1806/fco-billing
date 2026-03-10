@@ -1,5 +1,7 @@
+
 import { Logo } from "@/components/logo";
 import BusinessCardQR from "@/components/BusinessCardQR";
+import PaymentQR from "@/components/PaymentQR";
 import QRCode from 'qrcode.react';
 
 export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:string }) => {
@@ -81,16 +83,21 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
                 </main>
                 <footer className="mt-auto pt-1 text-xs">
                     <div className="grid grid-cols-2 gap-x-4">
-                        <div className="space-y-0.5 pr-4">
-                            <p><strong>Total Quantity:</strong> {totals.totalQty} (Patti: {totals.pattiQty}, Dabba: {totals.dabbaQty})</p>
-                             <div className="mt-2 flex gap-4">
-                                <BusinessCardQR size={40} />
-                                {pageUrl && (
-                                    <div className="flex flex-col items-center">
-                                        <QRCode value={pageUrl} size={40} renderAs="svg"/>
-                                        <p className="text-[8px] font-semibold">Scan to View</p>
-                                    </div>
-                                )}
+                        <div className="space-y-0.5 pr-4 flex flex-col justify-between">
+                            <div>
+                                <p><strong>Total Quantity:</strong> {totals.totalQty} (Patti: {totals.pattiQty}, Dabba: {totals.dabbaQty})</p>
+                                <div className="mt-2 flex gap-4 items-end">
+                                    <BusinessCardQR size={40} />
+                                    {pageUrl && (
+                                        <div className="flex flex-col items-center">
+                                            <QRCode value={pageUrl} size={40} renderAs="svg"/>
+                                            <p className="text-[8px] font-semibold">View Ledger</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="mt-4">
+                                <PaymentQR size={60} amount={totals.netSale} />
                             </div>
                         </div>
                         <div className="space-y-0.5 border-l-2 border-green-700 pl-4 text-[10px]">
@@ -107,7 +114,7 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
                     <div className="flex justify-end items-end mt-1">
                         <div className="text-center">
                             <p className="font-signature text-2xl text-gray-700">Faisal</p>
-                            <p className="font-bold -mt-2 text-[10px]">Sign. of Manager</p>
+                            <p className="font-bold -mt-2 text-[10px]">Sign. Of Manager</p>
                         </div>
                     </div>
                 </footer>

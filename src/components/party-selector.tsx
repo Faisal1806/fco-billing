@@ -1,9 +1,8 @@
 
-
 "use client"
 
 import * as React from "react"
-import { Check, ChevronsUpDown, Leaf, ShoppingCart, Users, Handshake, PlusCircle } from "lucide-react"
+import { Check, ChevronsUpDown, Leaf, ShoppingCart, Users, Handshake, PlusCircle, History } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -14,6 +13,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandSeparator,
 } from "@/components/ui/command"
 import {
   Popover,
@@ -36,6 +36,7 @@ import { useToast } from "@/hooks/use-toast"
 
 
 const PARTY_STORAGE_PREFIX = 'party-';
+const RECENT_PARTIES_KEY = 'fco_recent_parties';
 
 type Party = {
   id: string;
@@ -102,6 +103,14 @@ const PartyIcon = ({ type }: { type: Party['type'] }) => {
     return <Users className="h-4 w-4 mr-2 text-purple-500" />;
 };
 
+const trackRecentParty = (partyName: string) => {
+    if (typeof window === 'undefined') return;
+    const raw = localStorage.getItem(RECENT_PARTIES_KEY);
+    let recents: string[] = raw ? JSON.parse(raw) : [];
+    recents = [partyName, ...recents.filter(n => n !== partyName)].slice(0, 5);
+    localStorage.setItem(RECENT_PARTIES_KEY, JSON.stringify(recents));
+}
+
 const AddPartyDialog = ({ open, setOpen, onPartyAdded }: { open: boolean, setOpen: (open: boolean) => void, onPartyAdded: (newParty: Party) => void }) => {
     const { toast } = useToast();
     const emptyFormState: Omit<Party, 'id'> = { name: '', type: 'Grower', address: '', phone: '', email: '', notes: '' };
@@ -135,46 +144,46 @@ const AddPartyDialog = ({ open, setOpen, onPartyAdded }: { open: boolean, setOpe
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="sm:max-w-lg glass-panel rounded-[2rem]">
                 <DialogHeader>
-                    <DialogTitle>Add New Party</DialogTitle>
+                    <DialogTitle className="text-xl font-black tracking-tight">ADD NEW PARTY NODE</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2 md:col-span-2">
                             <Label htmlFor="name">Name (M/s)</Label>
-                            <Input id="name" name="name" value={formState.name} onChange={handleInputChange} />
+                            <Input id="name" name="name" value={formState.name} onChange={handleInputChange} className="rounded-xl h-12" />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="type">Type</Label>
+                            <Label htmlFor="type">Entity Type</Label>
                             <Select name="type" value={formState.type} onValueChange={(v) => handleSelectChange('type', v)}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Grower">Grower (Sells to you)</SelectItem>
-                                    <SelectItem value="Customer">Customer (Buys from you)</SelectItem>
-                                    <SelectItem value="Both">Both (Grower & Customer)</SelectItem>
-                                    <SelectItem value="Outside Party">Outside Party</SelectItem>
-                                    <SelectItem value="Both (Outside & Customer)">Both (Outside & Customer)</SelectItem>
+                                <SelectTrigger className="rounded-xl h-12"><SelectValue /></SelectTrigger>
+                                <SelectContent className="rounded-xl">
+                                    <SelectItem value="Grower">Grower (Supply)</SelectItem>
+                                    <SelectItem value="Customer">Customer (Buyer)</SelectItem>
+                                    <SelectItem value="Both">Omni (Both)</SelectItem>
+                                    <SelectItem value="Outside Party">Outside Mandi</SelectItem>
+                                    <SelectItem value="Both (Outside & Customer)">Hybrid</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="phone">Phone / WhatsApp</Label>
-                            <Input id="phone" name="phone" value={formState.phone || ''} onChange={handleInputChange} />
+                            <Input id="phone" name="phone" value={formState.phone || ''} onChange={handleInputChange} className="rounded-xl h-12" />
                         </div>
                         <div className="space-y-2 md:col-span-2">
                             <Label htmlFor="address">Address</Label>
-                            <Input id="address" name="address" value={formState.address || ''} onChange={handleInputChange} />
+                            <Input id="address" name="address" value={formState.address || ''} onChange={handleInputChange} className="rounded-xl h-12" />
                         </div>
                         <div className="space-y-2 md:col-span-2">
-                            <Label htmlFor="notes">Notes</Label>
-                            <Textarea id="notes" name="notes" value={formState.notes || ''} onChange={handleInputChange} />
+                            <Label htmlFor="notes">Internal Notes</Label>
+                            <Textarea id="notes" name="notes" value={formState.notes || ''} onChange={handleInputChange} className="rounded-xl" />
                         </div>
                     </div>
                 </div>
                 <DialogFooter>
-                    <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                    <Button onClick={handleSaveParty}>Save Party</Button>
+                    <DialogClose asChild><Button variant="outline" className="rounded-xl">Cancel</Button></DialogClose>
+                    <Button onClick={handleSaveParty} className="rounded-xl px-8 bg-accent text-black font-bold">Save Party</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -193,6 +202,7 @@ export function PartySelector({ value, onChange, filter = 'all', disabled = fals
   const [open, setOpen] = React.useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false);
   const [parties, setParties] = React.useState<Party[]>([]);
+  const [recentNames, setRecentNames] = React.useState<string[]>([]);
 
   const fetchParties = React.useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -201,7 +211,7 @@ export function PartySelector({ value, onChange, filter = 'all', disabled = fals
     defaultGrowers.forEach(g => {
         const canonical = getCanonicalName(g.name);
         if (!loadedParties[canonical]) {
-            loadedParties[canonical] = { ...g, id: `${PARTY_STORAGE_PREFIX}${canonical}`, type: 'Grower' };
+            loadedParties[canonical] = { ...g, id: `${PARTY_STORAGE_PREFIX}${canonical}`, type: 'Grower' } as Party;
         }
     });
     
@@ -210,7 +220,6 @@ export function PartySelector({ value, onChange, filter = 'all', disabled = fals
       if (key?.startsWith(PARTY_STORAGE_PREFIX)) {
         const party = JSON.parse(localStorage.getItem(key)!);
         const canonical = getCanonicalName(party.name);
-        // Saved parties should overwrite defaults
         loadedParties[canonical] = party;
       }
     }
@@ -226,6 +235,11 @@ export function PartySelector({ value, onChange, filter = 'all', disabled = fals
     });
 
     setParties(filtered);
+
+    const rawRecents = localStorage.getItem(RECENT_PARTIES_KEY);
+    if (rawRecents) {
+        setRecentNames(JSON.parse(rawRecents));
+    }
   }, [filter]);
 
   React.useEffect(() => {
@@ -235,8 +249,16 @@ export function PartySelector({ value, onChange, filter = 'all', disabled = fals
   const handlePartyAdded = (newParty: Party) => {
       fetchParties();
       onChange(newParty.name);
+      trackRecentParty(newParty.name);
   };
 
+  const handleSelect = (partyName: string) => {
+      onChange(partyName);
+      trackRecentParty(partyName);
+      setOpen(false);
+  }
+
+  const recentParties = parties.filter(p => recentNames.includes(p.name));
 
   return (
     <>
@@ -247,7 +269,7 @@ export function PartySelector({ value, onChange, filter = 'all', disabled = fals
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between"
+          className="w-full justify-between rounded-xl h-12 bg-white/5 border-white/10 hover:bg-white/10"
           disabled={disabled}
         >
           {value
@@ -256,28 +278,53 @@ export function PartySelector({ value, onChange, filter = 'all', disabled = fals
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0 glass-panel rounded-2xl border-white/10 overflow-hidden">
         <Command>
-          <CommandInput placeholder="Search party..." />
-          <CommandList>
-            <CommandEmpty>
-                <Button variant="ghost" className="w-full" onClick={() => setIsAddDialogOpen(true)}>
-                    <PlusCircle className="mr-2 h-4 w-4" /> Add New Party
+          <CommandInput placeholder="Search parties..." className="h-12" />
+          <CommandList className="max-h-[400px]">
+            <CommandEmpty className="p-4 flex flex-col items-center gap-3">
+                <p className="text-xs text-muted-foreground uppercase font-black tracking-widest">Party node not found</p>
+                <Button variant="secondary" size="sm" className="w-full rounded-xl bg-accent text-black font-bold h-10" onClick={() => setIsAddDialogOpen(true)}>
+                    <PlusCircle className="mr-2 h-4 w-4" /> INITIALIZE NEW PARTY
                 </Button>
             </CommandEmpty>
-            <CommandGroup>
+            
+            {recentParties.length > 0 && (
+                <>
+                <CommandGroup heading={<span className="text-[10px] font-black uppercase tracking-widest text-accent flex items-center gap-2 px-2"><History className="h-3 w-3"/> Recently Engaged</span>}>
+                    {recentParties.map((party) => (
+                        <CommandItem
+                        key={`recent-${party.id}`}
+                        value={party.name}
+                        onSelect={() => handleSelect(party.name)}
+                        className="rounded-lg mx-1 cursor-pointer"
+                        >
+                        <Check
+                            className={cn(
+                            "mr-2 h-4 w-4 text-accent",
+                            value === party.name ? "opacity-100" : "opacity-0"
+                            )}
+                        />
+                        <PartyIcon type={party.type} />
+                        <span className="font-bold">{party.name}</span>
+                        </CommandItem>
+                    ))}
+                </CommandGroup>
+                <CommandSeparator className="bg-white/5" />
+                </>
+            )}
+
+            <CommandGroup heading={<span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2">Master Directory</span>}>
               {parties.map((party) => (
                 <CommandItem
                   key={party.id}
                   value={party.name}
-                  onSelect={(currentValue) => {
-                    onChange(currentValue === value ? "" : party.name)
-                    setOpen(false)
-                  }}
+                  onSelect={() => handleSelect(party.name)}
+                  className="rounded-lg mx-1 cursor-pointer"
                 >
                   <Check
                     className={cn(
-                      "mr-2 h-4 w-4",
+                      "mr-2 h-4 w-4 text-accent",
                       value === party.name ? "opacity-100" : "opacity-0"
                     )}
                   />

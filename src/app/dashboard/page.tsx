@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -5,13 +6,14 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { sidebarSections } from '@/components/Sidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, ShoppingCart, Users, DollarSign, Calendar, BarChart, FileText, BookOpen, PlusCircle, Award, Loader2, RefreshCw, Cloud, Sparkles, LayoutDashboard } from 'lucide-react';
+import { TrendingUp, ShoppingCart, Users, DollarSign, Calendar, BarChart, FileText, BookOpen, PlusCircle, Award, Loader2, RefreshCw, Cloud, Sparkles, LayoutDashboard, Search, Clock, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SummaryCard } from '@/components/ui/summary-card';
 import { useAppState } from '@/contexts/app-state-context';
 import { Badge } from '@/components/ui/badge';
 import { MarketInsights } from '@/components/MarketInsights';
+import { Input } from '@/components/ui/input';
 
 const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.ElementType, href: string }) => {
     const router = useRouter();
@@ -68,9 +70,13 @@ const containerVariants = {
 export default function DashboardPage() {
   const allNavItems = sidebarSections.flatMap(section => section.items);
   const { selectedYear, setSelectedYear } = useAppState();
+  const router = useRouter();
   const [isMounted, setIsMounted] = React.useState(false);
   const [availableYears, setAvailableYears] = React.useState<number[]>([]);
   const [isSyncing, setIsSyncing] = React.useState(false);
+  const [globalSearch, setGlobalSearch] = React.useState('');
+  const [lastBackup, setLastBackup] = React.useState('Syncing...');
+  
   const [stats, setStats] = React.useState<any>({ 
     todaySales: 0,
     todayPatti: 0,
@@ -95,6 +101,7 @@ export default function DashboardPage() {
 
   React.useEffect(() => {
     setIsMounted(true);
+    setLastBackup(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
   }, []);
 
   React.useEffect(() => {
@@ -195,6 +202,12 @@ export default function DashboardPage() {
     { title: "Outward Log", value: (stats.pattiSent + stats.dabbaSent).toString(), description: `Global unit distribution tracked via delivery note protocols.`, icon: Users },
   ];
 
+  const handleGlobalSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter' && globalSearch.trim()) {
+          router.push(`/smart-search?q=${encodeURIComponent(globalSearch.trim())}`);
+      }
+  };
+
   if (!isMounted) {
       return <div className="min-h-screen flex items-center justify-center bg-[#020205]"><Loader2 className="h-16 w-16 animate-spin text-accent" /></div>;
   }
@@ -210,19 +223,34 @@ export default function DashboardPage() {
         <section className="text-center py-24 relative overflow-hidden rounded-[4rem] bg-gradient-to-b from-white/[0.04] to-transparent border border-white/5 shadow-2xl">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(34,197,94,0.25)_0%,transparent_70%)] opacity-60" />
             
-            <motion.div initial={{ scale: 0.9, opacity: 0, filter: "blur(15px)" }} animate={{ scale: 1, opacity: 1, filter: "blur(0px)" }} transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }} className="relative z-10">
+            <motion.div initial={{ scale: 0.9, opacity: 0, filter: "blur(15px)" }} animate={{ scale: 1, opacity: 1, filter: "blur(0px)" }} transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }} className="relative z-10 px-6">
                 <div className="inline-flex items-center gap-3 px-6 py-2.5 rounded-full bg-accent/15 border border-accent/30 text-accent text-[11px] font-black uppercase tracking-[0.4em] mb-10 shadow-[0_0_30px_rgba(34,197,94,0.2)]">
                     <Sparkles className="h-4 w-4" /> MANDI TERMINAL SECURE
                 </div>
                 <h1 className="text-7xl md:text-9xl font-black text-white tracking-tighter mb-8 drop-shadow-[0_25px_60px_rgba(0,0,0,0.9)]">
                     F.CO BILLING <span className="text-accent underline decoration-accent/30 underline-offset-[12px] decoration-8">OS</span>
                 </h1>
+                
+                {/* Global Omni-Search Bar */}
+                <div className="relative max-w-2xl mx-auto mb-12">
+                    <div className="absolute inset-0 bg-accent/20 blur-3xl opacity-20 -z-10" />
+                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-accent opacity-50" />
+                    <Input 
+                        placeholder="SEARCH EVERYTHING: GROWERS, WATAKS, RECEIPTS..." 
+                        value={globalSearch}
+                        onChange={(e) => setGlobalSearch(e.target.value)}
+                        onKeyDown={handleGlobalSearch}
+                        className="h-20 pl-16 pr-8 rounded-[2rem] bg-white/5 border-white/10 focus:border-accent/50 text-base font-black uppercase tracking-widest shadow-2xl"
+                    />
+                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-[9px] font-black opacity-30 tracking-[0.2em]">PRESS ENTER</div>
+                </div>
+
                 <p className="text-2xl text-muted-foreground font-bold max-w-3xl mx-auto opacity-80 leading-relaxed text-balance">
                     Intelligence-driven operations for Firdous Ahmad & Company. Streamlining seasonal yields through advanced data orchestration.
                 </p>
             </motion.div>
 
-            <div className="absolute right-12 top-12 flex items-center gap-6">
+            <div className="absolute right-12 top-12 flex flex-col items-end gap-2">
                 {isSyncing ? (
                     <Badge variant="outline" className="bg-accent/15 animate-pulse text-accent border-accent/30 py-3 px-6 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em]">
                         <RefreshCw className="h-4 w-4 animate-spin mr-3" /> SYNCING CORE
@@ -232,6 +260,9 @@ export default function DashboardPage() {
                         <Cloud className="h-4 w-4 mr-3" /> LOCAL ENGINE SAFE
                     </Badge>
                 )}
+                <div className="flex items-center gap-2 text-[9px] font-black text-muted-foreground uppercase tracking-widest mr-2">
+                    <Clock className="h-3 w-3" /> LAST CLOUD BACKUP: {lastBackup}
+                </div>
             </div>
         </section>
 
@@ -257,17 +288,22 @@ export default function DashboardPage() {
                     <p className="text-[11px] text-muted-foreground font-black uppercase tracking-[0.3em]">Operational Year: {selectedYear}</p>
                 </div>
              </div>
-             <Select onValueChange={(value) => setSelectedYear(Number(value))} defaultValue={String(selectedYear)}>
-                 <SelectTrigger className="w-[220px] h-16 bg-white/5 border-white/10 rounded-2xl font-black text-xs tracking-[0.2em] hover:bg-white/10 transition-all uppercase px-6">
-                    <Calendar className="h-5 w-5 mr-4 text-accent" />
-                    <SelectValue placeholder="YEAR" />
-                 </SelectTrigger>
-                 <SelectContent className="glass-panel rounded-2xl border-white/10 p-2">
-                    {availableYears.map(year => (
-                        <SelectItem key={year} value={String(year)} className="font-black text-xs py-4 rounded-xl">{year}</SelectItem>
-                    ))}
-                 </SelectContent>
-             </Select>
+             <div className="flex items-center gap-6">
+                <Select onValueChange={(value) => setSelectedYear(Number(value))} defaultValue={String(selectedYear)}>
+                    <SelectTrigger className="w-[220px] h-16 bg-white/5 border-white/10 rounded-2xl font-black text-xs tracking-[0.2em] hover:bg-white/10 transition-all uppercase px-6">
+                        <Calendar className="h-5 w-5 mr-4 text-accent" />
+                        <SelectValue placeholder="YEAR" />
+                    </SelectTrigger>
+                    <SelectContent className="glass-panel rounded-2xl border-white/10 p-2">
+                        {availableYears.map(year => (
+                            <SelectItem key={year} value={String(year)} className="font-black text-xs py-4 rounded-xl">{year}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                <Button variant="outline" size="icon" className="h-16 w-16 rounded-2xl border-white/10 bg-white/5 hover:bg-accent hover:text-black transition-all" title="Secure Database Status">
+                    <ShieldCheck className="h-6 w-6" />
+                </Button>
+             </div>
         </div>
 
         {/* Command & Control Hub */}

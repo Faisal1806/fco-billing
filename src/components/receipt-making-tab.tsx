@@ -39,44 +39,46 @@ const ReceiptEntryRow = ({
   onUpdate: (field: keyof ReceiptEntry, value: string | number) => void;
   onRemove: () => void;
 }) => (
-  <div className="grid grid-cols-1 md:grid-cols-6 gap-2 items-center">
+  <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center">
     <Input
-      placeholder="Khata"
+      placeholder="Khata ID"
       value={entry.khata}
       onChange={(e) => onUpdate('khata', e.target.value)}
-      className="md:col-span-2"
+      className="md:col-span-2 h-12 rounded-xl bg-white/5 border-white/10 font-bold"
     />
      <Input
-      placeholder="Kind"
+      placeholder="Variety Node"
       value={entry.kind}
       onChange={(e) => onUpdate('kind', e.target.value)}
-      className="md:col-span-1"
+      className="md:col-span-1 h-12 rounded-xl bg-white/5 border-white/10 font-bold"
     />
     <Input
       type="number"
       placeholder="Peti"
       value={entry.peti || ''}
       onChange={(e) => onUpdate('peti', Number(e.target.value))}
-      className="md:col-span-1"
+      className="md:col-span-1 h-12 rounded-xl bg-white/5 border-white/10 font-black text-base"
     />
     <Input
       type="number"
       placeholder="Daba"
       value={entry.daba || ''}
       onChange={(e) => onUpdate('daba', Number(e.target.value))}
-      className="md:col-span-1"
+      className="md:col-span-1 h-12 rounded-xl bg-white/5 border-white/10 font-black text-base"
     />
     <Input
-      placeholder="Freight"
+      placeholder="Freight Info"
       value={entry.freight}
       onChange={(e) => onUpdate('freight', e.target.value)}
-      className="md:col-span-1"
+      className="md:col-span-1 h-12 rounded-xl bg-white/5 border-white/10 font-bold"
     />
-    <Button variant="ghost" size="icon" onClick={onRemove}>
-      <Trash2 className="h-4 w-4 text-destructive" />
+    <Button variant="ghost" size="icon" onClick={onRemove} className="h-10 w-10 hover:bg-rose-500/20 text-rose-500">
+      <Trash2 className="h-4 w-4" />
     </Button>
   </div>
 );
+
+const SUCCESS_SOUND_URL = 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3';
 
 export function ReceiptMakingTab() {
   const { toast } = useToast();
@@ -102,41 +104,17 @@ export function ReceiptMakingTab() {
   const [userRole, setUserRole] = React.useState<string | null>(null);
   const [searchTerm, setSearchTerm] = React.useState('');
 
+  const playSuccessSound = () => {
+    const audio = new Audio(SUCCESS_SOUND_URL);
+    audio.play().catch(e => console.log("Sound play blocked", e));
+  };
   
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
         setUserRole(localStorage.getItem('userRole'));
     }
     fetchReceipts();
-
-    const scannedDataJSON = localStorage.getItem('scannedReceiptData');
-    if(scannedDataJSON) {
-        try {
-            const scannedData: ReceiptExtractOutput = JSON.parse(scannedDataJSON);
-            setReceiptDetails({
-                no: scannedData.no,
-                date: scannedData.date,
-                customerName: scannedData.customerName,
-                ro: scannedData.ro || '',
-                freightPaid: scannedData.freightPaid || 0,
-                wattakReadyOn: scannedData.wattakReadyOn || '',
-            });
-            const loadedEntries = scannedData.entries && Array.isArray(scannedData.entries) ? scannedData.entries : [];
-            setEntries(loadedEntries.length > 0 ? loadedEntries : initialEntries);
-            toast({
-                title: "Data Populated from Scan",
-                description: "Review the extracted data and save the receipt."
-            });
-            setIsEditing(false); // Treat as new
-        } catch(e) {
-            console.error(e);
-            toast({variant: 'destructive', title: "Error Parsing Scanned Data"});
-        } finally {
-            localStorage.removeItem('scannedReceiptData');
-        }
-    }
-
-  }, [toast]);
+  }, []);
 
   const fetchReceipts = () => {
     let maxNo = 0;
@@ -204,7 +182,7 @@ export function ReceiptMakingTab() {
     setReceiptDetails(initialReceiptDetails);
     setEntries(initialEntries);
     setIsEditing(false);
-    fetchReceipts(); // This will set the next available number
+    fetchReceipts(); 
   };
 
   const handleSaveReceipt = async () => {
@@ -224,14 +202,15 @@ export function ReceiptMakingTab() {
     };
     
     localStorage.setItem(`receipt-${receiptId}`, JSON.stringify(receiptData));
+    playSuccessSound();
     
-    fetchReceipts(); // Re-fetch to update list
+    fetchReceipts(); 
     setIsEditing(true);
 
     toast({
       title: isEditing ? 'Receipt Updated!' : 'Receipt Saved!',
-      description: 'The goods receipt has been successfully saved.',
-      isSuccess: !isEditing, // Only show success animation on new save
+      description: 'The goods receipt has been successfully indexed in the terminal.',
+      isSuccess: !isEditing, 
     });
   };
 
@@ -299,144 +278,153 @@ export function ReceiptMakingTab() {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-2">
-            <CardHeader>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+        <Card className="md:col-span-2 glass-panel rounded-[3rem] border-white/5 overflow-hidden shadow-2xl">
+            <CardHeader className="bg-white/[0.03] border-b border-white/5 p-10">
                 <div className="flex justify-between items-center">
-                    <div className="text-sm font-bold">🍎 F.Co</div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.4em] text-accent">🍎 F.Co INWARD</div>
                     <div className="text-center flex-1">
-                        <h2 className="text-2xl font-bold">F.Co - FIRDOUS AHMAD & COMPANY</h2>
-                        <p className="text-sm text-muted-foreground">Goods Receipt</p>
+                        <h2 className="text-2xl font-black tracking-tighter uppercase">GOODS RECEIPT TERMINAL</h2>
+                        <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] mt-1">Inward Logistics Manifest Engine</p>
                     </div>
-                    <div className="text-sm font-bold">🍎 F.Co</div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.4em] text-accent">F.Co INWARD 🍎</div>
                 </div>
             </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                        <Label>No.</Label>
+            <CardContent className="p-10 space-y-10">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                    <div className="space-y-3">
+                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Receipt Index No.</Label>
                         <div className="flex items-center gap-2">
-                        <Input value={receiptDetails.no} onChange={e => handleDetailChange('no', e.target.value)} disabled={isEditing} />
+                        <Input value={receiptDetails.no} onChange={e => handleDetailChange('no', e.target.value)} disabled={isEditing} className="h-14 rounded-2xl font-black text-xl bg-white/5 border-white/10" />
                          {isEditing && (
-                            <Button variant="outline" size="icon" onClick={resetForm} title="Create a new receipt">
-                                <FilePlus className="h-4 w-4" />
+                            <Button variant="outline" size="icon" onClick={resetForm} className="h-14 w-14 rounded-2xl border-white/10 hover:bg-white/5" title="Initialize New Session">
+                                <FilePlus className="h-5 w-5 text-accent" />
                             </Button>
                         )}
                         </div>
                     </div>
-                    <div className="space-y-2">
-                        <Label>Dated</Label>
-                        <Input type="date" value={receiptDetails.date} onChange={e => handleDetailChange('date', e.target.value)} />
+                    <div className="space-y-3">
+                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Entry Timestamp</Label>
+                        <Input type="date" value={receiptDetails.date} onChange={e => handleDetailChange('date', e.target.value)} className="h-14 rounded-2xl bg-white/5 border-white/10 font-bold" />
                     </div>
-                    <div className="space-y-2 col-span-2 md:col-span-1">
-                        <Label>M/s (Grower)</Label>
+                    <div className="col-span-2 md:col-span-1 space-y-3">
+                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Grower Party Node</Label>
                         <PartySelector value={receiptDetails.customerName} onChange={(val) => handleDetailChange('customerName', val)} filter="grower" />
                     </div>
-                    <div className="space-y-2 col-span-2">
-                        <Label>R/o</Label>
-                        <Input placeholder="Residence of" value={receiptDetails.ro} onChange={e => handleDetailChange('ro', e.target.value)} />
+                    <div className="space-y-3 col-span-2">
+                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Residence Details (R/o)</Label>
+                        <Input placeholder="Identify residence node..." value={receiptDetails.ro} onChange={e => handleDetailChange('ro', e.target.value)} className="h-14 rounded-2xl bg-white/5 border-white/10 font-bold" />
                     </div>
                 </div>
                 
-                <Separator />
+                <Separator className="bg-white/5" />
 
-                <div className="space-y-4">
-                <div className="space-y-2">
-                    <div className="hidden md:grid grid-cols-6 items-center gap-2 text-sm text-muted-foreground">
-                        <Label className="md:col-span-2">KHATA</Label>
-                        <Label className="md:col-span-1">KIND</Label>
+                <div className="space-y-6">
+                    <div className="hidden md:grid grid-cols-6 items-center gap-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground px-4">
+                        <Label className="md:col-span-2">KHATA LOG</Label>
+                        <Label className="md:col-span-1">VARIETY</Label>
                         <Label className="md:col-span-1">PETI</Label>
-                        <Label className="md:col-span-1">DABA</Label>
+                        <Label className="md:col-span-1">DABBA</Label>
                         <Label className="md:col-span-1">FREIGHT</Label>
                     </div>
-                    {entries.map((entry, index) => (
-                    <ReceiptEntryRow
-                        key={index}
-                        entry={entry}
-                        onUpdate={(field, value) => handleEntryUpdate(index, field, value)}
-                        onRemove={() => removeSlot(index)}
-                    />
-                    ))}
-                    <Button variant="outline" size="sm" className="gap-1 mt-2" onClick={addSlot}>
-                    <PlusCircle className="h-3.5 w-3.5" />
-                    Add Item
+                    <div className="space-y-3">
+                        {entries.map((entry, index) => (
+                        <ReceiptEntryRow
+                            key={index}
+                            entry={entry}
+                            onUpdate={(field, value) => handleEntryUpdate(index, field, value)}
+                            onRemove={() => removeSlot(index)}
+                        />
+                        ))}
+                    </div>
+                    <Button variant="outline" size="sm" className="h-12 rounded-xl gap-2 font-black text-[10px] tracking-widest border-white/10 bg-white/5 hover:bg-white/10" onClick={addSlot}>
+                        <PlusCircle className="h-4 w-4 text-accent" />
+                        INSERT INWARD ROW
                     </Button>
                 </div>
-                </div>
 
-                <Separator />
+                <Separator className="bg-white/5" />
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-4">
-                            <Label>Freight Paid Rs:</Label>
-                            <Input className="text-right" type="number" value={receiptDetails.freightPaid || ''} onChange={(e) => handleDetailChange('freightPaid', Number(e.target.value))} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <div className="space-y-6">
+                        <div className="space-y-3">
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Freight Paid Ledger</Label>
+                            <Input className="h-14 rounded-2xl bg-white/5 border-white/10 text-right font-black text-base text-accent" type="number" value={receiptDetails.freightPaid || ''} onChange={(e) => handleDetailChange('freightPaid', Number(e.target.value))} />
                         </div>
-                        <div className="flex items-center gap-4">
-                            <Label>Watak Ready On:</Label>
-                            <Input value={receiptDetails.wattakReadyOn} onChange={(e) => handleDetailChange('wattakReadyOn', e.target.value)} />
+                        <div className="space-y-3">
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Watak Release Protocol</Label>
+                            <Input placeholder="Set ready date..." value={receiptDetails.wattakReadyOn} onChange={(e) => handleDetailChange('wattakReadyOn', e.target.value)} className="h-14 rounded-2xl bg-white/5 border-white/10 font-bold" />
                         </div>
                     </div>
 
-                    <div className="space-y-2 text-sm text-right">
-                        <div className="flex justify-end gap-4 items-center">
-                            <span className="font-medium">Total Nugs:</span>
-                            <span className="font-bold text-lg">{totalNugs}</span>
+                    <div className="flex flex-col justify-center items-end bg-accent/5 rounded-[2.5rem] border border-accent/10 p-10">
+                        <p className="text-[10px] font-black text-accent uppercase tracking-widest mb-2">Total Inward Load</p>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-6xl font-black text-white tracking-tighter">{totalNugs}</span>
+                            <span className="text-xs font-black text-muted-foreground uppercase tracking-widest">Units</span>
                         </div>
                     </div>
                 </div>
             </CardContent>
-            <CardFooter className="flex justify-center gap-4">
-                <Button onClick={handleSaveReceipt} className="flex-1 max-w-xs">{isEditing ? 'Update Receipt' : 'Save Receipt'}</Button>
-                <Button onClick={handleViewReceipt} variant="secondary" className="flex-1 max-w-xs gap-2" disabled={!isEditing}>
-                    <FileText className="h-4 w-4" /> View Receipt
-                </Button>
-                <Button onClick={handleWhatsAppShare} variant="outline" className="flex-1 max-w-xs gap-2 bg-green-500/10 border-green-500/20 text-green-400 hover:bg-green-500/20" disabled={!isEditing}>
-                    <FaWhatsapp className="h-4 w-4" /> WhatsApp Share
-                </Button>
+            <CardFooter className="p-10 pt-0">
+                <div className="flex justify-center gap-6 w-full">
+                    <Button onClick={handleSaveReceipt} className="flex-1 h-16 rounded-2xl gap-3 bg-accent text-black font-black tracking-widest text-xs hover:bg-accent/90 shadow-[0_0_30px_rgba(34,197,94,0.3)]">{isEditing ? 'UPDATE RECEIPT NODE' : 'INDEX GOOD RECEIPT'}</Button>
+                    <Button onClick={handleViewReceipt} variant="secondary" className="flex-1 h-16 rounded-2xl gap-3 font-black text-xs tracking-widest glass-panel hover:bg-white/10" disabled={!isEditing}>
+                        <FileText className="h-5 w-5 text-accent" /> VIEW MANIFEST
+                    </Button>
+                    <Button onClick={handleWhatsAppShare} variant="outline" className="flex-1 h-16 rounded-2xl gap-3 bg-green-500/10 border-green-500/20 text-green-400 font-black text-xs tracking-widest hover:bg-green-500/20" disabled={!isEditing}>
+                        <FaWhatsapp className="h-5 w-5" /> WHATSAPP SHARE
+                    </Button>
+                </div>
             </CardFooter>
         </Card>
-        <Card className="md:col-span-1 h-fit">
-            <CardHeader>
-                 <div className="flex items-center justify-between gap-4">
-                    <h3 className="text-lg font-medium flex items-center gap-2">
-                        Recent Receipts
-                        <Badge variant="secondary">{yearlyCount} This Year</Badge>
-                    </h3>
+
+        <Card className="md:col-span-1 h-fit glass-panel rounded-[3rem] border-white/5 overflow-hidden">
+            <CardHeader className="p-10 border-b border-white/5">
+                 <div className="flex items-center justify-between gap-6">
+                    <div>
+                        <CardTitle className="text-xl font-black tracking-tight uppercase">Recent Loads</CardTitle>
+                        <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1">{yearlyCount} Manifests Active</p>
+                    </div>
                     <div className="relative w-full max-w-[150px]">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
                         <Input 
                             placeholder="Search..." 
-                            className="pl-8"
+                            className="pl-10 h-12 rounded-xl bg-white/5 border-white/10 font-bold text-[10px]"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
                 </div>
             </CardHeader>
-            <CardContent>
-                <ScrollArea className="h-96">
-                    <div className="space-y-2">
+            <CardContent className="p-0">
+                <ScrollArea className="h-[600px]">
+                    <div className="divide-y divide-white/5">
                         {filteredReceipts.map(receipt => (
-                            <div key={receipt.no} className="flex justify-between items-center p-2 border rounded-md">
+                            <div key={receipt.no} className="group flex justify-between items-center p-8 hover:bg-white/[0.03] transition-all">
                                 <div>
-                                    <p className="font-medium">Receipt #{receipt.no}</p>
-                                    <p className="text-sm text-muted-foreground">{receipt.customerName}</p>
-                                    <p className="text-sm text-muted-foreground">{new Date(receipt.date).toLocaleDateString()}</p>
+                                    <p className="text-xs font-black text-accent uppercase tracking-widest mb-1">Receipt #{receipt.no}</p>
+                                    <p className="text-base font-black tracking-tight text-white">{receipt.customerName}</p>
+                                    <p className="text-[9px] text-muted-foreground font-black uppercase tracking-widest mt-1">{new Date(receipt.date).toLocaleDateString()}</p>
                                 </div>
-                                <div className="flex items-center">
-                                    <Button variant="ghost" size="icon" onClick={() => loadReceiptForEdit(receipt)}>
-                                        <FilePenLine className="h-4 w-4" />
+                                <div className="flex items-center gap-2">
+                                    <Button variant="ghost" size="icon" onClick={() => loadReceiptForEdit(receipt)} className="h-10 w-10 rounded-xl hover:bg-white/10">
+                                        <FilePenLine className="h-4 w-4 text-accent" />
                                     </Button>
                                     {userRole === 'admin' && (
-                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteReceipt(receipt.no)}>
-                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteReceipt(receipt.no)} className="h-10 w-10 rounded-xl hover:bg-rose-500/20">
+                                        <Trash2 className="h-4 w-4 text-rose-500" />
                                     </Button>
                                     )}
                                 </div>
                             </div>
                         ))}
-                         {savedReceipts.length === 0 && <p className="text-sm text-muted-foreground text-center">No recent receipts found.</p>}
+                         {savedReceipts.length === 0 && (
+                            <div className="p-20 text-center space-y-4 opacity-30">
+                                <Search className="h-12 w-12 mx-auto" />
+                                <p className="text-xs font-black uppercase tracking-widest">No inward manifests indexed</p>
+                            </div>
+                         )}
                     </div>
                 </ScrollArea>
             </CardContent>
