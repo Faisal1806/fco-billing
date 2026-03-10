@@ -488,6 +488,26 @@ export function BillMakingTab() {
     setIsSubmitting(false);
   };
 
+  const handleWhatsAppShare = () => {
+    if (!ms || !sNo) return;
+    
+    const invNo = watakNo || sNo;
+    const varieties = rows.filter(r => r.qty > 0).map(r => r.variety).join(', ');
+    const pageUrl = `${window.location.origin}/bill/view/${sNo}?style=classic`;
+
+    let msg = `*F.Co Billing System*\n`;
+    msg += `Watak No: ${invNo}\n`;
+    msg += `Grower: ${ms}\n`;
+    msg += `Fruit: ${varieties}\n`;
+    msg += `Boxes: ${totals.totalQty}\n`;
+    msg += `Net Sale: *₹${totals.netSale.toLocaleString()}*\n\n`;
+    msg += `View Full Bill: ${pageUrl}\n\n`;
+    msg += `Thank you for your business\n`;
+    msg += `*Firdous Ahmad & Company*`;
+
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
   if (!isMounted) return null;
 
   return (
@@ -762,11 +782,8 @@ export function BillMakingTab() {
                 <Button onClick={() => router.push(`/invoice/${sNo}`)} variant="secondary" className="flex-1 min-w-[150px] gap-2" disabled={!isEditing}>
                    <FileText className="h-4 w-4" /> Print/View Invoice
                 </Button>
-                 <Button onClick={() => {
-                    const msg = `Dear ${ms}, Invoice No. ${watakNo || sNo}, Net Sale ₹${totals.netSale.toFixed(2)}. Thank you – F.Co`;
-                    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
-                 }} variant="outline" className="flex-1 min-w-[150px] gap-2" disabled={!isEditing}>
-                   <FaWhatsapp className="h-4 w-4 text-green-500" /> WhatsApp
+                 <Button onClick={handleWhatsAppShare} variant="outline" className="flex-1 min-w-[150px] gap-2 bg-green-500/10 border-green-500/20 text-green-400 hover:bg-green-500/20" disabled={!isEditing}>
+                   <FaWhatsapp className="h-4 w-4" /> WhatsApp Share
                 </Button>
             </div>
         </CardFooter>

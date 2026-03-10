@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -106,18 +107,17 @@ export default function DailyRateBoard() {
 
     const shareAsText = () => {
         const dateStr = new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-        let text = `*DAILY MARKET RATES - ${dateStr}*\n`;
-        text += `*FIRDOUS AHMAD & COMPANY, SOPORE*\n\n`;
-        text += `| Fruit Variety | Rate Range |\n`;
-        text += `| :--- | :--- |\n`;
+        let msg = `*F.Co Billing System*\n`;
+        msg += `*DAILY FRUIT RATES - ${dateStr}*\n\n`;
         
         entries.forEach(e => {
-            text += `- ${e.name}: *₹${e.minRate} - ₹${e.maxRate}*\n`;
+            msg += `- ${e.name}: *₹${e.minRate} - ₹${e.maxRate}*\n`;
         });
 
-        text += `\n_Your Satisfaction is our Success_`;
+        msg += `\nThank you for your business\n`;
+        msg += `*Firdous Ahmad & Company*`;
         
-        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(msg)}`;
         window.open(whatsappUrl, '_blank');
     };
 

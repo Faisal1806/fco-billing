@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { PlusCircle, Trash2, FilePenLine, FilePlus, FlaskConical, FileText, Search } from 'lucide-react';
+import { FaWhatsapp } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
 import { PartySelector } from './party-selector';
@@ -193,6 +194,22 @@ export function PesticideBillTab() {
     router.push(`/pesticide-invoice/${billDetails.no}`);
   };
 
+  const handleWhatsAppShare = () => {
+    if (!billDetails.customerName || !billDetails.no) return;
+    
+    const pageUrl = `${window.location.origin}/pesticide-invoice/${billDetails.no}`;
+
+    let msg = `*F.Co Billing System*\n`;
+    msg += `Pesticide Bill No: ${billDetails.no}\n`;
+    msg += `Customer: ${billDetails.customerName}\n`;
+    msg += `Grand Total: *₹${grandTotal.toLocaleString()}*\n\n`;
+    msg += `View Full Bill: ${pageUrl}\n\n`;
+    msg += `Thank you for your business\n`;
+    msg += `*Firdous Ahmad & Company*`;
+
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
    const loadBillForEdit = (bill: any) => {
     setBillDetails({
         no: bill.no,
@@ -309,9 +326,12 @@ export function PesticideBillTab() {
             </CardContent>
             <CardFooter className="flex-col items-center gap-2">
                  <div className="flex justify-center gap-4 w-full">
-                    <Button onClick={handleSaveBill} className="w-full max-w-xs">{isEditing ? 'Update Bill' : 'Save Bill'}</Button>
-                    <Button onClick={handleViewBill} variant="secondary" className="w-full max-w-xs gap-2" disabled={!isEditing}>
+                    <Button onClick={handleSaveBill} className="flex-1 max-w-xs">{isEditing ? 'Update Bill' : 'Save Bill'}</Button>
+                    <Button onClick={handleViewBill} variant="secondary" className="flex-1 max-w-xs gap-2" disabled={!isEditing}>
                         <FileText className="h-4 w-4" /> View Bill
+                    </Button>
+                    <Button onClick={handleWhatsAppShare} variant="outline" className="flex-1 max-w-xs gap-2 bg-green-500/10 border-green-500/20 text-green-400 hover:bg-green-500/20" disabled={!isEditing}>
+                        <FaWhatsapp className="h-4 w-4" /> WhatsApp Share
                     </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">Goods once sold can not be taken back.</p>

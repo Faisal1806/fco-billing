@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -15,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { PlusCircle, Trash2, FilePenLine, FilePlus, FileText, Search } from 'lucide-react';
+import { FaWhatsapp } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
 import { saveDocument, deleteDocument } from '@/lib/actions';
@@ -214,6 +214,25 @@ export function ChallanMakingTab() {
       router.push(`/challan/${encodeURIComponent(challanId)}`);
   };
 
+  const handleWhatsAppShare = () => {
+    if (!details.toMs || !details.challanNo) return;
+    
+    const partyIdPart = normalizeForId(details.toMs);
+    const challanId = `${partyIdPart}-${details.challanNo}`;
+    const pageUrl = `${window.location.origin}/challan/${encodeURIComponent(challanId)}?source=qr`;
+
+    let msg = `*F.Co Billing System*\n`;
+    msg += `Delivery Note No: ${details.challanNo}\n`;
+    msg += `To: ${details.toMs}\n`;
+    msg += `Vehicle: ${details.vehicleNo || 'N/A'}\n`;
+    msg += `Total Nugs: ${totalNugs}\n\n`;
+    msg += `View Full Note: ${pageUrl}\n\n`;
+    msg += `Thank you for your business\n`;
+    msg += `*Firdous Ahmad & Company*`;
+
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
   const loadChallanForEdit = (challan: any) => {
     setDetails({
       challanNo: challan.challanNo,
@@ -362,9 +381,12 @@ export function ChallanMakingTab() {
 
             </CardContent>
             <CardFooter className="flex justify-center gap-4">
-                 <Button onClick={handleSaveChallan} className="w-full max-w-xs">{isEditing ? 'Update Note' : 'Save Note'}</Button>
-                <Button onClick={handleViewChallan} variant="secondary" className="w-full max-w-xs gap-2" disabled={!isEditing}>
+                 <Button onClick={handleSaveChallan} className="flex-1 max-w-xs">{isEditing ? 'Update Note' : 'Save Note'}</Button>
+                <Button onClick={handleViewChallan} variant="secondary" className="flex-1 max-w-xs gap-2" disabled={!isEditing}>
                     <FileText className="h-4 w-4" /> View Note
+                </Button>
+                <Button onClick={handleWhatsAppShare} variant="outline" className="flex-1 max-w-xs gap-2 bg-green-500/10 border-green-500/20 text-green-400 hover:bg-green-500/20" disabled={!isEditing}>
+                    <FaWhatsapp className="h-4 w-4" /> WhatsApp Share
                 </Button>
             </CardFooter>
         </Card>

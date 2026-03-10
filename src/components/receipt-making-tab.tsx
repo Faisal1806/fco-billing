@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { PlusCircle, Trash2, FilePenLine, FilePlus, FileText, Search } from 'lucide-react';
+import { FaWhatsapp } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
 import type { ReceiptExtractOutput } from '@/ai/flows/extract-receipt-flow';
@@ -242,6 +243,23 @@ export function ReceiptMakingTab() {
       router.push(`/receipt/${receiptDetails.no}`);
   };
 
+  const handleWhatsAppShare = () => {
+    if (!receiptDetails.customerName || !receiptDetails.no) return;
+    
+    const pageUrl = `${window.location.origin}/receipt/${receiptDetails.no}?source=qr`;
+
+    let msg = `*F.Co Billing System*\n`;
+    msg += `Receipt No: ${receiptDetails.no}\n`;
+    msg += `Grower: ${receiptDetails.customerName}\n`;
+    msg += `Total Boxes: ${totalNugs}\n`;
+    msg += `Date: ${new Date(receiptDetails.date).toLocaleDateString('en-GB')}\n\n`;
+    msg += `View Full Receipt: ${pageUrl}\n\n`;
+    msg += `Thank you for your business\n`;
+    msg += `*Firdous Ahmad & Company*`;
+
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
   const loadReceiptForEdit = (receipt: any) => {
     resetForm();
     setReceiptDetails({
@@ -369,9 +387,12 @@ export function ReceiptMakingTab() {
                 </div>
             </CardContent>
             <CardFooter className="flex justify-center gap-4">
-                <Button onClick={handleSaveReceipt} className="w-full max-w-xs">{isEditing ? 'Update Receipt' : 'Save Receipt'}</Button>
-                <Button onClick={handleViewReceipt} variant="secondary" className="w-full max-w-xs gap-2" disabled={!isEditing}>
+                <Button onClick={handleSaveReceipt} className="flex-1 max-w-xs">{isEditing ? 'Update Receipt' : 'Save Receipt'}</Button>
+                <Button onClick={handleViewReceipt} variant="secondary" className="flex-1 max-w-xs gap-2" disabled={!isEditing}>
                     <FileText className="h-4 w-4" /> View Receipt
+                </Button>
+                <Button onClick={handleWhatsAppShare} variant="outline" className="flex-1 max-w-xs gap-2 bg-green-500/10 border-green-500/20 text-green-400 hover:bg-green-500/20" disabled={!isEditing}>
+                    <FaWhatsapp className="h-4 w-4" /> WhatsApp Share
                 </Button>
             </CardFooter>
         </Card>
@@ -423,5 +444,3 @@ export function ReceiptMakingTab() {
     </div>
   );
 }
-
-    
