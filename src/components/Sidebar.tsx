@@ -1,5 +1,7 @@
+
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import {
   LayoutDashboard,
@@ -15,12 +17,9 @@ import {
   FileSpreadsheet,
   Users,
   ShoppingBasket,
-  Smile,
   LogOut,
-  Menu,
   Search,
   Award,
-  History,
   Receipt,
   RotateCcw,
   Truck,
@@ -33,6 +32,7 @@ import {
   Activity,
   Droplets,
   GitBranch,
+  Command as CommandIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "./logo";
@@ -51,13 +51,21 @@ import {
   MenubarSubContent,
   MenubarSubTrigger,
 } from "@/components/ui/menubar";
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 
 export const sidebarSections = [
     {
       title: "MAIN",
       items: [
         { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-        { name: "Smart Search", href: "/smart-search", icon: Search },
+        { name: "AI Assistant", href: "/smart-search", icon: Search },
       ]
     },
     {
@@ -111,6 +119,19 @@ export const sidebarSections = [
 export function AppMenubar() {
   const router = useRouter();
   const { toast } = useToast();
+  const [open, setOpen] = React.useState(false);
+  const [searchResults, setSearchResults] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setOpen((open) => !open);
+      }
+    };
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, []);
 
   const handleLogout = () => {
       if (typeof window !== 'undefined') {
@@ -120,13 +141,77 @@ export function AppMenubar() {
       router.push('/login');
   };
 
+  const performSearch = () => {
+      if (typeof window === 'undefined') return;
+      const results: any[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (!key) continue;
+          
+          if (key.startsWith('invoice-') || key.startsWith('purchase-') || key.startsWith('receipt-') || key.startsWith('party-')) {
+              try {
+                  const data = JSON.parse(localStorage.getItem(key)!);
+                  let type = 'Node';
+                  let icon = FileText;
+                  let title = '';
+                  let href = '';
+
+                  if (key.startsWith('invoice-')) {
+                      type = 'Watak';
+                      icon = FileText;
+                      title = `Invoice #${data.sNo} - ${data.customerName}`;
+                      href = `/invoice/${data.sNo}`;
+                  } else if (key.startsWith('purchase-')) {
+                      type = 'Purchase';
+                      icon = ShoppingBasket;
+                      title = `Purchase #${data.billNo} - ${data.growerName}`;
+                      href = `/purchase-bill/${data.billNo}`;
+                  } else if (key.startsWith('receipt-')) {
+                      type = 'Receipt';
+                      icon = Receipt;
+                      title = `Receipt #${data.no} - ${data.customerName}`;
+                      href = `/receipt/${data.no}`;
+                  } else if (key.startsWith('party-')) {
+                      type = 'Party';
+                      icon = Users;
+                      title = `${data.name} (${data.type})`;
+                      href = `/parties`;
+                  }
+
+                  results.push({ title, type, icon, href, id: key });
+              } catch (e) {}
+          }
+      }
+      setSearchResults(results);
+  };
+
+  React.useEffect(() => {
+      if (open) performSearch();
+  }, [open]);
+
   return (
     <div className="flex h-16 items-center border-b border-white/10 px-4 shrink-0 bg-black/30 backdrop-blur-md z-50">
         <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-primary-foreground">
           <Logo className="h-8 w-8" />
-          <span className="">F.Co App</span>
+          <span className="hidden sm:inline-block">F.Co OS</span>
         </Link>
         
+        <div className="ml-6 flex items-center">
+            <Button 
+                variant="outline" 
+                className="h-10 px-4 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-muted-foreground gap-10 flex justify-between min-w-[200px]"
+                onClick={() => setOpen(true)}
+            >
+                <div className="flex items-center gap-2">
+                    <Search className="h-4 w-4" />
+                    <span className="text-xs font-bold uppercase tracking-widest">Search Index...</span>
+                </div>
+                <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+                    <span className="text-xs">⌘</span>K
+                </kbd>
+            </Button>
+        </div>
+
         <Menubar className="ml-auto bg-transparent border-none">
             <MenubarMenu>
                 <MenubarTrigger className="p-0">
@@ -134,21 +219,21 @@ export function AppMenubar() {
                         <MoreVertical />
                     </Button>
                 </MenubarTrigger>
-                <MenubarContent align="end">
+                <MenubarContent align="end" className="glass-panel rounded-2xl border-white/10">
                     {sidebarSections.map((section, index) => (
                         <div key={section.title}>
                             <MenubarSub>
-                                <MenubarSubTrigger>{section.title}</MenubarSubTrigger>
-                                <MenubarSubContent>
+                                <MenubarSubTrigger className="font-bold text-[10px] tracking-widest uppercase py-3">{section.title}</MenubarSubTrigger>
+                                <MenubarSubContent className="glass-panel border-white/10 rounded-xl">
                                     {section.items.map(item => (
-                                        <MenubarItem key={item.name} onSelect={() => router.push(item.href)}>
-                                            <item.icon className="h-4 w-4 mr-2" />
-                                            {item.name}
+                                        <MenubarItem key={item.name} onSelect={() => router.push(item.href)} className="gap-3 py-3 rounded-lg">
+                                            <item.icon className="h-4 w-4 text-accent" />
+                                            <span className="font-bold text-xs uppercase tracking-tighter">{item.name}</span>
                                         </MenubarItem>
                                     ))}
                                 </MenubarSubContent>
                             </MenubarSub>
-                            {index < sidebarSections.length - 1 && <MenubarSeparator />}
+                            {index < sidebarSections.length - 1 && <MenubarSeparator className="bg-white/5" />}
                         </div>
                     ))}
                 </MenubarContent>
@@ -157,9 +242,38 @@ export function AppMenubar() {
 
         <ThemeSwitcher />
 
-        <Button variant="ghost" size="sm" onClick={handleLogout} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-white/10">
+        <Button variant="ghost" size="sm" onClick={handleLogout} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-white/10 rounded-xl">
             <LogOut className="h-4 w-4 mr-2" /> Logout
         </Button>
+
+        <CommandDialog open={open} onOpenChange={setOpen}>
+            <div className="glass-panel rounded-2xl overflow-hidden border-white/10 shadow-2xl">
+                <CommandInput placeholder="Search growers, wataks, receipts..." className="h-14 font-bold" />
+                <CommandList className="max-h-[450px]">
+                    <CommandEmpty className="p-10 text-center text-xs font-black uppercase tracking-widest opacity-30">No matching nodes found</CommandEmpty>
+                    <CommandGroup heading={<span className="text-[10px] font-black uppercase tracking-widest text-accent px-2">Master Index Results</span>}>
+                        {searchResults.map((item) => (
+                            <CommandItem 
+                                key={item.id} 
+                                onSelect={() => {
+                                    router.push(item.href);
+                                    setOpen(false);
+                                }}
+                                className="flex items-center gap-4 p-4 rounded-xl mx-2 cursor-pointer hover:bg-white/5 group"
+                            >
+                                <div className="h-10 w-10 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-accent group-hover:text-black transition-all">
+                                    <item.icon className="h-5 w-5" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-sm font-black tracking-tight">{item.title}</p>
+                                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">{item.type}</p>
+                                </div>
+                            </CommandItem>
+                        ))}
+                    </CommandGroup>
+                </CommandList>
+            </div>
+        </CommandDialog>
     </div>
   );
 }

@@ -15,6 +15,32 @@ import { Badge } from '@/components/ui/badge';
 import { MarketInsights } from '@/components/MarketInsights';
 import { Input } from '@/components/ui/input';
 
+const Greeting = () => {
+    const [greeting, setGreeting] = React.useState('Good Day');
+    React.useEffect(() => {
+        const hour = new Date().getHours();
+        if (hour < 12) setGreeting('Good Morning');
+        else if (hour < 17) setGreeting('Good Afternoon');
+        else setGreeting('Good Evening');
+    }, []);
+
+    return (
+        <motion.div 
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            className="mb-12"
+        >
+            <h1 className="text-5xl md:text-6xl font-black text-white tracking-tighter uppercase drop-shadow-2xl">
+                {greeting}, <span className="text-accent">Faisal</span>
+            </h1>
+            <p className="text-xs font-black text-muted-foreground tracking-[0.5em] uppercase mt-3 opacity-60">
+                F.CO BILLING OS • SECURE SESSION
+            </p>
+        </motion.div>
+    );
+};
+
 const NavTile = ({ title, icon: Icon, href }: { title: string, icon: React.ElementType, href: string }) => {
     const router = useRouter();
 
@@ -219,6 +245,9 @@ export default function DashboardPage() {
         animate="visible"
         variants={containerVariants}
     >
+        {/* Personalized Greeting */}
+        <Greeting />
+
         {/* Cinematic Operational Hero */}
         <section className="text-center py-24 relative overflow-hidden rounded-[4rem] bg-gradient-to-b from-white/[0.04] to-transparent border border-white/5 shadow-2xl">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(34,197,94,0.25)_0%,transparent_70%)] opacity-60" />
@@ -396,9 +425,9 @@ export default function DashboardPage() {
                                     INDEX RANK
                                 </div>
                                 <p className="text-xl font-black text-white mb-3 group-hover:translate-x-3 transition-transform duration-700">{grower.name}</p>
-                                <p className="text-3xl font-black text-accent drop-shadow-[0_0_30px_rgba(34,197,94,0.5)]">
+                                <h3 className="text-3xl font-black text-accent drop-shadow-[0_0_30px_rgba(34,197,94,0.5)]">
                                     ₹{grower.netSales.toLocaleString()}
-                                </p>
+                                </h3>
                                 <div className="absolute bottom-0 left-0 h-1.5 w-0 bg-accent group-hover:w-full transition-all duration-1000" />
                             </motion.div>
                         ))}
