@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Separator } from './ui/separator';
-import { PlusCircle, Trash2, FilePenLine, FilePlus, Share, FileText, ChevronsUpDown, Check, Search, AlertCircle, Loader2 } from 'lucide-react';
+import { PlusCircle, Trash2, FilePenLine, FilePlus, Share, FileText, ChevronsUpDown, Check, Search, AlertCircle, Loader2, Zap, Sparkles } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { ScrollArea } from './ui/scroll-area';
 import Lottie from 'lottie-react';
@@ -52,6 +52,7 @@ export function BillMakingTab() {
   const [freight, setFreight] = useState<number>(0);
   const [rows, setRows] = useState<Row[]>(initialRows);
   const [selectedReceiptNo, setSelectedReceiptNo] = useState('');
+  const [quickEntry, setQuickEntry] = useState('');
 
 
   // App State
@@ -226,6 +227,53 @@ export function BillMakingTab() {
     }
   };
 
+  const parseQuickEntry = () => {
+    const input = quickEntry.trim();
+    if (!input) return;
+
+    const tokens = input.split(/\s+/);
+    if (tokens.length < 3) {
+        toast({ variant: 'destructive', title: 'Invalid Quick Entry', description: 'Format: [Name] [Variety] [Qty] [Rate]' });
+        return;
+    }
+
+    let rate = 0;
+    let qty = 0;
+    let varietyParts: string[] = [];
+    let nameParts: string[] = [];
+
+    // Working backwards: the last two tokens are usually Rate and Qty
+    const last = tokens[tokens.length - 1];
+    const secondLast = tokens[tokens.length - 2];
+
+    if (!isNaN(Number(last)) && !isNaN(Number(secondLast))) {
+        rate = Number(last);
+        qty = Number(secondLast);
+        
+        // Now identify Name vs Variety
+        // Let's assume the first word is Name, everything else is Variety
+        // But some names have two words. Let's do:
+        // first word = Name, rest until numbers = Variety
+        nameParts = [tokens[0]];
+        varietyParts = tokens.slice(1, tokens.length - 2);
+    } else {
+        toast({ variant: 'destructive', title: 'Parsing Error', description: 'Ensure Quantity and Rate are numbers at the end.' });
+        return;
+    }
+
+    const name = nameParts.join(' ');
+    const variety = varietyParts.join(' ') || 'Apple';
+
+    // Apply to state
+    setMs(name);
+    const newRows = [...initialRows];
+    newRows[0] = { ...emptyRow, variety, qty, rate };
+    setRows(newRows);
+    
+    setQuickEntry('');
+    toast({ title: 'Quick Entry Applied', description: `Grower: ${name}, Variety: ${variety}, Qty: ${qty}, Rate: ₹${rate}` });
+  };
+
   const selectedReceipt = useMemo(() => {
     return availableReceipts.find(r => r.no === selectedReceiptNo);
   }, [selectedReceiptNo, availableReceipts]);
@@ -345,6 +393,7 @@ export function BillMakingTab() {
         setIsEditing(false);
         setSelectedReceiptNo('');
         setPartyCredit(null);
+        setQuickEntry('');
         fetchBillsAndReceipts();
     };
 
@@ -526,73 +575,99 @@ export function BillMakingTab() {
             </div>
         </CardHeader>
         <CardContent className="space-y-6">
-            <div className="flex flex-wrap gap-4 items-end p-4 border rounded-md bg-muted/50">
-                <div className="flex-1 min-w-[300px]">
-                    <Label>Load Details from Goods Receipt</Label>
-                    <Popover open={receiptPopoverOpen} onOpenChange={setReceiptPopoverOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={receiptPopoverOpen}
-                          className="w-full justify-between"
-                        >
-                          {selectedReceiptNo
-                            ? `Receipt #${selectedReceiptNo} - ${availableReceipts.find(r => r.no === selectedReceiptNo)?.customerName}`
-                            : "Select a receipt to auto-fill..."}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                        <Command>
-                          <CommandInput placeholder="Search receipt no. or name..." />
-                          <CommandList>
-                            <CommandEmpty>No receipt found.</CommandEmpty>
-                            <CommandGroup>
-                              {availableReceipts.map((r) => {
-                                const isUsed = usedReceiptsMap.has(r.no);
-                                const usedForInvoice = usedReceiptsMap.get(r.no);
-                                return (
-                                <CommandItem
-                                  key={r.no}
-                                  value={`${r.no} ${r.customerName} ${new Date(r.date).toLocaleDateString()}`}
-                                  onSelect={() => {
-                                    setSelectedReceiptNo(r.no);
-                                    setReceiptPopoverOpen(false);
-                                  }}
-                                  className={cn('cursor-pointer')}
-                                  disabled={isUsed && sNo !== usedForInvoice}
+            
+            {/* Action Bar: Load, Scan, and Quick Entry */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                    <div className="flex flex-wrap gap-4 items-end p-4 border rounded-md bg-muted/50">
+                        <div className="flex-1 min-w-[200px]">
+                            <Label className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1 block">Load from Goods Receipt</Label>
+                            <Popover open={receiptPopoverOpen} onOpenChange={setReceiptPopoverOpen}>
+                            <PopoverTrigger asChild>
+                                <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={receiptPopoverOpen}
+                                className="w-full justify-between"
                                 >
-                                  <Check
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      selectedReceiptNo === r.no ? "opacity-100" : "opacity-0"
-                                    )}
-                                  />
-                                  Receipt #{r.no} - {r.customerName}
-                                  {isUsed && <span className="ml-auto text-xs text-destructive">(Used in Invoice #{usedForInvoice})</span>}
-                                </CommandItem>
-                              )})}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                </div>
-                <div className="flex-shrink-0">
-                    <span className="text-sm font-bold text-muted-foreground px-2">OR</span>
-                </div>
-                <div className="flex-shrink-0">
-                    <CameraScanner onScanComplete={handleScanComplete} />
-                </div>
-                 {isReceiptUsed && (
-                    <div className="w-full mt-2">
-                        <Badge variant="destructive">
-                            Watak already made for Invoice #{usedReceiptsMap.get(selectedReceiptNo)}. Form is in view-only mode.
-                        </Badge>
+                                {selectedReceiptNo
+                                    ? `Receipt #${selectedReceiptNo}`
+                                    : "Select a receipt..."}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                <Command>
+                                <CommandInput placeholder="Search receipt..." />
+                                <CommandList>
+                                    <CommandEmpty>No receipt found.</CommandEmpty>
+                                    <CommandGroup>
+                                    {availableReceipts.map((r) => {
+                                        const isUsed = usedReceiptsMap.has(r.no);
+                                        const usedForInvoice = usedReceiptsMap.get(r.no);
+                                        return (
+                                        <CommandItem
+                                        key={r.no}
+                                        value={`${r.no} ${r.customerName}`}
+                                        onSelect={() => {
+                                            setSelectedReceiptNo(r.no);
+                                            setReceiptPopoverOpen(false);
+                                        }}
+                                        className={cn('cursor-pointer')}
+                                        disabled={isUsed && sNo !== usedForInvoice}
+                                        >
+                                        <Check
+                                            className={cn(
+                                            "mr-2 h-4 w-4",
+                                            selectedReceiptNo === r.no ? "opacity-100" : "opacity-0"
+                                            )}
+                                        />
+                                        #{r.no} - {r.customerName}
+                                        </CommandItem>
+                                    )})}
+                                    </CommandGroup>
+                                </CommandList>
+                                </Command>
+                            </PopoverContent>
+                            </Popover>
+                        </div>
+                        <div className="flex-shrink-0">
+                            <CameraScanner onScanComplete={handleScanComplete} />
+                        </div>
                     </div>
-                )}
+                </div>
+
+                <div className="flex flex-col justify-end">
+                    <div className="flex gap-2 p-4 border rounded-md bg-accent/5 relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-2 opacity-5">
+                            <Zap className="h-12 w-12 text-accent" />
+                        </div>
+                        <div className="flex-1 relative z-10">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-accent mb-1 block flex items-center gap-2">
+                                <Zap className="h-3 w-3" /> Ultra-Fast Quick Entry
+                            </Label>
+                            <Input 
+                                placeholder="e.g. bashir apple 120 1550" 
+                                value={quickEntry} 
+                                onChange={e => setQuickEntry(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && parseQuickEntry()}
+                                className="bg-background border-accent/20 focus:border-accent h-10"
+                            />
+                        </div>
+                        <Button variant="secondary" className="h-10 mt-5 bg-accent/20 hover:bg-accent/30 text-accent font-black text-xs tracking-widest" onClick={parseQuickEntry}>
+                            APPLY
+                        </Button>
+                    </div>
+                </div>
             </div>
+
+            {isReceiptUsed && (
+                <div className="w-full">
+                    <Badge variant="destructive" className="w-full justify-center py-2">
+                        Watak already made for Invoice #{usedReceiptsMap.get(selectedReceiptNo)}. Form is in view-only mode.
+                    </Badge>
+                </div>
+            )}
 
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4 items-end">
                 <div className="md:col-span-2">
