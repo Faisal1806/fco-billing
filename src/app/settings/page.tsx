@@ -31,6 +31,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PageHeader from '@/components/PageHeader';
 import { useTheme } from 'next-themes';
 import { Switch } from '@/components/ui/switch';
+import { cn } from '@/lib/utils';
 
 const InvoicePreview = ({ title, colors, children }: {
     title: string,
@@ -172,12 +173,12 @@ export default function SettingsPage() {
         try {
             const data: { [key: string]: any[] } = {
                 'Invoices': [], 'Purchases': [], 'Receipts': [], 'Challans': [], 'Pesticide_Invoices': [],
-                'Parties': [], 'Products': [], 'Advances': [], 'Cold_Storage': [], 'Bikris': [], 'Accessories': []
+                'Parties': [], 'Profiles': [], 'Advances': [], 'Cold_Storage': [], 'Bikris': [], 'Accessories': []
             };
 
             const keyMap: { [key: string]: string } = {
                 'invoice-': 'Invoices', 'purchase-': 'Purchases', 'receipt-': 'Receipts', 'challan-': 'Challans',
-                'pesticide-invoice-': 'Pesticide_Invoices', 'party-': 'Parties', 'product-': 'Products',
+                'pesticide-invoice-': 'Pesticide_Invoices', 'party-': 'Parties', 'product-': 'Profiles',
                 'advance-': 'Advances', 'cs-': 'Cold_Storage', 'bikri-': 'Bikris', 'accessory-ledger-': 'Accessories'
             };
 
