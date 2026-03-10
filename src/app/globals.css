@@ -1,5 +1,5 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Nastaliq+Urdu:wght@400;600&family=Dancing+Script:wght@700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Nastaliq+Urdu:wght@400;600&family=Dancing+Script:wght@700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -26,31 +26,29 @@
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 240 4.9% 83.9%;
-    --radius: 0.75rem;
+    --radius: 1rem;
 
     --star-background: hsl(var(--muted));
   }
 
   .dark {
-    --background: 220 20% 5%;
-    --foreground: 0 0% 98%;
-    --card: 220 20% 10%;
-    --card-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 140 80% 60%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 220 20% 15%;
-    --input: 220 20% 15%;
-    --ring: 140 80% 60%;
-    
-    --star-background: hsl(var(--muted));
+    --background: 230 25% 4%;
+    --foreground: 0 0% 100%;
+    --card: 230 25% 7%;
+    --card-foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 230 25% 7%;
+    --secondary: 230 25% 12%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 230 25% 15%;
+    --muted-foreground: 230 10% 70%;
+    --accent: 142 76% 45%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 230 25% 15%;
+    --input: 230 25% 15%;
+    --ring: 142 76% 45%;
   }
 }
 
@@ -59,8 +57,9 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
     font-family: 'Inter', sans-serif;
+    background-attachment: fixed;
   }
   .font-urdu {
     font-family: 'Noto Nastaliq Urdu', serif;
@@ -71,6 +70,10 @@
 }
 
 @layer components {
+    .glass-panel {
+        @apply bg-card/40 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/50;
+    }
+    
     .neon-glow-container:hover .neon-glow-icon {
         color: hsl(var(--accent));
         text-shadow:
@@ -78,66 +81,36 @@
             0 0 10px hsl(var(--accent)),
             0 0 15px hsl(var(--accent));
     }
+
+    .btn-gradient {
+        @apply bg-gradient-to-br from-green-500 to-emerald-700 hover:from-green-400 hover:to-emerald-600 text-white shadow-lg transition-all duration-300 active:scale-95;
+    }
+}
+
+/* Page Transitions */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 400ms, transform 400ms;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-background;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-muted rounded-full hover:bg-muted-foreground/50 transition-colors;
 }
 
 @media print {
   .print-area-a4, .print-area-thermal {
     display: none;
   }
-}
-
-.login-splash-screen {
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    overflow: hidden;
-}
-
-.login-container {
-    position: relative;
-    z-index: 10;
-    background: rgba(31, 41, 55, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 25px 45px rgba(0,0,0,0.2);
-    backdrop-filter: blur(15px);
-    border-radius: 20px;
-    display: flex;
-    overflow: hidden;
-}
-
-.rating_star {
-    display: block;
-    overflow: visible;
-    pointer-events: none;
-}
-
-.rating_star-fill {
-    fill: var(--star-background);
-    transition: fill 0.2s ease-in-out;
-}
-
-.rating_star-stroke {
-    stroke: currentColor;
-    stroke-linejoin: round;
-}
-
-.rating_star.filled .rating_star-fill,
-.rating_star.hovered .rating_star-fill {
-    fill: currentColor;
-    animation: star-fill-anim 0.5s ease-out forwards;
-}
-
-
-@keyframes star-fill-anim {
-    0% {
-        transform: scale(0);
-    }
-    50% {
-        transform: scale(1.2);
-    }
-    100% {
-        transform: scale(1);
-    }
 }

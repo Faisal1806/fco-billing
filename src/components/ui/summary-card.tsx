@@ -4,28 +4,31 @@
 import * as React from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { Card } from './card';
+import { cn } from '@/lib/utils';
+
+interface SummaryCardProps {
+    title: string;
+    value: string;
+    icon: React.ElementType;
+    description: string;
+    className?: string;
+}
 
 export const SummaryCard = ({ 
     title, 
     value, 
     icon: Icon, 
-    description 
-}: { 
-    title: string; 
-    value: string; 
-    icon: React.ElementType; 
-    description: string;
-}) => {
+    description,
+    className
+}: SummaryCardProps) => {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
-  // Smooth out the movement
-  const mouseXSpring = useSpring(x);
-  const mouseYSpring = useSpring(y);
+  const mouseXSpring = useSpring(x, { stiffness: 150, damping: 20 });
+  const mouseYSpring = useSpring(y, { stiffness: 150, damping: 20 });
 
-  // Map mouse position to rotation degrees
-  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["15deg", "-15deg"]);
-  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-15deg", "15deg"]);
+  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["10deg", "-10deg"]);
+  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-10deg", "10deg"]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -49,29 +52,47 @@ export const SummaryCard = ({
         style={{
             rotateX,
             rotateY,
+            perspective: 1000,
             transformStyle: "preserve-3d",
         }}
         variants={{
             hidden: { y: 20, opacity: 0 },
             visible: { y: 0, opacity: 1 }
         }}
-        className="group relative h-full"
+        className={cn("group h-full", className)}
     >
-        <Card className="bg-card/60 backdrop-blur-sm border-white/10 h-full p-5 flex flex-col justify-between transition-all duration-300 group-hover:border-primary/50 group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)] shadow-lg overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
-            {/* Ambient Background Glow */}
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+        <Card className="relative glass-panel h-full p-6 flex flex-col justify-between transition-all duration-500 hover:border-accent/50 hover:bg-card/60 overflow-hidden">
+            {/* Dynamic Reflection Glow */}
+            <motion.div 
+                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-[radial-gradient(circle_at_var(--x)_var(--y),rgba(34,197,94,0.15)_0%,transparent_60%)]"
+                style={{ 
+                    '--x': useTransform(mouseXSpring, [-0.5, 0.5], ["0%", "100%"]) as any,
+                    '--y': useTransform(mouseYSpring, [-0.5, 0.5], ["0%", "100%"]) as any,
+                } as any}
+            />
             
-            <div className="flex justify-between items-start relative z-10" style={{ transform: "translateZ(30px)" }}>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">{title}</p>
-                <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
-                    <Icon className="h-5 w-5 text-primary" />
+            <div className="flex justify-between items-start relative z-10" style={{ transform: "translateZ(20px)" }}>
+                <div className="space-y-1">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground group-hover:text-accent transition-colors duration-300">
+                        {title}
+                    </p>
+                </div>
+                <div className="p-3 bg-white/5 rounded-xl group-hover:bg-accent/20 group-hover:text-accent transition-all duration-500 border border-white/5 group-hover:border-accent/30 shadow-lg">
+                    <Icon className="h-5 w-5 transition-transform duration-500 group-hover:scale-110" />
                 </div>
             </div>
             
-            <div className="mt-6 relative z-10" style={{ transform: "translateZ(60px)" }}>
-                <h3 className="text-3xl font-black text-white tracking-tight drop-shadow-md">{value}</h3>
-                <p className="text-xs text-muted-foreground mt-1 line-clamp-1 opacity-80">{description}</p>
+            <div className="mt-8 relative z-10" style={{ transform: "translateZ(40px)" }}>
+                <h3 className="text-3xl font-black text-white tracking-tighter drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] group-hover:scale-105 transition-transform duration-500 origin-left">
+                    {value}
+                </h3>
+                <p className="text-xs text-muted-foreground mt-2 font-medium opacity-70 group-hover:opacity-100 transition-opacity">
+                    {description}
+                </p>
             </div>
+
+            {/* Bottom Accent Line */}
+            <div className="absolute bottom-0 left-0 h-[2px] w-0 bg-accent transition-all duration-700 group-hover:w-full" />
         </Card>
     </motion.div>
   );
