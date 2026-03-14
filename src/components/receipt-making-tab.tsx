@@ -7,6 +7,7 @@ import {
   CardContent,
   CardFooter,
   CardHeader,
+  CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -295,7 +296,7 @@ export function ReceiptMakingTab() {
                     <div className="space-y-3">
                         <Label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Receipt Index No.</Label>
                         <div className="flex items-center gap-2">
-                        <Input value={receiptDetails.no} onChange={e => handleDetailChange('no', e.target.value)} disabled={isEditing} className="h-14 rounded-2xl font-black text-xl bg-white/5 border-white/10" />
+                        <Input value={receiptDetails.no} onChange={e => handleDetailChange('no', e.target.value)} disabled={isEditing} className="h-14 rounded-2xl bg-white/5 border-white/10 font-black text-xl bg-white/5 border-white/10" />
                          {isEditing && (
                             <Button variant="outline" size="icon" onClick={resetForm} className="h-14 w-14 rounded-2xl border-white/10 hover:bg-white/5" title="Initialize New Session">
                                 <FilePlus className="h-5 w-5 text-accent" />
@@ -353,7 +354,7 @@ export function ReceiptMakingTab() {
                         </div>
                         <div className="space-y-3">
                             <Label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Watak Release Protocol</Label>
-                            <Input placeholder="Set ready date..." value={receiptDetails.wattakReadyOn} onChange={(e) => handleDetailChange('wattakReadyOn', e.target.value)} className="h-14 rounded-2xl bg-white/5 border-white/10 font-bold" />
+                            <Input placeholder="Set ready date..." value={receiptDetails.wattakReadyOn} onChange={e => handleDetailChange('wattakReadyOn', e.target.value)} className="h-14 rounded-2xl bg-white/5 border-white/10 font-bold" />
                         </div>
                     </div>
 
