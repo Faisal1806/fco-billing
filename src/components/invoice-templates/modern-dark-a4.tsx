@@ -1,13 +1,35 @@
+
 import { Logo } from "@/components/logo";
 import BusinessCardQR from "@/components/BusinessCardQR";
 import { Separator } from "@/components/ui/separator";
 import QRCode from 'qrcode.react';
 
 export const ModernDarkA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl: string }) => {
-    const { sNo, date, date2, customerName, watakNo, khata, entries, totals, freight } = billData;
+    const { 
+        sNo = '', 
+        date = '', 
+        date2 = '', 
+        customerName = '', 
+        watakNo = '', 
+        khata = '', 
+        entries = [], 
+        totals = { 
+            grossSale: 0, 
+            labour: 0, 
+            association: 0, 
+            security: 0, 
+            commissionAmount: 0,
+            totalExpenses: 0, 
+            netSale: 0,
+            totalQty: 0,
+            pattiQty: 0,
+            dabbaQty: 0
+        }, 
+        freight = 0 
+    } = billData || {};
     
     return (
-        <div className="w-[148mm] min-h-[210mm] mx-auto bg-gray-800 text-gray-200 shadow-2xl print:shadow-none p-6 flex flex-col font-sans relative">
+        <div className="w-[148mm] min-h-[210mm] mx-auto bg-gray-900 text-gray-200 shadow-2xl print:shadow-none p-6 flex flex-col font-sans relative">
             <div className="absolute inset-0 flex items-center justify-center z-0">
                 <Logo className="w-96 h-96 opacity-[0.02]" />
             </div>
@@ -37,7 +59,7 @@ export const ModernDarkA4Layout = ({ billData, pageUrl }: { billData: any, pageU
                         </div>
                         <div className="text-right text-xs text-gray-400">
                              <p><strong>Bill No:</strong> <span className="text-white font-mono">{sNo}</span></p>
-                             <p><strong>Date:</strong> <span className="text-white font-mono">{new Date(date).toLocaleDateString('en-GB')}</span></p>
+                             <p><strong>Date:</strong> <span className="text-white font-mono">{date ? new Date(date).toLocaleDateString('en-GB') : 'N/A'}</span></p>
                              {date2 && <p><strong>Date 2:</strong> <span className="text-white font-mono">{new Date(date2).toLocaleDateString('en-GB')}</span></p>}
                              <p><strong>Watak No:</strong> <span className="text-white font-mono">{watakNo}</span></p>
                         </div>
@@ -60,7 +82,7 @@ export const ModernDarkA4Layout = ({ billData, pageUrl }: { billData: any, pageU
                                             <td className="py-2">{entry.type}</td>
                                             <td className="py-2">{entry.variety}</td>
                                             <td className="py-2 text-center font-mono">{entry.qty}</td>
-                                            <td className="py-2 text-right font-mono">{entry.isForwarded ? 'Forward' : `₹${entry.rate.toFixed(2)}`}</td>
+                                            <td className="py-2 text-right font-mono">{entry.isForwarded ? 'Forward' : `₹${(entry.rate || 0).toFixed(2)}`}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -70,32 +92,32 @@ export const ModernDarkA4Layout = ({ billData, pageUrl }: { billData: any, pageU
                         <div className="col-span-2 border-l border-gray-700 pl-6">
                             <h3 className="text-gray-400 uppercase font-semibold pb-2 border-b border-gray-700">Expenses</h3>
                              <div className="space-y-2 mt-2">
-                                <div className="flex justify-between items-center"><span className="text-gray-400">Freight</span><span className="font-mono">₹{freight.toFixed(2)}</span></div>
-                                <div className="flex justify-between items-center"><span className="text-gray-400">Labour</span><span className="font-mono">₹{totals.labour.toFixed(2)}</span></div>
-                                <div className="flex justify-between items-center"><span className="text-gray-400">Association</span><span className="font-mono">₹{totals.association.toFixed(2)}</span></div>
-                                <div className="flex justify-between items-center"><span className="text-gray-400">Security</span><span className="font-mono">₹{totals.security.toFixed(2)}</span></div>
-                                <div className="flex justify-between items-center font-semibold pt-1 border-t border-gray-700/50"><span className="text-gray-300">Commission</span><span className="font-mono">₹{totals.commissionAmount.toFixed(2)}</span></div>
+                                <div className="flex justify-between items-center"><span className="text-gray-400">Freight</span><span className="font-mono">₹{(freight || 0).toFixed(2)}</span></div>
+                                <div className="flex justify-between items-center"><span className="text-gray-400">Labour</span><span className="font-mono">₹{(totals?.labour || 0).toFixed(2)}</span></div>
+                                <div className="flex justify-between items-center"><span className="text-gray-400">Association</span><span className="font-mono">₹{(totals?.association || 0).toFixed(2)}</span></div>
+                                <div className="flex justify-between items-center"><span className="text-gray-400">Security</span><span className="font-mono">₹{(totals?.security || 0).toFixed(2)}</span></div>
+                                <div className="flex justify-between items-center font-semibold pt-1 border-t border-gray-700/50"><span className="text-gray-300">Commission</span><span className="font-mono">₹{(totals?.commissionAmount || 0).toFixed(2)}</span></div>
                             </div>
                         </div>
                     </div>
 
                     <div className="mt-6 grid grid-cols-5 gap-6">
                         <div className="col-span-3 text-xs">
-                             <p className="text-gray-400"><strong>Total Quantity:</strong> <span className="font-mono text-gray-300">{totals.totalQty} (Patti: {totals.pattiQty}, Dabba: {totals.dabbaQty})</span></p>
+                             <p className="text-gray-400"><strong>Total Quantity:</strong> <span className="font-mono text-gray-300">{totals?.totalQty || 0} (Patti: {totals?.pattiQty || 0}, Dabba: {totals?.dabbaQty || 0})</span></p>
                         </div>
                          <div className="col-span-2 space-y-1 text-sm border-l border-gray-700 pl-6">
                             <div className="flex justify-between items-center text-gray-400">
                                 <span>Gross Sale:</span>
-                                <span className="font-mono">₹{totals.grossSale.toFixed(2)}</span>
+                                <span className="font-mono">₹{(totals?.grossSale || 0).toFixed(2)}</span>
                              </div>
                              <div className="flex justify-between items-center text-gray-400">
                                 <span>Total Expenses:</span>
-                                <span className="font-mono">- ₹{totals.totalExpenses.toFixed(2)}</span>
+                                <span className="font-mono">- ₹{(totals?.totalExpenses || 0).toFixed(2)}</span>
                             </div>
                             <Separator className="my-2 bg-gray-600" />
                              <div className="flex justify-between items-center text-lg font-bold text-green-400 pt-1">
                                 <span >Net Sale:</span>
-                                <span className="font-mono">₹{totals.netSale.toFixed(2)}</span>
+                                <span className="font-mono">₹{(totals?.netSale || 0).toFixed(2)}</span>
                              </div>
                         </div>
                     </div>
