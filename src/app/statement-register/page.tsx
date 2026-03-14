@@ -16,6 +16,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableFooter
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { 
@@ -29,7 +30,8 @@ import {
     TrendingDown, 
     Wallet, 
     FileText,
-    ArrowUpRight
+    ArrowUpRight,
+    Calculator
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -39,6 +41,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PageHeader from '@/components/PageHeader';
 import { SummaryCard } from '@/components/ui/summary-card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 export default function StatementRegisterPage() {
     const router = useRouter();
@@ -56,7 +59,8 @@ export default function StatementRegisterPage() {
                 const key = localStorage.key(i);
                 if (key?.startsWith('manual-statement-')) {
                     try {
-                        loaded.push(JSON.parse(localStorage.getItem(key)!));
+                        const stmt = JSON.parse(localStorage.getItem(key)!);
+                        loaded.push(stmt);
                     } catch (e) {
                         console.error("Error parsing statement:", key, e);
                     }
@@ -78,8 +82,8 @@ export default function StatementRegisterPage() {
         if (!searchTerm) return statements;
         const lower = searchTerm.toLowerCase();
         return statements.filter(s => 
-            s.partyName.toLowerCase().includes(lower) || 
-            s.sNo.toString().includes(lower)
+            s.partyName?.toLowerCase().includes(lower) || 
+            s.sNo?.toString().includes(lower)
         );
     }, [statements, searchTerm]);
 
@@ -117,21 +121,21 @@ export default function StatementRegisterPage() {
                 <SummaryCard 
                     title="Gross Credit Volume" 
                     value={`₹${globalTotals.credits.toLocaleString()}`} 
-                    description="Aggregate net sales across all indexed statement nodes."
+                    description="Aggregate net sales (Jama) across all indexed statement nodes."
                     icon={Wallet}
                 />
                 <SummaryCard 
                     title="Remittance Flow" 
                     value={`₹${globalTotals.debits.toLocaleString()}`} 
-                    description="Total cash and bank payments received from growers."
+                    description="Total cash and bank payments (Kharch) received from growers."
                     icon={TrendingUp}
                 />
                 <SummaryCard 
-                    title="Net Account Balance" 
+                    title="Net Ledger Position" 
                     value={`₹${Math.abs(globalTotals.balance).toLocaleString()}`} 
-                    description={globalTotals.balance >= 0 ? "Total amount currently payable to growers." : "Total outstanding advances to be recovered."}
+                    description={globalTotals.balance >= 0 ? "Total Net Jama (Payable to Growers)" : "Total Net Baqaya (Recoverable Advances)"}
                     icon={globalTotals.balance >= 0 ? TrendingDown : TrendingUp}
-                    className={globalTotals.balance >= 0 ? "border-rose-500/30" : "border-emerald-500/30"}
+                    className={globalTotals.balance >= 0 ? "border-emerald-500/30" : "border-rose-500/30"}
                 />
             </div>
 
@@ -168,9 +172,9 @@ export default function StatementRegisterPage() {
                                     <TableHead className="text-[10px] font-black uppercase tracking-widest pl-10">ID</TableHead>
                                     <TableHead className="text-[10px] font-black uppercase tracking-widest">Grower Node</TableHead>
                                     <TableHead className="text-[10px] font-black uppercase tracking-widest">Date</TableHead>
-                                    <TableHead className="text-right text-[10px] font-black uppercase tracking-widest">Total Credit</TableHead>
-                                    <TableHead className="text-right text-[10px] font-black uppercase tracking-widest">Total Debit</TableHead>
-                                    <TableHead className="text-right text-[10px] font-black uppercase tracking-widest">Final Balance</TableHead>
+                                    <TableHead className="text-right text-[10px] font-black uppercase tracking-widest">Total Jama</TableHead>
+                                    <TableHead className="text-right text-[10px] font-black uppercase tracking-widest">Total Kharch</TableHead>
+                                    <TableHead className="text-right text-[10px] font-black uppercase tracking-widest">Net Position</TableHead>
                                     <TableHead className="text-right text-[10px] font-black uppercase tracking-widest pr-10">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -194,10 +198,10 @@ export default function StatementRegisterPage() {
                                                 </TableCell>
                                                 <TableCell>
                                                     <p className="font-black text-white tracking-tight">{s.partyName}</p>
-                                                    <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">Node ID: {s.sNo}</p>
+                                                    <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">ID: {s.sNo}</p>
                                                 </TableCell>
                                                 <TableCell className="text-xs font-bold opacity-60">
-                                                    {new Date(s.statementDate).toLocaleDateString('en-GB')}
+                                                    {s.statementDate ? new Date(s.statementDate).toLocaleDateString('en-GB') : 'N/A'}
                                                 </TableCell>
                                                 <TableCell className="text-right font-bold text-sm">
                                                     ₹{s.creditTotals?.netSale?.toLocaleString() || '0'}
@@ -213,7 +217,7 @@ export default function StatementRegisterPage() {
                                                         ₹{Math.abs(s.finalBalance).toLocaleString()}
                                                     </p>
                                                     <p className="text-[8px] font-black uppercase tracking-widest opacity-40">
-                                                        {s.finalBalance >= 0 ? "PAYABLE" : "RECOVERABLE"}
+                                                        {s.finalBalance >= 0 ? "JAMA" : "BAQAYAH"}
                                                     </p>
                                                 </TableCell>
                                                 <TableCell className="text-right pr-10">
@@ -259,6 +263,33 @@ export default function StatementRegisterPage() {
                                     )}
                                 </AnimatePresence>
                             </TableBody>
+                            <TableFooter className="bg-white/[0.05] h-20 font-black border-t-2 border-white/10">
+                                <TableRow className="border-none">
+                                    <TableCell colSpan={3} className="pl-10 text-[10px] uppercase tracking-widest text-accent flex items-center gap-3 h-20">
+                                        <Calculator className="h-4 w-4" /> AGGREGATE LEDGER TOTALS
+                                    </TableCell>
+                                    <TableCell className="text-right text-base tracking-tighter">
+                                        ₹{globalTotals.credits.toLocaleString()}
+                                    </TableCell>
+                                    <TableCell className="text-right text-base tracking-tighter text-rose-400">
+                                        - ₹{globalTotals.debits.toLocaleString()}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <div className="flex flex-col items-end">
+                                            <span className={cn(
+                                                "text-xl tracking-tighter",
+                                                globalTotals.balance >= 0 ? "text-emerald-400" : "text-rose-400"
+                                            )}>
+                                                ₹{Math.abs(globalTotals.balance).toLocaleString()}
+                                            </span>
+                                            <span className="text-[8px] uppercase tracking-widest opacity-40">
+                                                NET {globalTotals.balance >= 0 ? "JAMA" : "BAQAYAH"}
+                                            </span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell></TableCell>
+                                </TableRow>
+                            </TableFooter>
                         </Table>
                     </ScrollArea>
                 </CardContent>
