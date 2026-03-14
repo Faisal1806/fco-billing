@@ -86,6 +86,7 @@ export const sidebarSections = [
         title: "FINANCE & LEDGERS",
         items: [
             { name: "Khata Ledger", href: "/khata", icon: BookOpen },
+            { name: "Statement Register", href: "/statement-register", icon: FileSpreadsheet },
             { name: "Statement Of Account", href: "/statement", icon: FileSpreadsheet },
             { name: "Payments", href: "/advances", icon: Banknote },
             { name: "Loyalty", href: "/loyalty", icon: Award },
@@ -148,7 +149,7 @@ export function AppMenubar() {
           const key = localStorage.key(i);
           if (!key) continue;
           
-          if (key.startsWith('invoice-') || key.startsWith('purchase-') || key.startsWith('receipt-') || key.startsWith('party-')) {
+          if (key.startsWith('invoice-') || key.startsWith('purchase-') || key.startsWith('receipt-') || key.startsWith('party-') || key.startsWith('manual-statement-')) {
               try {
                   const data = JSON.parse(localStorage.getItem(key)!);
                   let type = 'Node';
@@ -176,6 +177,11 @@ export function AppMenubar() {
                       icon = Users;
                       title = `${data.name} (${data.type})`;
                       href = `/parties`;
+                  } else if (key.startsWith('manual-statement-')) {
+                      type = 'Statement';
+                      icon = FileSpreadsheet;
+                      title = `Statement #${data.sNo} - ${data.partyName}`;
+                      href = `/statement-register`;
                   }
 
                   results.push({ title, type, icon, href, id: key });
