@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Loader2, Bot, User, BrainCircuit } from 'lucide-react';
+import { Search, Loader2, Bot, User, BrainCircuit, Sparkles, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { queryData } from '@/ai/flows/smart-search-flow';
 import { SmartSearchOutput } from '@/ai/schemas/smart-search-schemas';
@@ -21,6 +21,14 @@ const getNestedValue = (obj: any, path: string) => {
     return path.split('.').reduce((acc, part) => acc && acc[part], obj);
 };
 
+const SUGGESTIONS = [
+    "Show me top 5 sales this month",
+    "Find all statements for Faisal",
+    "List receipts from last week",
+    "Find parties from Nadihal",
+    "Show me commissions earned"
+];
+
 export default function SmartSearchPage() {
   const { toast } = useToast();
   const [query, setQuery] = useState('');
@@ -32,11 +40,12 @@ export default function SmartSearchPage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
         const data: {[key: string]: any[]} = {
-            invoices: [], purchases: [], receipts: [], challans: [], products: [], parties: [], expenses: [], advances: [], cold_storage: [], bikris: []
+            invoices: [], purchases: [], receipts: [], challans: [], products: [], parties: [], expenses: [], advances: [], cold_storage: [], bikris: [], statements: []
         };
         const prefixes: {[key: string]: string} = {
             'invoice-': 'invoices', 'purchase-': 'purchases', 'receipt-': 'receipts', 'challan-': 'challans', 'product-': 'products',
-            'party-': 'parties', 'expense-': 'expenses', 'advance-': 'advances', 'cs-': 'cold_storage', 'bikri-': 'bikris'
+            'party-': 'parties', 'expense-': 'expenses', 'advance-': 'advances', 'cs-': 'cold_storage', 'bikri-': 'bikris',
+            'manual-statement-': 'statements'
         };
 
         for (let i = 0; i < localStorage.length; i++) {
@@ -64,15 +73,16 @@ export default function SmartSearchPage() {
     }
   }, [messages]);
 
-  const handleSearch = async () => {
-    if (!query.trim()) return;
+  const handleSearch = async (forcedQuery?: string) => {
+    const activeQuery = forcedQuery || query;
+    if (!activeQuery.trim()) return;
 
     setIsLoading(true);
-    const userMessage: Message = { role: 'user', content: query };
+    const userMessage: Message = { role: 'user', content: activeQuery };
     setMessages(prev => [...prev, userMessage]);
     
     try {
-      const result = await queryData({ query });
+      const result = await queryData({ query: activeQuery });
       
       let assistantMessage: Message;
       if (result.error) {
@@ -133,9 +143,10 @@ export default function SmartSearchPage() {
   };
 
   const ResultCard = ({ item }: { item: any }) => {
-      const title = item.name || item.customerName || item.growerName || `ID: ${item.id || item.sNo || item.billNo}`;
-      const date = item.date ? new Date(item.date).toLocaleDateString() : null;
-      const amount = item.totals?.netSale ?? item.totals?.grandTotal ?? item.amount ?? null;
+      const title = item.name || item.customerName || item.growerName || item.partyName || `ID: ${item.id || item.sNo || item.billNo}`;
+      const date = item.date || item.statementDate || (item.dateIn ? item.dateIn : null);
+      const displayDate = date ? new Date(date).toLocaleDateString() : null;
+      const amount = item.totals?.netSale ?? item.totals?.grandTotal ?? item.amount ?? item.finalBalance ?? null;
       
       return (
         <motion.div
@@ -147,11 +158,11 @@ export default function SmartSearchPage() {
             className="bg-card/60 backdrop-blur-sm border border-white/10 p-4 rounded-lg shadow-md"
         >
             <h4 className="font-bold text-primary-foreground truncate">{title}</h4>
-            {date && <p className="text-xs text-muted-foreground">{date}</p>}
-            {amount !== null && <p className="font-mono text-lg mt-2">₹{amount.toLocaleString()}</p>}
+            {displayDate && <p className="text-xs text-muted-foreground">{displayDate}</p>}
+            {amount !== null && <p className="font-mono text-lg mt-2 text-accent">₹{amount.toLocaleString()}</p>}
             <div className="text-xs mt-2 space-y-1 text-muted-foreground overflow-hidden">
                 {Object.entries(item).slice(0, 3).map(([key, value]) => 
-                    (typeof value === 'string' || typeof value === 'number') && key !== 'name' && key !== 'date' && (
+                    (typeof value === 'string' || typeof value === 'number') && !['name', 'date', 'id', 'sNo', 'customerName', 'growerName', 'partyName'].includes(key) && (
                         <div key={key} className="flex justify-between gap-2">
                             <span className="capitalize font-medium text-foreground/70">{key.replace(/([A-Z])/g, ' $1')}:</span>
                             <span className="truncate">{String(value)}</span>
@@ -185,15 +196,22 @@ export default function SmartSearchPage() {
         initial={{ opacity: 0, x: isUser ? 50 : -50 }}
         animate={{ opacity: 1, x: 0 }}
       >
-        {!isUser && <div className="p-2 bg-primary/10 rounded-full shrink-0"><Icon className="h-6 w-6 text-primary" /></div>}
-        <div className={`max-w-3xl w-full p-4 rounded-xl shadow-lg ${isUser ? 'bg-primary text-primary-foreground' : (isError ? 'bg-destructive/20 text-destructive-foreground border border-destructive/50' : 'bg-card/70 backdrop-blur-sm border border-white/10')}`}>
+        {!isUser && (
+            <div className="flex flex-col items-center gap-2">
+                <div className="p-3 bg-accent/20 rounded-2xl border border-accent/30 shrink-0"><Icon className="h-6 w-6 text-accent" /></div>
+                <span className="text-[8px] font-black uppercase tracking-widest opacity-40">AI NODE</span>
+            </div>
+        )}
+        <div className={`max-w-3xl w-full p-6 rounded-[2rem] shadow-lg ${isUser ? 'bg-accent text-black font-bold' : (isError ? 'bg-destructive/20 text-destructive-foreground border border-destructive/50' : 'glass-panel border-white/10')}`}>
           {typeof msg.content === 'string' ? (
-            <p>{msg.content}</p>
+            <p className="leading-relaxed">{msg.content}</p>
           ) : (
             <div>
               {msg.results && msg.results.length > 0 ? (
                 <>
-                <p className="font-semibold mb-3">Found {msg.results.length} results from '{msg.content.collection}':</p>
+                <p className="font-black text-xs uppercase tracking-widest mb-4 opacity-60 flex items-center gap-2">
+                    <Sparkles className="h-3 w-3" /> Data Retrieval Successful: {msg.results.length} nodes located in '{msg.content.collection}'
+                </p>
                  <motion.div 
                     className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
                     variants={containerVariants}
@@ -204,51 +222,76 @@ export default function SmartSearchPage() {
                 </motion.div>
                 </>
               ) : msg.results && msg.results.length === 0 ? (
-                 <p>I couldn't find any results matching your query in the '{msg.content.collection}' collection.</p>
+                 <p className="opacity-60 italic">Scan complete. I could not locate any matching data nodes in the '{msg.content.collection}' infrastructure.</p>
               ) : (
-                 <pre className="mt-2 text-xs bg-black/20 p-2 rounded-md overflow-x-auto">
+                 <pre className="mt-2 text-[10px] font-mono bg-black/20 p-4 rounded-xl overflow-x-auto opacity-50">
                     {JSON.stringify(msg.content, null, 2)}
                  </pre>
               )}
             </div>
           )}
         </div>
-         {isUser && <div className="p-2 bg-card rounded-full shrink-0"><Icon className="h-6 w-6" /></div>}
+         {isUser && (
+             <div className="flex flex-col items-center gap-2">
+                <div className="p-3 bg-white/10 rounded-2xl border border-white/10 shrink-0"><Icon className="h-6 w-6" /></div>
+                <span className="text-[8px] font-black uppercase tracking-widest opacity-40">OPERATOR</span>
+             </div>
+         )}
       </motion.div>
     );
   };
 
   return (
     <Card className="h-[calc(100vh-10rem)] flex flex-col bg-transparent border-none shadow-none">
-      <CardHeader className="text-center">
+      <CardHeader className="text-center pb-8">
         <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1, transition: { delay: 0.2, type: 'spring' } }}
             className="flex justify-center"
         >
-            <div className="p-4 bg-primary/10 rounded-full w-fit mb-2 border-4 border-primary/20">
-                <BrainCircuit className="h-10 w-10 text-primary" />
+            <div className="p-6 bg-accent/10 rounded-[2.5rem] w-fit mb-4 border border-accent/20 relative group">
+                <div className="absolute inset-0 bg-accent/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                <BrainCircuit className="h-12 w-12 text-accent relative z-10" />
             </div>
         </motion.div>
-        <CardTitle className="text-3xl">AI Chat Assistant</CardTitle>
-        <CardDescription>
-          Ask anything about your data in plain English. For example: "Show me top 5 sales this month" or "Find parties from Nadihal".
+        <CardTitle className="text-4xl font-black tracking-tighter uppercase">AI Terminal Assistant</CardTitle>
+        <CardDescription className="text-xs font-bold tracking-widest uppercase opacity-60 mt-2">
+          Natural Language Query Node • Connected to F.Co Cloud Database
         </CardDescription>
       </CardHeader>
-      <CardContent ref={scrollAreaRef} className="flex-1 flex flex-col gap-4 overflow-y-auto p-4">
+      
+      <CardContent ref={scrollAreaRef} className="flex-1 flex flex-col gap-8 overflow-y-auto p-8 custom-scrollbar">
         <AnimatePresence>
             {messages.length === 0 ? (
             <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex-1 flex flex-col items-center justify-center text-center text-muted-foreground"
+                className="flex-1 flex flex-col items-center justify-center text-center space-y-10"
             >
-                <Bot className="h-16 w-16 mb-4" />
-                <p className="text-lg font-semibold">I'm ready to help!</p>
-                <p>What would you like to find today?</p>
+                <div className="space-y-4">
+                    <MessageSquare className="h-16 w-16 mb-4 text-muted-foreground opacity-20 mx-auto" />
+                    <p className="text-lg font-black tracking-tight text-white/40 uppercase">Awaiting Operator Input...</p>
+                </div>
+                
+                <div className="w-full max-w-2xl">
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-accent mb-6">INTELLIGENCE STARTERS</p>
+                    <div className="flex flex-wrap justify-center gap-3">
+                        {SUGGESTIONS.map((s, i) => (
+                            <motion.button
+                                key={i}
+                                whileHover={{ scale: 1.05, y: -2 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => handleSearch(s)}
+                                className="px-6 py-3 rounded-2xl glass-panel border-white/5 hover:border-accent/50 text-[11px] font-black uppercase tracking-widest text-muted-foreground hover:text-accent transition-all"
+                            >
+                                {s}
+                            </motion.button>
+                        ))}
+                    </div>
+                </div>
             </motion.div>
             ) : (
-            <div className="space-y-6">
+            <div className="space-y-10">
                 {messages.map(renderMessage)}
                 {isLoading && (
                 <motion.div 
@@ -256,11 +299,11 @@ export default function SmartSearchPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                 >
-                    <div className="p-2 bg-primary/10 rounded-full shrink-0">
-                    <Loader2 className="h-6 w-6 text-primary animate-spin" />
+                    <div className="p-3 bg-accent/10 rounded-2xl border border-accent/20 shrink-0">
+                        <Loader2 className="h-6 w-6 text-accent animate-spin" />
                     </div>
-                    <div className="max-w-3xl w-full p-4 rounded-xl bg-card/70 backdrop-blur-sm border border-white/10">
-                    <p>Thinking...</p>
+                    <div className="max-w-3xl w-full p-6 rounded-[2rem] glass-panel border-white/10">
+                        <p className="text-xs font-black uppercase tracking-widest animate-pulse opacity-50">Analyzing data clusters...</p>
                     </div>
                 </motion.div>
                 )}
@@ -268,30 +311,32 @@ export default function SmartSearchPage() {
             )}
         </AnimatePresence>
       </CardContent>
+
       <motion.div 
-        className="p-4 border-t border-white/10 mt-auto"
+        className="p-8 border-t border-white/5 mt-auto"
         initial={{ y: 50, opacity: 0 }}
         animate={{ y: 0, opacity: 1, transition: { delay: 0.5 } }}
       >
-        <div className="relative">
+        <div className="relative max-w-4xl mx-auto">
              <motion.div
-                whileHover={{ scale: 1.02, boxShadow: '0 0 20px rgba(var(--ring), 0.3)' }}
+                whileHover={{ scale: 1.01 }}
                 className="relative"
             >
+                <div className="absolute inset-0 bg-accent/10 blur-3xl rounded-full opacity-20 pointer-events-none" />
                 <Input
-                    placeholder="Type your search query..."
+                    placeholder="COMMAND YOUR DATA (e.g. 'Show me top 5 sales this month')..."
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleSearch()}
                     disabled={isLoading}
-                    className="pr-24 h-14 text-base rounded-full bg-card/80 backdrop-blur-sm border-2 border-primary/30 focus-visible:ring-primary/50"
+                    className="pr-32 h-20 text-sm font-black tracking-widest uppercase rounded-[2.5rem] bg-white/5 border-white/10 focus-visible:ring-accent/50 focus-visible:border-accent/50 shadow-2xl"
                 />
                 <Button
-                    className="absolute right-3 top-1/2 -translate-y-1/2 h-11 rounded-full px-5"
-                    onClick={handleSearch}
+                    className="absolute right-3 top-3 bottom-3 rounded-[2rem] px-8 bg-accent text-black font-black tracking-widest text-[10px] hover:bg-accent/90"
+                    onClick={() => handleSearch()}
                     disabled={isLoading || !query.trim()}
                 >
-                    {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Search className="h-5 w-5" />}
+                    {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Search className="h-4 w-4 mr-2" /> EXECUTE</>}
                 </Button>
             </motion.div>
         </div>

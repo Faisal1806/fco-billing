@@ -31,20 +31,23 @@ Here are the available data collections and their queryable fields:
 - **products**
   - Fields: name (string), category (string), stock (number), supplier (string)
 
-- **parties**
+- **parties** (Growers, Customers, etc.)
   - Fields: name (string), type (string, "Grower", "Customer", "Both", etc.), address (string), phone (string)
 
 - **expenses**
   - Fields: date (string, YYYY-MM-DD), category (string), description (string), amount (number), partyName (string)
 
-- **advances**
+- **advances** (Payments/Loans)
   - Fields: date (string, YYYY-MM-DD), partyName (string), type (string, "Advance Given" or "Repayment Received"), amount (number)
 
 - **cold_storage**
   - Fields: dateIn (string, YYYY-MM-DD), grower (string), item (string), chamberNo (string), currentQty (number), status (string, "In Stock" or "Released")
   
-- **bikris** (also called outside sales)
+- **bikris** (Outside Sales)
     - Fields: bikriNo (string), date (string, YYYY-MM-DD), market (string), growerName (string), bikriType (string, "fcoStock" or "growerForwarding"), calculation.netProfitOrLoss (number), calculation.netSalePayableToGrower (number)
+
+- **statements** (Manual Grower Statements)
+    - Fields: sNo (string), partyName (string), statementDate (string, YYYY-MM-DD), finalBalance (number)
 `;
 
 // Define Prompts
@@ -53,7 +56,7 @@ const smartSearchPrompt = ai.definePrompt(
         name: 'smartSearchPrompt',
         input: { schema: SmartSearchInputSchema },
         output: { schema: SmartSearchOutputSchema },
-        prompt: `You are an expert at converting natural language queries into structured data filters.
+        prompt: `You are an expert at converting natural language queries into structured data filters for the F.Co Billing OS.
     The user wants to search their business data. Your task is to determine the correct data collection and construct a set of filters based on their query.
 
     Today's date is ${new Date().toISOString().split('T')[0]}.
@@ -65,8 +68,10 @@ const smartSearchPrompt = ai.definePrompt(
     - If you cannot determine the collection or filters, set the 'error' field with a helpful message. Do not guess.
     - For queries like "show me sales", default to the 'invoices' collection.
     - For queries about profit or loss from outside sales, use the 'bikris' collection.
-    - For "top N" or "bottom N" queries, add a 'limit' and 'sort' property to the output. For example, "top 5 sales" should be collection: 'invoices', sort: { field: 'totals.netSale', direction: 'desc' }, limit: 5.
+    - For queries about manual ledger statements, use the 'statements' collection.
+    - For "top N" or "bottom N" queries, add a 'limit' and 'sort' property to the output.
     - The 'sort' field should have 'field' and 'direction' ('asc' or 'desc').
+    - If searching for a person by name, use the 'contains' operator on the appropriate name field.
     - Do not invent fields. Only use the fields listed in the schemas.
 
     User Query: "{{query}}"`,

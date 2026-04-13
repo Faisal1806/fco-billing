@@ -25,7 +25,7 @@ export const SmartSearchInputSchema = z.object({
 export type SmartSearchInput = z.infer<typeof SmartSearchInputSchema>;
 
 export const SmartSearchOutputSchema = z.object({
-  collection: z.enum(['invoices', 'purchases', 'receipts', 'challans', 'products', 'parties', 'expenses', 'advances', 'cold_storage', 'bikris']).describe('The data collection to search within.'),
+  collection: z.enum(['invoices', 'purchases', 'receipts', 'challans', 'products', 'parties', 'expenses', 'advances', 'cold_storage', 'bikris', 'statements']).describe('The data collection to search within.'),
   filters: z.array(FilterSchema).describe('An array of filters to apply to the data.'),
   sort: SortSchema.optional().describe("An optional sort configuration."),
   limit: z.number().optional().describe("An optional limit for the number of results."),
