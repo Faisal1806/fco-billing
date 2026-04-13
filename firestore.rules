@@ -5,27 +5,13 @@ service cloud.firestore {
     /**
      * F.Co OS GLOBAL ACCESS PROTOCOL
      * 
-     * For the prototyping phase and shared link stability, we allow unauthenticated 
-     * read/write access to all collections. This ensures that:
-     * 1. Shared invoice links can be opened by customers without an account.
-     * 2. Device nodes (FCM tokens) can be registered for push notifications.
-     * 3. Master Cloud Sync functions correctly across all terminal nodes.
-     *
-     * In a production environment, this should be restricted to 'request.auth != null'.
+     * In this prototyping phase, we allow global read/write access to ensure:
+     * 1. Shared links work for unauthenticated customers.
+     * 2. Device nodes (FCM) can register for notifications.
+     * 3. Cloud Sync works across all terminals.
      */
     match /{document=**} {
       allow read, write: if true;
     }
-
-    /**
-     * SYSTEM NODES (Explicitly ensuring recursive access for critical infrastructure)
-     */
-    match /fcm-tokens/{document=**} { allow read, write: if true; }
-    match /notificationJobs/{document=**} { allow read, write: if true; }
-    match /bills/{document=**} { allow read, write: if true; }
-    match /purchases/{document=**} { allow read, write: if true; }
-    match /receipts/{document=**} { allow read, write: if true; }
-    match /challans/{document=**} { allow read, write: if true; }
-    match /statements/{document=**} { allow read, write: if true; }
   }
 }

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -86,7 +85,6 @@ export default function SmartSearchPage() {
     doc.setFontSize(10);
     doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 22);
 
-    // Pick specific columns based on collection for a better report
     let columns: string[] = [];
     let rows: any[] = [];
 
