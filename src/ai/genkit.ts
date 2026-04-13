@@ -65,7 +65,16 @@ const smartSearchPrompt = ai.definePrompt(
 
     - Follow-up context: Use the history provided to understand what "they", "it", or specific names mentioned previously refer to.
     - Date Conversion: Convert relative terms like "today", "last week", "this month" into specific YYYY-MM-DD dates or date ranges.
-    - Aggregation: If the user asks for "total", "sum", "grand total", "average", or "how many", use the 'aggregation' field.
+    
+    - Aggregation Rules (CRITICAL):
+      If the user asks for "total", "sum", "grand total", "average", or "how many", you MUST use the 'aggregation' field.
+      - For 'invoices': Default field for total/sum is 'totals.netSale'.
+      - For 'purchases': Default field for total/sum is 'totals.grandTotal'.
+      - For 'bikris': Default field for total/sum is 'calculation.netSalePayableToGrower'.
+      - For 'statements': Default field for total/sum is 'finalBalance'.
+      - For 'advances': Default field for total/sum is 'amount'.
+      - For 'receipts': Default field for total/sum is 'totalNugs'.
+
     - Actions: If the user asks for data "in pdf form", "as a report", or "to print", set 'action' to 'export_pdf'.
     - For queries like "show me sales", default to the 'invoices' collection.
     - For queries about profit or loss from outside sales, use the 'bikris' collection.

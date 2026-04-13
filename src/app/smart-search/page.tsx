@@ -5,13 +5,14 @@ import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Loader2, Bot, User, BrainCircuit, Sparkles, MessageSquare, FileDown, Calculator } from 'lucide-react';
+import { Search, Loader2, Bot, User, BrainCircuit, Sparkles, MessageSquare, FileDown, Calculator, TrendingUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { queryData } from '@/ai/flows/smart-search-flow';
 import { SmartSearchOutput } from '@/ai/schemas/smart-search-schemas';
 import { motion, AnimatePresence } from 'framer-motion';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { Badge } from '@/components/ui/badge';
 
 type Message = {
   role: 'user' | 'assistant' | 'error';
@@ -107,14 +108,13 @@ export default function SmartSearchPage() {
     const userMessage: Message = { role: 'user', content: activeQuery };
     setMessages(prev => [...prev, userMessage]);
     
-    // Prepare history for AI context
     const history = messages
         .filter(m => m.role !== 'error')
         .map(m => ({
             role: m.role === 'user' ? 'user' as const : 'model' as const,
             content: typeof m.content === 'string' ? m.content : `Performed search on ${m.content.collection} with ${m.results?.length} results.`
         }))
-        .slice(-6); // Only last 3 turns
+        .slice(-6);
 
     try {
       const result = await queryData({ query: activeQuery, history });
@@ -264,15 +264,31 @@ export default function SmartSearchPage() {
           ) : (
             <div className="space-y-6">
               {msg.aggregationResult !== undefined && (
-                  <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="p-6 bg-accent/10 border border-accent/30 rounded-2xl flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                          <div className="p-3 bg-accent rounded-xl"><Calculator className="h-6 w-6 text-black" /></div>
+                  <motion.div 
+                    initial={{ scale: 0.9, opacity: 0, y: -20 }} 
+                    animate={{ scale: 1, opacity: 1, y: 0 }} 
+                    className="p-8 bg-emerald-500/10 border-2 border-emerald-500/30 rounded-[2.5rem] flex items-center justify-between shadow-[0_0_40px_rgba(16,185,129,0.1)] relative overflow-hidden group"
+                  >
+                      <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                          <TrendingUp className="h-24 w-24 text-emerald-400" />
+                      </div>
+                      <div className="flex items-center gap-6 relative z-10">
+                          <div className="p-5 bg-emerald-500 rounded-[1.5rem] shadow-lg shadow-emerald-500/20">
+                              <Calculator className="h-8 w-8 text-black" />
+                          </div>
                           <div>
-                              <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Calculated Aggregate</p>
-                              <p className="text-3xl font-black text-white tracking-tighter">₹{msg.aggregationResult.toLocaleString()}</p>
+                              <p className="text-[11px] font-black uppercase tracking-[0.3em] text-emerald-400 mb-1">
+                                {msg.content.aggregation?.type === 'sum' ? 'Grand Total Summary' : 
+                                 msg.content.aggregation?.type === 'avg' ? 'Average Yield' : 'Index Count'}
+                              </p>
+                              <p className="text-5xl font-black text-white tracking-tighter drop-shadow-md">
+                                {msg.content.aggregation?.type === 'count' ? '' : '₹'}{msg.aggregationResult.toLocaleString()}
+                              </p>
                           </div>
                       </div>
-                      <Badge variant="outline" className="bg-accent/20 text-accent font-black">{msg.content.aggregation?.type.toUpperCase()}</Badge>
+                      <Badge className="bg-emerald-500 text-black font-black py-2 px-4 rounded-xl text-[10px] tracking-widest uppercase relative z-10">
+                        VERIFIED RESULT
+                      </Badge>
                   </motion.div>
               )}
 
@@ -297,11 +313,7 @@ export default function SmartSearchPage() {
                 </>
               ) : msg.results && msg.results.length === 0 ? (
                  <p className="opacity-60 italic">Scan complete. I could not locate any matching data nodes in the '{msg.content.collection}' infrastructure.</p>
-              ) : (
-                 <pre className="mt-2 text-[10px] font-mono bg-black/20 p-4 rounded-xl overflow-x-auto opacity-50">
-                    {JSON.stringify(msg.content, null, 2)}
-                 </pre>
-              )}
+              ) : null}
             </div>
           )}
         </div>
@@ -398,7 +410,7 @@ export default function SmartSearchPage() {
             >
                 <div className="absolute inset-0 bg-accent/10 blur-3xl rounded-full opacity-20 pointer-events-none" />
                 <Input
-                    placeholder="COMMAND YOUR DATA (e.g. 'Show me top 5 sales this month')..."
+                    placeholder="COMMAND YOUR DATA (e.g. 'Sum up all invoices for AB. Majeed')..."
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleSearch()}
