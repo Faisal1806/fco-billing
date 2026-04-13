@@ -1,4 +1,3 @@
-
 'use client'
 
 import * as React from 'react';
@@ -357,6 +356,7 @@ export default function SettingsPage() {
             'cs-': 'cold-storage',
             'bikri-': 'bikris',
             'accessory-ledger-': 'accessory-ledger',
+            'manual-statement-': 'statements',
         };
     
         let successCount = 0;
