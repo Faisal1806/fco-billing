@@ -75,7 +75,7 @@ const smartSearchPrompt = ai.definePrompt(
     4. CONTEXT: Use the provided history to maintain filters. If the user first asks for a grower's invoices and then asks "what is the total?", carry over the grower name filter.
     5. NAMES: If searching for a person, use the 'contains' operator on the name field.
 
-    EXAMPLES:
+    FEW-SHOT EXAMPLES:
     User: "Show all wataks of AB. Majeed Lone S/P"
     Assistant: {"collection": "invoices", "filters": [{"field": "customerName", "operator": "contains", "value": "AB. Majeed Lone S/P"}], "action": "view"}
 

@@ -36,7 +36,7 @@ const SUGGESTIONS = [
 export default function SmartSearchPage() {
   const { toast } = useToast();
   const [query, setQuery] = useState('');
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = setMessagesState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [allData, setAllData] = useState<{[key: string]: any[]}>({});
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -97,6 +97,14 @@ export default function SmartSearchPage() {
             item.totals?.pattiQty || 0,
             item.totals?.dabbaQty || 0,
             `Rs. ${item.totals?.netSale || 0}`
+        ]);
+    } else if (collection === 'statements') {
+        columns = ['Date', 'S.No', 'Grower', 'Balance'];
+        rows = results.map(item => [
+            item.statementDate || 'N/A',
+            item.sNo || 'N/A',
+            item.partyName || 'N/A',
+            `Rs. ${item.finalBalance || 0}`
         ]);
     } else {
         columns = Object.keys(results[0]).slice(0, 6);
@@ -252,7 +260,7 @@ export default function SmartSearchPage() {
                           </div>
                           <div>
                               <p className="text-[11px] font-black uppercase tracking-[0.3em] text-emerald-400 mb-1">
-                                {msg.content.aggregation?.type === 'sum' ? 'Grand Total Summary' : 
+                                {msg.content.aggregation?.type === 'sum' ? 'Calculated Grand Total' : 
                                  msg.content.aggregation?.type === 'avg' ? 'Average Yield' : 'Index Count'}
                               </p>
                               <p className="text-5xl font-black text-white tracking-tighter drop-shadow-md">
@@ -272,14 +280,18 @@ export default function SmartSearchPage() {
                         <p className="font-black text-xs uppercase tracking-widest opacity-60 flex items-center gap-2">
                             <Sparkles className="h-3 w-3" /> Found {msg.results.length} records in '{msg.content.collection}'
                         </p>
-                        {msg.content.action === 'export_pdf' && <Badge className="bg-blue-500 gap-2 border-none text-white animate-pulse"><FileDown className="h-3 w-3" /> PDF GENERATED</Badge>}
+                        {msg.content.action === 'export_pdf' && (
+                            <Badge className="bg-blue-500 gap-2 border-none text-white animate-pulse">
+                                <FileDown className="h-3 w-3" /> PDF GENERATED
+                            </Badge>
+                        )}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {msg.results.slice(0, 12).map((item, i) => (
                             <div key={i} className="bg-white/5 border border-white/5 p-4 rounded-xl">
                                 <p className="font-bold text-sm truncate text-white">{item.customerName || item.growerName || item.partyName || item.name || 'Record'}</p>
                                 <p className="text-[10px] text-muted-foreground uppercase font-black">{item.date || item.sNo || item.billNo || ''}</p>
-                                <p className="text-lg font-black text-accent mt-2">₹{(item.totals?.netSale || item.totals?.grandTotal || item.amount || 0).toLocaleString()}</p>
+                                <p className="text-lg font-black text-accent mt-2">₹{(item.totals?.netSale || item.totals?.grandTotal || item.amount || item.finalBalance || 0).toLocaleString()}</p>
                             </div>
                         ))}
                     </div>
@@ -370,4 +382,9 @@ export default function SmartSearchPage() {
       </div>
     </Card>
   );
+}
+
+// Fixed missing hook usage in component definition above
+function setMessagesState<T>(arg0: never[]): [any, any] {
+    return useState(arg0);
 }
