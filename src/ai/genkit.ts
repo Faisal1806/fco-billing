@@ -63,18 +63,21 @@ const smartSearchPrompt = ai.definePrompt(
 
     ${collectionsSchema}
 
-    RULES:
-    - If the user asks for "total", "sum", "grand total", "add these up", "average", or "how many", you MUST use the 'aggregation' field.
-    - For 'invoices': Default field for total/sum is 'totals.netSale'.
-    - For 'purchases': Default field for total/sum is 'totals.grandTotal'.
-    - For 'statements': Default field for total/sum is 'finalBalance'.
-    - For 'advances': Default field for total/sum is 'amount'.
-    - If searching for a person by name, use the 'contains' operator on the appropriate name field.
-    - CONTEXT: Use the history to carry forward filters. If the user asks "Now show me the total", reuse the filters from the previous query.
+    MANDATORY RULES:
+    1. ACTION: If the user mentions "PDF", "report", "document", "file", or "print", you MUST set the 'action' field to 'export_pdf'.
+    2. AGGREGATION: If the user asks for "total", "sum", "grand total", "add these up", "average", or "how many", you MUST use the 'aggregation' field.
+    3. FIELD MAPPING for Total/Sum:
+       - 'invoices': Use 'totals.netSale'
+       - 'purchases': Use 'totals.grandTotal'
+       - 'statements': Use 'finalBalance'
+       - 'advances': Use 'amount'
+       - 'expenses': Use 'amount'
+    4. CONTEXT: Use the provided history to maintain filters. If the user first asks for a grower's invoices and then asks "what is the total?", carry over the grower name filter.
+    5. NAMES: If searching for a person, use the 'contains' operator on the name field.
 
     EXAMPLES:
     User: "Show all wataks of AB. Majeed Lone S/P"
-    Assistant: {"collection": "invoices", "filters": [{"field": "customerName", "operator": "contains", "value": "AB. Majeed Lone S/P"}]}
+    Assistant: {"collection": "invoices", "filters": [{"field": "customerName", "operator": "contains", "value": "AB. Majeed Lone S/P"}], "action": "view"}
 
     User: "Now add all these in grand total"
     Assistant: {"collection": "invoices", "filters": [{"field": "customerName", "operator": "contains", "value": "AB. Majeed Lone S/P"}], "aggregation": {"field": "totals.netSale", "type": "sum"}}

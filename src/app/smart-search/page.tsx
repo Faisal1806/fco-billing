@@ -22,6 +22,7 @@ type Message = {
 };
 
 const getNestedValue = (obj: any, path: string) => {
+    if (!obj || !path) return undefined;
     return path.split('.').reduce((acc, part) => acc && acc[part], obj);
 };
 
@@ -85,19 +86,35 @@ export default function SmartSearchPage() {
     doc.setFontSize(10);
     doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 22);
 
-    const head = [Object.keys(results[0]).slice(0, 6)];
-    const body = results.map(item => Object.values(item).slice(0, 6).map(v => typeof v === 'object' ? JSON.stringify(v) : String(v)));
+    // Pick specific columns based on collection for a better report
+    let columns: string[] = [];
+    let rows: any[] = [];
+
+    if (collection === 'invoices') {
+        columns = ['Date', 'Invoice No', 'Grower', 'Petti', 'Dabba', 'Net Sale'];
+        rows = results.map(item => [
+            item.date || 'N/A',
+            item.sNo || item.watakNo || 'N/A',
+            item.customerName || 'N/A',
+            item.totals?.pattiQty || 0,
+            item.totals?.dabbaQty || 0,
+            `Rs. ${item.totals?.netSale || 0}`
+        ]);
+    } else {
+        columns = Object.keys(results[0]).slice(0, 6);
+        rows = results.map(item => Object.values(item).slice(0, 6).map(v => typeof v === 'object' ? JSON.stringify(v) : String(v)));
+    }
 
     autoTable(doc, {
-        head,
-        body,
+        head: [columns],
+        body: rows,
         startY: 30,
         theme: 'striped',
         headStyles: { fillColor: [30, 127, 79] }
     });
 
     doc.save(`FCo-Report-${collection}-${Date.now()}.pdf`);
-    toast({ title: 'PDF Report Generated', description: 'Your data has been exported to a professional document.' });
+    toast({ title: 'PDF Report Generated', description: 'Your data has been exported to a professional document.', isSuccess: true });
   };
 
   const handleSearch = async (forcedQuery?: string) => {
@@ -112,7 +129,7 @@ export default function SmartSearchPage() {
         .filter(m => m.role !== 'error')
         .map(m => ({
             role: m.role === 'user' ? 'user' as const : 'model' as const,
-            content: typeof m.content === 'string' ? m.content : `Action: ${m.content.collection} search. Filters: ${JSON.stringify(m.content.filters)}. Agg: ${JSON.stringify(m.content.aggregation)}`
+            content: typeof m.content === 'string' ? m.content : `Action: ${m.content.collection} search. Filters: ${JSON.stringify(m.content.filters)}. Agg: ${JSON.stringify(m.content.aggregation)}. Action: ${m.content.action}`
         }))
         .slice(-6);
 
@@ -132,12 +149,12 @@ export default function SmartSearchPage() {
                 if (itemValue === undefined) return false;
 
                 switch(filter.operator) {
-                    case '==': return itemValue == filter.value;
-                    case '!=': return itemValue != filter.value;
-                    case '>': return itemValue > filter.value;
-                    case '>=': return itemValue >= filter.value;
-                    case '<': return itemValue < filter.value;
-                    case '<=': return itemValue <= filter.value;
+                    case '==': return String(itemValue) == String(filter.value);
+                    case '!=': return String(itemValue) != String(filter.value);
+                    case '>': return Number(itemValue) > Number(filter.value);
+                    case '>=': return Number(itemValue) >= Number(filter.value);
+                    case '<': return Number(itemValue) < Number(filter.value);
+                    case '<=': return Number(itemValue) <= Number(filter.value);
                     case 'contains': return typeof itemValue === 'string' && itemValue.toLowerCase().includes(String(filter.value).toLowerCase());
                     default: return false;
                 }
@@ -178,19 +195,20 @@ export default function SmartSearchPage() {
         };
 
         if (result.action === 'export_pdf' && filteredData.length > 0) {
-            setTimeout(() => exportResultsToPdf(result.collection, filteredData), 1000);
+            toast({ title: 'Initializing Report...', description: 'Preparing PDF for download.' });
+            setTimeout(() => exportResultsToPdf(result.collection, filteredData), 1500);
         }
       }
       setMessages(prev => [...prev, assistantMessage]);
 
     } catch (error) {
       console.error('Smart Search failed:', error);
-      const errorMessage: Message = { role: 'error', content: 'An unexpected error occurred. Please try again.' };
+      const errorMessage: Message = { role: 'error', content: 'An unexpected error occurred while processing your request.' };
       setMessages(prev => [...prev, errorMessage]);
       toast({
         variant: 'destructive',
         title: 'Search Failed',
-        description: (error as Error).message || 'Could not process your request.',
+        description: 'Check your network connection and API keys.',
       });
     } finally {
       setQuery('');
@@ -256,7 +274,7 @@ export default function SmartSearchPage() {
                         <p className="font-black text-xs uppercase tracking-widest opacity-60 flex items-center gap-2">
                             <Sparkles className="h-3 w-3" /> Found {msg.results.length} records in '{msg.content.collection}'
                         </p>
-                        {msg.content.action === 'export_pdf' && <Badge className="bg-blue-500 gap-2"><FileDown className="h-3 w-3" /> PDF GENERATED</Badge>}
+                        {msg.content.action === 'export_pdf' && <Badge className="bg-blue-500 gap-2 border-none text-white animate-pulse"><FileDown className="h-3 w-3" /> PDF GENERATED</Badge>}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {msg.results.slice(0, 12).map((item, i) => (
@@ -269,6 +287,10 @@ export default function SmartSearchPage() {
                     </div>
                     {msg.results.length > 12 && <p className="text-[10px] font-bold text-muted-foreground text-center uppercase tracking-widest">Showing top 12 of {msg.results.length} nodes</p>}
                 </div>
+              )}
+              
+              {!msg.results?.length && !msg.aggregationResult && !isError && (
+                  <p className="text-muted-foreground text-sm italic">Analysis complete. No matching data nodes found in the current environment.</p>
               )}
             </div>
           )}
