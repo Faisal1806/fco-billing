@@ -36,7 +36,7 @@ const SUGGESTIONS = [
 export default function SmartSearchPage() {
   const { toast } = useToast();
   const [query, setQuery] = useState('');
-  const [messages, setMessages] = setMessagesState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [allData, setAllData] = useState<{[key: string]: any[]}>({});
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -107,20 +107,24 @@ export default function SmartSearchPage() {
             `Rs. ${item.finalBalance || 0}`
         ]);
     } else {
-        columns = Object.keys(results[0]).slice(0, 6);
-        rows = results.map(item => Object.values(item).slice(0, 6).map(v => typeof v === 'object' ? JSON.stringify(v) : String(v)));
+        if (results.length > 0) {
+          columns = Object.keys(results[0]).slice(0, 6);
+          rows = results.map(item => Object.values(item).slice(0, 6).map(v => typeof v === 'object' ? JSON.stringify(v) : String(v)));
+        }
     }
 
-    autoTable(doc, {
-        head: [columns],
-        body: rows,
-        startY: 30,
-        theme: 'striped',
-        headStyles: { fillColor: [30, 127, 79] }
-    });
+    if (columns.length > 0) {
+      autoTable(doc, {
+          head: [columns],
+          body: rows,
+          startY: 30,
+          theme: 'striped',
+          headStyles: { fillColor: [30, 127, 79] }
+      });
 
-    doc.save(`FCo-Report-${collection}-${Date.now()}.pdf`);
-    toast({ title: 'PDF Report Generated', description: 'Your data has been exported to a professional document.', isSuccess: true });
+      doc.save(`FCo-Report-${collection}-${Date.now()}.pdf`);
+      toast({ title: 'PDF Report Generated', description: 'Your data has been exported to a professional document.', isSuccess: true });
+    }
   };
 
   const handleSearch = async (forcedQuery?: string) => {
@@ -382,9 +386,4 @@ export default function SmartSearchPage() {
       </div>
     </Card>
   );
-}
-
-// Fixed missing hook usage in component definition above
-function setMessagesState<T>(arg0: never[]): [any, any] {
-    return useState(arg0);
 }

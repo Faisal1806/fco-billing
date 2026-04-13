@@ -3,12 +3,14 @@ service cloud.firestore {
   match /databases/{database}/documents {
     
     /**
-     * F.Co GLOBAL ACCESS PROTOCOL (PROTOTYPE)
+     * F.Co GLOBAL ACCESS PROTOCOL (PROTOTYPE - EMERGENCY OVERRIDE)
      * 
-     * In this prototyping phase, we allow global recursive read/write access to ensure:
-     * 1. Shared links work for unauthenticated customers.
-     * 2. Device nodes (FCM) can register for notifications.
+     * This set of rules allows global recursive read/write access to all collections.
+     * This is required in the prototyping phase to ensure:
+     * 1. Shared links work for unauthenticated customers (public view).
+     * 2. Device nodes (FCM) can register and list tokens for notifications.
      * 3. Cloud Sync works across all terminals without permission blocks.
+     * 4. AI Assistant can query all indexed data nodes.
      */
     match /{document=**} {
       allow read, write: if true;

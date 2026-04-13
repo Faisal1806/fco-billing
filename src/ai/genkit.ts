@@ -62,18 +62,17 @@ const smartSearchPrompt = ai.definePrompt(
 
     ${collectionsSchema}
 
-    MANDATORY RULES:
-    1. ACTION: If the user mentions "PDF", "report", "document", "file", "download", or "print", you MUST set the 'action' field to 'export_pdf'.
-    2. AGGREGATION: If the user asks for "total", "sum", "grand total", "add these up", "average", or "how many", you MUST use the 'aggregation' field.
-    3. FIELD MAPPING for Total/Sum (CRITICAL):
-       - 'invoices': Use 'totals.netSale'
-       - 'purchases': Use 'totals.grandTotal'
-       - 'statements': Use 'finalBalance'
-       - 'advances': Use 'amount'
-       - 'expenses': Use 'amount'
-       - 'bikris': Use 'calculation.netSalePayableToGrower' or 'calculation.netProfitOrLoss'
-    4. CONTEXT: Use the provided history to maintain filters. If the user first asks for a grower's invoices and then asks "what is the total?", carry over the grower name filter.
-    5. NAMES: If searching for a person, use the 'contains' operator on the name field.
+    MANDATORY RULES (CRITICAL):
+    1. AGGREGATION: If the user mentions "total", "sum", "grand total", "add these up", "what is the total", or "average", you MUST use the 'aggregation' field.
+    2. FIELD MAPPING for Total/Sum:
+       - 'invoices': You MUST use 'totals.netSale' for summing.
+       - 'purchases': You MUST use 'totals.grandTotal' for summing.
+       - 'statements': You MUST use 'finalBalance' for summing.
+       - 'advances': You MUST use 'amount' for summing.
+       - 'bikris': You MUST use 'calculation.netSalePayableToGrower' for summing.
+    3. ACTION: If the user mentions "PDF", "report", "document", "file", "download", or "print", you MUST set 'action' to 'export_pdf'.
+    4. CONTEXT: Use the provided history to maintain filters. If the user first asks for a grower's invoices and then asks "what is the total?", YOU MUST carry over the name filter.
+    5. NAMES: Use the 'contains' operator for any name search.
 
     FEW-SHOT EXAMPLES:
     User: "Show all wataks of AB. Majeed Lone S/P"
