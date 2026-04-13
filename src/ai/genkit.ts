@@ -63,33 +63,31 @@ const smartSearchPrompt = ai.definePrompt(
 
     ${collectionsSchema}
 
-    - Follow-up context: Use the history provided to understand what "they", "it", or specific names mentioned previously refer to.
-    - Date Conversion: Convert relative terms like "today", "last week", "this month" into specific YYYY-MM-DD dates or date ranges.
-    
-    - Aggregation Rules (CRITICAL):
-      If the user asks for "total", "sum", "grand total", "average", or "how many", you MUST use the 'aggregation' field.
-      - For 'invoices': Default field for total/sum is 'totals.netSale'.
-      - For 'purchases': Default field for total/sum is 'totals.grandTotal'.
-      - For 'bikris': Default field for total/sum is 'calculation.netSalePayableToGrower'.
-      - For 'statements': Default field for total/sum is 'finalBalance'.
-      - For 'advances': Default field for total/sum is 'amount'.
-      - For 'receipts': Default field for total/sum is 'totalNugs'.
-
-    - Actions: If the user asks for data "in pdf form", "as a report", or "to print", set 'action' to 'export_pdf'.
-    - For queries like "show me sales", default to the 'invoices' collection.
-    - For queries about profit or loss from outside sales, use the 'bikris' collection.
-    - For queries about manual ledger statements, use the 'statements' collection.
-    - For "top N" or "bottom N" queries, add a 'limit' and 'sort' property to the output.
-    - The 'sort' field should have 'field' and 'direction' ('asc' or 'desc').
+    RULES:
+    - If the user asks for "total", "sum", "grand total", "add these up", "average", or "how many", you MUST use the 'aggregation' field.
+    - For 'invoices': Default field for total/sum is 'totals.netSale'.
+    - For 'purchases': Default field for total/sum is 'totals.grandTotal'.
+    - For 'statements': Default field for total/sum is 'finalBalance'.
+    - For 'advances': Default field for total/sum is 'amount'.
     - If searching for a person by name, use the 'contains' operator on the appropriate name field.
-    - Do not invent fields. Only use the fields listed in the schemas.
+    - CONTEXT: Use the history to carry forward filters. If the user asks "Now show me the total", reuse the filters from the previous query.
 
+    EXAMPLES:
+    User: "Show all wataks of AB. Majeed Lone S/P"
+    Assistant: {"collection": "invoices", "filters": [{"field": "customerName", "operator": "contains", "value": "AB. Majeed Lone S/P"}]}
+
+    User: "Now add all these in grand total"
+    Assistant: {"collection": "invoices", "filters": [{"field": "customerName", "operator": "contains", "value": "AB. Majeed Lone S/P"}], "aggregation": {"field": "totals.netSale", "type": "sum"}}
+
+    User: "Show me all wataks of Faisal in pdf form"
+    Assistant: {"collection": "invoices", "filters": [{"field": "customerName", "operator": "contains", "value": "Faisal"}], "action": "export_pdf"}
+
+    User Query: "{{query}}"
+    
     Conversation History:
     {{#each history}}
     {{role}}: {{content}}
-    {{/each}}
-
-    User Query: "{{query}}"`,
+    {{/each}}`,
     }
 );
 

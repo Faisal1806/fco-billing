@@ -26,9 +26,9 @@ const getNestedValue = (obj: any, path: string) => {
 };
 
 const SUGGESTIONS = [
-    "Show me top 5 sales this month",
-    "Find all statements for Faisal",
-    "What is the total net sale for AB. Majeed Lone S/P?",
+    "Show me all wataks of AB. Majeed Lone S/P",
+    "What is the grand total of sales for Faisal?",
+    "Find all statements from last month",
     "Show me all wataks of Faisal in PDF form",
     "List receipts from last week",
 ];
@@ -112,7 +112,7 @@ export default function SmartSearchPage() {
         .filter(m => m.role !== 'error')
         .map(m => ({
             role: m.role === 'user' ? 'user' as const : 'model' as const,
-            content: typeof m.content === 'string' ? m.content : `Performed search on ${m.content.collection} with ${m.results?.length} results.`
+            content: typeof m.content === 'string' ? m.content : `Action: ${m.content.collection} search. Filters: ${JSON.stringify(m.content.filters)}. Agg: ${JSON.stringify(m.content.aggregation)}`
         }))
         .slice(-6);
 
@@ -198,53 +198,11 @@ export default function SmartSearchPage() {
     }
   };
 
-  const ResultCard = ({ item }: { item: any }) => {
-      const title = item.name || item.customerName || item.growerName || item.partyName || `ID: ${item.id || item.sNo || item.billNo}`;
-      const date = item.date || item.statementDate || (item.dateIn ? item.dateIn : null);
-      const displayDate = date ? new Date(date).toLocaleDateString() : null;
-      const amount = item.totals?.netSale ?? item.totals?.grandTotal ?? item.amount ?? item.finalBalance ?? null;
-      
-      return (
-        <motion.div
-            variants={{
-                hidden: { opacity: 0, y: 20 },
-                visible: { opacity: 1, y: 0 }
-            }}
-            whileHover={{ scale: 1.05, y: -5, boxShadow: '0px 20px 40px rgba(0, 0, 0, 0.4)' }}
-            className="bg-card/60 backdrop-blur-sm border border-white/10 p-4 rounded-lg shadow-md"
-        >
-            <h4 className="font-bold text-primary-foreground truncate">{title}</h4>
-            {displayDate && <p className="text-xs text-muted-foreground">{displayDate}</p>}
-            {amount !== null && <p className="font-mono text-lg mt-2 text-accent">₹{amount.toLocaleString()}</p>}
-            <div className="text-xs mt-2 space-y-1 text-muted-foreground overflow-hidden">
-                {Object.entries(item).slice(0, 3).map(([key, value]) => 
-                    (typeof value === 'string' || typeof value === 'number') && !['name', 'date', 'id', 'sNo', 'customerName', 'growerName', 'partyName', 'entries', 'totals', 'calculation'].includes(key) && (
-                        <div key={key} className="flex justify-between gap-2">
-                            <span className="capitalize font-medium text-foreground/70">{key.replace(/([A-Z])/g, ' $1')}:</span>
-                            <span className="truncate">{String(value)}</span>
-                        </div>
-                    )
-                )}
-            </div>
-        </motion.div>
-      )
-  };
-
-
   const renderMessage = (msg: Message, index: number) => {
     const isUser = msg.role === 'user';
     const isError = msg.role === 'error';
     const Icon = isUser ? User : Bot;
     
-    const containerVariants = {
-        hidden: { opacity: 0, y: 20 },
-        visible: {
-            opacity: 1,
-            y: 0,
-            transition: { staggerChildren: 0.1 }
-        }
-    };
-
     return (
       <motion.div 
         key={index} 
@@ -253,8 +211,8 @@ export default function SmartSearchPage() {
         animate={{ opacity: 1, x: 0 }}
       >
         {!isUser && (
-            <div className="flex flex-col items-center gap-2">
-                <div className="p-3 bg-accent/20 rounded-2xl border border-accent/30 shrink-0"><Icon className="h-6 w-6 text-accent" /></div>
+            <div className="flex flex-col items-center gap-2 shrink-0">
+                <div className="p-3 bg-accent/20 rounded-2xl border border-accent/30"><Icon className="h-6 w-6 text-accent" /></div>
                 <span className="text-[8px] font-black uppercase tracking-widest opacity-40">AI NODE</span>
             </div>
         )}
@@ -265,8 +223,8 @@ export default function SmartSearchPage() {
             <div className="space-y-6">
               {msg.aggregationResult !== undefined && (
                   <motion.div 
-                    initial={{ scale: 0.9, opacity: 0, y: -20 }} 
-                    animate={{ scale: 1, opacity: 1, y: 0 }} 
+                    initial={{ scale: 0.95, opacity: 0 }} 
+                    animate={{ scale: 1, opacity: 1 }} 
                     className="p-8 bg-emerald-500/10 border-2 border-emerald-500/30 rounded-[2.5rem] flex items-center justify-between shadow-[0_0_40px_rgba(16,185,129,0.1)] relative overflow-hidden group"
                   >
                       <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
@@ -292,34 +250,32 @@ export default function SmartSearchPage() {
                   </motion.div>
               )}
 
-              {msg.results && msg.results.length > 0 ? (
-                <>
-                <div className="flex justify-between items-center mb-4">
-                    <p className="font-black text-xs uppercase tracking-widest opacity-60 flex items-center gap-2">
-                        <Sparkles className="h-3 w-3" /> Retrieval: {msg.results.length} nodes in '{msg.content.collection}'
-                    </p>
-                    {msg.content.action === 'export_pdf' && (
-                        <Badge className="bg-blue-500 gap-2"><FileDown className="h-3 w-3" /> PDF Report Active</Badge>
-                    )}
+              {msg.results && msg.results.length > 0 && (
+                <div className="space-y-4">
+                    <div className="flex justify-between items-center px-2">
+                        <p className="font-black text-xs uppercase tracking-widest opacity-60 flex items-center gap-2">
+                            <Sparkles className="h-3 w-3" /> Found {msg.results.length} records in '{msg.content.collection}'
+                        </p>
+                        {msg.content.action === 'export_pdf' && <Badge className="bg-blue-500 gap-2"><FileDown className="h-3 w-3" /> PDF GENERATED</Badge>}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {msg.results.slice(0, 12).map((item, i) => (
+                            <div key={i} className="bg-white/5 border border-white/5 p-4 rounded-xl">
+                                <p className="font-bold text-sm truncate text-white">{item.customerName || item.growerName || item.partyName || item.name || 'Record'}</p>
+                                <p className="text-[10px] text-muted-foreground uppercase font-black">{item.date || item.sNo || item.billNo || ''}</p>
+                                <p className="text-lg font-black text-accent mt-2">₹{(item.totals?.netSale || item.totals?.grandTotal || item.amount || 0).toLocaleString()}</p>
+                            </div>
+                        ))}
+                    </div>
+                    {msg.results.length > 12 && <p className="text-[10px] font-bold text-muted-foreground text-center uppercase tracking-widest">Showing top 12 of {msg.results.length} nodes</p>}
                 </div>
-                 <motion.div 
-                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-                    variants={containerVariants}
-                    initial="hidden"
-                    animate="visible"
-                >
-                    {msg.results.map((item, i) => <ResultCard key={i} item={item} />)}
-                </motion.div>
-                </>
-              ) : msg.results && msg.results.length === 0 ? (
-                 <p className="opacity-60 italic">Scan complete. I could not locate any matching data nodes in the '{msg.content.collection}' infrastructure.</p>
-              ) : null}
+              )}
             </div>
           )}
         </div>
          {isUser && (
-             <div className="flex flex-col items-center gap-2">
-                <div className="p-3 bg-white/10 rounded-2xl border border-white/10 shrink-0"><Icon className="h-6 w-6" /></div>
+             <div className="flex flex-col items-center gap-2 shrink-0">
+                <div className="p-3 bg-white/10 rounded-2xl border border-white/10"><User className="h-6 w-6" /></div>
                 <span className="text-[8px] font-black uppercase tracking-widest opacity-40">OPERATOR</span>
              </div>
          )}
@@ -330,103 +286,68 @@ export default function SmartSearchPage() {
   return (
     <Card className="h-[calc(100vh-10rem)] flex flex-col bg-transparent border-none shadow-none">
       <CardHeader className="text-center pb-8">
-        <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1, transition: { delay: 0.2, type: 'spring' } }}
-            className="flex justify-center"
-        >
-            <div className="p-6 bg-accent/10 rounded-[2.5rem] w-fit mb-4 border border-accent/20 relative group">
-                <div className="absolute inset-0 bg-accent/20 blur-2xl rounded-full opacity-0 group-hover:opacity-10 transition-opacity" />
-                <BrainCircuit className="h-12 w-12 text-accent relative z-10" />
+        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex justify-center">
+            <div className="p-6 bg-accent/10 rounded-[2.5rem] w-fit mb-4 border border-accent/20">
+                <BrainCircuit className="h-12 w-12 text-accent" />
             </div>
         </motion.div>
         <CardTitle className="text-4xl font-black tracking-tighter uppercase">AI Terminal Assistant</CardTitle>
-        <CardDescription className="text-xs font-bold tracking-widest uppercase opacity-60 mt-2">
-          Natural Language Query Node • Contextual History Active
-        </CardDescription>
+        <CardDescription className="text-[10px] font-bold tracking-[0.3em] uppercase opacity-60">Natural Language Intelligence Hub</CardDescription>
       </CardHeader>
       
       <CardContent ref={scrollAreaRef} className="flex-1 flex flex-col gap-8 overflow-y-auto p-8 custom-scrollbar">
         <AnimatePresence>
             {messages.length === 0 ? (
-            <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex-1 flex flex-col items-center justify-center text-center space-y-10"
-            >
-                <div className="space-y-4">
-                    <MessageSquare className="h-16 w-16 mb-4 text-muted-foreground opacity-20 mx-auto" />
-                    <p className="text-lg font-black tracking-tight text-white/40 uppercase">Awaiting Operator Input...</p>
-                </div>
-                
+            <div className="flex-1 flex flex-col items-center justify-center text-center space-y-8">
+                <MessageSquare className="h-16 w-16 opacity-10" />
                 <div className="w-full max-w-2xl">
                     <p className="text-[10px] font-black uppercase tracking-[0.3em] text-accent mb-6">INTELLIGENCE STARTERS</p>
                     <div className="flex flex-wrap justify-center gap-3">
                         {SUGGESTIONS.map((s, i) => (
-                            <motion.button
-                                key={i}
-                                whileHover={{ scale: 1.05, y: -2 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => handleSearch(s)}
-                                className="px-6 py-3 rounded-2xl glass-panel border-white/5 hover:border-accent/50 text-[11px] font-black uppercase tracking-widest text-muted-foreground hover:text-accent transition-all"
-                            >
+                            <button key={i} onClick={() => handleSearch(s)} className="px-6 py-3 rounded-2xl glass-panel border-white/5 hover:border-accent/50 text-[11px] font-black uppercase tracking-widest text-muted-foreground hover:text-accent transition-all">
                                 {s}
-                            </motion.button>
+                            </button>
                         ))}
                     </div>
                 </div>
-            </motion.div>
+            </div>
             ) : (
             <div className="space-y-10">
                 {messages.map(renderMessage)}
                 {isLoading && (
-                <motion.div 
-                    className="flex items-start gap-4"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                >
+                <div className="flex items-start gap-4">
                     <div className="p-3 bg-accent/10 rounded-2xl border border-accent/20 shrink-0">
                         <Loader2 className="h-6 w-6 text-accent animate-spin" />
                     </div>
                     <div className="max-w-3xl w-full p-6 rounded-[2rem] glass-panel border-white/10">
-                        <p className="text-xs font-black uppercase tracking-widest animate-pulse opacity-50">Synthesizing data stream...</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest animate-pulse opacity-50">Synthesizing data stream...</p>
                     </div>
-                </motion.div>
+                </div>
                 )}
             </div>
             )}
         </AnimatePresence>
       </CardContent>
 
-      <motion.div 
-        className="p-8 border-t border-white/5 mt-auto"
-        initial={{ y: 50, opacity: 0 }}
-        animate={{ y: 0, opacity: 1, transition: { delay: 0.5 } }}
-      >
+      <div className="p-8 border-t border-white/5 mt-auto">
         <div className="relative max-w-4xl mx-auto">
-             <motion.div
-                whileHover={{ scale: 1.01 }}
-                className="relative"
+            <Input
+                placeholder="COMMAND YOUR DATA (e.g. 'Grand total of Faisal's sales')..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleSearch()}
+                disabled={isLoading}
+                className="pr-32 h-20 text-sm font-black tracking-widest uppercase rounded-[2.5rem] bg-white/5 border-white/10 focus-visible:ring-accent/50"
+            />
+            <Button
+                className="absolute right-3 top-3 bottom-3 rounded-[2rem] px-8 bg-accent text-black font-black tracking-widest text-[10px]"
+                onClick={() => handleSearch()}
+                disabled={isLoading || !query.trim()}
             >
-                <div className="absolute inset-0 bg-accent/10 blur-3xl rounded-full opacity-20 pointer-events-none" />
-                <Input
-                    placeholder="COMMAND YOUR DATA (e.g. 'Sum up all invoices for AB. Majeed')..."
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleSearch()}
-                    disabled={isLoading}
-                    className="pr-32 h-20 text-sm font-black tracking-widest uppercase rounded-[2.5rem] bg-white/5 border-white/10 focus-visible:ring-accent/50 focus-visible:border-accent/50 shadow-2xl"
-                />
-                <Button
-                    className="absolute right-3 top-3 bottom-3 rounded-[2rem] px-8 bg-accent text-black font-black tracking-widest text-[10px] hover:bg-accent/90"
-                    onClick={() => handleSearch()}
-                    disabled={isLoading || !query.trim()}
-                >
-                    {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Search className="h-4 w-4 mr-2" /> EXECUTE</>}
-                </Button>
-            </motion.div>
+                {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'EXECUTE'}
+            </Button>
         </div>
-      </motion.div>
+      </div>
     </Card>
   );
 }
