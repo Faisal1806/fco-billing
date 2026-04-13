@@ -5,7 +5,7 @@
  * - PesticideCategoryInputSchema, PesticideCategoryInput - The input type for the flow.
  * - PesticideCategoryOutputSchema, PesticideCategoryOutput - The return type for the flow.
  */
-import { z } from 'zod';
+import { z } from 'genkit';
 
 export const PesticideCategoryInputSchema = z.object({
   name: z.string().describe('The name of the pesticide or fertilizer product.'),

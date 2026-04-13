@@ -1,16 +1,15 @@
 
-import { genkit, type Genkit } from 'genkit';
+import { genkit, type Genkit, z } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
-import { z } from 'zod';
 import { SmartSearchInputSchema, SmartSearchOutputSchema } from './schemas/smart-search-schemas';
 import { PesticideCategoryInputSchema, PesticideCategoryOutputSchema } from './schemas/pesticide-category-schemas';
 
-// Initialize Genkit with the Google AI plugin using the latest model generation
+// Initialize Genkit with the Google AI plugin using the latest model generation (Gemini 3)
 export const ai: Genkit = genkit({
   plugins: [
     googleAI(),
   ],
-  model: googleAI.model('gemini-2.5-flash'),
+  model: googleAI.model('gemini-3-flash-preview'),
 });
 
 // Schemas for Smart Search

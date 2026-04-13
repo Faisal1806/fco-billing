@@ -6,7 +6,7 @@
  * - SmartSearchOutputSchema, SmartSearchOutput - The return type for the queryData function.
  */
 
-import { z } from 'zod';
+import { z } from 'genkit';
 
 export const FilterSchema = z.object({
   field: z.string().describe('The field to filter on (e.g., "date", "customerName", "totals.netSale").'),

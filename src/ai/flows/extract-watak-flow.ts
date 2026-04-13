@@ -33,7 +33,7 @@ export type WatakExtractOutput = z.infer<typeof WatakExtractOutputSchema>;
 
 export async function extractWatak(input: { photoDataUri: string }): Promise<WatakExtractOutput> {
   const { output } = await ai.generate({
-    model: googleAI.model('gemini-2.5-flash'),
+    model: googleAI.model('gemini-3-flash-preview'),
     input: input,
     output: { schema: WatakExtractOutputSchema },
     prompt: `You are an expert at reading handwritten and printed fruit mandi invoices (Wataks) from Sopore, Kashmir.
