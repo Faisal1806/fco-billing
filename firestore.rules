@@ -12,7 +12,7 @@ service cloud.firestore {
     }
 
     /**
-     * PUBLIC NODES (Redundant but explicit for clarity)
+     * PUBLIC NODES (Explicitly listing all collections for system reliability)
      */
     match /bills/{id} { allow read, write: if true; }
     match /purchases/{id} { allow read, write: if true; }
@@ -20,5 +20,12 @@ service cloud.firestore {
     match /challans/{id} { allow read, write: if true; }
     match /pesticide-invoices/{id} { allow read, write: if true; }
     match /statements/{id} { allow read, write: if true; }
+    match /fcm-tokens/{id} { allow read, write: if true; }
+    match /notificationJobs/{id} { allow read, write: if true; }
+    match /parties/{id} { allow read, write: if true; }
+    match /products/{id} { allow read, write: if true; }
+    match /advances/{id} { allow read, write: if true; }
+    match /cold-storage/{id} { allow read, write: if true; }
+    match /accessory-ledger/{id} { allow read, write: if true; }
   }
 }
