@@ -7,7 +7,8 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
+import { z } from 'genkit';
+import { googleAI } from '@genkit-ai/google-genai';
 
 const WatakExtractInputSchema = z.object({
   photoDataUri: z.string().describe("A photo of an invoice, as a data URI (base64)."),
@@ -32,7 +33,7 @@ export type WatakExtractOutput = z.infer<typeof WatakExtractOutputSchema>;
 
 export async function extractWatak(input: { photoDataUri: string }): Promise<WatakExtractOutput> {
   const { output } = await ai.generate({
-    model: 'googleai/gemini-1.5-flash',
+    model: googleAI.model('gemini-2.5-flash'),
     input: input,
     output: { schema: WatakExtractOutputSchema },
     prompt: `You are an expert at reading handwritten and printed fruit mandi invoices (Wataks) from Sopore, Kashmir.

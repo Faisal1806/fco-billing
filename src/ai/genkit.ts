@@ -5,15 +5,12 @@ import { z } from 'zod';
 import { SmartSearchInputSchema, SmartSearchOutputSchema } from './schemas/smart-search-schemas';
 import { PesticideCategoryInputSchema, PesticideCategoryOutputSchema } from './schemas/pesticide-category-schemas';
 
-// Initialize the AI plugin
+// Initialize Genkit with the Google AI plugin using the latest model generation
 export const ai: Genkit = genkit({
   plugins: [
-    googleAI({
-      // The API key is passed in the flow itself,
-      // but you can set a server-side default here.
-      // apiKey: process.env.GEMINI_API_KEY,
-    }),
+    googleAI(),
   ],
+  model: googleAI.model('gemini-2.5-flash'),
 });
 
 // Schemas for Smart Search
@@ -55,7 +52,6 @@ Here are the available data collections and their queryable fields:
 const smartSearchPrompt = ai.definePrompt(
     {
         name: 'smartSearchPrompt',
-        model: 'googleai/gemini-1.5-flash',
         input: { schema: SmartSearchInputSchema },
         output: { schema: SmartSearchOutputSchema },
         prompt: `You are an expert at converting natural language queries into structured data filters.
@@ -81,7 +77,6 @@ const smartSearchPrompt = ai.definePrompt(
 const categorizePesticidePrompt = ai.definePrompt(
     {
         name: 'categorizePesticidePrompt',
-        model: 'googleai/gemini-1.5-flash',
         input: { schema: PesticideCategoryInputSchema },
         output: { schema: PesticideCategoryOutputSchema },
         prompt: `You are an expert in agricultural products. Your task is to categorize the given product name into one of the following categories: Fungicide, Insecticide, Herbicide, Fertilizer, Plant Growth Regulator, or Other.
