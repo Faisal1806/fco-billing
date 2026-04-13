@@ -5,16 +5,19 @@ import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Loader2, Bot, User, BrainCircuit, Sparkles, MessageSquare } from 'lucide-react';
+import { Search, Loader2, Bot, User, BrainCircuit, Sparkles, MessageSquare, FileDown, Calculator } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { queryData } from '@/ai/flows/smart-search-flow';
 import { SmartSearchOutput } from '@/ai/schemas/smart-search-schemas';
 import { motion, AnimatePresence } from 'framer-motion';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 type Message = {
   role: 'user' | 'assistant' | 'error';
   content: string | SmartSearchOutput;
   results?: any[];
+  aggregationResult?: number;
 };
 
 const getNestedValue = (obj: any, path: string) => {
@@ -24,9 +27,9 @@ const getNestedValue = (obj: any, path: string) => {
 const SUGGESTIONS = [
     "Show me top 5 sales this month",
     "Find all statements for Faisal",
+    "What is the total net sale for AB. Majeed Lone S/P?",
+    "Show me all wataks of Faisal in PDF form",
     "List receipts from last week",
-    "Find parties from Nadihal",
-    "Show me commissions earned"
 ];
 
 export default function SmartSearchPage() {
@@ -73,6 +76,29 @@ export default function SmartSearchPage() {
     }
   }, [messages]);
 
+  const exportResultsToPdf = (collection: string, results: any[]) => {
+    if (!results || results.length === 0) return;
+    
+    const doc = new jsPDF();
+    doc.text(`F.Co Intelligence Report - ${collection.toUpperCase()}`, 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 22);
+
+    const head = [Object.keys(results[0]).slice(0, 6)];
+    const body = results.map(item => Object.values(item).slice(0, 6).map(v => typeof v === 'object' ? JSON.stringify(v) : String(v)));
+
+    autoTable(doc, {
+        head,
+        body,
+        startY: 30,
+        theme: 'striped',
+        headStyles: { fillColor: [30, 127, 79] }
+    });
+
+    doc.save(`FCo-Report-${collection}-${Date.now()}.pdf`);
+    toast({ title: 'PDF Report Generated', description: 'Your data has been exported to a professional document.' });
+  };
+
   const handleSearch = async (forcedQuery?: string) => {
     const activeQuery = forcedQuery || query;
     if (!activeQuery.trim()) return;
@@ -81,8 +107,17 @@ export default function SmartSearchPage() {
     const userMessage: Message = { role: 'user', content: activeQuery };
     setMessages(prev => [...prev, userMessage]);
     
+    // Prepare history for AI context
+    const history = messages
+        .filter(m => m.role !== 'error')
+        .map(m => ({
+            role: m.role === 'user' ? 'user' as const : 'model' as const,
+            content: typeof m.content === 'string' ? m.content : `Performed search on ${m.content.collection} with ${m.results?.length} results.`
+        }))
+        .slice(-6); // Only last 3 turns
+
     try {
-      const result = await queryData({ query: activeQuery });
+      const result = await queryData({ query: activeQuery, history });
       
       let assistantMessage: Message;
       if (result.error) {
@@ -123,7 +158,28 @@ export default function SmartSearchPage() {
             filteredData = filteredData.slice(0, result.limit);
         }
 
-        assistantMessage = { role: 'assistant', content: result, results: filteredData };
+        let aggregationResult: number | undefined;
+        if (result.aggregation && filteredData.length > 0) {
+            const values = filteredData.map(item => Number(getNestedValue(item, result.aggregation!.field)) || 0);
+            if (result.aggregation.type === 'sum') {
+                aggregationResult = values.reduce((a, b) => a + b, 0);
+            } else if (result.aggregation.type === 'avg') {
+                aggregationResult = values.reduce((a, b) => a + b, 0) / values.length;
+            } else if (result.aggregation.type === 'count') {
+                aggregationResult = filteredData.length;
+            }
+        }
+
+        assistantMessage = { 
+            role: 'assistant', 
+            content: result, 
+            results: filteredData,
+            aggregationResult 
+        };
+
+        if (result.action === 'export_pdf' && filteredData.length > 0) {
+            setTimeout(() => exportResultsToPdf(result.collection, filteredData), 1000);
+        }
       }
       setMessages(prev => [...prev, assistantMessage]);
 
@@ -162,7 +218,7 @@ export default function SmartSearchPage() {
             {amount !== null && <p className="font-mono text-lg mt-2 text-accent">₹{amount.toLocaleString()}</p>}
             <div className="text-xs mt-2 space-y-1 text-muted-foreground overflow-hidden">
                 {Object.entries(item).slice(0, 3).map(([key, value]) => 
-                    (typeof value === 'string' || typeof value === 'number') && !['name', 'date', 'id', 'sNo', 'customerName', 'growerName', 'partyName'].includes(key) && (
+                    (typeof value === 'string' || typeof value === 'number') && !['name', 'date', 'id', 'sNo', 'customerName', 'growerName', 'partyName', 'entries', 'totals', 'calculation'].includes(key) && (
                         <div key={key} className="flex justify-between gap-2">
                             <span className="capitalize font-medium text-foreground/70">{key.replace(/([A-Z])/g, ' $1')}:</span>
                             <span className="truncate">{String(value)}</span>
@@ -206,12 +262,30 @@ export default function SmartSearchPage() {
           {typeof msg.content === 'string' ? (
             <p className="leading-relaxed">{msg.content}</p>
           ) : (
-            <div>
+            <div className="space-y-6">
+              {msg.aggregationResult !== undefined && (
+                  <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="p-6 bg-accent/10 border border-accent/30 rounded-2xl flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                          <div className="p-3 bg-accent rounded-xl"><Calculator className="h-6 w-6 text-black" /></div>
+                          <div>
+                              <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Calculated Aggregate</p>
+                              <p className="text-3xl font-black text-white tracking-tighter">₹{msg.aggregationResult.toLocaleString()}</p>
+                          </div>
+                      </div>
+                      <Badge variant="outline" className="bg-accent/20 text-accent font-black">{msg.content.aggregation?.type.toUpperCase()}</Badge>
+                  </motion.div>
+              )}
+
               {msg.results && msg.results.length > 0 ? (
                 <>
-                <p className="font-black text-xs uppercase tracking-widest mb-4 opacity-60 flex items-center gap-2">
-                    <Sparkles className="h-3 w-3" /> Data Retrieval Successful: {msg.results.length} nodes located in '{msg.content.collection}'
-                </p>
+                <div className="flex justify-between items-center mb-4">
+                    <p className="font-black text-xs uppercase tracking-widest opacity-60 flex items-center gap-2">
+                        <Sparkles className="h-3 w-3" /> Retrieval: {msg.results.length} nodes in '{msg.content.collection}'
+                    </p>
+                    {msg.content.action === 'export_pdf' && (
+                        <Badge className="bg-blue-500 gap-2"><FileDown className="h-3 w-3" /> PDF Report Active</Badge>
+                    )}
+                </div>
                  <motion.div 
                     className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
                     variants={containerVariants}
@@ -250,13 +324,13 @@ export default function SmartSearchPage() {
             className="flex justify-center"
         >
             <div className="p-6 bg-accent/10 rounded-[2.5rem] w-fit mb-4 border border-accent/20 relative group">
-                <div className="absolute inset-0 bg-accent/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute inset-0 bg-accent/20 blur-2xl rounded-full opacity-0 group-hover:opacity-10 transition-opacity" />
                 <BrainCircuit className="h-12 w-12 text-accent relative z-10" />
             </div>
         </motion.div>
         <CardTitle className="text-4xl font-black tracking-tighter uppercase">AI Terminal Assistant</CardTitle>
         <CardDescription className="text-xs font-bold tracking-widest uppercase opacity-60 mt-2">
-          Natural Language Query Node • Connected to F.Co Cloud Database
+          Natural Language Query Node • Contextual History Active
         </CardDescription>
       </CardHeader>
       
@@ -303,7 +377,7 @@ export default function SmartSearchPage() {
                         <Loader2 className="h-6 w-6 text-accent animate-spin" />
                     </div>
                     <div className="max-w-3xl w-full p-6 rounded-[2rem] glass-panel border-white/10">
-                        <p className="text-xs font-black uppercase tracking-widest animate-pulse opacity-50">Analyzing data clusters...</p>
+                        <p className="text-xs font-black uppercase tracking-widest animate-pulse opacity-50">Synthesizing data stream...</p>
                     </div>
                 </motion.div>
                 )}

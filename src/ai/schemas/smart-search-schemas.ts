@@ -19,8 +19,19 @@ export const SortSchema = z.object({
     direction: z.enum(['asc', 'desc']).describe('The sort direction.'),
 });
 
+export const AggregationSchema = z.object({
+    field: z.string().describe('The field to aggregate (e.g., "totals.netSale").'),
+    type: z.enum(['sum', 'avg', 'count']).describe('The type of aggregation to perform.'),
+});
+
+export const ChatMessageSchema = z.object({
+    role: z.enum(['user', 'model']),
+    content: z.string(),
+});
+
 export const SmartSearchInputSchema = z.object({
   query: z.string().describe('The user\'s natural language search query.'),
+  history: z.array(ChatMessageSchema).optional().describe('The conversation history for follow-up context.'),
 });
 export type SmartSearchInput = z.infer<typeof SmartSearchInputSchema>;
 
@@ -29,6 +40,8 @@ export const SmartSearchOutputSchema = z.object({
   filters: z.array(FilterSchema).describe('An array of filters to apply to the data.'),
   sort: SortSchema.optional().describe("An optional sort configuration."),
   limit: z.number().optional().describe("An optional limit for the number of results."),
+  aggregation: AggregationSchema.optional().describe("Optional request to calculate a total, average, or count."),
+  action: z.enum(['view', 'export_pdf']).optional().describe("The action the user wants to perform, e.g., viewing data or exporting a PDF."),
   error: z.string().optional().describe('An error message if the query could not be understood.'),
 });
 export type SmartSearchOutput = z.infer<typeof SmartSearchOutputSchema>;

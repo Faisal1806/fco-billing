@@ -63,9 +63,10 @@ const smartSearchPrompt = ai.definePrompt(
 
     ${collectionsSchema}
 
-    - When filtering by date, convert relative terms like "today", "last week", "this month" into specific YYYY-MM-DD dates or date ranges.
-    - If a user asks for "unpaid" or "paid" wataks, there is no status field. You should return an error message explaining that this feature is not yet available.
-    - If you cannot determine the collection or filters, set the 'error' field with a helpful message. Do not guess.
+    - Follow-up context: Use the history provided to understand what "they", "it", or specific names mentioned previously refer to.
+    - Date Conversion: Convert relative terms like "today", "last week", "this month" into specific YYYY-MM-DD dates or date ranges.
+    - Aggregation: If the user asks for "total", "sum", "grand total", "average", or "how many", use the 'aggregation' field.
+    - Actions: If the user asks for data "in pdf form", "as a report", or "to print", set 'action' to 'export_pdf'.
     - For queries like "show me sales", default to the 'invoices' collection.
     - For queries about profit or loss from outside sales, use the 'bikris' collection.
     - For queries about manual ledger statements, use the 'statements' collection.
@@ -73,6 +74,11 @@ const smartSearchPrompt = ai.definePrompt(
     - The 'sort' field should have 'field' and 'direction' ('asc' or 'desc').
     - If searching for a person by name, use the 'contains' operator on the appropriate name field.
     - Do not invent fields. Only use the fields listed in the schemas.
+
+    Conversation History:
+    {{#each history}}
+    {{role}}: {{content}}
+    {{/each}}
 
     User Query: "{{query}}"`,
     }
