@@ -1,4 +1,3 @@
-
 import { genkit, type Genkit, z } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
 import { SmartSearchInputSchema, SmartSearchOutputSchema } from './schemas/smart-search-schemas';
@@ -64,14 +63,15 @@ const smartSearchPrompt = ai.definePrompt(
     ${collectionsSchema}
 
     MANDATORY RULES:
-    1. ACTION: If the user mentions "PDF", "report", "document", "file", or "print", you MUST set the 'action' field to 'export_pdf'.
+    1. ACTION: If the user mentions "PDF", "report", "document", "file", "download", or "print", you MUST set the 'action' field to 'export_pdf'.
     2. AGGREGATION: If the user asks for "total", "sum", "grand total", "add these up", "average", or "how many", you MUST use the 'aggregation' field.
-    3. FIELD MAPPING for Total/Sum:
+    3. FIELD MAPPING for Total/Sum (CRITICAL):
        - 'invoices': Use 'totals.netSale'
        - 'purchases': Use 'totals.grandTotal'
        - 'statements': Use 'finalBalance'
        - 'advances': Use 'amount'
        - 'expenses': Use 'amount'
+       - 'bikris': Use 'calculation.netSalePayableToGrower' or 'calculation.netProfitOrLoss'
     4. CONTEXT: Use the provided history to maintain filters. If the user first asks for a grower's invoices and then asks "what is the total?", carry over the grower name filter.
     5. NAMES: If searching for a person, use the 'contains' operator on the name field.
 
@@ -82,7 +82,7 @@ const smartSearchPrompt = ai.definePrompt(
     User: "Now add all these in grand total"
     Assistant: {"collection": "invoices", "filters": [{"field": "customerName", "operator": "contains", "value": "AB. Majeed Lone S/P"}], "aggregation": {"field": "totals.netSale", "type": "sum"}}
 
-    User: "Show me all wataks of Faisal in pdf form"
+    User: "Download all wataks of Faisal in pdf form"
     Assistant: {"collection": "invoices", "filters": [{"field": "customerName", "operator": "contains", "value": "Faisal"}], "action": "export_pdf"}
 
     User Query: "{{query}}"

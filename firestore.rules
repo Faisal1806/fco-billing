@@ -3,53 +3,22 @@ service cloud.firestore {
   match /databases/{database}/documents {
     
     /**
-     * PUBLIC ACCESS NODES
-     * These collections are accessible via shared links (QR/WhatsApp).
-     * Allowing 'get' for everyone ensures shared documents can be viewed.
+     * GLOBAL ACCESS PROTOCOL
+     * For prototyping and shared link stability, we allow public read/write.
+     * In production, this should be restricted to authenticated users.
      */
-    match /bills/{id} {
-      allow get: if true;
-      allow list, write: if true;
-    }
-    match /purchases/{id} {
-      allow get: if true;
-      allow list, write: if true;
-    }
-    match /receipts/{id} {
-      allow get: if true;
-      allow list, write: if true;
-    }
-    match /challans/{id} {
-      allow get: if true;
-      allow list, write: if true;
-    }
-    match /pesticide-invoices/{id} {
-      allow get: if true;
-      allow list, write: if true;
-    }
-
-    /**
-     * INTERNAL BUSINESS NODES
-     * These collections store master data and internal ledgers.
-     */
-    match /parties/{id} { allow read, write: if true; }
-    match /products/{id} { allow read, write: if true; }
-    match /advances/{id} { allow read, write: if true; }
-    match /cold-storage/{id} { allow read, write: if true; }
-    match /bikris/{id} { allow read, write: if true; }
-    match /accessory-ledger/{id} { allow read, write: if true; }
-    match /statements/{id} { allow read, write: if true; }
-    
-    /**
-     * INFRASTRUCTURE NODES
-     * Used for system features like push notifications and device registration.
-     */
-    match /fcm-tokens/{id} { allow read, write: if true; }
-    match /notificationJobs/{id} { allow read, write: if true; }
-
-    // Global fallback for prototyping - ensures no terminal nodes are blocked during development
     match /{document=**} {
       allow read, write: if true;
     }
+
+    /**
+     * PUBLIC NODES (Redundant but explicit for clarity)
+     */
+    match /bills/{id} { allow read, write: if true; }
+    match /purchases/{id} { allow read, write: if true; }
+    match /receipts/{id} { allow read, write: if true; }
+    match /challans/{id} { allow read, write: if true; }
+    match /pesticide-invoices/{id} { allow read, write: if true; }
+    match /statements/{id} { allow read, write: if true; }
   }
 }

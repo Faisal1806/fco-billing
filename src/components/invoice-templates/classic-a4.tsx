@@ -1,16 +1,15 @@
-
 import { Logo } from "@/components/logo";
 import BusinessCardQR from "@/components/BusinessCardQR";
 import PaymentQR from "@/components/PaymentQR";
 import QRCode from 'qrcode.react';
 
 export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:string }) => {
-    // Defensive destructuring with defaults
+    // Defensive destructuring with robust defaults to prevent formatting errors
     const { 
         sNo = '', 
         date = '', 
         date2 = '', 
-        customerName = '', 
+        customerName = 'N/A', 
         watakNo = '', 
         khata = '', 
         entries = [], 
@@ -20,6 +19,7 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
             labour: 0, 
             association: 0, 
             security: 0, 
+            commissionAmount: 0,
             totalExpenses: 0, 
             netSale: 0,
             totalQty: 0,
@@ -88,8 +88,8 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
                                     <td className="py-0.5 px-1 border-r border-green-600/50">{entry.type}</td>
                                     <td className="py-0.5 px-1 border-r border-green-600/50">{entry.variety}</td>
                                     <td className="py-0.5 px-1 text-center border-r border-green-600/50">{entry.qty}</td>
-                                    <td className="py-0.5 px-1 text-right border-r border-green-600/50">{entry.isForwarded ? 'Forwarded' : `₹${(entry.rate || 0).toFixed(2)}`}</td>
-                                    <td className="py-0.5 px-1 text-right font-semibold">{entry.isForwarded ? 'Forwarded' : `₹${(entry.total || 0).toFixed(2)}`}</td>
+                                    <td className="py-0.5 px-1 text-right border-r border-green-600/50">{entry.isForwarded ? 'Forwarded' : `₹${(Number(entry.rate) || 0).toFixed(2)}`}</td>
+                                    <td className="py-0.5 px-1 text-right font-semibold">{entry.isForwarded ? 'Forwarded' : `₹${(Number(entry.total) || 0).toFixed(2)}`}</td>
                                 </tr>
                             ))}
                             {emptyRows.map((_, index) => (
@@ -124,14 +124,14 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
                             </div>
                         </div>
                         <div className="space-y-0.5 border-l-2 border-green-700 pl-4 text-[10px]">
-                            <div className="flex justify-between"><span>Subtotal:</span> <span className="font-semibold">₹{(totals?.subtotal || 0).toFixed(2)}</span></div>
-                            <div className="flex justify-between font-bold border-t border-gray-400"><span>Gross Sale:</span> <span>₹{(totals?.grossSale || 0).toFixed(2)}</span></div>
-                            <div className="flex justify-between"><span>Freight:</span> <span>- ₹{(freight || 0).toFixed(2)}</span></div>
-                            <div className="flex justify-between"><span>Labour:</span> <span>- ₹{(totals?.labour || 0).toFixed(2)}</span></div>
-                            <div className="flex justify-between"><span>Association:</span> <span>- ₹{(totals?.association || 0).toFixed(2)}</span></div>
-                            <div className="flex justify-between"><span>Security:</span> <span>- ₹{(totals?.security || 0).toFixed(2)}</span></div>
-                            <div className="flex justify-between font-bold border-t border-gray-400"><span>Total Exp:</span> <span>- ₹{(totals?.totalExpenses || 0).toFixed(2)}</span></div>
-                            <div className="flex justify-between font-bold text-base border-t border-gray-400"><span>Net Sale:</span> <span>₹{(totals?.netSale || 0).toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span>Subtotal:</span> <span className="font-semibold">₹{(Number(totals?.subtotal) || 0).toFixed(2)}</span></div>
+                            <div className="flex justify-between font-bold border-t border-gray-400"><span>Gross Sale:</span> <span>₹{(Number(totals?.grossSale) || 0).toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span>Freight:</span> <span>- ₹{(Number(freight) || 0).toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span>Labour:</span> <span>- ₹{(Number(totals?.labour) || 0).toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span>Association:</span> <span>- ₹{(Number(totals?.association) || 0).toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span>Security:</span> <span>- ₹{(Number(totals?.security) || 0).toFixed(2)}</span></div>
+                            <div className="flex justify-between font-bold border-t border-gray-400"><span>Total Exp:</span> <span>- ₹{(Number(totals?.totalExpenses) || 0).toFixed(2)}</span></div>
+                            <div className="flex justify-between font-bold text-base border-t border-gray-400"><span>Net Sale:</span> <span>₹{(Number(totals?.netSale) || 0).toFixed(2)}</span></div>
                         </div>
                     </div>
                     <div className="flex justify-end items-end mt-1">

@@ -1,11 +1,15 @@
+'use client';
 
-'use server';
+import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, getDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { app } from './firebase';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
-import { getClientDb } from './firebase';
-import { collection, getDocs, doc, setDoc, deleteDoc, getDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+// Initialize Firestore on the client side
+const db = getFirestore(app);
 
 /**
- * Sends push notifications to specified FCM tokens.
+ * Sends push notifications to specified FCM tokens by queueing a job.
  */
 export async function sendPushNotification(notification: {
     title: string;
@@ -13,89 +17,98 @@ export async function sendPushNotification(notification: {
     tokens: string[];
     url?: string;
 }) {
-    if (notification.tokens.length === 0) {
-        return { success: true, message: "No tokens provided." };
-    }
+    if (notification.tokens.length === 0) return { success: true };
 
-    try {
-        const db = getClientDb();
-        const notificationJobsRef = collection(db, 'notificationJobs');
-        await addDoc(notificationJobsRef, {
-            ...notification,
-            createdAt: serverTimestamp(),
-            status: 'pending',
+    const notificationJobsRef = collection(db, 'notificationJobs');
+    const jobData = {
+        ...notification,
+        createdAt: serverTimestamp(),
+        status: 'pending',
+    };
+
+    return addDoc(notificationJobsRef, jobData)
+        .then((docRef) => ({ success: true, id: docRef.id }))
+        .catch(async (error) => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: notificationJobsRef.path,
+                operation: 'create',
+                requestResourceData: jobData,
+            } satisfies SecurityRuleContext));
+            return { success: false, error: error.message };
         });
-        return { success: true, message: "Notification job queued successfully." };
-    } catch (error) {
-        console.error("Error queueing notification job:", error);
-        return { success: false, error: (error as Error).message };
-    }
 }
 
 /**
- * Generic function to save a document to the cloud (Firestore).
- * Used for the "Sync to Cloud" feature.
+ * Saves a document to Firestore with non-blocking error handling.
  */
 export async function saveDocument(collectionName: string, id: string, data: any) {
-  try {
-    const db = getClientDb();
-    // Ensure we don't save UI state or functions
-    const cleanData = JSON.parse(JSON.stringify(data));
-    await setDoc(doc(db, collectionName, id), cleanData, { merge: true });
-    return { success: true, id };
-  } catch (error) {
-    console.error(`Error saving document to ${collectionName}:`, error);
-    return { success: false, error: (error as Error).message };
-  }
+    const docRef = doc(db, collectionName, id);
+    const cleanData = JSON.parse(JSON.stringify(data)); // Strip non-serializable content
+
+    return setDoc(docRef, cleanData, { merge: true })
+        .then(() => ({ success: true, id }))
+        .catch(async (error) => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'write',
+                requestResourceData: cleanData,
+            } satisfies SecurityRuleContext));
+            return { success: false, error: error.message };
+        });
 }
 
 /**
- * Generic function to delete a document from the cloud.
+ * Deletes a document from Firestore.
  */
 export async function deleteDocument(collectionName: string, id: string) {
-    try {
-        const db = getClientDb();
-        await deleteDoc(doc(db, collectionName, id));
-        return { success: true };
-    } catch (error) {
-        console.error("Error deleting document:", error);
-        return { success: false, error: (error as Error).message };
-    }
+    const docRef = doc(db, collectionName, id);
+    return deleteDoc(docRef)
+        .then(() => ({ success: true }))
+        .catch(async (error) => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'delete',
+            } satisfies SecurityRuleContext));
+            return { success: false, error: error.message };
+        });
 }
 
 /**
- * Generic function to get a single document from a collection.
+ * Fetches a single document from Firestore.
  */
-export async function getDocument(collectionName: string, id: string): Promise<{ success: boolean; data?: any; error?: string }> {
+export async function getDocument(collectionName: string, id: string) {
+    const docRef = doc(db, collectionName, id);
     try {
-        const db = getClientDb();
-        const docRef = doc(db, collectionName, id);
         const docSnap = await getDoc(docRef);
-
         if (docSnap.exists()) {
             return { success: true, data: { id: docSnap.id, ...docSnap.data() } };
-        } else {
-            return { success: false, error: "Document not found in the cloud." };
         }
-    } catch (error) {
-        console.error(`Error fetching document from ${collectionName}:`, error);
-        return { success: false, error: (error as Error).message };
+        return { success: false, error: "Document not found." };
+    } catch (error: any) {
+        const contextualError = new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'get',
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', contextualError);
+        return { success: false, error: error.message };
     }
 }
 
 /**
- * Generic function to get all documents from a collection.
- * Useful for restoring from a cloud backup.
+ * Fetches all documents from a collection.
  */
-export async function getDocuments(collectionName: string): Promise<{ success: boolean; data?: any[]; error?: string }> {
+export async function getDocuments(collectionName: string) {
+    const colRef = collection(db, collectionName);
     try {
-        const db = getClientDb();
-        const querySnapshot = await getDocs(collection(db, collectionName));
+        const querySnapshot = await getDocs(colRef);
         const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
         return { success: true, data };
-    } catch (error) {
-        console.error(`Error fetching documents from ${collectionName}:`, error);
-        return { success: false, error: (error as Error).message };
+    } catch (error: any) {
+        const contextualError = new FirestorePermissionError({
+            path: colRef.path,
+            operation: 'list',
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', contextualError);
+        return { success: false, error: error.message };
     }
 }
