@@ -184,9 +184,9 @@ export function BillMakingTab() {
         setDate(new Date().toISOString().split('T')[0]);
 
         const fetchTokens = async () => {
-            const { success, data } = await getDocuments('fcm-tokens');
+            const { success, data } = await getDocuments('fcm-tokens', true);
             if (success && data) {
-                setFcmTokens(data.map(t => t.token));
+                setFcmTokens(data.map((t: any) => t.token));
             }
         };
         fetchTokens();
@@ -404,22 +404,22 @@ export function BillMakingTab() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDeleteWatak = async (sNo: string) => {
-    if(userRole !== 'admin') {
+  const handleDeleteWatak = async (deletedSNo: string) => {
+    if (userRole !== 'admin') {
       toast({ variant: "destructive", title: "Permission Denied", description: "You do not have permission to delete invoices."});
       return;
     }
-    if(!window.confirm(`Are you sure you want to delete Invoice #${sNo}? This cannot be undone.`)) return;
+    if (!window.confirm(`Are you sure you want to delete Invoice #${deletedSNo}? This cannot be undone.`)) return;
     
-    localStorage.removeItem(`invoice-${sNo}`);
+    localStorage.removeItem(`invoice-${deletedSNo}`);
     try {
-        await deleteDocument('bills', sNo);
-        toast({ title: "Invoice Deleted", description: `Invoice #${sNo} has been deleted locally and from cloud.`});
+        await deleteDocument('bills', deletedSNo);
+        toast({ title: "Invoice Deleted", description: `Invoice #${deletedSNo} has been deleted locally and from cloud.`});
     } catch (e) {
         toast({ title: "Invoice Deleted Locally", description: `Bill removed from device but cloud sync failed.`});
     }
     fetchBillsAndReceipts();
-    if (sNo === sNo) resetForm();
+    if (deletedSNo === sNo) resetForm();
   }
 
 

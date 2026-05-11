@@ -86,7 +86,7 @@ export default function ProductsPage() {
         setUserRole(localStorage.getItem('userRole'));
     }
     const fetchTokens = async () => {
-        const { success, data } = await getDocuments('fcm-tokens');
+        const { success, data } = await getDocuments('fcm-tokens', true);
         if (success && data) {
             setFcmTokens(data.map(t => t.token));
         }

@@ -2,6 +2,7 @@
 'use client';
 
 import * as React from 'react';
+import { Suspense } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLanguage } from '@/contexts/language-context';
 import { BillMakingTab } from '@/components/bill-making-tab';
@@ -10,7 +11,7 @@ import { PesticideBillTab } from '@/components/pesticide-bill-tab';
 import { ChallanMakingTab } from '@/components/challan-making-tab';
 import { useSearchParams } from 'next/navigation';
 
-export default function SalesPage() {
+function SalesPageContent() {
   const { t } = useLanguage();
   const searchParams = useSearchParams();
   const initialTab = searchParams.get('tab') || 'wataks';
@@ -44,5 +45,13 @@ export default function SalesPage() {
             <PesticideBillTab />
         </TabsContent>
     </Tabs>
+  );
+}
+
+export default function SalesPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SalesPageContent />
+    </Suspense>
   );
 }

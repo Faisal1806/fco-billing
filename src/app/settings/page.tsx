@@ -18,9 +18,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { getClientMessaging } from '@/lib/firebase';
 import { saveDocument, sendPushNotification, deleteDocument, getDocuments } from '@/lib/actions';
-import { getToken } from 'firebase/messaging';
 import { Input } from '@/components/ui/input';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import * as XLSX from 'xlsx';
@@ -76,7 +74,7 @@ export default function SettingsPage() {
     const [activeAccent, setActiveAccent] = React.useState('142 76% 45%');
 
      const fetchTokens = async () => {
-        const { success, data } = await getDocuments('fcm-tokens');
+        const { success, data } = await getDocuments('fcm-tokens', true);
         if (success && data) {
             setFcmTokens(data);
         }
@@ -273,38 +271,11 @@ export default function SettingsPage() {
 
 
     const handleEnableNotifications = async () => {
-        const messaging = getClientMessaging();
-        if (!messaging) {
-            toast({
-                variant: 'destructive',
-                title: 'Unsupported Browser',
-                description: 'Push notifications are not supported on this browser or environment.',
-            });
-            return;
-        }
-
-        try {
-            const permission = await Notification.requestPermission();
-            if (permission === 'granted') {
-                const fcmToken = await getToken(messaging);
-                
-                if (fcmToken) {
-                    await saveDocument('fcm-tokens', fcmToken, { token: fcmToken, enabledAt: new Date().toISOString() });
-                    fetchTokens();
-                    toast({
-                        title: 'Notifications Enabled',
-                        description: 'This terminal is now receiving real-time push updates.',
-                    });
-                } else {
-                     toast({ variant: 'destructive', title: 'Token Error', description: 'Could not register FCM node.' });
-                }
-            } else {
-                 toast({ variant: 'destructive', title: 'Permission Denied', description: 'Please enable notifications in your browser settings.' });
-            }
-        } catch (error) {
-            console.error('Error getting FCM token:', error);
-            toast({ variant: 'destructive', title: 'Notification Error', description: `An error occurred: ${(error as Error).message}` });
-        }
+        toast({
+            variant: 'destructive',
+            title: 'Unsupported Feature',
+            description: 'Push notifications are disabled because Firebase has been removed.',
+        });
     };
 
     const handleSendTestNotification = async () => {

@@ -86,9 +86,9 @@ export default function AdvancesPage() {
             setUserRole(localStorage.getItem('userRole'));
         }
         const fetchTokens = async () => {
-            const { success, data } = await getDocuments('fcm-tokens');
+            const { success, data } = await getDocuments('fcm-tokens', true);
             if (success && data) {
-                setFcmTokens(data.map(t => t.token));
+                setFcmTokens(data.map((t: any) => t.token));
             }
         };
         fetchTokens();
@@ -97,11 +97,14 @@ export default function AdvancesPage() {
     const fetchEntries = () => {
         setIsLoading(true);
         if(typeof window !== 'undefined') {
-            const items = [];
+            const items: AdvanceEntry[] = [];
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key?.startsWith(STORAGE_PREFIX)) {
-                    items.push(JSON.parse(localStorage.getItem(key)!));
+                    const raw = localStorage.getItem(key);
+                    if (raw) {
+                      items.push(JSON.parse(raw));
+                    }
                 }
             }
              setEntries(items.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
