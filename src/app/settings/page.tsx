@@ -63,6 +63,34 @@ const accentColors = [
 ];
 
 export default function SettingsPage() {
+    const handleRestoreJson = async (
+  e: React.ChangeEvent<HTMLInputElement>
+) => {
+  const file = e.target.files?.[0];
+
+  if (!file) return;
+
+  try {
+    const text = await file.text();
+
+    const jsonData = JSON.parse(text);
+
+    const response = await fetch("/api/restore-json", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(jsonData),
+    });
+
+    const result = await response.json();
+
+    alert(result.message || "Backup restored successfully");
+  } catch (error) {
+    console.error(error);
+    alert("Restore failed");
+  }
+};
     const { toast } = useToast();
     const { theme, setTheme } = useTheme();
     const [invoiceStyle, setInvoiceStyle] = React.useState('classic');
@@ -384,7 +412,7 @@ export default function SettingsPage() {
             });
         }
     };
-    
+
     return (
         <div className="space-y-10 pb-20">
             <PageHeader
@@ -465,7 +493,25 @@ export default function SettingsPage() {
                         </div>
                     </CardContent>
                 </MotionCard>
+
             </div>
+<div className="mt-4">
+  <input
+    type="file"
+    accept=".json"
+    onChange={handleRestoreJson}
+    className="hidden"
+    id="restoreJson"
+  />
+
+  <label
+    htmlFor="restoreJson"
+    className="flex items-center justify-center w-full rounded-xl border border-green-500 py-3 text-green-400 cursor-pointer hover:bg-green-500/10"
+  >
+    Restore From JSON Backup
+  </label>
+</div>
+
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
                 {/* Theme & Accent Customization */}
