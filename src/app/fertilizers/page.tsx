@@ -2,7 +2,7 @@
 'use client';
 
 import AutomaticRateList from "@/components/AutomaticRateList";
-import EditableRateList from "@/components/EditableRateList";
+
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
@@ -32,12 +32,10 @@ export default function FertilizersPage() {
         />
 
         <Separator className="my-8" />
-
-        <EditableRateList 
           storageKeyPrefix="manual-fertilizer-rates-"
           title="Manual & Add-on Fertilizer Rates"
           defaultRates={defaultPesticideRates}
-        />
+        /
       </>
   );
 }

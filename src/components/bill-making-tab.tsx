@@ -23,7 +23,7 @@ import { saveDocument, deleteDocument, sendPushNotification, getDocuments } from
 import { Checkbox } from './ui/checkbox';
 import { Progress } from './ui/progress';
 import { Alert, AlertDescription } from './ui/alert';
-import CameraScanner from './camera-scanner';
+
 
 
 type Row = {
@@ -619,7 +619,7 @@ export function BillMakingTab() {
                             </Popover>
                         </div>
                         <div className="flex-shrink-0">
-                            <CameraScanner onScanComplete={handleScanComplete} />
+                                    
                         </div>
                     </div>
                 </div>
