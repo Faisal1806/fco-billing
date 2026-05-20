@@ -7,6 +7,8 @@ export async function POST(req) {
     await connectDB();
 
     const data = await req.json();
+    console.log("RESTORE DATA:",Object.keys(data));
+    console.log(data)
 
     if (data.customers) {
       await Customer.insertMany(data.customers);
