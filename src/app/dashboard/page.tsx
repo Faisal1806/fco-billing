@@ -153,13 +153,18 @@ export default function DashboardPage() {
             try {
                 data = JSON.parse(localStorage.getItem(key)!);
             } catch { continue; }
+            if (data.date || data.createdAt) {
 
-            if(data.date) {
-                const dateObj = new Date(data.date);
-                if (!isNaN(dateObj.getTime())) {
-                    years.add(dateObj.getFullYear());
-                    
-                    if (dateObj.getFullYear() === selectedYear) {
+    const rawDate = data.date || data.createdAt;
+    const dateObj = new Date(rawDate);
+
+    if (!isNaN(dateObj.getTime())) {
+
+        years.add(dateObj.getFullYear());
+
+        if (dateObj.getFullYear() === selectedYear) {
+
+           
                         if(key.startsWith('invoice-')) {
                             newStats.yearGrossSales += data.totals?.grossSale || 0;
                             newStats.yearNetSales += data.totals?.netSale || 0;
