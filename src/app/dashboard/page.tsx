@@ -203,8 +203,18 @@ export default function DashboardPage() {
                 }
             }
         }
+        const extractedYears = Array.from(years);
 
-        setAvailableYears(Array.from(years).sort((a,b) => b-a));
+if (!extractedYears.includes(2025)) {
+    extractedYears.push(2025);
+}
+
+setAvailableYears(extractedYears.sort((a, b) => b - a));
+if (!extractedYears.includes(selectedYear)) {
+    setSelectedYear(extractedYears[0]);
+}
+
+        
 
         newLoyaltyStats.totalPoints = Math.floor(Object.values(growerSales).reduce((acc, sale) => acc + sale, 0) * 0.01);
         const sortedGrowers = Object.entries(growerSales).sort(([,a],[,b]) => b-a);
