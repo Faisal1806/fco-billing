@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
@@ -263,62 +263,39 @@ export default function SettingsPage() {
 
         const reader = new FileReader();
         reader.onload = (e) => {
-    try {
-        console.log("IMPORT STARTED");
+            try {
+                const jsonString = e.target?.result as string;
+                const backupData = JSON.parse(jsonString);
 
-        const jsonString = e.target?.result as string;
+                if (typeof backupData !== 'object' || backupData === null) {
+                    throw new Error("Invalid backup file format.");
+                }
+                
+                const adminRole = localStorage.getItem('userRole');
+                localStorage.clear();
+                if (adminRole) {
+                    localStorage.setItem('userRole', adminRole);
+                }
 
-        console.log("RAW JSON:", jsonString);
+                for (const key in backupData) {
+                    if (Object.prototype.hasOwnProperty.call(backupData, key)) {
+                         const value = typeof backupData[key] === 'object' 
+                            ? JSON.stringify(backupData[key]) 
+                            : backupData[key];
+                        localStorage.setItem(key, value);
+                    }
+                }
 
-        const backupData = JSON.parse(jsonString);
+                toast({ title: "Import Successful", description: "Terminal database restored. Reloading..." });
+                setTimeout(() => window.location.reload(), 2000);
 
-        console.log("PARSED DATA:", backupData);
-
-        if (typeof backupData !== 'object' || backupData === null) {
-            throw new Error("Invalid backup file format.");
-        }
-
-        const adminRole = localStorage.getItem('userRole');
-
-        localStorage.clear();
-
-        if (adminRole) {
-            localStorage.setItem('userRole', adminRole);
-        }
-
-        Object.entries(backupData).forEach(([key, value]) => {
-            console.log("Saving:", key);
-
-            localStorage.setItem(
-                key,
-                typeof value === 'object'
-                    ? JSON.stringify(value)
-                    : String(value)
-            );
-        });
-
-        console.log("FINAL STORAGE:", Object.keys(localStorage));
-
-        toast({
-            title: "Import Successful",
-            description: "Database restored."
-        });
-
-        setTimeout(() => {
-            window.location.reload();
-        }, 1500);
-
-    } catch (error) {
-        console.error("IMPORT ERROR:", error);
-
-        toast({
-            variant: 'destructive',
-            title: 'Import Failed',
-            description: 'Backup file invalid.'
-        });
-    }
-};
-
+            } catch (error) {
+                console.error("JSON Import failed:", error);
+                toast({ variant: 'destructive', title: 'Import Failed', description: 'The backup file seems to be corrupted or invalid.' });
+            }
+        };
+        reader.readAsText(file);
+    };
 
 
     const handleEnableNotifications = async () => {
@@ -740,5 +717,4 @@ export default function SettingsPage() {
         </div>
     );
 }
-
 
