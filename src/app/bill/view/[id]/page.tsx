@@ -122,3 +122,4 @@ export default function PublicBillPage({ params }: { params: { id: string } }) {
         </div>
     );
 }
+

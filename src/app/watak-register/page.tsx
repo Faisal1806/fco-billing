@@ -134,7 +134,10 @@ export default function SalesRegisterPage() {
   const { t } = useLanguage();
   const router = useRouter();
   const { toast } = useToast();
-  const { selectedYear, setSelectedYear } = useAppState();
+  const years = new Set<number>();
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = React.useState(currentYear);
+ 
 
   const [wataks, setWataks] = React.useState<WatakEntry[]>([]);
   const [growers, setGrowers] = React.useState<string[]>([]);
@@ -150,9 +153,11 @@ export default function SalesRegisterPage() {
   const fetchWataks = React.useCallback(() => {
     setIsLoading(true);
     if(typeof window !== 'undefined') {
-        const items = [];
+        const items: any[] = wataks || [];
         const growerMap = new Map<string, string>(); // Map from canonical name -> canonical name
-        const years = new Set<number>([new Date().getFullYear()]);
+        const itemYear = items?.[0]?.date
+  ? Number(String(items?.[0]?.date).split(/[-/]/).find(part => part.length === 4))
+  : null;
 
         const addPartyToMap = (name: string) => {
              const canonical = getCanonicalName(name);
@@ -167,7 +172,10 @@ export default function SalesRegisterPage() {
             const key = localStorage.key(i);
             if (key?.startsWith('party-')) {
                 try {
-                    addPartyToMap(JSON.parse(localStorage.getItem(key)!).name);
+                    const partyData = localStorage.getItem(key);
+                    if (partyData) {
+                        addPartyToMap(JSON.parse(partyData).name);
+                    }
                 } catch(e) { console.error("Failed to parse party:", e); }
             }
         }
@@ -176,20 +184,20 @@ export default function SalesRegisterPage() {
             const key = localStorage.key(i);
             if (key?.startsWith('invoice-')) {
                 try {
-                    const watak = JSON.parse(localStorage.getItem(key)!);
-                    if (watak.date) {
-                        years.add(new Date(watak.date).getFullYear());
-                    }
-                    if (new Date(watak.date).getFullYear() === selectedYear) {
-                      items.push(watak);
-                      addPartyToMap(watak.customerName);
+                    const watakData = localStorage.getItem(key);
+                    if (watakData) {
+                        const watak = JSON.parse(watakData);
+                        if (watak.date && watak?.date ? Number(String(watak.date).split(/[-/]/).find(p => p.length === 4)) === selectedYear : false) {
+                          items.push(watak);
+                          addPartyToMap(watak.customerName);
+                        }
                     }
                 } catch(e) {
                     console.error("Failed to parse watak from local storage", e);
                 }
             }
         }
-        setAvailableYears(Array.from(years).sort((a,b) => b-a));
+     
         setWataks(items.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         setPartyNameMap(growerMap);
         const uniqueGrowers = ['All Growers', ...Array.from(growerMap.values())].sort();
@@ -299,9 +307,8 @@ export default function SalesRegisterPage() {
     for (const billData of filteredWataks) {
       try {
         await new Promise<void>((resolve) => {
-          root.render(<ClassicA4Layout billData={billData} pageUrl={`${window.location.origin}/bill/view/${billData.sNo}?style=classic`} />, async () => {
-            await new Promise(r => setTimeout(r, 100));
-            
+          root.render(<ClassicA4Layout billData={billData} pageUrl={`${window.location.origin}/bill/view/${billData.sNo}?style=classic`} />);
+          setTimeout(async () => {
             const canvas = await html2canvas(tempContainer.children[0] as HTMLElement, {
               scale: 2,
               useCORS: true,
@@ -317,7 +324,7 @@ export default function SalesRegisterPage() {
             
             await new Promise(r => setTimeout(r, 300));
             resolve();
-          });
+          }, 100);
         });
       } catch (error) {
         console.error("Failed to generate PDF for invoice:", billData.sNo, error);
@@ -630,3 +637,4 @@ export default function SalesRegisterPage() {
     
 
     
+

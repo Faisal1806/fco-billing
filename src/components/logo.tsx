@@ -14,3 +14,4 @@ export const Logo = (props: React.SVGProps<SVGSVGElement>) => (
         <text x="11.5" y="15.5" fontFamily="sans-serif" fontSize="3.5" fontWeight="bold" textAnchor="middle" fill="white">F.Co</text>
     </svg>
 );
+

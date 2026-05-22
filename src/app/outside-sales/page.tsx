@@ -90,14 +90,14 @@ export default function OutsideSalesPage() {
                 if (key?.startsWith('challan-')) {
                     const challan = JSON.parse(localStorage.getItem(key)!);
                     if (challan.date) years.add(new Date(challan.date).getFullYear());
-                    if (new Date(challan.date).getFullYear() === selectedYear) {
+                    if (challan?.date ? Number(String(challan.date).split(/[-/]/).find(p => p.length === 4)) === selectedYear : false) {
                       allChallans.push(challan);
                     }
                 }
                 if (key?.startsWith('bikri-')) {
                     const bikri = JSON.parse(localStorage.getItem(key)!);
                     if (bikri.date) years.add(new Date(bikri.date).getFullYear());
-                     if (new Date(bikri.date).getFullYear() === selectedYear) {
+                     if (bikri?.date ? Number(String(bikri.date).split(/[-/]/).find(p => p.length === 4)) === selectedYear : false) {
                       allBikris.push(bikri);
                     }
                 }
@@ -665,3 +665,4 @@ export default function OutsideSalesPage() {
 }
 
     
+

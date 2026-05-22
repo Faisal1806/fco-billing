@@ -69,3 +69,4 @@ export async function getDocuments(collectionName: string, silent: boolean = fal
 
   return { success: true, data };
 }
+

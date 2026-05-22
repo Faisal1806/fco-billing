@@ -37,3 +37,4 @@ export default function PaymentQR({ vpa = "lone07936@okaxis", name = "Firdous Ah
     </div>
   );
 }
+

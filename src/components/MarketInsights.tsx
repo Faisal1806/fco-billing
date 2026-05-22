@@ -196,3 +196,4 @@ export const MarketInsights = ({ selectedYear }: { selectedYear: number }) => {
         </section>
     );
 };
+

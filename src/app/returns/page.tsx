@@ -73,7 +73,7 @@ const ReturnCard = ({ item, onDelete, userRole }: { item: ReturnItem, onDelete: 
         <CardHeader className="pb-2">
             <CardTitle className={`text-lg font-bold truncate ${textColor}`}>{item.itemName}</CardTitle>
             <CardDescription className="text-white/70">
-                {new Date(item.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                {new Date(item.date || "").toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
             </CardDescription>
         </CardHeader>
         <CardContent className="flex-grow space-y-3 pt-2">
@@ -274,3 +274,4 @@ export default function ReturnsPage() {
     </div>
   );
 }
+

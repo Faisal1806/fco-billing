@@ -140,7 +140,7 @@ export function ReceiptMakingTab() {
   const yearlyCount = React.useMemo(() => {
     if(!savedReceipts) return 0;
     const currentYear = new Date().getFullYear();
-    return savedReceipts.filter(r => new Date(r.date).getFullYear() === currentYear).length;
+    return savedReceipts.filter(r => r?.date ? Number(String(r.date).split(/[-/]/).find(p => p.length === 4)) === selectedYear : false).length;
   }, [savedReceipts]);
 
   const filteredReceipts = React.useMemo(() => {
@@ -433,3 +433,4 @@ export function ReceiptMakingTab() {
     </div>
   );
 }
+

@@ -39,3 +39,4 @@ export default function BusinessCardQR({ size = 80 }: Props) {
     </div>
   );
 }
+

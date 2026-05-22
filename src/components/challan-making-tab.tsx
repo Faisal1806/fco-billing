@@ -121,7 +121,7 @@ export function ChallanMakingTab() {
   const yearlyCount = React.useMemo(() => {
     if(!savedChallans) return 0;
     const currentYear = new Date().getFullYear();
-    return savedChallans.filter(c => new Date(c.date).getFullYear() === currentYear).length;
+    return savedChallans.filter(c => c?.date ? Number(String(c.date).split(/[-/]/).find(p => p.length === 4)) === selectedYear : false).length;
   }, [savedChallans]);
 
   const filteredChallans = React.useMemo(() => {
@@ -438,3 +438,4 @@ export function ChallanMakingTab() {
     </div>
   );
 }
+

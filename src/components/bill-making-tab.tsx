@@ -164,7 +164,7 @@ export function BillMakingTab() {
   const yearlyCount = useMemo(() => {
     if(!savedWataks) return 0;
     const currentYear = new Date().getFullYear();
-    return savedWataks.filter(w => new Date(w.date).getFullYear() === currentYear).length;
+    return savedWataks.filter(w => w?.date ? Number(String(w.date).split(/[-/]/).find(p => p.length === 4)) === selectedYear : false).length;
   }, [savedWataks]);
   
   const filteredWataks = useMemo(() => {
@@ -938,3 +938,4 @@ export function BillMakingTab() {
     </>
   );
 }
+

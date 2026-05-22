@@ -452,3 +452,4 @@ if (!extractedYears.includes(selectedYear)) {
     </motion.div>
   );
 }
+

@@ -271,3 +271,4 @@ export default function BikriBillPage({ params }: { params: { id: string } }) {
         </div>
     );
 }
+

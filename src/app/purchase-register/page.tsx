@@ -201,7 +201,7 @@ export default function PurchaseRegisterPage() {
                     if (purchase.date) {
                         years.add(new Date(purchase.date).getFullYear());
                     }
-                    if (new Date(purchase.date).getFullYear() === selectedYear) {
+                    if (purchase?.date ? Number(String(purchase.date).split(/[-/]/).find(p => p.length === 4)) === selectedYear : false) {
                       loadedPurchases.push(purchase);
                     }
                 } catch(e) { console.error("Failed to parse purchase:", e)}
@@ -569,3 +569,4 @@ export default function PurchaseRegisterPage() {
     
 
     
+

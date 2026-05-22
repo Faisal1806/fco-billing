@@ -44,3 +44,4 @@ export default function DocumentCard({ type, title, children }: Props) {
     </div>
   );
 }
+

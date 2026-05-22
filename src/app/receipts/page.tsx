@@ -10,3 +10,4 @@ export default function ReceiptsRedirect() {
     }, [router]);
     return null;
 }
+

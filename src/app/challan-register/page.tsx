@@ -10,3 +10,4 @@ export default function ChallanRedirect() {
     }, [router]);
     return null;
 }
+

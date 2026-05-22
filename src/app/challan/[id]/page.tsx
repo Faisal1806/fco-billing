@@ -401,3 +401,4 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
         </div>
     );
 }
+

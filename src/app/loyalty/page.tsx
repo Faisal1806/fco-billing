@@ -25,6 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import { saveDocument, sendPushNotification, getDocuments } from '@/lib/actions';
 import { Input } from '@/components/ui/input';
 import PageHeader from '@/components/PageHeader';
+import { Label } from "@/components/ui/label";
 
 type TransactionType = 'Sale' | 'Bikri' | 'Discount';
 
@@ -353,3 +354,4 @@ const StatCard = ({ title, value, icon: Icon, color }: { title: string, value: s
         </div>
     </div>
 );
+

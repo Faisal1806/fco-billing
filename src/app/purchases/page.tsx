@@ -81,14 +81,14 @@ export default function PurchasesPage() {
   const yearlyCount = useMemo(() => {
     if(!savedPurchases) return 0;
     const currentYear = new Date().getFullYear();
-    return savedPurchases.filter(p => new Date(p.date).getFullYear() === currentYear).length;
+    return savedPurchases.filter(p => p?.date ? Number(String(p.date).split(/[-/]/).find(p => p.length === 4)) === selectedYear : false).length;
   }, [savedPurchases]);
 
   const yearlyNugs = useMemo(() => {
     if(!savedPurchases) return 0;
     const currentYear = new Date().getFullYear();
     return savedPurchases
-      .filter(p => new Date(p.date).getFullYear() === currentYear)
+      .filter(p => p?.date ? Number(String(p.date).split(/[-/]/).find(p => p.length === 4)) === selectedYear : false)
       .reduce((acc, p) => acc + (p.totals?.totalQty || 0), 0);
   }, [savedPurchases]);
 
@@ -437,3 +437,4 @@ export default function PurchasesPage() {
     </div>
   );
 }
+
