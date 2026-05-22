@@ -135,8 +135,7 @@ export default function SalesRegisterPage() {
   const router = useRouter();
   const { toast } = useToast();
   const years = new Set<number>();
-  const currentYear = new Date().getFullYear();
-  const [selectedYear, setSelectedYear] = React.useState(currentYear);
+  const { selectedYear, setSelectedYear } = useAppState();
  
 
   const [wataks, setWataks] = React.useState<WatakEntry[]>([]);
@@ -637,4 +636,5 @@ export default function SalesRegisterPage() {
     
 
     
+
 
