@@ -263,39 +263,62 @@ export default function SettingsPage() {
 
         const reader = new FileReader();
         reader.onload = (e) => {
-            try {
-                const jsonString = e.target?.result as string;
-                const backupData = JSON.parse(jsonString);
+    try {
+        console.log("IMPORT STARTED");
 
-                if (typeof backupData !== 'object' || backupData === null) {
-                    throw new Error("Invalid backup file format.");
-                }
-                
-                const adminRole = localStorage.getItem('userRole');
-                localStorage.clear();
-                if (adminRole) {
-                    localStorage.setItem('userRole', adminRole);
-                }
+        const jsonString = e.target?.result as string;
 
-                for (const key in backupData) {
-                    if (Object.prototype.hasOwnProperty.call(backupData, key)) {
-                         const value = typeof backupData[key] === 'object' 
-                            ? JSON.stringify(backupData[key]) 
-                            : backupData[key];
-                        localStorage.setItem(key, value);
-                    }
-                }
+        console.log("RAW JSON:", jsonString);
 
-                toast({ title: "Import Successful", description: "Terminal database restored. Reloading..." });
-                setTimeout(() => window.location.reload(), 2000);
+        const backupData = JSON.parse(jsonString);
 
-            } catch (error) {
-                console.error("JSON Import failed:", error);
-                toast({ variant: 'destructive', title: 'Import Failed', description: 'The backup file seems to be corrupted or invalid.' });
-            }
-        };
-        reader.readAsText(file);
-    };
+        console.log("PARSED DATA:", backupData);
+
+        if (typeof backupData !== 'object' || backupData === null) {
+            throw new Error("Invalid backup file format.");
+        }
+
+        const adminRole = localStorage.getItem('userRole');
+
+        localStorage.clear();
+
+        if (adminRole) {
+            localStorage.setItem('userRole', adminRole);
+        }
+
+        Object.entries(backupData).forEach(([key, value]) => {
+            console.log("Saving:", key);
+
+            localStorage.setItem(
+                key,
+                typeof value === 'object'
+                    ? JSON.stringify(value)
+                    : String(value)
+            );
+        });
+
+        console.log("FINAL STORAGE:", Object.keys(localStorage));
+
+        toast({
+            title: "Import Successful",
+            description: "Database restored."
+        });
+
+        setTimeout(() => {
+            window.location.reload();
+        }, 1500);
+
+    } catch (error) {
+        console.error("IMPORT ERROR:", error);
+
+        toast({
+            variant: 'destructive',
+            title: 'Import Failed',
+            description: 'Backup file invalid.'
+        });
+    }
+};
+
 
 
     const handleEnableNotifications = async () => {
@@ -499,7 +522,7 @@ export default function SettingsPage() {
   <input
     type="file"
     accept=".json"
-    onChange={handleRestoreJson}
+    onChange={handleImportDataJson}
     className="hidden"
     id="restoreJson"
   />
@@ -717,4 +740,5 @@ export default function SettingsPage() {
         </div>
     );
 }
+
 
