@@ -2,6 +2,7 @@
 'use client';
 
 import * as React from 'react';
+import { useAppState } from '@/contexts/app-state-context';
 import {
   Card,
   CardContent,
@@ -82,6 +83,7 @@ const ReceiptEntryRow = ({
 const SUCCESS_SOUND_URL = 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3';
 
 export function ReceiptMakingTab() {
+  const { selectedYear } = useAppState();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -433,4 +435,6 @@ export function ReceiptMakingTab() {
     </div>
   );
 }
+
+
 

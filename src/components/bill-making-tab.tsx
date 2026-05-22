@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useAppState } from '@/contexts/app-state-context';
 import { useMemo, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -41,6 +42,7 @@ const initialRows: Row[] = Array.from({ length: 5 }, () => ({ ...emptyRow }));
 const SUCCESS_SOUND_URL = 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3';
 
 export function BillMakingTab() {
+  const { selectedYear } = useAppState();
   const [sNo, setSNo] = useState('');
   const [ms, setMs] = useState('');                 
   const [khata, setKhata] = useState('');           
@@ -938,4 +940,7 @@ export function BillMakingTab() {
     </>
   );
 }
+
+
+
 
