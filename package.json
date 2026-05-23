@@ -75,7 +75,7 @@
     "jspdf-autotable": "^3.8.2",
     "lottie-react": "^2.4.0",
     "lucide-react": "^0.400.0",
-    "mongoose": "^9.6.1",
+    "mongoose": "^9.6.2",
     "next": "^14.2.35",
     "next-themes": "^0.3.0",
     "qrcode.react": "^3.1.0",
