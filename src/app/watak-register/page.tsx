@@ -149,7 +149,7 @@ export default function SalesRegisterPage() {
   const [partyNameMap, setPartyNameMap] = React.useState<Map<string, string>>(new Map());
   const [availableYears, setAvailableYears] = React.useState<number[]>([]);
 
-  const fetchWataks = React.useCallback(() => {
+  const fetchWataks = React.useCallback(async () => {
     setIsLoading(true);
     if(typeof window !== 'undefined') {
         const items: any[] = wataks || [];
@@ -167,36 +167,24 @@ export default function SalesRegisterPage() {
 
         defaultGrowers.forEach(p => addPartyToMap(p.name));
 
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key?.startsWith('party-')) {
-                try {
-                    const partyData = localStorage.getItem(key);
-                    if (partyData) {
-                        addPartyToMap(JSON.parse(partyData).name);
-                    }
-                } catch(e) { console.error("Failed to parse party:", e); }
-            }
+        // Fetch parties from MongoDB
+        const partiesResult = await fetch('/api/documents?prefix=party-').then(r => r.json());
+        if (partiesResult.success && partiesResult.data) {
+            partiesResult.data.forEach((party: any) => {
+                if (party.name) addPartyToMap(party.name);
+            });
         }
-        
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key?.startsWith('invoice-')) {
-                try {
-                    const watakData = localStorage.getItem(key);
-                    if (watakData) {
-                        const watak = JSON.parse(watakData);
-                        if (watak.date && watak?.date ? Number(String(watak.date).split(/[-/]/).find(p => p.length === 4)) === selectedYear : false) {
-                          items.push(watak);
-                          addPartyToMap(watak.customerName);
-                        }
-                    }
-                } catch(e) {
-                    console.error("Failed to parse watak from local storage", e);
+
+        // Fetch invoices from MongoDB
+        const invoicesResult = await fetch('/api/documents?prefix=invoice-').then(r => r.json());
+        if (invoicesResult.success && invoicesResult.data) {
+            invoicesResult.data.forEach((watak: any) => {
+                if (watak.date && Number(String(watak.date).split(/[-/]/).find((p: string) => p.length === 4)) === selectedYear) {
+                    items.push(watak);
+                    if (watak.customerName) addPartyToMap(watak.customerName);
                 }
-            }
+            });
         }
-     
         setWataks(items.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         setPartyNameMap(growerMap);
         const uniqueGrowers = ['All Growers', ...Array.from(growerMap.values())].sort();
@@ -636,5 +624,6 @@ export default function SalesRegisterPage() {
     
 
     
+
 
 
