@@ -33,7 +33,8 @@ export async function GET() {
     const receipts = await FcoDocument.countDocuments({ key: { $regex: '^receipt-' } });
     const parties = await FcoDocument.countDocuments({ key: { $regex: '^party-' } });
     return NextResponse.json({ success: true, counts: { total, invoices, purchases, receipts, parties } });
-  } catch (error) {
-    return NextResponse.json({ success: false, error: 'Check failed' }, { status: 500 });
+    } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
-}
+
