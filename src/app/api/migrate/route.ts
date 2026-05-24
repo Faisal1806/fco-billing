@@ -37,4 +37,4 @@ export async function GET() {
     const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
-
+}
