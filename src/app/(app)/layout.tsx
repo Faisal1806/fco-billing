@@ -42,10 +42,7 @@ useEffect(() => {
             }
           });
           if (userRole) localStorage.setItem('userRole', userRole);
-          sessionStorage.setItem('mongodb-synced', 'true');
           console.log(`Synced ${result.data.length} records`);
-          // Reload once after first sync so all pages read fresh localStorage
-          window.location.reload();
         }
       } catch (error) {
         console.error('MongoDB sync failed:', error);
@@ -53,14 +50,7 @@ useEffect(() => {
         setSynced(true);
       }
     };
-
-    if (sessionStorage.getItem('mongodb-synced') === 'true') {
-      // Already synced this session - just show the page
-      setSynced(true);
-    } else {
-      // First visit - sync then reload
-      syncFromMongoDB();
-    }
+    syncFromMongoDB();
   }, []);
   
 
