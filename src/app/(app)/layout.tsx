@@ -27,8 +27,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [synced, setSynced] = useState(false);
 
-  useEffect(() => {
-    // Sync all MongoDB data into localStorage on every page load
+useEffect(() => {
     const syncFromMongoDB = async () => {
       try {
         const res = await fetch('/api/documents');
@@ -43,16 +42,27 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             }
           });
           if (userRole) localStorage.setItem('userRole', userRole);
-          console.log(`Synced ${result.data.length} records from MongoDB`);
+          sessionStorage.setItem('mongodb-synced', 'true');
+          console.log(`Synced ${result.data.length} records`);
+          // Reload once after first sync so all pages read fresh localStorage
+          window.location.reload();
         }
       } catch (error) {
-        console.error('MongoDB sync failed, using localStorage:', error);
+        console.error('MongoDB sync failed:', error);
       } finally {
         setSynced(true);
       }
     };
-    syncFromMongoDB();
+
+    if (sessionStorage.getItem('mongodb-synced') === 'true') {
+      // Already synced this session - just show the page
+      setSynced(true);
+    } else {
+      // First visit - sync then reload
+      syncFromMongoDB();
+    }
   }, []);
+  
 
   if (!synced) {
     return (
@@ -90,3 +100,4 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
