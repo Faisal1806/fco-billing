@@ -3,7 +3,10 @@ import { usePathname } from 'next/navigation';
 import { AppMenubar } from "@/components/Sidebar";
 import { motion, AnimatePresence } from 'framer-motion';
 import FloatingActionButton from '@/components/FloatingActionButton';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, createContext, useContext } from 'react';
+
+export const SyncContext = createContext<boolean>(false);
+export const useSynced = () => useContext(SyncContext);
 
 const BackgroundMesh = () => (
     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#020205]">
@@ -27,7 +30,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [synced, setSynced] = useState(false);
 
-useEffect(() => {
+  useEffect(() => {
     const syncFromMongoDB = async () => {
       try {
         const res = await fetch('/api/documents');
@@ -43,6 +46,8 @@ useEffect(() => {
           });
           if (userRole) localStorage.setItem('userRole', userRole);
           console.log(`Synced ${result.data.length} records`);
+          // Dispatch event so all pages know sync is done
+          window.dispatchEvent(new CustomEvent('mongodb-synced'));
         }
       } catch (error) {
         console.error('MongoDB sync failed:', error);
@@ -52,42 +57,42 @@ useEffect(() => {
     };
     syncFromMongoDB();
   }, []);
-  
 
   if (!synced) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#020205]">
         <div className="text-white text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-sm opacity-60">Loading data...</p>
+          <p className="text-sm opacity-60">Syncing data...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-screen w-full overflow-x-hidden bg-[#020205]">
-      <BackgroundMesh />
-      <div className="relative z-10 flex min-h-screen w-full flex-col">
-        <AppMenubar />
-        <main className="flex-1 w-full max-w-[1900px] mx-auto px-6 sm:px-10 md:px-16 py-12 md:py-20">
-            <AnimatePresence mode="wait">
-                <motion.div
-                    key={pathname}
-                    initial={{ opacity: 0, y: 40, filter: "blur(20px)", scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, filter: "blur(0px)", scale: 1 }}
-                    exit={{ opacity: 0, y: -40, filter: "blur(20px)", scale: 0.96 }}
-                    transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                    className="min-h-full"
-                >
-                    {children}
-                </motion.div>
-            </AnimatePresence>
-        </main>
-        <FloatingActionButton />
+    <SyncContext.Provider value={synced}>
+      <div className="relative min-h-screen w-full overflow-x-hidden bg-[#020205]">
+        <BackgroundMesh />
+        <div className="relative z-10 flex min-h-screen w-full flex-col">
+          <AppMenubar />
+          <main className="flex-1 w-full max-w-[1900px] mx-auto px-6 sm:px-10 md:px-16 py-12 md:py-20">
+              <AnimatePresence mode="wait">
+                  <motion.div
+                      key={pathname}
+                      initial={{ opacity: 0, y: 40, filter: "blur(20px)", scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, filter: "blur(0px)", scale: 1 }}
+                      exit={{ opacity: 0, y: -40, filter: "blur(20px)", scale: 0.96 }}
+                      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                      className="min-h-full"
+                  >
+                      {children}
+                  </motion.div>
+              </AnimatePresence>
+          </main>
+          <FloatingActionButton />
+        </div>
+        <div className="h-40" /> 
       </div>
-      <div className="h-40" /> 
-    </div>
+    </SyncContext.Provider>
   );
 }
-

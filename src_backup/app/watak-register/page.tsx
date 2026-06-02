@@ -150,7 +150,7 @@ export default function SalesRegisterPage() {
   const [partyNameMap, setPartyNameMap] = React.useState<Map<string, string>>(new Map());
   const [availableYears, setAvailableYears] = React.useState<number[]>([]);
 
-  const fetchWataks = React.useCallback(() => {
+  const fetchWataks = React.useCallback(async () => {
     setIsLoading(true);
     if(typeof window !== 'undefined') {
         const items: any[] = wataks || [];

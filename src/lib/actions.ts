@@ -61,3 +61,4 @@ export async function deleteDocument(key: string, _useFirestore = false) {
     catch { return { success: false, error: 'Delete failed' }; }
   }
 }
+

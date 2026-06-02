@@ -187,3 +187,4 @@ export default function AutomaticRateList({ sourceType, title }: AutomaticRateLi
     );
 }
 
+

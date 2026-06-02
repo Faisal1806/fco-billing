@@ -82,3 +82,4 @@ export const ThermalLayout = ({ billData, pageUrl }: { billData: any, pageUrl: s
     );
 };
 
+

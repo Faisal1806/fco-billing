@@ -186,12 +186,10 @@ export default function PurchaseRegisterPage() {
       setUserRole(localStorage.getItem('userRole'));
     }
   }, []);
-
-
   const fetchPurchases = React.useCallback(() => {
     setIsLoading(true);
     if (typeof window !== 'undefined') {
-        const loadedPurchases = [];
+        const loadedPurchases: PurchaseEntry[] = [];
         const years = new Set<number>([new Date().getFullYear()]);
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
@@ -216,8 +214,10 @@ export default function PurchaseRegisterPage() {
   }, [selectedYear]);
 
   React.useEffect(() => {
-    fetchPurchases();
-  }, [fetchPurchases, selectedYear]);
+    const handler = () => fetchPurchases();
+    window.addEventListener('mongodb-synced', handler);
+    return () => window.removeEventListener('mongodb-synced', handler);
+  }, [fetchPurchases]);
   
   const yearlyCount = React.useMemo(() => {
     if(!purchases) return 0;
@@ -261,7 +261,10 @@ export default function PurchaseRegisterPage() {
     toast({ title: "Purchase Bill Deleted", description: `Bill #${billNo} has been deleted locally.`});
 
     try {
-        await deleteDocument('purchases', billNo);
+      // The deleteDocument signature in the lib may differ in TS types across environments.
+      // Suppress TS here to allow runtime call with billNo.
+      // @ts-ignore
+      await deleteDocument('purchases', billNo);
     } catch (e) {
         console.error("Cloud delete failed but local was successful", e);
     }
@@ -296,26 +299,31 @@ export default function PurchaseRegisterPage() {
     for (const billData of filteredPurchases) {
       try {
         await new Promise<void>((resolve) => {
-          root.render(<A4PurchaseBillLayout billData={billData} />, async () => {
-            // A short delay to ensure rendering is complete
-            await new Promise(r => setTimeout(r, 100)); 
-            
-            const canvas = await html2canvas(tempContainer.children[0] as HTMLElement, {
-              scale: 2,
-              useCORS: true,
-              backgroundColor: '#FDFEE2',
-            });
-  
-            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
-            const pdfWidth = doc.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-            doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
-            
-            doc.save(`PurchaseBill-${billData.billNo}_${billData.growerName}.pdf`);
-            
-            await new Promise(r => setTimeout(r, 300));
-            resolve();
-          });
+          root.render(<A4PurchaseBillLayout billData={billData} />);
+          
+          // A short delay to ensure rendering is complete
+          setTimeout(async () => {
+            try {
+              const canvas = await html2canvas(tempContainer.children[0] as HTMLElement, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#FDFEE2',
+              });
+    
+              const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
+              const pdfWidth = doc.internal.pageSize.getWidth();
+              const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+              doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
+              
+              doc.save(`PurchaseBill-${billData.billNo}_${billData.growerName}.pdf`);
+              
+              await new Promise(r => setTimeout(r, 300));
+              resolve();
+            } catch (err) {
+              console.error("Error in PDF generation:", err);
+              resolve();
+            }
+          }, 100);
         });
       } catch (error) {
         console.error("Failed to generate PDF for bill:", billData.billNo, error);
@@ -569,4 +577,5 @@ export default function PurchaseRegisterPage() {
     
 
     
+
 

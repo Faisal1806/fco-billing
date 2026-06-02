@@ -132,3 +132,4 @@ const EntryTableComponent = ({ title, rows, icon, onUpdate, onAdd, onRemove, sho
 
 export const EntryTable = React.memo(EntryTableComponent);
 
+

@@ -11,3 +11,4 @@ export default function ReceiptsRedirect() {
     return null;
 }
 
+

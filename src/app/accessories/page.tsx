@@ -118,7 +118,7 @@ export default function SuppliesPage() {
         const id = `${STORAGE_PREFIX}${Date.now()}`;
         const newEntry = { ...formState, id };
         
-        localStorage.setItem(id, JSON.stringify(newEntry));
+        await fetch("/api/save-document", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ collection: "wataks", data: newEntry }) });
         
         try {
             await saveDocument('accessory-ledger', id, newEntry);
@@ -342,4 +342,5 @@ export default function SuppliesPage() {
     </div>
   );
 }
+
 

@@ -128,6 +128,11 @@ export default function DashboardPage() {
     setIsMounted(true);
     setLastBackup(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
   }, []);
+  // Re-fetch when MongoDB sync completes
+React.useEffect(() => {
+  window.addEventListener('mongodb-synced', () => setIsMounted(true));
+  return () => window.removeEventListener('mongodb-synced', () => setIsMounted(true));
+}, []);
 
   React.useEffect(() => {
     if (isMounted) {
@@ -452,4 +457,5 @@ if (!extractedYears.includes(selectedYear)) {
     </motion.div>
   );
 }
+
 
