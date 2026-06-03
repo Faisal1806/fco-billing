@@ -29,6 +29,7 @@ const BackgroundMesh = () => (
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [synced, setSynced] = useState(false);
+const [syncKey, setSyncKey] = useState(0);
 
   useEffect(() => {
     const syncFromMongoDB = async () => {
@@ -48,6 +49,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           console.log(`Synced ${result.data.length} records`);
           // Dispatch event so all pages know sync is done
           window.dispatchEvent(new CustomEvent('mongodb-synced'));
+setSyncKey(prev => prev + 1);
         }
       } catch (error) {
         console.error('MongoDB sync failed:', error);
@@ -77,8 +79,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <AppMenubar />
           <main className="flex-1 w-full max-w-[1900px] mx-auto px-6 sm:px-10 md:px-16 py-12 md:py-20">
               <AnimatePresence mode="wait">
-                  <motion.div
-                      key={pathname}
+                  <motion.div key={`${pathname}-${syncKey}`}
                       initial={{ opacity: 0, y: 40, filter: "blur(20px)", scale: 0.96 }}
                       animate={{ opacity: 1, y: 0, filter: "blur(0px)", scale: 1 }}
                       exit={{ opacity: 0, y: -40, filter: "blur(20px)", scale: 0.96 }}

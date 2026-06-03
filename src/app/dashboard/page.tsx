@@ -130,8 +130,12 @@ export default function DashboardPage() {
   }, []);
   // Re-fetch when MongoDB sync completes
 React.useEffect(() => {
-  window.addEventListener('mongodb-synced', () => setIsMounted(true));
-  return () => window.removeEventListener('mongodb-synced', () => setIsMounted(true));
+  const handler = () => {
+    setIsMounted(false);
+    setTimeout(() => setIsMounted(true), 50);
+  };
+  window.addEventListener('mongodb-synced', handler);
+  return () => window.removeEventListener('mongodb-synced', handler);
 }, []);
 
   React.useEffect(() => {
