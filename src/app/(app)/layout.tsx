@@ -54,7 +54,8 @@ setSyncKey(prev => prev + 1);
       } catch (error) {
         console.error('MongoDB sync failed:', error);
       } finally {
-        setSynced(true);
+        // Small delay to ensure localStorage writes complete
+        setTimeout(() => setSynced(true), 500);
       }
     };
     syncFromMongoDB();
