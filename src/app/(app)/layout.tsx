@@ -32,30 +32,39 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 const [syncKey, setSyncKey] = useState(0);
 
   useEffect(() => {
-    const syncFromMongoDB = async () => {
+  const syncFromMongoDB = async () => {
       try {
         const res = await fetch('/api/documents');
         const result = await res.json();
         if (result.success && result.data) {
           const userRole = localStorage.getItem('userRole');
-          result.data.forEach((item: Record<string, unknown>) => {
-            const key = item.key as string;
-            if (key) {
-              const { key: _, ...value } = item;
-              localStorage.setItem(key, JSON.stringify(value));
-            }
-          });
+          
+          // Write in small batches to ensure mobile localStorage completes
+          const batchSize = 50;
+          const items = result.data;
+          
+          for (let i = 0; i < items.length; i += batchSize) {
+            const batch = items.slice(i, i + batchSize);
+            batch.forEach((item: Record<string, unknown>) => {
+              const key = item.key as string;
+              if (key) {
+                const { key: _, ...value } = item;
+                localStorage.setItem(key, JSON.stringify(value));
+              }
+            });
+            // Small pause between batches for mobile
+            await new Promise(resolve => setTimeout(resolve, 10));
+          }
+          
           if (userRole) localStorage.setItem('userRole', userRole);
-          console.log(`Synced ${result.data.length} records`);
-          // Dispatch event so all pages know sync is done
+          setSyncKey(prev => prev + 1);
           window.dispatchEvent(new CustomEvent('mongodb-synced'));
-setSyncKey(prev => prev + 1);
+          console.log(`Synced ${result.data.length} records in batches`);
         }
       } catch (error) {
         console.error('MongoDB sync failed:', error);
       } finally {
-        // Small delay to ensure localStorage writes complete
-        setTimeout(() => setSynced(true), 500);
+        setTimeout(() => setSynced(true), 200);
       }
     };
     syncFromMongoDB();
