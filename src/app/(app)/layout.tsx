@@ -29,55 +29,42 @@ const BackgroundMesh = () => (
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [synced, setSynced] = useState(false);
-const [syncKey, setSyncKey] = useState(0);
+  const [syncKey, setSyncKey] = useState(0);
 
-useEffect(() => {
-    const syncFromMongoDB = async () => {
-      try {
-        const res = await fetch('/api/documents');
-        const result = await res.json();
-        if (result.success && result.data) {
-          const userRole = localStorage.getItem('userRole');
-          
-          const batchSize = 50;
-          const items = result.data;
-          for (let i = 0; i < items.length; i += batchSize) {
-            const batch = items.slice(i, i + batchSize);
-            batch.forEach((item: Record<string, unknown>) => {
-              const key = item.key as string;
-              if (key) {
-                const { key: _, ...value } = item;
-                localStorage.setItem(key, JSON.stringify(value));
-              }
-            });
-            await new Promise(resolve => setTimeout(resolve, 10));
+  const syncFromMongoDB = async () => {
+    try {
+      const res = await fetch('/api/documents');
+      const result = await res.json();
+      if (result.success && result.data) {
+        const userRole = localStorage.getItem('userRole');
+        // Clear old data first
+        const keysToRemove = Object.keys(localStorage).filter(k => k !== 'userRole' && k !== 'invoiceStyle' && k !== 'fco_accent_color');
+        keysToRemove.forEach(k => localStorage.removeItem(k));
+        // Write all MongoDB data
+        result.data.forEach((item: Record<string, unknown>) => {
+          const key = item.key as string;
+          if (key) {
+            const { key: _, ...value } = item;
+            localStorage.setItem(key, JSON.stringify(value));
           }
-          
-          if (userRole) localStorage.setItem('userRole', userRole);
-          setSyncKey(prev => prev + 1);
-          window.dispatchEvent(new CustomEvent('mongodb-synced'));
-          console.log(`Synced ${result.data.length} records`);
-        }
-      } catch (error) {
-        console.error('MongoDB sync failed:', error);
-      } finally {
-        setTimeout(() => setSynced(true), 200);
+        });
+        if (userRole) localStorage.setItem('userRole', userRole);
+        console.log(`Synced ${result.data.length} records from MongoDB`);
       }
-    };
+    } catch (error) {
+      console.error('MongoDB sync failed:', error);
+    } finally {
+      setSynced(true);
+      setSyncKey(prev => prev + 1);
+    }
+  };
 
-    // Sync on first load
+  useEffect(() => {
     syncFromMongoDB();
-
-    // Re-sync whenever window gets focus (switching between devices)
-    const handleFocus = () => {
-      console.log('Window focused - re-syncing from MongoDB...');
-      syncFromMongoDB();
-    };
-
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
+    // Re-sync on window focus
+    window.addEventListener('focus', syncFromMongoDB);
+    return () => window.removeEventListener('focus', syncFromMongoDB);
   }, []);
-  
 
   if (!synced) {
     return (
@@ -98,7 +85,8 @@ useEffect(() => {
           <AppMenubar />
           <main className="flex-1 w-full max-w-[1900px] mx-auto px-6 sm:px-10 md:px-16 py-12 md:py-20">
               <AnimatePresence mode="wait">
-                  <motion.div key={`${pathname}-${syncKey}`}
+                  <motion.div
+                      key={`${pathname}-${syncKey}`}
                       initial={{ opacity: 0, y: 40, filter: "blur(20px)", scale: 0.96 }}
                       animate={{ opacity: 1, y: 0, filter: "blur(0px)", scale: 1 }}
                       exit={{ opacity: 0, y: -40, filter: "blur(20px)", scale: 0.96 }}
@@ -111,7 +99,7 @@ useEffect(() => {
           </main>
           <FloatingActionButton />
         </div>
-        <div className="h-40" /> 
+        <div className="h-40" />
       </div>
     </SyncContext.Provider>
   );
