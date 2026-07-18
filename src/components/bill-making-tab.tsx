@@ -20,7 +20,7 @@ import { PartySelector } from './party-selector';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
 import { cn } from '@/lib/utils';
-import { saveDocument, deleteDocument, sendPushNotification, getDocuments } from '@/lib/actions';
+import { saveDocument, deleteDocument, getDocuments } from '@/lib/actions';
 import { Checkbox } from './ui/checkbox';
 import { Progress } from './ui/progress';
 import { Alert, AlertDescription } from './ui/alert';
@@ -415,7 +415,7 @@ export function BillMakingTab() {
     
     localStorage.removeItem(`invoice-${deletedSNo}`);
     try {
-        await deleteDocument('bills', deletedSNo);
+        await deleteDocument(`invoice-${deletedSNo}`);
         toast({ title: "Invoice Deleted", description: `Invoice #${deletedSNo} has been deleted locally and from cloud.`});
     } catch (e) {
         toast({ title: "Invoice Deleted Locally", description: `Bill removed from device but cloud sync failed.`});
@@ -487,7 +487,7 @@ export function BillMakingTab() {
     localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
 
     try {
-        await saveDocument('bills', billId, billData);
+        await saveDocument('bills', billData);
         playSuccessSound();
 
         toast({
@@ -496,22 +496,22 @@ export function BillMakingTab() {
             isSuccess: true,
         });
 
-        if (fcmTokens.length > 0) {
-            if (isEditing) {
-                await sendPushNotification({
-                    title: 'Bill Updated',
-                    body: `Your Bill #${sNo} has been Updated – Check Details Again`,
-                    tokens: fcmTokens, 
-                    url: `/invoice/${sNo}`
-                });
-            } else {
-                await sendPushNotification({
-                    title: 'New Bill Created',
-                    body: `New Bill Created for ${ms} – Watak No. ${watakNo || sNo}`,
-                    tokens: fcmTokens, 
-                });
-            }
-        }
+        // if (fcmTokens.length > 0) {
+        //     if (isEditing) {
+        //         await sendPushNotification({
+        //             title: 'Bill Updated',
+        //             body: `Your Bill #${sNo} has been Updated – Check Details Again`,
+        //             tokens: fcmTokens, 
+        //             url: `/invoice/${sNo}`
+        //         });
+        //     } else {
+        //         await sendPushNotification({
+        //             title: 'New Bill Created',
+        //             body: `New Bill Created for ${ms} – Watak No. ${watakNo || sNo}`,
+        //             tokens: fcmTokens, 
+        //         });
+        //     }
+        // }
 
     } catch(error) {
         console.error("Error saving to cloud", error);

@@ -1,9 +1,10 @@
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI as string;
+const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_DB = process.env.MONGODB_DB || 'fco_billing';
 
 if (!MONGODB_URI) {
-  throw new Error('Please define MONGODB_URI in environment variables');
+  throw new Error('MONGODB_URI is not defined');
 }
 
 interface MongooseCache {
@@ -12,28 +13,34 @@ interface MongooseCache {
 }
 
 declare global {
-  var mongooseCache: MongooseCache;
+  // eslint-disable-next-line no-var
+  var mongooseCache: MongooseCache | undefined;
 }
 
-let cached: MongooseCache = global.mongooseCache;
+const cached: MongooseCache = global.mongooseCache ?? {
+  conn: null,
+  promise: null,
+};
 
-if (!cached) {
-  cached = global.mongooseCache = { conn: null, promise: null };
+if (!global.mongooseCache) {
+  global.mongooseCache = cached;
 }
 
 async function connectDB(): Promise<typeof mongoose> {
   if (cached.conn) {
     return cached.conn;
   }
+
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI, {
+    cached.promise = mongoose.connect(MONGODB_URI as string, {
       bufferCommands: false,
-      dbName: 'fco-billing',
+      dbName: MONGODB_DB,
     });
   }
+
   cached.conn = await cached.promise;
+
   return cached.conn;
 }
 
 export default connectDB;
-
