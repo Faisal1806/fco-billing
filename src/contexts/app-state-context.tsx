@@ -10,7 +10,7 @@ interface AppStateContextType {
 const AppStateContext = createContext<AppStateContextType | undefined>(undefined);
 
 export const AppStateProvider = ({ children }: { children: ReactNode }) => {
-  const [selectedYear, setSelectedYear] = useState<number>(2025);
+  const [selectedYear, setSelectedYear] = useState<number>(2026);
 
   return (
     <AppStateContext.Provider value={{ selectedYear, setSelectedYear }}>
@@ -26,6 +26,7 @@ export const useAppState = () => {
   }
   return context;
 };
+
 
 
 
