@@ -31,18 +31,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [synced, setSynced] = useState(false);
 const [syncKey, setSyncKey] = useState(0);
 
-  useEffect(() => {
-  const syncFromMongoDB = async () => {
+useEffect(() => {
+    const syncFromMongoDB = async () => {
       try {
         const res = await fetch('/api/documents');
         const result = await res.json();
         if (result.success && result.data) {
           const userRole = localStorage.getItem('userRole');
           
-          // Write in small batches to ensure mobile localStorage completes
           const batchSize = 50;
           const items = result.data;
-          
           for (let i = 0; i < items.length; i += batchSize) {
             const batch = items.slice(i, i + batchSize);
             batch.forEach((item: Record<string, unknown>) => {
@@ -52,14 +50,13 @@ const [syncKey, setSyncKey] = useState(0);
                 localStorage.setItem(key, JSON.stringify(value));
               }
             });
-            // Small pause between batches for mobile
             await new Promise(resolve => setTimeout(resolve, 10));
           }
           
           if (userRole) localStorage.setItem('userRole', userRole);
           setSyncKey(prev => prev + 1);
           window.dispatchEvent(new CustomEvent('mongodb-synced'));
-          console.log(`Synced ${result.data.length} records in batches`);
+          console.log(`Synced ${result.data.length} records`);
         }
       } catch (error) {
         console.error('MongoDB sync failed:', error);
@@ -67,8 +64,20 @@ const [syncKey, setSyncKey] = useState(0);
         setTimeout(() => setSynced(true), 200);
       }
     };
+
+    // Sync on first load
     syncFromMongoDB();
+
+    // Re-sync whenever window gets focus (switching between devices)
+    const handleFocus = () => {
+      console.log('Window focused - re-syncing from MongoDB...');
+      syncFromMongoDB();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
+  
 
   if (!synced) {
     return (
