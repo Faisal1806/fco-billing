@@ -70,10 +70,10 @@ export interface PurchaseEntry {
 const A4PurchaseBillLayout = ({ billData }: { billData: PurchaseEntry }) => {
     const { billNo, date, growerName, entries, totals } = billData;
     return (
-         <div className="w-[148mm] h-[210mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-4 border-2 border-green-700 flex flex-col relative font-serif">
+         <div className="w-[146mm] h-[208mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-[6mm] border border-green-700 flex flex-col relative font-serif overflow-hidden">
             {/* Watermark */}
             <div className="absolute inset-0 flex items-center justify-center z-0">
-               <Logo className="w-48 h-48 opacity-10" />
+               <Logo className="w-40 h-40 opacity-10" />
             </div>
             
             <div className="relative z-10 flex flex-col flex-grow">

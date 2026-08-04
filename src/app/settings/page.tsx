@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
@@ -495,7 +495,7 @@ export default function SettingsPage() {
                 </MotionCard>
 
             </div>
-<div className="mt-4">
+<div className="mt-2">
   <input
     type="file"
     accept=".json"

@@ -248,7 +248,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                         print-color-adjust: exact;
                     }
                     .print-container {
-                        margin: 0;
+                        margin: 1mm;
                         padding: 0;
                         display: block !important;
                         width: 100%;
@@ -262,7 +262,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                     }
                     @page {
                         size: ${printStyle === 'a4' ? 'A5 portrait' : '80mm 297mm'};
-                        margin: 0;
+                        margin: 1mm;
                     }
                 }
             `}</style>

@@ -29,7 +29,7 @@ export const ModernLightA4Layout = ({ billData, pageUrl }: { billData: any, page
     } = billData || {};
     
     return (
-        <div className="w-[148mm] min-h-[210mm] mx-auto bg-white text-gray-800 shadow-2xl print:shadow-none p-6 flex flex-col font-sans relative">
+        <div className="w-[146mm] h-[208mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-[6mm] border border-green-700 flex flex-col relative font-serif overflow-hidden">
             <div className="absolute inset-0 flex items-center justify-center z-0">
                 <Logo className="w-96 h-96 opacity-[0.03]" />
             </div>

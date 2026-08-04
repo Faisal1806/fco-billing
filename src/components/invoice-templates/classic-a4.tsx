@@ -33,12 +33,12 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
     const emptyRows = Array.from({ length: emptyRowsCount });
 
    return (
-        <div className="w-[148mm] min-h-[210mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-4 border-2 border-green-700 flex flex-col relative font-serif">
+        <div className="w-[146mm] h-[208mm] overflow-hidden bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-2 border border-green-700 flex flex-col relative font-serif mx-auto">
             <div className="absolute inset-0 flex items-center justify-center z-0">
-                <Logo className="w-48 h-48 opacity-10" />
+                <Logo className="w-40 h-40 opacity-10" />
             </div>
             <div className="relative z-10 flex flex-col flex-grow">
-                <header className="text-center border-b-2 border-green-700 pb-1">
+                <header className="text-center border-b border-green-700 pb-0.5">
                     <div className="flex justify-between items-start">
                          <div className="text-left text-xs font-bold flex items-center gap-1">
                             <p>🍎</p>
@@ -84,7 +84,7 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
                         </thead>
                         <tbody>
                             {entries.map((entry: any, index: number) => (
-                                <tr key={index} className="h-5">
+                                <tr key={index} className="h-4">
                                     <td className="py-0.5 px-1 border-r border-green-600/50">{entry.type}</td>
                                     <td className="py-0.5 px-1 border-r border-green-600/50">{entry.variety}</td>
                                     <td className="py-0.5 px-1 text-center border-r border-green-600/50">{entry.qty}</td>
@@ -93,7 +93,7 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
                                 </tr>
                             ))}
                             {emptyRows.map((_, index) => (
-                                <tr key={`empty-${index}`} className="h-5">
+                                <tr key={`empty-${index}`} className="h-4">
                                     <td className="py-0.5 px-1 border-r border-green-600/50">&nbsp;</td>
                                     <td className="py-0.5 px-1 border-r border-green-600/50"></td>
                                     <td className="py-0.5 px-1 border-r border-green-600/50"></td>
@@ -104,7 +104,7 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
                         </tbody>
                     </table>
                 </main>
-                <footer className="mt-auto pt-1 text-xs">
+                <footer className="mt-auto pt-0 text-[10px] leading-tight">
                     <div className="grid grid-cols-2 gap-x-4">
                         <div className="space-y-0.5 pr-4 flex flex-col justify-between">
                             <div>
@@ -119,8 +119,8 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
                                     )}
                                 </div>
                             </div>
-                            <div className="mt-4">
-                                <PaymentQR size={60} amount={totals?.netSale || 0} />
+                            <div className="mt-2">
+                                <PaymentQR size={48} amount={totals?.netSale || 0} />
                             </div>
                         </div>
                         <div className="space-y-0.5 border-l-2 border-green-700 pl-4 text-[10px]">

@@ -178,7 +178,7 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
     if (loading) {
         return (
             <div className="bg-muted min-h-screen p-8 flex items-center justify-center">
-                 <div className="w-[148mm] min-h-[210mm] mx-auto bg-white p-6">
+                 <div className="w-[146mm] h-[208mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-[6mm] border border-green-700 flex flex-col relative font-serif overflow-hidden">
                     <Skeleton className="h-24 w-full mb-4" />
                     <Skeleton className="h-48 w-full" />
                  </div>
@@ -203,7 +203,7 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
     } = challanData;
     
     const A4Layout = () => (
-         <div className="w-[148mm] min-h-[210mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-6 flex flex-col">
+         <div className="w-[146mm] h-[208mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-[6mm] border border-green-700 flex flex-col relative font-serif overflow-hidden">
                 <header className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white p-4 rounded-t-xl text-center flex justify-between items-center">
                     <div className="text-sm font-bold">🍎 F.Co</div>
                     <div>
@@ -370,7 +370,7 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
                     }
                     @page {
                         size: ${printStyle === 'a4' ? 'A5 portrait' : '80mm 297mm'};
-                        margin: 0;
+                        margin: 1mm;
                     }
                 }
             `}</style>

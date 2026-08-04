@@ -193,10 +193,10 @@ export default function PurchaseBillPage({ params }: { params: { id:string } }) 
     const { billNo, date, growerName, entries, totals } = billData;
     
     const A4Layout = () => (
-         <div className="w-[148mm] min-h-[210mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-4 border-2 border-green-700 flex flex-col relative font-serif">
+         <div className="w-[146mm] h-[208mm] overflow-hidden bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-2 border border-green-700 flex flex-col relative font-serif mx-auto">
             {/* Watermark */}
             <div className="absolute inset-0 flex items-center justify-center z-0">
-               <Logo className="w-48 h-48 opacity-10" />
+               <Logo className="w-40 h-40 opacity-10" />
             </div>
             
             <div className="relative z-10 flex flex-col flex-grow">
@@ -355,7 +355,7 @@ export default function PurchaseBillPage({ params }: { params: { id:string } }) 
                         print-color-adjust: exact;
                     }
                     .print-container {
-                        margin: 0;
+                        margin: 1mm;
                         padding: 0;
                         display: block !important;
                         width: 100%;
@@ -370,7 +370,7 @@ export default function PurchaseBillPage({ params }: { params: { id:string } }) 
 
                     @page {
                         size: ${printStyle === 'a4' ? 'A5 portrait' : '80mm 297mm'};
-                        margin: 0;
+                        margin: 1mm;
                     }
                 }
             `}</style>

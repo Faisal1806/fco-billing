@@ -241,37 +241,90 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     return (
         <div className="bg-background font-sans print:bg-white flex flex-col md:flex-row gap-10 justify-center p-4 md:p-12">
              <style jsx global>{`
-                @media print {
-                    body {
-                        background: white !important;
-                        -webkit-print-color-adjust: exact;
-                        print-color-adjust: exact;
-                    }
-                    .print-container {
-                        margin: 0;
-                        padding: 0;
-                        display: block !important;
-                        width: 100%;
-                        height: 100%;
-                    }
-                    .print-area-a4 {
-                        display: ${printStyle === 'a4' ? 'block' : 'none'} !important;
-                    }
-                     .print-area-thermal {
-                        display: ${printStyle === 'thermal' ? 'block' : 'none'} !important;
-                    }
-                    @page {
-                        size: ${printStyle === 'a4' ? 'A5 portrait' : '80mm 297mm'};
-                        margin: 0;
-                    }
-                }
-            `}</style>
-            
+@page{
+    size:${printStyle === 'a4' ? 'A5 portrait' : '80mm 297mm'};
+    margin:1mm;
+}
+
+@media print{
+
+html,
+body{
+    margin:0 !important;
+    padding:0 !important;
+    background:#fff !important;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+}
+
+body *{
+    visibility:hidden;
+}
+
+.print-container,
+.print-container *{
+    visibility:visible;
+}
+
+.print-container{
+    position:absolute;
+    left:0;
+    top:0;
+    width:100%;
+    margin:0 auto !important;
+    padding:0 !important;
+    display:block !important;
+}
+
+
+
+.print-area-thermal{
+    display:${printStyle === 'thermal' ? 'block' : 'none'} !important;
+}
+
+.print-area-a4 table{
+    page-break-inside:avoid;
+    break-inside:avoid;
+}
+
+.print-area-a4 tr{
+    page-break-inside:avoid;
+    break-inside:avoid;
+}
+
+.print-area-a4{
+    page-break-after: avoid !important;
+    page-break-before: avoid !important;
+}
+
+.print-area-a4 *{
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+}
+
+footer{
+    page-break-inside: avoid !important;
+}
+
+thead{
+    display: table-header-group;
+}
+
+tfoot{
+    display: table-footer-group;
+}
+
+.print-area-a4 img{
+    max-width:100%;
+}
+
+}
+`}</style>
             <div className="print:hidden w-full max-w-[300px] space-y-4 sticky top-10 self-start">
                 <Controls />
             </div>
 
-            <div className="print-container">
+            <div className="print-container print-area-a4 mx-auto">
                 <div ref={printRef}>
                     <div className="print-area-a4">
                         {renderContent()}

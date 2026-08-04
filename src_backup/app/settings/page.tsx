@@ -510,7 +510,7 @@ export default function SettingsPage() {
                 </MotionCard>
 
             </div>
-<div className="mt-4">
+<div className="mt-2">
   <input
     type="file"
     accept=".json"

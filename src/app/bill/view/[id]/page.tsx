@@ -98,7 +98,7 @@ export default function PublicBillPage({ params }: { params: { id: string } }) {
                     }
                     @page {
                         size: A5 portrait;
-                        margin: 0;
+                        margin: 1mm;
                     }
                 }
             `}</style>
