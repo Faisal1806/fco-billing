@@ -40,7 +40,7 @@ export default function PublicBillPage({ params }: { params: { id: string } }) {
             setLoading(true);
 
             // Fetch directly from the new public `bills` collection.
-            const { success, data: firestoreData, error } = await getDocument('bills', params.id);
+            const { success, data: firestoreData, error } = await getDocument(`bills/${params.id}`);
             
             if (success && firestoreData) {
                 setBillData(firestoreData);

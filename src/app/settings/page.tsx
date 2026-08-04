@@ -102,7 +102,7 @@ export default function SettingsPage() {
     const [activeAccent, setActiveAccent] = React.useState('142 76% 45%');
 
      const fetchTokens = async () => {
-        const { success, data } = await getDocuments('fcm-tokens', true);
+        const { success, data } = await getDocuments('fcm-tokens');
         if (success && data) {
             setFcmTokens(data);
         }
@@ -330,7 +330,7 @@ export default function SettingsPage() {
 
     const handleDeleteToken = async (tokenId: string) => {
         try {
-            await deleteDocument('fcm-tokens', tokenId);
+            await deleteDocument(`fcm-tokens/${tokenId}`);
             fetchTokens();
             toast({ title: 'Node Unregistered', description: 'The device has been disconnected from push services.'});
         } catch (error) {
@@ -388,7 +388,9 @@ export default function SettingsPage() {
     
             try {
                 const data = JSON.parse(localStorage.getItem(key)!);
-                const result = await saveDocument(collectionName, data.id || docId, data);
+                // saveDocument expects (collectionName, data)
+                const payload = { ...data, id: data.id || docId };
+                const result = await saveDocument(collectionName, payload);
                 if (result.success) successCount++;
                 else errorCount++;
             } catch (e) {

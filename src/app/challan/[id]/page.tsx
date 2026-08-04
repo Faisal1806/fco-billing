@@ -77,7 +77,7 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
             const docId = `challan-${decodedId}`;
 
             if (isPublicView) {
-                const { success, data: firestoreData, error } = await getDocument('challans', decodedId);
+                const { success, data: firestoreData, error } = await getDocument(decodedId);
                 if (success && firestoreData) {
                     data = firestoreData as ChallanData;
                 } else {

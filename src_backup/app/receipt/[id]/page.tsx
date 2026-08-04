@@ -67,7 +67,8 @@ export default function PaymentPage({ params }: { params: { id: string } }) {
             const docId = `receipt-${params.id}`;
             
             if (isPublicView) {
-                const { success, data: firestoreData, error } = await getDocument('receipts', params.id);
+                // getDocument expects only the document id in this version
+                const { success, data: firestoreData, error } = await getDocument(params.id);
                 if (success && firestoreData) {
                     data = firestoreData as ReceiptData;
                 } else {

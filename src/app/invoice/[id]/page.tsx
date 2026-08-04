@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { useEffect, useState, useRef } from "react";
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Printer, Download, FileText, Receipt, Loader2 } from "lucide-react";
 import { FaWhatsapp } from 'react-icons/fa';
@@ -59,6 +59,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     const [pageUrl, setPageUrl] = useState('');
     const [printStyle, setPrintStyle] = useState<'a4' | 'thermal'>('a4');
     const [invoiceStyle, setInvoiceStyle] = useState('classic');
+    const router = useRouter();
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -86,8 +87,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                     toast({ variant: "destructive", title: "Local Data Corrupted" });
                 }
             } else {
-                const { success, data: firestoreData, error } = await getDocument('bills', params.id);
-                 if (success && firestoreData) {
+                const { success, data: firestoreData, error } = await getDocument(`bills/${params.id}`);
+                if (success && firestoreData) {
                     data = firestoreData as BillData;
                 } else {
                      toast({

@@ -186,7 +186,7 @@ export function BillMakingTab() {
         setDate(new Date().toISOString().split('T')[0]);
 
         const fetchTokens = async () => {
-            const { success, data } = await getDocuments('fcm-tokens', true);
+            const { success, data } = await getDocuments('fcm-tokens');
             if (success && data) {
                 setFcmTokens(data.map((t: any) => t.token));
             }

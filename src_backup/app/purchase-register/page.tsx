@@ -261,7 +261,7 @@ export default function PurchaseRegisterPage() {
     toast({ title: "Purchase Bill Deleted", description: `Bill #${billNo} has been deleted locally.`});
 
     try {
-        await deleteDocument('purchases', billNo);
+        await deleteDocument(billNo);
     } catch (e) {
         console.error("Cloud delete failed but local was successful", e);
     }
@@ -296,10 +296,10 @@ export default function PurchaseRegisterPage() {
     for (const billData of filteredPurchases) {
       try {
         await new Promise<void>((resolve) => {
-          root.render(<A4PurchaseBillLayout billData={billData} />, async () => {
-            // A short delay to ensure rendering is complete
-            await new Promise(r => setTimeout(r, 100)); 
-            
+          root.render(<A4PurchaseBillLayout billData={billData} />);
+          
+          // A short delay to ensure rendering is complete
+          setTimeout(async () => {
             const canvas = await html2canvas(tempContainer.children[0] as HTMLElement, {
               scale: 2,
               useCORS: true,
@@ -315,7 +315,7 @@ export default function PurchaseRegisterPage() {
             
             await new Promise(r => setTimeout(r, 300));
             resolve();
-          });
+          }, 100);
         });
       } catch (error) {
         console.error("Failed to generate PDF for bill:", billData.billNo, error);

@@ -70,7 +70,7 @@ export default function PurchaseBillPage({ params }: { params: { id:string } }) 
             let data: PurchaseData | null = null;
             const docId = `purchase-${params.id}`;
 
-            const { success, data: firestoreData, error } = await getDocument('purchases', docId);
+            const { success, data: firestoreData, error } = await getDocument(docId);
 
             if (success && firestoreData) {
                 data = firestoreData as PurchaseData;
