@@ -26,6 +26,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { useToast } from '@/hooks/use-toast';
+// @ts-ignore - CSS import type declarations are not available in this project setup
 import '@/app/khata/print.css'; // Reuse styles
 import { addLog } from '@/lib/logger';
 
@@ -53,82 +54,89 @@ export default function CustomerDashboardPage() {
     const [isLoading, setIsLoading] = React.useState(true);
 
     React.useEffect(() => {
-        setIsLoading(true);
-        const name = localStorage.getItem('customerName');
-        if (!name) {
-            router.push('/portal/login');
-            return;
-        }
-        setCustomerName(name);
-        addLog('View Ledger', `Customer "${name}" viewed their ledger dashboard.`);
+        const loadLedger = async () => {
+            setIsLoading(true);
+            const name = localStorage.getItem('customerName');
+            if (!name) {
+                router.push('/portal/login');
+                return;
+            }
+            setCustomerName(name);
+            await addLog(
+                'View Ledger',
+                `Customer "${name}" viewed their ledger dashboard.`
+            );
 
-        const allTransactions: Transaction[] = [];
+            const allTransactions: Transaction[] = [];
 
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (!key) continue;
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (!key) continue;
 
-            try {
-                 if (key.startsWith('invoice-')) {
-                    const sale = JSON.parse(localStorage.getItem(key)!);
-                    if (sale.customerName.toLowerCase() === name.toLowerCase()) {
-                        allTransactions.push({
-                            id: `sale-${sale.sNo}`,
-                            date: sale.date,
-                            type: 'Sale',
-                            amount: sale.totals.netSale,
-                            grossAmount: sale.totals.grossSale,
-                            expenses: sale.totals.totalExpenses,
-                            docId: sale.sNo,
-                        });
+                try {
+                    if (key.startsWith('invoice-')) {
+                        const sale = JSON.parse(localStorage.getItem(key)!);
+                        if (sale.customerName.toLowerCase() === name.toLowerCase()) {
+                            allTransactions.push({
+                                id: `sale-${sale.sNo}`,
+                                date: sale.date,
+                                type: 'Sale',
+                                amount: sale.totals.netSale,
+                                grossAmount: sale.totals.grossSale,
+                                expenses: sale.totals.totalExpenses,
+                                docId: sale.sNo,
+                            });
+                        }
+                    } else if (key.startsWith('purchase-')) {
+                        const purchase = JSON.parse(localStorage.getItem(key)!);
+                        if (purchase.growerName.toLowerCase() === name.toLowerCase()) {
+                            allTransactions.push({
+                                id: `purchase-${purchase.billNo}`,
+                                date: purchase.date,
+                                type: 'Purchase',
+                                amount: purchase.totals.grandTotal,
+                                grossAmount: purchase.totals.grandTotal,
+                                expenses: 0,
+                                docId: purchase.billNo,
+                            });
+                        }
+                    } else if (key.startsWith('advance-')) {
+                        const advance = JSON.parse(localStorage.getItem(key)!);
+                        if (advance.partyName.toLowerCase() === name.toLowerCase()) {
+                            allTransactions.push({
+                                id: advance.id,
+                                date: advance.date,
+                                type: advance.type === 'Advance Given' ? 'Advance' : 'Repayment',
+                                amount: advance.amount,
+                                grossAmount: advance.amount,
+                                expenses: 0,
+                                docId: advance.id,
+                                notes: advance.notes,
+                            });
+                        }
                     }
-                } else if (key.startsWith('purchase-')) {
-                     const purchase = JSON.parse(localStorage.getItem(key)!);
-                     if (purchase.growerName.toLowerCase() === name.toLowerCase()) {
-                         allTransactions.push({
-                            id: `purchase-${purchase.billNo}`,
-                            date: purchase.date,
-                            type: 'Purchase',
-                            amount: purchase.totals.grandTotal,
-                            grossAmount: purchase.totals.grandTotal,
-                            expenses: 0,
-                            docId: purchase.billNo,
-                        });
-                     }
-                } else if (key.startsWith('advance-')) {
-                    const advance = JSON.parse(localStorage.getItem(key)!);
-                    if (advance.partyName.toLowerCase() === name.toLowerCase()) {
-                        allTransactions.push({
-                            id: advance.id,
-                            date: advance.date,
-                            type: advance.type === 'Advance Given' ? 'Advance' : 'Repayment',
-                            amount: advance.amount,
-                            grossAmount: advance.amount,
-                            expenses: 0,
-                            docId: advance.id,
-                            notes: advance.notes,
-                        });
-                    }
+                } catch (error) {
+                    console.error(`Failed to parse item from local storage: ${key}`, error);
                 }
-            } catch (error) {
-                console.error(`Failed to parse item from local storage: ${key}`, error);
             }
-        }
 
-        allTransactions.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        setTransactions(allTransactions);
+            allTransactions.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            setTransactions(allTransactions);
 
-        let runningBalance = 0;
-        allTransactions.forEach(trans => {
-            if (trans.type === 'Sale' || trans.type === 'Purchase' || trans.type === 'Repayment') {
-                runningBalance += trans.amount;
-            } else { // Advance
-                runningBalance -= trans.amount;
-            }
-        });
-        setBalance(runningBalance);
+            let runningBalance = 0;
+            allTransactions.forEach(trans => {
+                if (trans.type === 'Sale' || trans.type === 'Purchase' || trans.type === 'Repayment') {
+                    runningBalance += trans.amount;
+                } else { // Advance
+                    runningBalance -= trans.amount;
+                }
+            });
+            setBalance(runningBalance);
 
-        setIsLoading(false);
+            setIsLoading(false);
+        };
+
+        loadLedger();
     }, [router]);
 
     const getLedgerWithRunningBalance = (): LedgerEntryWithRunningBalance[] => {
@@ -145,10 +153,13 @@ export default function CustomerDashboardPage() {
 
     const ledgerForExport = getLedgerWithRunningBalance();
     
-    const exportToPDF = () => {
+    const exportToPDF = async () => {
         if (!customerName) return;
         
-        addLog('Download Report', `Customer "${customerName}" downloaded their ledger as a PDF.`);
+        await addLog(
+            'Download Report',
+            `Customer "${customerName}" downloaded their ledger as a PDF.`
+        );
 
         const doc = new jsPDF();
         
@@ -183,10 +194,13 @@ export default function CustomerDashboardPage() {
         doc.save(`Ledger-${customerName}.pdf`);
     };
 
-    const exportToExcel = () => {
+    const exportToExcel = async () => {
         if (!customerName) return;
 
-        addLog('Download Report', `Customer "${customerName}" downloaded their ledger as an Excel file.`);
+        await addLog(
+            'Download Report',
+            `Customer "${customerName}" downloaded their ledger as an Excel file.`
+        );
 
         const worksheetData = ledgerForExport.map(tx => ({
             Date: new Date(tx.date).toLocaleDateString('en-GB'),

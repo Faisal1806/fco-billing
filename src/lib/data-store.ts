@@ -1,58 +1,160 @@
-// Global in-memory data store - shared across all pages
-// Populated from MongoDB on app load
+'use client';
+
+import {
+  getDocuments,
+  saveDocument,
+} from '@/lib/actions';
+
+type DataItem = Record<string, any>;
 
 type DataStore = {
-  data: Record<string, unknown>[];
+  data: DataItem[];
   loaded: boolean;
+  loading: boolean;
   listeners: Set<() => void>;
 };
 
 const store: DataStore = {
   data: [],
   loaded: false,
+  loading: false,
   listeners: new Set(),
 };
 
-export async function loadDataStore(): Promise<void> {
+
+/**
+ * LOAD EVERYTHING FROM MONGODB
+ */
+export async function loadDataStore(
+  force = false
+): Promise<void> {
+  if (store.loading) {
+    return;
+  }
+
+  if (store.loaded && !force) {
+    return;
+  }
+
+  store.loading = true;
+
   try {
-    const res = await fetch('/api/documents');
-    const result = await res.json();
-    if (result.success && result.data) {
-      store.data = result.data;
+    const result = await getDocuments();
+
+    if (result.success) {
+      store.data = result.data || [];
       store.loaded = true;
-      // Write to localStorage as backup
-      const userRole = localStorage.getItem('userRole');
-      result.data.forEach((item: Record<string, unknown>) => {
-        const key = item.key as string;
-        if (key) {
-          const { key: _, ...value } = item;
-          localStorage.setItem(key, JSON.stringify(value));
-        }
-      });
-      if (userRole) localStorage.setItem('userRole', userRole);
-      // Notify all listeners
-      store.listeners.forEach(fn => fn());
     }
   } catch (error) {
-    console.error('Failed to load data store:', error);
-    store.loaded = true;
-    store.listeners.forEach(fn => fn());
+    console.error(
+      'Failed to load central MongoDB data:',
+      error
+    );
+  } finally {
+    store.loading = false;
+
+    store.listeners.forEach(listener => {
+      listener();
+    });
   }
 }
 
-export function getByPrefix(prefix: string): Record<string, unknown>[] {
-  return store.data.filter(item => (item.key as string)?.startsWith(prefix));
+
+/**
+ * GET ALL CENTRAL DATA
+ */
+export function getAllData(): DataItem[] {
+  return store.data;
 }
 
+
+/**
+ * GET DOCUMENTS BY PREFIX
+ */
+export function getByPrefix(
+  prefix: string
+): DataItem[] {
+  return store.data.filter(item =>
+    String(item.key || '').startsWith(prefix)
+  );
+}
+
+
+/**
+ * GET ONE DOCUMENT
+ */
+export function getByKey(
+  key: string
+): DataItem | undefined {
+  return store.data.find(
+    item => item.key === key
+  );
+}
+
+
+/**
+ * CHECK WHETHER DATA HAS LOADED
+ */
 export function isStoreLoaded(): boolean {
   return store.loaded;
 }
 
-export function onStoreLoaded(fn: () => void): () => void {
-  if (store.loaded) {
-    fn();
-    return () => {};
+
+/**
+ * SUBSCRIBE TO DATA CHANGES
+ */
+export function onStoreLoaded(
+  listener: () => void
+) {
+  store.listeners.add(listener);
+
+  return () => {
+    store.listeners.delete(listener);
+  };
+}
+
+
+/**
+ * FORCE REFRESH FROM MONGODB
+ */
+export async function refreshDataStore() {
+  store.loaded = false;
+
+  await loadDataStore(true);
+}
+
+
+/**
+ * SAVE TO MONGODB
+ */
+export async function saveToCentralStore(
+  key: string,
+  data: Record<string, any>
+) {
+  const result = await saveDocument(key, data);
+
+  if (!result.success) {
+    return result;
   }
-  store.listeners.add(fn);
-  return () => store.listeners.delete(fn);
+
+  const newItem = {
+    key,
+    ...data,
+  };
+
+  const existingIndex = store.data.findIndex(
+    item => item.key === key
+  );
+
+  if (existingIndex >= 0) {
+    store.data[existingIndex] = newItem;
+  } else {
+    store.data.push(newItem);
+  }
+
+  store.listeners.forEach(listener => {
+    listener();
+  });
+
+  return result;
 }

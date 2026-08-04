@@ -18,6 +18,7 @@ import { saveDocument, deleteDocument } from '@/lib/actions';
 import { Badge } from '@/components/ui/badge';
 import { PartySelector } from '@/components/party-selector';
 import PageHeader from '@/components/PageHeader';
+import { getDocuments } from '@/lib/actions';
 
 type PurchaseRow = {
   type: 'Patti' | 'Dabba';
@@ -54,25 +55,45 @@ export default function PurchasesPage() {
     }
   }, []);
 
-  const fetchPurchases = useCallback(() => {
-    setIsLoading(true);
-    if (typeof window !== 'undefined') {
-        const loadedPurchases = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith('purchase-')) {
-                try {
-                    const purchase = JSON.parse(localStorage.getItem(key)!);
-                    // Ensure the document has an id for keying, using billNo as fallback
-                    if (!purchase.id) purchase.id = `purchase-${purchase.billNo}`;
-                    loadedPurchases.push(purchase);
-                } catch(e) { console.error("Failed to parse purchase:", e)}
-            }
-        }
-        setSavedPurchases(loadedPurchases.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+  const fetchPurchases = useCallback(async () => {
+  setIsLoading(true);
+
+  try {
+    const res = await fetch(
+      '/api/documents?collection=purchases',
+      {
+        cache: 'no-store',
+      }
+    );
+
+    const result = await res.json();
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to load purchases');
     }
+
+    const loadedPurchases = result.data || [];
+
+    setSavedPurchases(
+      loadedPurchases.sort(
+        (a: any, b: any) =>
+          new Date(b.date).getTime() -
+          new Date(a.date).getTime()
+      )
+    );
+  } catch (error) {
+    console.error('Failed to load purchases:', error);
+
+    toast({
+      variant: 'destructive',
+      title: 'Failed to load purchases',
+      description: 'Could not connect to the cloud database.',
+    });
+  } finally {
     setIsLoading(false);
-  }, []);
+  }
+}, [toast]);
+
 
   useEffect(() => {
     fetchPurchases();
@@ -163,10 +184,18 @@ export default function PurchasesPage() {
     };
     
     // Save to local storage first for immediate access
-    localStorage.setItem(purchaseId, JSON.stringify(purchaseData));
+    const result = await saveDocument(
+      'purchases',
+      purchaseId,
+      purchaseData
+    );
+
+    if (!result.success) {
+      throw new Error(result.error || 'Cloud save failed');
+    }
 
     try {
-        await saveDocument('purchases', purchaseId, purchaseData);
+        await saveDocument(purchaseId, purchaseData);
     } catch (error) {
         console.error("Cloud sync failed:", error)
     }
@@ -225,7 +254,7 @@ export default function PurchasesPage() {
 
         // Attempt to delete from cloud but don't block UI
         try {
-          await deleteDocument('purchases', docId);
+          await deleteDocument(docId);
         } catch (error) {
             console.error("Cloud delete failed:", error);
         }

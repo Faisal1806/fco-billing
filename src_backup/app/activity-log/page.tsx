@@ -4,7 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ActivityLog, fetchLogs } from '@/lib/logger';
+import {
+  ActivityLog,
+  fetchLogs,
+  clearLogs,
+} from '@/lib/logger';
 import { Loader2, History, Trash2, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -16,19 +20,43 @@ export default function ActivityLogPage() {
     const { toast } = useToast();
 
     useEffect(() => {
-        setIsLoading(true);
-        const loadedLogs = fetchLogs();
-        setLogs(loadedLogs);
-        setIsLoading(false);
+        let mounted = true;
+        const load = async () => {
+            setIsLoading(true);
+            try {
+                const loadedLogs = await fetchLogs();
+                if (mounted) setLogs(loadedLogs);
+            } catch (e) {
+                console.error('Failed to load logs', e);
+            } finally {
+                if (mounted) setIsLoading(false);
+            }
+        };
+
+        load();
+
+        return () => {
+            mounted = false;
+        };
     }, []);
 
-    const handleClearLogs = () => {
-        if (window.confirm('Are you sure you want to delete all activity logs? This cannot be undone.')) {
-            localStorage.removeItem('activityLogs');
-            setLogs([]);
-            toast({ title: 'Logs Cleared', description: 'All activity logs have been deleted.' });
-        }
-    };
+    const handleClearLogs = async () => {
+    if (
+        !window.confirm(
+            'Are you sure you want to delete all activity logs? This cannot be undone.'
+        )
+    ) {
+        return;
+    }
+
+    await clearLogs();
+    setLogs([]);
+
+    toast({
+        title: 'Logs Cleared',
+        description: 'All activity logs have been deleted.',
+    });
+};
 
     const getBadgeVariant = (type: ActivityLog['type']) => {
         switch (type) {

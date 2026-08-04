@@ -20,7 +20,7 @@ function CustomerLoginPageContent() {
   const [error, setError] = useState('');
   const [isAutoLoggingIn, setIsAutoLoggingIn] = useState(false);
 
-  const handleLogin = (name: string) => {
+  const handleLogin = async (name: string) => {
     const trimmedName = name.trim();
     if (!trimmedName) {
       setError('Please enter your name.');
@@ -54,7 +54,10 @@ function CustomerLoginPageContent() {
         if (typeof window !== 'undefined') {
             localStorage.setItem('customerName', trimmedName);
         }
-        addLog('Portal Login', `Customer "${trimmedName}" logged in successfully.`);
+        await addLog(
+  'Portal Login',
+  `Customer "${trimmedName}" logged in successfully.`
+);
         router.push('/portal/dashboard');
         toast({
             title: 'Login Successful',

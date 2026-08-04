@@ -71,14 +71,12 @@ const defaultGrowers: { name: string, address: string }[] = [
     { name: 'Naseer Ahmad Bhat', address: 'R/o Nadihal Bla.' },
     { name: 'GH. Mohd. Lone B/P', address: 'R/o Nadihal Bla.' },
     { name: 'GH. Mohd. Bhat', address: 'R/o Nadihal Bla.' },
-    { name: 'Nazir Ahmad Lone B/P', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Maqbool Baigh', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Shabaan Ahangar', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Akbar Lone B/P', address: 'R/o Nadihal Bla.' },
     { name: 'Tanveer Ahmad Lone B/P', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Shabaan Lone (Lama)', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Arif Lone (Uffa)', address: 'R/o Nadihal Bla.' },
-    { name: 'Mohd. Subhan Parry', address: 'R/o Nadihal Bla.' },
+    { name: 'Mohd. Subhan Parray', address: 'R/o Nadihal Bla.' },
     { name: 'GH. Mohiuddin Lone (Poltry)', address: 'R/o Nadihal Bla.' },
     { name: 'Majoor Ahmad Lone ®', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Akbar Lone (Lama)', address: 'R/o Nadihal Bla.' },
@@ -511,7 +509,13 @@ export default function PartiesPage() {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="phone">Phone / WhatsApp</Label>
-                                <Input id="phone" name="phone" value={p.phone || ''} onChange={handleInputChange} />
+                                <Input
+    id="phone"
+    name="phone"
+    value={formState.phone || ''}
+    onChange={handleInputChange}
+/>
+
                             </div>
                             <div className="space-y-2 md:col-span-2">
                                 <Label htmlFor="address">Address</Label>
@@ -631,5 +635,6 @@ export default function PartiesPage() {
     </div>
   );
 }
+
 
 

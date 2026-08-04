@@ -18,7 +18,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { saveDocument, sendPushNotification, deleteDocument, getDocuments } from '@/lib/actions';
+import { saveDocument, deleteDocument, getDocuments } from '@/lib/actions';
 import { Input } from '@/components/ui/input';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import * as XLSX from 'xlsx';
@@ -102,7 +102,7 @@ export default function SettingsPage() {
     const [activeAccent, setActiveAccent] = React.useState('142 76% 45%');
 
      const fetchTokens = async () => {
-        const { success, data } = await getDocuments('fcm-tokens', true);
+        const { success, data } = await getDocuments('fcm-tokens');
         if (success && data) {
             setFcmTokens(data);
         }
@@ -306,6 +306,21 @@ export default function SettingsPage() {
         });
     };
 
+    // Local helper to send push notifications via server API
+    const sendPushNotification = async (payload: { title: string; body: string; tokens: string[]; url?: string }) => {
+        try {
+            const res = await fetch('/api/send-push', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            return await res.json();
+        } catch (error) {
+            console.error('sendPushNotification error', error);
+            throw error;
+        }
+    };
+
     const handleSendTestNotification = async () => {
         setIsSending(true);
         if (fcmTokens.length === 0) {
@@ -330,7 +345,7 @@ export default function SettingsPage() {
 
     const handleDeleteToken = async (tokenId: string) => {
         try {
-            await deleteDocument('fcm-tokens', tokenId);
+            await deleteDocument(`fcm-tokens/${tokenId}`);
             fetchTokens();
             toast({ title: 'Node Unregistered', description: 'The device has been disconnected from push services.'});
         } catch (error) {
@@ -388,7 +403,7 @@ export default function SettingsPage() {
     
             try {
                 const data = JSON.parse(localStorage.getItem(key)!);
-                const result = await saveDocument(collectionName, data.id || docId, data);
+                const result = await saveDocument(collectionName, { ...data, id: data.id || docId });
                 if (result.success) successCount++;
                 else errorCount++;
             } catch (e) {

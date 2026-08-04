@@ -1,64 +1,233 @@
 const API_BASE = '/api/documents';
 
-export async function saveDocument(key: string, data: Record<string, unknown>, _useFirestore = false) {
+type DocumentValue = Record<string, any>;
+
+type ApiResult<T = any> = {
+  success: boolean;
+  data?: T;
+  error?: string;
+};
+
+async function parseResponse<T = any>(
+  response: Response
+): Promise<ApiResult<T>> {
+  const text = await response.text();
+
+  if (!text) {
+    return {
+      success: response.ok,
+      error: response.ok ? undefined : `HTTP ${response.status}`,
+    };
+  }
+
   try {
-    const res = await fetch(API_BASE, {
+    return JSON.parse(text);
+  } catch {
+    return {
+      success: false,
+      error: text || `HTTP ${response.status}`,
+    };
+  }
+}
+
+
+/**
+ * SAVE ONE DOCUMENT
+ *
+ * Example:
+ *
+ * saveDocument(
+ *   'purchase-123',
+ *   {
+ *     billNo: '123',
+ *     date: '2026-07-27'
+ *   }
+ * )
+ */
+export async function saveDocument(
+  key: string,
+  data: DocumentValue
+): Promise<ApiResult> {
+  try {
+    const response = await fetch(API_BASE, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key, value: data }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        key,
+        value: data,
+      }),
     });
-    const result = await res.json();
-    return { success: result.success };
-  } catch {
-    try { localStorage.setItem(key, JSON.stringify(data)); return { success: true }; }
-    catch { return { success: false, error: 'Save failed' }; }
+
+    const result = await parseResponse(response);
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || 'Failed to save document');
+    }
+
+    return {
+      success: true,
+      data: result.data,
+    };
+  } catch (error) {
+    console.error(`Failed to save document: ${key}`, error);
+
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to save document',
+    };
   }
 }
 
-export async function getDocument(key: string, _useFirestore = false) {
-  try {
-    const res = await fetch(`${API_BASE}?key=${encodeURIComponent(key)}`);
-    if (res.status === 404) return { success: false, error: 'Not found' };
-    const result = await res.json();
-    return { success: result.success, data: result.data };
-  } catch {
-    try {
-      const raw = localStorage.getItem(key);
-      if (!raw) return { success: false, error: 'Not found' };
-      return { success: true, data: JSON.parse(raw) };
-    } catch { return { success: false, error: 'Fetch failed' }; }
-  }
-}
 
-export async function getDocuments(prefix: string, _useFirestore = false) {
+/**
+ * GET ONE DOCUMENT
+ */
+export async function getDocument(
+  key: string
+): Promise<ApiResult> {
   try {
-    const res = await fetch(`${API_BASE}?prefix=${encodeURIComponent(prefix)}`);
-    const result = await res.json();
-    return { success: result.success, data: result.data };
-  } catch {
-    try {
-      const items: Record<string, unknown>[] = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k && k.startsWith(prefix)) {
-          const raw = localStorage.getItem(k);
-          if (raw) items.push(JSON.parse(raw));
-        }
+    const response = await fetch(
+      `${API_BASE}?key=${encodeURIComponent(key)}`,
+      {
+        method: 'GET',
+        cache: 'no-store',
       }
-      return { success: true, data: items };
-    } catch { return { success: false, error: 'Fetch failed' }; }
+    );
+
+    const result = await parseResponse(response);
+
+    if (response.status === 404) {
+      return {
+        success: false,
+        error: 'Document not found',
+      };
+    }
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || 'Failed to load document');
+    }
+
+    return {
+      success: true,
+      data: result.data,
+    };
+  } catch (error) {
+    console.error(`Failed to get document: ${key}`, error);
+
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to load document',
+    };
   }
 }
 
-export async function deleteDocument(key: string, _useFirestore = false) {
+
+/**
+ * GET ALL DOCUMENTS
+ *
+ * Example:
+ *
+ * getDocuments('purchase-')
+ *
+ * returns all:
+ *
+ * purchase-1
+ * purchase-2
+ * purchase-3
+ */
+export async function getDocuments(
+  prefix?: string
+): Promise<ApiResult<any[]>> {
   try {
-    const res = await fetch(`${API_BASE}?key=${encodeURIComponent(key)}`, { method: 'DELETE' });
-    const result = await res.json();
-    localStorage.removeItem(key);
-    return { success: result.success };
-  } catch {
-    try { localStorage.removeItem(key); return { success: true }; }
-    catch { return { success: false, error: 'Delete failed' }; }
+    const url = prefix
+      ? `${API_BASE}?prefix=${encodeURIComponent(prefix)}`
+      : API_BASE;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      cache: 'no-store',
+    });
+
+    const result = await parseResponse(response);
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || 'Failed to load documents');
+    }
+
+    return {
+      success: true,
+      data: Array.isArray(result.data)
+        ? result.data
+        : [],
+    };
+  } catch (error) {
+    console.error(
+      `Failed to get documents with prefix: ${prefix || 'all'}`,
+      error
+    );
+
+    return {
+      success: false,
+      data: [],
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to load documents',
+    };
   }
 }
 
+
+/**
+ * DELETE ONE DOCUMENT
+ */
+export async function deleteDocument(
+  key: string
+): Promise<ApiResult> {
+  try {
+    const response = await fetch(
+      `${API_BASE}?key=${encodeURIComponent(key)}`,
+      {
+        method: 'DELETE',
+      }
+    );
+
+    const result = await parseResponse(response);
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || 'Failed to delete document');
+    }
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error(`Failed to delete document: ${key}`, error);
+
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to delete document',
+    };
+  }
+}
+
+export async function sendPushNotification(
+  payload: Record<string, any>
+): Promise<ApiResult> {
+  console.warn('sendPushNotification is not implemented in this app route.');
+  return {
+    success: false,
+    error: 'sendPushNotification is not implemented',
+  };
+}

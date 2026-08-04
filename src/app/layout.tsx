@@ -4,6 +4,7 @@ import { LanguageProvider } from "@/contexts/language-context";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AppStateProvider } from "@/contexts/app-state-context";
+import { StorageSyncProvider } from "@/components/storage-sync-provider";
 
 export const metadata = {
   title: "F.Co Billing System",
@@ -22,7 +23,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           <AppStateProvider>
             <LanguageProvider>
-                {children}
+              <StorageSyncProvider />
+              {children}
               <Toaster />
             </LanguageProvider>
           </AppStateProvider>

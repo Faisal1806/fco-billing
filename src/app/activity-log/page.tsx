@@ -1,98 +1,268 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import React, {
+  useEffect,
+  useState,
+} from 'react';
+
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+
 import { Badge } from '@/components/ui/badge';
-import { ActivityLog, fetchLogs } from '@/lib/logger';
-import { Loader2, History, Trash2, ShieldAlert } from 'lucide-react';
+
+import {
+  ActivityLog,
+  fetchLogs,
+} from '@/lib/logger';
+
+import {
+  Loader2,
+  History,
+  Trash2,
+  ShieldAlert,
+} from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
+
 import { useToast } from '@/hooks/use-toast';
+
 import PageHeader from '@/components/PageHeader';
 
+import { getDocument, saveDocument } from '@/lib/actions';
+
 export default function ActivityLogPage() {
-    const [logs, setLogs] = useState<ActivityLog[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const { toast } = useToast();
+  const [logs, setLogs] =
+    useState<ActivityLog[]>([]);
 
-    useEffect(() => {
-        setIsLoading(true);
-        const loadedLogs = fetchLogs();
-        setLogs(loadedLogs);
-        setIsLoading(false);
-    }, []);
+  const [isLoading, setIsLoading] =
+    useState(true);
 
-    const handleClearLogs = () => {
-        if (window.confirm('Are you sure you want to delete all activity logs? This cannot be undone.')) {
-            localStorage.removeItem('activityLogs');
-            setLogs([]);
-            toast({ title: 'Logs Cleared', description: 'All activity logs have been deleted.' });
-        }
-    };
+  const [isClearing, setIsClearing] =
+    useState(false);
 
-    const getBadgeVariant = (type: ActivityLog['type']) => {
-        switch (type) {
-            case 'Portal Login': return 'default';
-            case 'View Ledger': return 'secondary';
-            case 'Download Report': return 'outline';
-            default: return 'secondary';
-        }
+  const { toast } = useToast();
+
+  const loadLogs = async () => {
+    setIsLoading(true);
+
+    try {
+      const loadedLogs = await fetchLogs();
+
+      setLogs(loadedLogs);
+    } catch (error) {
+      console.error(
+        'Failed to load activity logs:',
+        error
+      );
+
+      toast({
+        variant: 'destructive',
+        title: 'Failed to Load Logs',
+        description:
+          'Could not load activity logs from the server.',
+      });
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    return (
-        <div className="space-y-6">
-            <PageHeader
-                title="Customer Portal Activity Log"
-                description="Monitor customer logins and actions within the portal."
-                icon={<History className="h-8 w-8" />}
-                imageUrl="/assets/3d/activity.png"
-            />
-            <Card>
-                <CardHeader>
-                    <div className="flex justify-between items-center">
-                        <CardTitle>Log History</CardTitle>
-                        <Button variant="destructive" size="sm" onClick={handleClearLogs} className="gap-2">
-                            <Trash2 className="h-4 w-4" /> Clear All Logs
-                        </Button>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    {isLoading ? (
-                        <div className="flex justify-center items-center h-48">
-                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                        </div>
-                    ) : logs.length > 0 ? (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Timestamp</TableHead>
-                                    <TableHead>Activity Type</TableHead>
-                                    <TableHead>Details</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {logs.map((log) => (
-                                    <TableRow key={log.id}>
-                                        <TableCell>{new Date(log.timestamp).toLocaleString()}</TableCell>
-                                        <TableCell>
-                                            <Badge variant={getBadgeVariant(log.type)}>{log.type}</Badge>
-                                        </TableCell>
-                                        <TableCell className="font-mono text-xs">{log.details}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    ) : (
-                        <div className="text-center py-16 text-muted-foreground border-2 border-dashed rounded-lg">
-                            <ShieldAlert className="mx-auto h-12 w-12" />
-                            <h3 className="mt-4 text-lg font-semibold">No Activity Recorded Yet</h3>
-                            <p className="mt-1 text-sm">Customer actions from the portal will appear here.</p>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-        </div>
+  useEffect(() => {
+    loadLogs();
+  }, []);
+
+  const handleClearLogs = async () => {
+    const confirmed = window.confirm(
+      'Are you sure you want to delete all activity logs? This cannot be undone.'
     );
+
+    if (!confirmed) return;
+
+    setIsClearing(true);
+
+    try {
+      const existingResult =
+        await getDocument('activityLogs');
+
+      if (!existingResult.success) {
+        throw new Error(
+          existingResult.error ||
+            'Could not load existing logs'
+        );
+      }
+
+      const saveResult = await saveDocument(
+        'activityLogs',
+        [] as unknown as Record<string, unknown>
+      );
+
+      if (!saveResult.success) {
+        throw new Error(
+          saveResult.error ||
+            'Could not clear activity logs'
+        );
+      }
+
+      setLogs([]);
+
+      toast({
+        title: 'Logs Cleared',
+        description:
+          'All activity logs have been deleted centrally.',
+      });
+    } catch (error) {
+      console.error(
+        'Failed to clear activity logs:',
+        error
+      );
+
+      toast({
+        variant: 'destructive',
+        title: 'Failed to Clear Logs',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Could not clear activity logs.',
+      });
+    } finally {
+      setIsClearing(false);
+    }
+  };
+
+  const getBadgeVariant = (
+    type: ActivityLog['type']
+  ) => {
+    switch (type) {
+      case 'Portal Login':
+        return 'default';
+
+      case 'View Ledger':
+        return 'secondary';
+
+      case 'Download Report':
+        return 'outline';
+
+      default:
+        return 'secondary';
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Customer Portal Activity Log"
+        description="Monitor customer logins and actions within the portal."
+        icon={<History className="h-8 w-8" />}
+        imageUrl="/assets/3d/activity.png"
+      />
+
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle>
+              Log History
+            </CardTitle>
+
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleClearLogs}
+              disabled={
+                isClearing ||
+                isLoading ||
+                logs.length === 0
+              }
+              className="gap-2"
+            >
+              {isClearing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
+
+              {isClearing
+                ? 'Clearing...'
+                : 'Clear All Logs'}
+            </Button>
+          </div>
+        </CardHeader>
+
+        <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center items-center h-48">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : logs.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>
+                    Timestamp
+                  </TableHead>
+
+                  <TableHead>
+                    Activity Type
+                  </TableHead>
+
+                  <TableHead>
+                    Details
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+
+              <TableBody>
+                {logs.map((log) => (
+                  <TableRow key={log.id}>
+                    <TableCell>
+                      {new Date(
+                        log.timestamp
+                      ).toLocaleString()}
+                    </TableCell>
+
+                    <TableCell>
+                      <Badge
+                        variant={getBadgeVariant(
+                          log.type
+                        )}
+                      >
+                        {log.type}
+                      </Badge>
+                    </TableCell>
+
+                    <TableCell className="font-mono text-xs">
+                      {log.details}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="text-center py-16 text-muted-foreground border-2 border-dashed rounded-lg">
+              <ShieldAlert className="mx-auto h-12 w-12" />
+
+              <h3 className="mt-4 text-lg font-semibold">
+                No Activity Recorded Yet
+              </h3>
+
+              <p className="mt-1 text-sm">
+                Customer actions from the portal will appear here.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
-
-

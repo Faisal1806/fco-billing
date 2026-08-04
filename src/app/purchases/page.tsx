@@ -3,6 +3,7 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { saveDocument, deleteDocument, getDocuments } from '@/lib/actions';
 
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,7 +41,6 @@ import {
 } from 'lucide-react';
 
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { saveDocument, deleteDocument, getDocuments } from '@/lib/actions';
 import { Badge } from '@/components/ui/badge';
 import { PartySelector } from '@/components/party-selector';
 import PageHeader from '@/components/PageHeader';
@@ -137,104 +137,31 @@ export default function PurchasesPage() {
     setIsLoading(true);
 
     try {
-      /*
-       * PRIMARY SOURCE:
-       * MongoDB through /api/documents
-       */
       const result = await getDocuments('purchase-');
 
-      if (result.success && Array.isArray(result.data)) {
-        const purchases: Purchase[] = result.data
-          .map((item: any) => {
-            const purchase = item.value ?? item;
+      if (result.success) {
+        const purchases = (result.data || []).map((item: any) => ({
+          ...item,
+          id: item.id || `purchase-${item.billNo}`,
+        }));
 
-            return {
-              ...purchase,
-              id:
-                purchase.id ||
-                item.key ||
-                `purchase-${purchase.billNo}`,
-            };
-          })
-          .filter((purchase: Purchase) => purchase.billNo);
-
-        setSavedPurchases(purchases);
-
-        const years = new Set<number>();
-
-        years.add(currentYear);
-
-        purchases.forEach((purchase) => {
-          const year = getYearFromDate(purchase.date);
-
-          if (year) {
-            years.add(year);
-          }
-        });
-
-        const sortedYears = Array.from(years).sort((a, b) => b - a);
-
-        setAvailableYears(sortedYears);
-
-        setIsLoading(false);
-        return;
+        setSavedPurchases(
+          purchases.sort(
+            (a: any, b: any) =>
+              new Date(b.date).getTime() -
+              new Date(a.date).getTime()
+          )
+        );
+      } else {
+        setSavedPurchases([]);
       }
     } catch (error) {
-      console.error('MongoDB purchase loading failed:', error);
+      console.error('Failed to load purchases:', error);
+      setSavedPurchases([]);
+    } finally {
+      setIsLoading(false);
     }
-
-    /*
-     * FALLBACK:
-     * Load from localStorage if MongoDB is unavailable
-     */
-    if (typeof window !== 'undefined') {
-      const localPurchases: Purchase[] = [];
-
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-
-        if (key?.startsWith('purchase-')) {
-          try {
-            const raw = localStorage.getItem(key);
-
-            if (!raw) continue;
-
-            const purchase = JSON.parse(raw);
-
-            localPurchases.push({
-              ...purchase,
-              id: purchase.id || key,
-            });
-          } catch (error) {
-            console.error(
-              'Failed to parse local purchase:',
-              error
-            );
-          }
-        }
-      }
-
-      setSavedPurchases(localPurchases);
-
-      const years = new Set<number>();
-
-      years.add(currentYear);
-
-      localPurchases.forEach((purchase) => {
-        const year = getYearFromDate(purchase.date);
-
-        if (year) {
-          years.add(year);
-        }
-      });
-
-      setAvailableYears(
-        Array.from(years).sort((a, b) => b - a)
-      );
-    }
-
-    setIsLoading(false);
-  }, [currentYear]);
+  }, []);
 
   useEffect(() => {
     fetchPurchases();
