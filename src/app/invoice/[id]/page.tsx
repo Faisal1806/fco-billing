@@ -278,6 +278,15 @@ body *{
 }
 
 
+.print-area-a4{
+    display:${printStyle === 'a4' ? 'block' : 'none'} !important;
+    width:146mm !important;
+    height:208mm !important;
+    overflow:hidden !important;
+    margin:0 auto !important;
+    box-sizing:border-box;
+}
+
 
 .print-area-thermal{
     display:${printStyle === 'thermal' ? 'block' : 'none'} !important;
