@@ -29,7 +29,7 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
         freight = 0 
     } = billData || {};
 
-    const emptyRowsCount = Math.max(0, 12 - entries.length);
+    const emptyRowsCount = Math.max(0, 10 - entries.length);
     const emptyRows = Array.from({ length: emptyRowsCount });
 
    return (
@@ -42,7 +42,7 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
                     <div className="flex justify-between items-start">
                          <div className="text-left text-xs font-bold flex items-center gap-1">
                             <p>🍎</p>
-                            <p>F.Co App</p>
+                            <p>F.Co</p>
                          </div>
                          <div className="flex-grow">
                             <div className="text-[8px] leading-tight">
@@ -54,7 +54,7 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
                             <p className="text-[8px]">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
                          </div>
                          <div className="text-right text-xs font-bold flex items-center gap-1">
-                             <p>F.Co App</p>
+                             <p>F.Co</p>
                             <p>🍎</p>
                          </div>
                     </div>
@@ -65,7 +65,7 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
                         {khata && <p><strong>Khata:</strong> {khata}</p>}
                     </div>
                     <div className="text-right text-xs">
-                        <p><strong>Bill No:</strong> {sNo}</p>
+                        <p><strong>Invoice No:</strong> {sNo}</p>
                         <p><strong>Date:</strong> {date ? new Date(date).toLocaleDateString('en-GB') : 'N/A'}</p>
                         {date2 && <p><strong>Date 2:</strong> {new Date(date2).toLocaleDateString('en-GB')}</p>}
                         {watakNo && <p><strong>Watak No:</strong> {watakNo}</p>}
@@ -104,24 +104,17 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
                         </tbody>
                     </table>
                 </main>
-                <footer className="mt-auto pt-0 text-[10px] leading-tight">
-                    <div className="grid grid-cols-2 gap-x-4">
+                <footer className="pt-1 text-xs">
+                    <div className="grid grid-cols-2 gap-x-2">
                         <div className="space-y-0.5 pr-4 flex flex-col justify-between">
                             <div>
                                 <p><strong>Total Quantity:</strong> {totals?.totalQty || 0} (Patti: {totals?.pattiQty || 0}, Dabba: {totals?.dabbaQty || 0})</p>
                                 <div className="mt-2 flex gap-4 items-end">
                                     <BusinessCardQR size={40} />
-                                    {pageUrl && (
-                                        <div className="flex flex-col items-center">
-                                            <QRCode value={pageUrl} size={40} renderAs="svg"/>
-                                            <p className="text-[8px] font-semibold">View Ledger</p>
-                                        </div>
-                                    )}
+                                 
                                 </div>
                             </div>
-                            <div className="mt-2">
-                                <PaymentQR size={48} amount={totals?.netSale || 0} />
-                            </div>
+                            
                         </div>
                         <div className="space-y-0.5 border-l-2 border-green-700 pl-4 text-[10px]">
                             <div className="flex justify-between"><span>Subtotal:</span> <span className="font-semibold">₹{(Number(totals?.subtotal) || 0).toFixed(2)}</span></div>

@@ -258,13 +258,24 @@ body{
     print-color-adjust:exact;
 }
 
-body *{
-    visibility:hidden;
+body{
+    margin:0 !important;
+    padding:0 !important;
 }
 
-.print-container,
-.print-container *{
-    visibility:visible;
+.print-container{
+    position:relative !important;
+    display:block !important;
+    width:146mm !important;
+    margin:0 auto !important;
+}
+
+.print-area-a4{
+    display:block !important;
+}
+
+.print-area-thermal{
+    display:none !important;
 }
 
 .print-container{
