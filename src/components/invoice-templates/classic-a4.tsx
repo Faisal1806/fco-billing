@@ -1,7 +1,6 @@
 import { Logo } from "@/components/logo";
 import BusinessCardQR from "@/components/BusinessCardQR";
-import PaymentQR from "@/components/PaymentQR";
-import QRCode from 'qrcode.react';
+
 
 export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:string }) => {
     // Defensive destructuring with robust defaults to prevent formatting errors

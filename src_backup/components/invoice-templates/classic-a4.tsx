@@ -111,12 +111,8 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
                                 <p><strong>Total Quantity:</strong> {totals?.totalQty || 0} (Patti: {totals?.pattiQty || 0}, Dabba: {totals?.dabbaQty || 0})</p>
                                 <div className="mt-2 flex gap-4 items-end">
                                     <BusinessCardQR size={40} />
-                                    {pageUrl && (
-                                        <div className="flex flex-col items-center">
-                                            <QRCode value={pageUrl} size={40} renderAs="svg"/>
-                                            <p className="text-[8px] font-semibold">View Ledger</p>
-                                        </div>
-                                    )}
+                                   
+                                    
                                 </div>
                             </div>
                             <div className="mt-2">
