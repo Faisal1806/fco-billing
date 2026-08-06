@@ -31,6 +31,8 @@ import * as XLSX from 'xlsx';
 import '../khata/print.css';
 import { saveDocument, deleteDocument } from '@/lib/actions';
 import PageHeader from '@/components/PageHeader';
+import { usePrintOrientation } from '@/components/print-orientation-provider';
+import { PrintOrientationSelector } from '@/components/print-orientation-selector';
 
 const STORAGE_PREFIX = 'accessory-ledger-';
 
@@ -69,6 +71,7 @@ export default function SuppliesPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [userRole, setUserRole] = useState<string | null>(null);
     const [loaderAnimation, setLoaderAnimation] = useState(null);
+    const { orientation, printDocument } = usePrintOrientation();
 
      useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -161,11 +164,11 @@ export default function SuppliesPage() {
     const overallTotal = entries.reduce((acc, curr) => acc + (curr.qty * curr.rate), 0);
     
     const handlePrint = () => {
-        window.print();
+        printDocument();
     };
 
     const exportToPDF = () => {
-        const doc = new jsPDF();
+        const doc = new jsPDF(orientation === 'landscape' ? 'l' : 'p', 'mm', 'a4');
         doc.text("Supplies Ledger", 14, 15);
         autoTable(doc, {
             head: [['Date', 'Customer', 'Category', 'Item', 'Qty', 'Rate', 'Payment', 'Amount']],

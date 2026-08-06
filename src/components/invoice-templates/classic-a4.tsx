@@ -1,5 +1,6 @@
 import { Logo } from "@/components/logo";
 import BusinessCardQR from "@/components/BusinessCardQR";
+import { serverHooks } from "next/dist/server/app-render/entry-base";
 
 
 export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:string }) => {
@@ -19,6 +20,9 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
             association: 0, 
             security: 0, 
             commissionAmount: 0,
+            securityCharges: 0,
+            postage: 8,
+            serviceCharges: 0,
             totalExpenses: 0, 
             netSale: 0,
             totalQty: 0,
@@ -122,10 +126,12 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
                             <div className="flex justify-between"><span>Labour:</span> <span>- ₹{(Number(totals?.labour) || 0).toFixed(2)}</span></div>
                             <div className="flex justify-between"><span>Association:</span> <span>- ₹{(Number(totals?.association) || 0).toFixed(2)}</span></div>
                             <div className="flex justify-between"><span>Security:</span> <span>- ₹{(Number(totals?.security) || 0).toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span>Commission:</span> <span>- ₹{(Number(totals?.commissionAmount ?? 0) || 0).toFixed(2)}</span></div>
                             <div className="flex justify-between">
     <span>S. Charges:</span>
-    <span>- ₹{(Number(totals?.serviceCharges) || 0).toFixed(2)}</span>
+    <span>- ₹{(Number(totals?.securityCharges ?? totals?.serviceCharges ?? 0) || 0).toFixed(2)}</span>
 </div>
+                            <div className="flex justify-between"><span>Postage:</span> <span>- ₹{(Number(totals?.postage ?? 8) || 8).toFixed(2)}</span></div>
                             <div className="flex justify-between font-bold border-t border-gray-400"><span>Total Exp:</span> <span>- ₹{(Number(totals?.totalExpenses) || 0).toFixed(2)}</span></div>
                             <div className="flex justify-between font-bold text-base border-t border-gray-400"><span>Net Sale:</span> <span>₹{(Number(totals?.netSale) || 0).toFixed(2)}</span></div>
                         </div>

@@ -16,6 +16,8 @@ import jsPDF from 'jspdf';
 import QRCode from 'qrcode.react';
 import { useSearchParams } from "next/navigation";
 import { getDocument } from "@/lib/actions";
+import { usePrintOrientation } from '@/components/print-orientation-provider';
+import { PrintOrientationSelector } from '@/components/print-orientation-selector';
 
 
 interface ChallanData {
@@ -54,6 +56,7 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
     const [printStyle, setPrintStyle] = useState<'a4' | 'thermal'>('a4');
     const [invoiceStyle, setInvoiceStyle] = useState('classic');
     const searchParams = useSearchParams();
+    const { orientation, printDocument } = usePrintOrientation();
     const isPublicView = searchParams.get('source') === 'qr';
 
 
@@ -121,7 +124,7 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
 
         const isThermal = printStyle === 'thermal';
         const format: any = isThermal ? [80, 297] : 'a5';
-        const orientation = 'portrait';
+        const pdfOrientation = isThermal ? 'portrait' : (orientation === 'landscape' ? 'landscape' : 'portrait');
     
         const activeLayout = printStyle === 'a4' ? element.querySelector('.print-area-a4 > div') : element.querySelector('.print-area-thermal');
         if (!activeLayout) return;
@@ -132,7 +135,7 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
         });
 
         const pdf = new jsPDF({
-            orientation,
+            orientation: pdfOrientation,
             unit: 'mm',
             format,
         });
@@ -159,7 +162,8 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
                     <FaWhatsapp className="h-4 w-4 text-green-500" />
                     Share
                 </Button>
-                <Button onClick={() => window.print()} variant="outline" size="sm" className="gap-2">
+                <PrintOrientationSelector />
+                <Button onClick={printDocument} variant="outline" size="sm" className="gap-2">
                     <Printer className="h-4 w-4" />
                     Print
                 </Button>

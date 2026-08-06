@@ -2,6 +2,7 @@
 import QRCode from 'qrcode.react';
 import { Separator } from '@/components/ui/separator';
 import BusinessCardQR from '../BusinessCardQR';
+import { serverHooks } from 'next/dist/server/app-render/entry-base';
 
 export const ThermalLayout = ({ billData, pageUrl }: { billData: any, pageUrl: string }) => {
     const { 
@@ -15,6 +16,9 @@ export const ThermalLayout = ({ billData, pageUrl }: { billData: any, pageUrl: s
             grossSale: 0, 
             labour: 0, 
             commissionAmount: 0,
+            securityCharges: 0,
+            postage: 8,
+            serviceCharges: 0,
             association: 0, 
             security: 0, 
             totalExpenses: 0, 
@@ -61,7 +65,11 @@ export const ThermalLayout = ({ billData, pageUrl }: { billData: any, pageUrl: s
                 <div className="flex justify-between"><span>Gross Sale:</span><span>{(totals?.grossSale || 0).toFixed(2)}</span></div>
                 <div className="flex justify-between"><span>Freight:</span><span>- {(freight || 0).toFixed(2)}</span></div>
                 <div className="flex justify-between"><span>Labour:</span><span>- {(totals?.labour || 0).toFixed(2)}</span></div>
-                <div className="flex justify-between"><span>Commission:</span><span>- {(totals?.commissionAmount || 0).toFixed(2)}</span></div>
+                <div className="flex justify-between"><span>Commission:</span><span>- {(Number(totals?.commissionAmount ?? 0) || 0).toFixed(2)}</span></div>
+                <div className="flex justify-between"><span>S. Charges:</span><span>- {(Number(totals?.securityCharges ?? totals?.serviceCharges ?? 0) || 0).toFixed(2)}</span></div>
+                <div className="flex justify-between"><span>Postage:</span><span>- {(Number(totals?.postage ?? 8) || 8).toFixed(2)}</span></div>
+                <div className="flex justify-between"><span>Association:</span><span>- {(totals?.association || 0).toFixed(2)}</span></div>
+                <div className="flex justify-between"><span>Security:</span><span>- {(totals?.security || 0).toFixed(2)}</span></div>
                 <div className="flex justify-between"><span>Other Exp:</span><span>- {((totals?.association || 0) + (totals?.security || 0)).toFixed(2)}</span></div>
                 <div className="flex justify-between font-semibold"><span>Total Exp:</span><span>- {(totals?.totalExpenses || 0).toFixed(2)}</span></div>
             </div>
@@ -72,10 +80,6 @@ export const ThermalLayout = ({ billData, pageUrl }: { billData: any, pageUrl: s
                 <p>Thank you for your business!</p>
                  <div className="grid grid-cols-2 gap-4 mt-2">
                     <BusinessCardQR size={60} />
-                    <div className="flex flex-col items-center justify-center">
-                        <QRCode value={pageUrl} size={60} />
-                        <p className="text-[8px] font-semibold mt-1">Scan to View Bill</p>
-                    </div>
                 </div>
             </footer>
         </div>

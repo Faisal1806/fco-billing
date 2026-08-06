@@ -330,7 +330,7 @@ export default function SettingsPage() {
 
     const handleDeleteToken = async (tokenId: string) => {
         try {
-            await deleteDocument(`fcm-tokens/${tokenId}`);
+            await deleteDocument('fcm-tokens', tokenId);
             fetchTokens();
             toast({ title: 'Node Unregistered', description: 'The device has been disconnected from push services.'});
         } catch (error) {

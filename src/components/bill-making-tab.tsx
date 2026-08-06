@@ -24,6 +24,8 @@ import { saveDocument, deleteDocument, getDocuments } from '@/lib/actions';
 import { Checkbox } from './ui/checkbox';
 import { Progress } from './ui/progress';
 import { Alert, AlertDescription } from './ui/alert';
+import { calculateCommissionDeductions } from '@/lib/commission';
+import { calculateLabour } from '@/lib/labour';
 
 
 
@@ -50,6 +52,7 @@ export function BillMakingTab() {
   const [date, setDate] = useState('');
   const [date2, setDate2] = useState('');
   const [freight, setFreight] = useState<number>(0);
+  const [postageInput, setPostageInput] = useState('8');
   const [rows, setRows] = useState<Row[]>(initialRows);
   const [selectedReceiptNo, setSelectedReceiptNo] = useState('');
   const [quickEntry, setQuickEntry] = useState('');
@@ -325,13 +328,13 @@ export function BillMakingTab() {
 
     const totalGrossSale = subtotal;
 
-    const labour = totalQty * 3.5;
+    const labour = calculateLabour(totalQty);
     const association = totalQty * 0.1;
     const security = totalQty * 0.9;
-    const commission = Math.floor(subtotal * 0.06);
-const serviceCharges = Math.floor(subtotal * 0.06);
+    const { commissionAmount, securityCharges } = calculateCommissionDeductions(totalGrossSale);
+    const resolvedPostage = postageInput === '' ? 8 : (Number(postageInput) || 8);
 
-    const totalExp = commission + labour + association + security + (Number(freight) || 0);
+    const totalExp = (Number(freight) || 0) + labour + association + security + commissionAmount + securityCharges + resolvedPostage;
     const netSale = totalGrossSale - totalExp;
 
     return {
@@ -343,8 +346,11 @@ const serviceCharges = Math.floor(subtotal * 0.06);
       sgst: 0,
       totalTax: 0,
       totalGrossSale,
-      commission,
-      serviceCharges,
+      commission: commissionAmount,
+      commissionAmount,
+      postage: Number(resolvedPostage.toFixed(2)),
+      serviceCharges: securityCharges,
+      securityCharges,
       labour,
       association,
       security,
@@ -352,7 +358,7 @@ const serviceCharges = Math.floor(subtotal * 0.06);
       netSale,
       rowGross,
     };
-}, [rows, freight]);
+}, [rows, freight, postageInput]);
 
   const creditLimitExceeded = useMemo(() => {
     if (!partyCredit || partyCredit.limit === 0) return false;
@@ -386,6 +392,7 @@ const serviceCharges = Math.floor(subtotal * 0.06);
         setDate(new Date().toISOString().split('T')[0]);
         setDate2('');
         setFreight(0);
+        setPostageInput('8');
         setRows(initialRows);
         setIsEditing(false);
         setSelectedReceiptNo('');
@@ -402,6 +409,7 @@ const serviceCharges = Math.floor(subtotal * 0.06);
     setDate(watak.date);
     setDate2(watak.date2 || '');
     setFreight(watak.freight || 0);
+    setPostageInput(watak.totals?.postage !== undefined ? String(watak.totals.postage) : '8');
     setRows(watak.entries.length > 0 ? watak.entries : initialRows);
     setSelectedReceiptNo(watak.linkedReceiptNo || '');
     setIsEditing(true);
@@ -417,7 +425,7 @@ const serviceCharges = Math.floor(subtotal * 0.06);
     
     localStorage.removeItem(`invoice-${deletedSNo}`);
     try {
-        await deleteDocument(`invoice-${deletedSNo}`);
+        await deleteDocument('bills', deletedSNo);
         toast({ title: "Invoice Deleted", description: `Invoice #${deletedSNo} has been deleted locally and from cloud.`});
     } catch (e) {
         toast({ title: "Invoice Deleted Locally", description: `Bill removed from device but cloud sync failed.`});
@@ -473,8 +481,10 @@ const serviceCharges = Math.floor(subtotal * 0.06);
         labour: Number(totals.labour.toFixed(2)),
         association: Number(totals.association.toFixed(2)),
         security: Number(totals.security.toFixed(2)),
-        commissionAmount: Number(totals.commission.toFixed(2)),
-        serviceCharges: Number(totals.serviceCharges.toFixed(2)),
+        commissionAmount: Number(totals.commissionAmount.toFixed(2)),
+        securityCharges: Number(totals.securityCharges.toFixed(2)),
+        postage: Number((totals.postage ?? 8).toFixed(2)),
+        serviceCharges: Number(totals.securityCharges.toFixed(2)),
         totalExpenses: Number(totals.totalExp.toFixed(2)),
         netSale: Number(totals.netSale.toFixed(2)),
       },
@@ -824,6 +834,17 @@ const serviceCharges = Math.floor(subtotal * 0.06);
                                 value={freight || ''}
                                 onChange={e => setFreight(Number(e.target.value))}
                                 disabled={formDisabled}
+                            />
+                        </div>
+                        <div className="flex justify-between items-center text-lg pt-2 border-t border-white/5">
+                            <span className="opacity-60 text-xs uppercase">POSTAGE</span>
+                            <Input
+                                type="number"
+                                className="w-32 h-10 text-right rounded-xl bg-white/5 border-white/10 font-black text-accent"
+                                value={postageInput}
+                                onChange={e => setPostageInput(e.target.value)}
+                                disabled={formDisabled}
+                                placeholder="8"
                             />
                         </div>
                     </div>

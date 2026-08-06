@@ -77,7 +77,9 @@ export interface WatakEntry {
       totalTax: number;
       grossSale: number;
       commissionAmount: number;
-      serviceCharges: number;
+      securityCharges: number;
+      postage?: number;
+      serviceCharges?: number;
       labour: number;
       association: number;
       security: number;

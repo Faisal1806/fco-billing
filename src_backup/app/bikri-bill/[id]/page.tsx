@@ -40,6 +40,8 @@ interface BikriData {
         commissionAmount: number;
         serviceCharges: number;
         calculatedFreight: number;
+        labour: number;
+        association: number;
         totalExpenses: number;
         netSale?: number;
         netProfitOrLoss?: number;
@@ -232,6 +234,9 @@ export default function BikriBillPage({ params }: { params: { id: string } }) {
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between"><span>Calculated Freight:</span> <span className="font-mono">₹{billData.calculation.calculatedFreight.toFixed(2)}</span></div>
                             <div className="flex justify-between"><span>Commission ({billData.commissionRate}%):</span> <span className="font-mono">₹{billData.calculation.commissionAmount.toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span>Service Charges:</span> <span className="font-mono">₹{billData.calculation.serviceCharges.toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span>Labour:</span> <span className="font-mono">₹{billData.calculation.labour.toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span>Association:</span> <span className="font-mono">₹{billData.calculation.association.toFixed(2)}</span></div>
                             <div className="flex justify-between"><span>Other Expenses:</span> <span className="font-mono">₹{billData.expenses.toFixed(2)}</span></div>
                             <Separator className="my-1"/>
                             <div className="flex justify-between font-bold"><span>Total Expenses:</span> <span className="font-mono">₹{billData.calculation.totalExpenses.toFixed(2)}</span></div>

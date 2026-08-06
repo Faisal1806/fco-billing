@@ -10,6 +10,8 @@ import { ClassicA4Layout } from "@/components/invoice-templates/classic-a4";
 import { ModernDarkA4Layout } from "@/components/invoice-templates/modern-dark-a4";
 import { ModernLightA4Layout } from "@/components/invoice-templates/modern-light-a4";
 import { getDocument } from "@/lib/actions";
+import { usePrintOrientation } from '@/components/print-orientation-provider';
+import { PrintOrientationSelector } from '@/components/print-orientation-selector';
 
 // This is the public-facing bill viewer page.
 // It fetches from the new, public `bills` collection.
@@ -21,6 +23,7 @@ export default function PublicBillPage({ params }: { params: { id: string } }) {
     const [pageUrl, setPageUrl] = useState('');
     const [invoiceStyle, setInvoiceStyle] = useState('classic');
     const searchParams = useSearchParams();
+    const { orientation, printDocument } = usePrintOrientation();
     const styleParam = searchParams.get('style');
 
 
@@ -97,7 +100,7 @@ export default function PublicBillPage({ params }: { params: { id: string } }) {
                         padding: 0;
                     }
                     @page {
-                        size: A5 portrait;
+                        size: ${orientation === 'landscape' ? 'A5 landscape' : 'A5 portrait'};
                         margin: 1mm;
                     }
                 }
@@ -105,7 +108,8 @@ export default function PublicBillPage({ params }: { params: { id: string } }) {
             
             <div className="print:hidden w-full max-w-[250px] space-y-4 sticky top-4 self-start">
                  <div className="flex flex-col gap-4 print:hidden p-4 bg-card rounded-lg border">
-                     <Button onClick={() => window.print()} variant="outline" size="sm" className="gap-2">
+                     <PrintOrientationSelector />
+                     <Button onClick={printDocument} variant="outline" size="sm" className="gap-2">
                         <Printer className="h-4 w-4" />
                         Print
                     </Button>

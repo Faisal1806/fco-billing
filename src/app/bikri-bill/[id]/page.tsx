@@ -11,6 +11,8 @@ import { FaWhatsapp } from 'react-icons/fa';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from 'jspdf';
+import { usePrintOrientation } from '@/components/print-orientation-provider';
+import { PrintOrientationSelector } from '@/components/print-orientation-selector';
 import autoTable from 'jspdf-autotable';
 import QRCode from 'qrcode.react';
 
@@ -38,7 +40,9 @@ interface BikriData {
         totalPurchaseCost: number;
         grossSale: number;
         commissionAmount: number;
-        serviceCharges: number;
+        securityCharges: number;
+        postage?: number;
+        serviceCharges?: number;
         calculatedFreight: number;
         totalExpenses: number;
         netSale?: number;
@@ -54,6 +58,7 @@ export default function BikriBillPage({ params }: { params: { id: string } }) {
     const { toast } = useToast();
     const printRef = useRef<HTMLDivElement>(null);
     const [pageUrl, setPageUrl] = useState('');
+    const { orientation, printDocument } = usePrintOrientation();
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -104,7 +109,7 @@ export default function BikriBillPage({ params }: { params: { id: string } }) {
         if (!element || !billData) return;
     
         const doc = new jsPDF({
-            orientation: 'portrait',
+            orientation: orientation === 'landscape' ? 'landscape' : 'portrait',
             unit: 'mm',
             format: 'a4'
         });
@@ -127,7 +132,8 @@ export default function BikriBillPage({ params }: { params: { id: string } }) {
                     <FaWhatsapp className="h-4 w-4 text-green-500" />
                     Share
                 </Button>
-                <Button onClick={() => window.print()} variant="outline" size="sm" className="gap-2">
+                <PrintOrientationSelector />
+                <Button onClick={printDocument} variant="outline" size="sm" className="gap-2">
                     <Printer className="h-4 w-4" />
                     Print
                 </Button>
@@ -231,7 +237,8 @@ export default function BikriBillPage({ params }: { params: { id: string } }) {
                         <h3 className="text-lg font-bold mb-2">Expenses</h3>
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between"><span>Calculated Freight:</span> <span className="font-mono">₹{billData.calculation.calculatedFreight.toFixed(2)}</span></div>
-                            <div className="flex justify-between"><span>Commission ({billData.commissionRate}%):</span> <span className="font-mono">₹{billData.calculation.commissionAmount.toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span>Commission:</span> <span className="font-mono">₹{billData.calculation.commissionAmount.toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span>S. Charges:</span> <span className="font-mono">₹{(billData.calculation.securityCharges ?? billData.calculation.serviceCharges ?? 0).toFixed(2)}</span></div>
                             <div className="flex justify-between"><span>Other Expenses:</span> <span className="font-mono">₹{billData.expenses.toFixed(2)}</span></div>
                             <Separator className="my-1"/>
                             <div className="flex justify-between font-bold"><span>Total Expenses:</span> <span className="font-mono">₹{billData.calculation.totalExpenses.toFixed(2)}</span></div>

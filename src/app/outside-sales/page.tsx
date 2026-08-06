@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import PageHeader from '@/components/PageHeader';
 import { useAppState } from '@/contexts/app-state-context';
+import { calculateCommissionDeductions } from '@/lib/commission';
 
 type BikriType = 'fcoStock' | 'growerForwarding';
 
@@ -182,13 +183,13 @@ export default function OutsideSalesPage() {
         const soldSaleRows = saleRows.filter(r => !r.isStored);
         const totalPurchaseCost = bikriType === 'fcoStock' ? purchaseRows.reduce((acc, row) => acc + (Number(row.qty) || 0) * (Number(row.rate) || 0), 0) : 0;
         const grossSale = soldSaleRows.reduce((acc, row) => acc + (Number(row.qty) || 0) * (Number(row.rate) || 0), 0);
-        const commissionAmount = grossSale * ((Number(commissionRate) || 0) / 100);
+        const { commissionAmount, securityCharges } = calculateCommissionDeductions(grossSale);
 
         const pattiQty = soldSaleRows.filter(r => r.type === 'Patti').reduce((acc, r) => acc + (Number(r.qty) || 0), 0);
         const dabbaQty = soldSaleRows.filter(r => r.type === 'Dabba').reduce((acc, r) => acc + (Number(r.qty) || 0), 0);
         const calculatedFreight = (pattiQty * (Number(freightPerPatti) || 0)) + (dabbaQty * ((Number(freightPerPatti) || 0) / 2));
         
-        const totalExpenses = calculatedFreight + (Number(expenses) || 0) + commissionAmount;
+        const totalExpenses = calculatedFreight + (Number(expenses) || 0) + commissionAmount + securityCharges;
         
         let netProfitOrLoss = 0;
         let netSalePayableToGrower = 0;
@@ -200,7 +201,7 @@ export default function OutsideSalesPage() {
             netSalePayableToGrower = grossSale - totalExpenses;
         }
 
-        return { totalPurchaseCost, grossSale, commissionAmount, calculatedFreight, totalExpenses, netProfitOrLoss, netSalePayableToGrower };
+        return { totalPurchaseCost, grossSale, commissionAmount, securityCharges, serviceCharges: securityCharges, calculatedFreight, totalExpenses, netProfitOrLoss, netSalePayableToGrower };
     }, [purchaseRows, saleRows, expenses, commissionRate, freightPerPatti, bikriType]);
 
 
@@ -271,7 +272,7 @@ export default function OutsideSalesPage() {
             };
             localStorage.setItem(csId, JSON.stringify(newStockItem));
             try {
-                await saveDocument('cold-storage', csId, newStockItem);
+                await saveDocument(csId, newStockItem);
                 storedItemsCount++;
             } catch (error) {
                 console.error("Failed to save stored item to cloud:", error);
@@ -279,7 +280,7 @@ export default function OutsideSalesPage() {
         }
         
         try {
-            await saveDocument('bikris', recordId, data);
+            await saveDocument(recordId, data);
             let description = 'The outside sale has been recorded.';
             if (storedItemsCount > 0) {
                 description += ` ${storedItemsCount} item(s) were automatically added to Cold Storage.`
@@ -293,7 +294,7 @@ export default function OutsideSalesPage() {
             setIsSubmitting(false);
         }
     };
-    
+
      const loadBikriForEdit = (bikri: any) => {
         resetForm();
         setId(bikri.id);

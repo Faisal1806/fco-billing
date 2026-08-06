@@ -29,6 +29,8 @@ import { useToast } from '@/hooks/use-toast';
 // @ts-ignore - CSS import type declarations are not available in this project setup
 import '@/app/khata/print.css'; // Reuse styles
 import { addLog } from '@/lib/logger';
+import { usePrintOrientation } from '@/components/print-orientation-provider';
+import { PrintOrientationSelector } from '@/components/print-orientation-selector';
 
 type TransactionType = 'Sale' | 'Purchase' | 'Advance' | 'Repayment';
 
@@ -52,6 +54,7 @@ export default function CustomerDashboardPage() {
     const [balance, setBalance] = React.useState(0);
     const [customerName, setCustomerName] = React.useState<string | null>(null);
     const [isLoading, setIsLoading] = React.useState(true);
+    const { orientation, printDocument } = usePrintOrientation();
 
     React.useEffect(() => {
         const loadLedger = async () => {
@@ -161,7 +164,7 @@ export default function CustomerDashboardPage() {
             `Customer "${customerName}" downloaded their ledger as a PDF.`
         );
 
-        const doc = new jsPDF();
+        const doc = new jsPDF(orientation === 'landscape' ? 'l' : 'p', 'mm', 'a4');
         
         doc.setFontSize(18);
         doc.text(`Ledger Statement for ${customerName}`, 14, 22);
@@ -251,7 +254,8 @@ export default function CustomerDashboardPage() {
                         <CardDescription>This is your complete transaction history with Firdous Ahmad & Company.</CardDescription>
                     </div>
                      <div className="flex items-center gap-2">
-                        <Button onClick={() => window.print()} variant="outline" size="sm" className="gap-1">
+                        <PrintOrientationSelector />
+                        <Button onClick={printDocument} variant="outline" size="sm" className="gap-1">
                             <Printer className="h-3.5 w-3.5" /> Print
                         </Button>
                         <Button onClick={exportToPDF} variant="outline" size="sm" className="gap-1">

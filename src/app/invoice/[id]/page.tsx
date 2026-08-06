@@ -16,6 +16,8 @@ import { ModernLightA4Layout } from "@/components/invoice-templates/modern-light
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { getDocument } from "@/lib/actions";
+import { usePrintOrientation } from '@/components/print-orientation-provider';
+import { PrintOrientationSelector } from '@/components/print-orientation-selector';
 
 interface BillData {
     id: string;
@@ -41,7 +43,9 @@ interface BillData {
       totalQty: number;
       grossSale: number;
       commissionAmount: number;
-      serviceCharges: number;
+      securityCharges: number;
+      postage?: number;
+      serviceCharges?: number;
       labour: number;
       association: number;
       security: number;
@@ -61,6 +65,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     const [printStyle, setPrintStyle] = useState<'a4' | 'thermal'>('a4');
     const [invoiceStyle, setInvoiceStyle] = useState('classic');
     const router = useRouter();
+    const { orientation, printDocument } = usePrintOrientation();
+    const effectiveOrientation = printStyle === 'thermal' ? 'portrait' : orientation;
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -135,7 +141,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
         const isThermal = printStyle === 'thermal';
         const format: any = isThermal ? [80, 297] : 'a5';
-        const orientation = 'portrait';
+        const pdfOrientation = isThermal ? 'portrait' : (orientation === 'landscape' ? 'landscape' : 'portrait');
 
      const content =
     printStyle === 'a4'
@@ -146,14 +152,14 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
         try {
             const canvas = await html2canvas(content as HTMLElement, {
-                scale: 3, // Ultra high resolution for "Save to Device"
+                scale: 4,
                 useCORS: true,
                 backgroundColor: invoiceStyle === 'modern-dark' ? '#1f2937' : '#ffffff',
                 logging: false
             });
 
             const pdf = new jsPDF({
-                orientation,
+                orientation: pdfOrientation,
                 unit: 'mm',
                 format,
             });
@@ -188,7 +194,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                     <FaWhatsapp className="h-4 w-4" />
                     WHATSAPP SHARE
                 </Button>
-                <Button onClick={() => window.print()} variant="outline" size="sm" className="h-12 rounded-xl gap-2 border-white/10 font-bold">
+                <PrintOrientationSelector />
+                <Button onClick={printDocument} variant="outline" size="sm" className="h-12 rounded-xl gap-2 border-white/10 font-bold">
                     <Printer className="h-4 w-4" />
                     PRINT NOW
                 </Button>
@@ -200,7 +207,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
              {billData && pageUrl && (
                 <div className="p-4 bg-white/5 border border-white/5 rounded-2xl flex flex-col items-center gap-3">
                     <div className="p-2 bg-white rounded-xl">
-                        <QRCode value={pageUrl} size={120} bgColor="#ffffff" fgColor="#000000" level="H" />
+                        <QRCode value={pageUrl} size={120} bgColor="#FFFFFF" fgColor="#000000" level="H" renderAs="svg" />
                     </div>
                     <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground text-center">Verification QR Code</p>
                 </div>
@@ -245,7 +252,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         <div className="bg-background font-sans print:bg-white flex flex-col md:flex-row gap-10 justify-center p-4 md:p-12">
            <style jsx global>{`
 @page{
-    size:${printStyle === 'a4' ? 'A5 portrait' : '80mm 297mm'};
+    size:${printStyle === 'a4' ? (effectiveOrientation === 'landscape' ? 'A5 landscape' : 'A5 portrait') : '80mm 297mm'};
     margin:0;
 }
 

@@ -21,6 +21,8 @@ import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import '@/app/khata/print.css';
 import { motion } from 'framer-motion';
+import { usePrintOrientation } from '@/components/print-orientation-provider';
+import { PrintOrientationSelector } from '@/components/print-orientation-selector';
 
 
 type CreditRow = {
@@ -47,6 +49,7 @@ const emptyDebitRow = { id: Date.now(), date: '', details: '', amount: 0 };
 export default function StatementOfAccountPage() {
     const { toast } = useToast();
     const router = useRouter();
+    const { orientation, printDocument } = usePrintOrientation();
     // Header State
     const [sNo, setSNo] = React.useState('');
     const [partyName, setPartyName] = React.useState('');
@@ -173,7 +176,8 @@ export default function StatementOfAccountPage() {
 
 
   const handleSaveAsPdf = () => {
-    const doc = new jsPDF('p', 'mm', 'a4');
+    const pdfOrientation = orientation === 'landscape' ? 'l' : 'p';
+    const doc = new jsPDF(pdfOrientation, 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 10;
 
@@ -322,7 +326,7 @@ export default function StatementOfAccountPage() {
   };
 
   const handlePrint = () => {
-    window.print();
+    printDocument();
   }
 
 
@@ -346,6 +350,10 @@ export default function StatementOfAccountPage() {
               background: white !important;
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
+            }
+            @page {
+              size: ${orientation === 'landscape' ? 'A4 landscape' : 'A4 portrait'};
+              margin: 6mm;
             }
         }
       `}</style>
@@ -485,6 +493,7 @@ export default function StatementOfAccountPage() {
                         <p className="font-bold">Signature</p>
                     </div>
                     <div className='flex gap-2 flex-wrap'>
+                        <PrintOrientationSelector />
                         <Button className="gap-2" onClick={handleSave}>
                             <Save className="h-4 w-4" /> {isEditing ? 'Update' : 'Save'}
                         </Button>
