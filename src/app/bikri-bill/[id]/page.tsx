@@ -38,6 +38,7 @@ interface BikriData {
         totalPurchaseCost: number;
         grossSale: number;
         commissionAmount: number;
+        serviceCharges: number;
         calculatedFreight: number;
         totalExpenses: number;
         netSale?: number;

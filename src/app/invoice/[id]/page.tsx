@@ -41,6 +41,7 @@ interface BillData {
       totalQty: number;
       grossSale: number;
       commissionAmount: number;
+      serviceCharges: number;
       labour: number;
       association: number;
       security: number;
@@ -136,9 +137,10 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         const format: any = isThermal ? [80, 297] : 'a5';
         const orientation = 'portrait';
 
-        const content = printStyle === 'a4'
-            ? activeLayout.querySelector('.print-area-a4 > div')
-            : activeLayout.querySelector('.print-area-thermal');
+     const content =
+    printStyle === 'a4'
+        ? activeLayout.querySelector('.print-area-a4')
+        : activeLayout.querySelector('.print-area-thermal');
 
         if (!content) return;
 

@@ -41,6 +41,7 @@ interface BillData {
       totalQty: number;
       grossSale: number;
       commissionAmount: number;
+      serviceCharges: number;
       labour: number;
       association: number;
       security: number;

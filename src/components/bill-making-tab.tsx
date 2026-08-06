@@ -325,10 +325,11 @@ export function BillMakingTab() {
 
     const totalGrossSale = subtotal;
 
-    const labour = totalQty * 3;
+    const labour = totalQty * 3.5;
     const association = totalQty * 0.1;
     const security = totalQty * 0.9;
-    const commission = Math.floor(subtotal * 0.12);
+    const commission = Math.floor(subtotal * 0.06);
+const serviceCharges = Math.floor(subtotal * 0.06);
 
     const totalExp = commission + labour + association + security + (Number(freight) || 0);
     const netSale = totalGrossSale - totalExp;
@@ -343,6 +344,7 @@ export function BillMakingTab() {
       totalTax: 0,
       totalGrossSale,
       commission,
+      serviceCharges,
       labour,
       association,
       security,
@@ -466,18 +468,13 @@ export function BillMakingTab() {
         total: r.isForwarded ? 0 : ((Number(r.qty) || 0) * (Number(r.rate) || 0)),
       })),
       totals: {
-        pattiQty: totals.pattiQty,
-        dabbaQty: totals.dabbaQty,
-        totalQty: totals.totalQty,
         subtotal: Number(totals.subtotal.toFixed(2)),
-        cgst: 0,
-        sgst: 0,
-        totalTax: 0,
         grossSale: Number(totals.totalGrossSale.toFixed(2)),
-        commissionAmount: Number(totals.commission.toFixed(2)),
         labour: Number(totals.labour.toFixed(2)),
         association: Number(totals.association.toFixed(2)),
         security: Number(totals.security.toFixed(2)),
+        commissionAmount: Number(totals.commission.toFixed(2)),
+        serviceCharges: Number(totals.serviceCharges.toFixed(2)),
         totalExpenses: Number(totals.totalExp.toFixed(2)),
         netSale: Number(totals.netSale.toFixed(2)),
       },

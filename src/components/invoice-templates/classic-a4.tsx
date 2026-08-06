@@ -122,6 +122,10 @@ export const ClassicA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl:
                             <div className="flex justify-between"><span>Labour:</span> <span>- ₹{(Number(totals?.labour) || 0).toFixed(2)}</span></div>
                             <div className="flex justify-between"><span>Association:</span> <span>- ₹{(Number(totals?.association) || 0).toFixed(2)}</span></div>
                             <div className="flex justify-between"><span>Security:</span> <span>- ₹{(Number(totals?.security) || 0).toFixed(2)}</span></div>
+                            <div className="flex justify-between">
+    <span>S. Charges:</span>
+    <span>- ₹{(Number(totals?.serviceCharges) || 0).toFixed(2)}</span>
+</div>
                             <div className="flex justify-between font-bold border-t border-gray-400"><span>Total Exp:</span> <span>- ₹{(Number(totals?.totalExpenses) || 0).toFixed(2)}</span></div>
                             <div className="flex justify-between font-bold text-base border-t border-gray-400"><span>Net Sale:</span> <span>₹{(Number(totals?.netSale) || 0).toFixed(2)}</span></div>
                         </div>
