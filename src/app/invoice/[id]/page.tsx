@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Printer, Download, FileText, Receipt, Loader2 } from "lucide-react";
 import { FaWhatsapp } from 'react-icons/fa';
 import { useToast } from "@/hooks/use-toast";
-import QRCode from 'qrcode.react';
 import { ClassicA4Layout } from "@/components/invoice-templates/classic-a4";
 import { ModernDarkA4Layout } from "@/components/invoice-templates/modern-dark-a4";
 import { ThermalLayout } from "@/components/invoice-templates/thermal";
@@ -16,6 +15,7 @@ import { ModernLightA4Layout } from "@/components/invoice-templates/modern-light
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { getDocument } from "@/lib/actions";
+import { normalizeInvoiceData } from '@/lib/commission';
 import { usePrintOrientation } from '@/components/print-orientation-provider';
 import { PrintOrientationSelector } from '@/components/print-orientation-selector';
 
@@ -108,7 +108,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
 
             if (data) {
-                setBillData(data);
+                const normalizedData = normalizeInvoiceData(data);
+                setBillData(normalizedData);
                 if(typeof window !== 'undefined'){
                   setPageUrl(`${window.location.origin}/bill/view/${params.id}?style=${invoiceStyle}`);
                 }
@@ -120,63 +121,132 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     }, [params.id, toast, invoiceStyle]);
 
 
-    const handleShare = () => {
-        if (billData) {
-            const message = `F.Co Official Invoice (#${billData.sNo}) for ${billData.customerName}: ${pageUrl}`;
-            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-            window.open(whatsappUrl, '_blank');
-        } else {
-            toast({ variant: "destructive", title: "Share Failed", description: "Could not share the invoice." });
-        }
-    };
-    
-    const handleDownloadPdf = async () => {
-        toast({
-            title: "Generating High-Res PDF",
-            description: "Preparing your document for local storage...",
-        });
+ const handleShare = () => {
+  if (!billData) {
+    toast({
+      variant: "destructive",
+      title: "Share Failed",
+      description: "Could not share the invoice.",
+    });
+    return;
+  }
 
-        const activeLayout = printRef.current;
-        if (!activeLayout || !billData) return;
+  const message =
+    `F.Co Official Invoice (#${billData.sNo}) for ` +
+    `${billData.customerName}: ${pageUrl}`;
 
-        const isThermal = printStyle === 'thermal';
-        const format: any = isThermal ? [80, 297] : 'a5';
-        const pdfOrientation = isThermal ? 'portrait' : (orientation === 'landscape' ? 'landscape' : 'portrait');
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
 
-     const content =
-    printStyle === 'a4'
-        ? activeLayout.querySelector('.print-area-a4')
-        : activeLayout.querySelector('.print-area-thermal');
+window.open(whatsappUrl, '_blank');
+};
 
-        if (!content) return;
+const handleDownloadPdf = async () => {
+  if (!billData || !printRef.current) {
+    toast({
+      variant: 'destructive',
+      title: 'PDF Failed',
+      description: 'Invoice content is not ready.',
+    });
+    return;
+  }
 
-        try {
-            const canvas = await html2canvas(content as HTMLElement, {
-                scale: 4,
-                useCORS: true,
-                backgroundColor: invoiceStyle === 'modern-dark' ? '#1f2937' : '#ffffff',
-                logging: false
-            });
+  toast({
+    title: 'Generating High-Res PDF',
+    description: 'Preparing your document...',
+  });
 
-            const pdf = new jsPDF({
-                orientation: pdfOrientation,
-                unit: 'mm',
-                format,
-            });
-            
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-            
-            pdf.addImage(canvas.toDataURL('image/png', 1.0), 'PNG', 0, 0, pdfWidth, pdfHeight);
-            pdf.save(`FCo-Invoice-${billData.sNo}_${billData.customerName}.pdf`);
-            
-            toast({ title: "Document Saved", description: "The invoice has been downloaded to your device.", isSuccess: true });
-        } catch (e) {
-            toast({ variant: 'destructive', title: "Save Failed", description: "An error occurred while generating the PDF." });
-        }
-    };
+  const activeLayout = printRef.current;
 
+  const isThermal = printStyle === 'thermal';
 
+  const format: any = isThermal
+    ? [80, 297]
+    : 'a5';
+
+  const pdfOrientation = isThermal
+    ? 'portrait'
+    : orientation;
+
+  const content = isThermal
+    ? activeLayout.querySelector('.print-area-thermal')
+    : activeLayout.querySelector('.print-area-a4');
+
+  if (!content) {
+    toast({
+      variant: 'destructive',
+      title: 'PDF Failed',
+      description: 'Invoice layout could not be found.',
+    });
+    return;
+  }
+
+  try {
+    const canvas = await html2canvas(
+      content as HTMLElement,
+      {
+        scale: 4,
+        useCORS: true,
+        backgroundColor:
+          invoiceStyle === 'modern-dark'
+            ? '#1f2937'
+            : '#FDFEE2',
+        logging: false,
+      }
+    );
+
+    const pdf = new jsPDF({
+      orientation: pdfOrientation,
+      unit: 'mm',
+      format,
+    });
+
+    const pdfWidth =
+      pdf.internal.pageSize.getWidth();
+
+    const pdfHeight =
+      (canvas.height * pdfWidth) /
+      canvas.width;
+
+    pdf.addImage(
+      canvas.toDataURL('image/png', 1.0),
+      'PNG',
+      0,
+      0,
+      pdfWidth,
+      pdfHeight,
+      undefined,
+      'FAST'
+    );
+
+    const safeCustomerName =
+      String(billData.customerName || 'Customer')
+        .replace(/[<>:"/\\|?*]/g, '_');
+
+    pdf.save(
+      `FCo-Invoice-${billData.sNo}_${safeCustomerName}.pdf`
+    );
+
+    toast({
+      title: 'Document Saved',
+      description:
+        'The invoice has been downloaded successfully.',
+      isSuccess: true,
+    });
+
+  } catch (error) {
+    console.error(
+      'Invoice PDF generation failed:',
+      error
+    );
+
+    toast({
+      variant: 'destructive',
+      title: 'Save Failed',
+      description:
+        'An error occurred while generating the PDF.',
+    });
+  }
+};
 
     const Controls = () => (
         <div className="flex flex-col gap-4 print:hidden p-6 glass-panel rounded-[2rem] border-white/10">
@@ -204,14 +274,6 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 <Download className="h-5 w-5" />
                 SAVE TO DEVICE
             </Button>
-             {billData && pageUrl && (
-                <div className="p-4 bg-white/5 border border-white/5 rounded-2xl flex flex-col items-center gap-3">
-                    <div className="p-2 bg-white rounded-xl">
-                        <QRCode value={pageUrl} size={120} bgColor="#FFFFFF" fgColor="#000000" level="H" renderAs="svg" />
-                    </div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground text-center">Verification QR Code</p>
-                </div>
-            )}
         </div>
     )
 
@@ -250,60 +312,84 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
     return (
         <div className="bg-background font-sans print:bg-white flex flex-col md:flex-row gap-10 justify-center p-4 md:p-12">
-           <style jsx global>{`
-@page{
-    size:${printStyle === 'a4' ? (effectiveOrientation === 'landscape' ? 'A5 landscape' : 'A5 portrait') : '80mm 297mm'};
-    margin:0;
-}
+  <style jsx global>{`
+  @page {
+    size: ${printStyle === 'thermal'
+      ? '80mm 297mm'
+      : `A5 ${effectiveOrientation}`};
+    margin: 0;
+  }
 
-@media print{
+  @media print {
 
-html,
-body{
-    margin:0 !important;
-    padding:0 !important;
-    width:100%;
-    height:100%;
-    background:#fff !important;
-    -webkit-print-color-adjust:exact;
-    print-color-adjust:exact;
-}
+    html,
+    body {
+      margin: 0 !important;
+      padding: 0 !important;
+      width: auto !important;
+      min-height: auto !important;
+      background: white !important;
 
-.print-hidden{
-    display:none !important;
-}
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
 
-.print-container{
-    width:146mm !important;
-    min-height:208mm !important;
-    margin:0 auto !important;
-    padding:0 !important;
-}
+    body {
+      overflow: visible !important;
+    }
 
-.print-area-a4{
-    display:${printStyle === 'a4' ? 'block' : 'none'} !important;
-    width:146mm !important;
-    min-height:208mm !important;
-    overflow:hidden !important;
-}
+    .print-hidden {
+      display: none !important;
+    }
 
-.print-area-thermal{
-    display:${printStyle === 'thermal' ? 'block' : 'none'} !important;
-}
+    .print-container {
+      width: auto !important;
+      min-height: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
 
-.print-area-a4 table{
-    page-break-inside:avoid !important;
-}
+    .print-area-a4 {
+      display: ${
+        printStyle === 'a4'
+          ? 'block'
+          : 'none'
+      } !important;
 
-.print-area-a4 tr{
-    page-break-inside:avoid !important;
-}
+      width: 146mm !important;
+      height: 208mm !important;
 
-.print-area-a4 footer{
-    page-break-inside:avoid !important;
-}
+      min-height: 208mm !important;
+      max-height: 208mm !important;
 
-}
+      margin: 0 !important;
+      padding: 0 !important;
+
+      overflow: hidden !important;
+    }
+
+    .print-area-thermal {
+      display: ${
+        printStyle === 'thermal'
+          ? 'block'
+          : 'none'
+      } !important;
+
+      width: 80mm !important;
+
+      margin: 0 !important;
+      padding: 0 !important;
+
+      overflow: visible !important;
+    }
+
+    .print-area-a4 table,
+    .print-area-a4 tr,
+    .print-area-a4 footer {
+      break-inside: avoid !important;
+      page-break-inside: avoid !important;
+    }
+  }
 `}</style>
             <div className="print-hidden w-full max-w-[300px] space-y-4 sticky top-10 self-start">
                 <Controls />

@@ -82,7 +82,7 @@ export const ModernDarkA4Layout = ({ billData, pageUrl }: { billData: any, pageU
                                             <td className="py-2">{entry.type}</td>
                                             <td className="py-2">{entry.variety}</td>
                                             <td className="py-2 text-center font-mono">{entry.qty}</td>
-                                            <td className="py-2 text-right font-mono">{entry.isForwarded ? 'Forward' : `₹${(entry.rate || 0).toFixed(2)}`}</td>
+                                            <td className="py-2 text-right font-mono">{entry.isForwarded ? 'Forward' : `₹${(Number(entry.rate) || 0).toFixed(2)}`}</td>
                                         </tr>
                                     ))}
                                 </tbody>

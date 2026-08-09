@@ -261,7 +261,7 @@ export default function PurchaseRegisterPage() {
     toast({ title: "Purchase Bill Deleted", description: `Bill #${billNo} has been deleted locally.`});
 
     try {
-        await deleteDocument(billNo);
+        await deleteDocument('purchases', billNo);
     } catch (e) {
         console.error("Cloud delete failed but local was successful", e);
     }

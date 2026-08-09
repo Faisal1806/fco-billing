@@ -2,7 +2,6 @@
 import { Logo } from "@/components/logo";
 import BusinessCardQR from "@/components/BusinessCardQR";
 import { Separator } from "@/components/ui/separator";
-import QRCode from 'qrcode.react';
 
 export const ModernLightA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl: string }) => {
     const { 
@@ -85,7 +84,7 @@ export const ModernLightA4Layout = ({ billData, pageUrl }: { billData: any, page
                                             <td className="py-2">{entry.type}</td>
                                             <td className="py-2">{entry.variety}</td>
                                             <td className="py-2 text-center font-mono">{entry.qty}</td>
-                                            <td className="py-2 text-right font-mono">{entry.isForwarded ? 'Forward' : `₹${(entry.rate || 0).toFixed(2)}`}</td>
+                                            <td className="py-2 text-right font-mono">{entry.isForwarded ? 'Forward' : `₹${(Number(entry.rate) || 0).toFixed(2)}`}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -132,7 +131,7 @@ export const ModernLightA4Layout = ({ billData, pageUrl }: { billData: any, page
 
                 <footer className="flex justify-between items-end mt-auto pt-4 border-t border-gray-200 text-xs">
                      <div className="grid grid-cols-1">
-                        <BusinessCardQR size={64} />
+                        <BusinessCardQR size={92} />
                     </div>
                     <div className="text-right text-gray-500">
                         <p className="font-signature text-3xl text-gray-800">Faisal</p>

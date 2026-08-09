@@ -1,8 +1,6 @@
 
-import QRCode from 'qrcode.react';
 import { Separator } from '@/components/ui/separator';
 import BusinessCardQR from '../BusinessCardQR';
-import { serverHooks } from 'next/dist/server/app-render/entry-base';
 
 export const ThermalLayout = ({ billData, pageUrl }: { billData: any, pageUrl: string }) => {
     const { 
@@ -55,8 +53,8 @@ export const ThermalLayout = ({ billData, pageUrl }: { billData: any, pageUrl: s
                         <tr key={i} className="border-b border-dashed border-black">
                             <td className="text-left py-1">{entry.variety} ({entry.type})</td>
                             <td className="text-right">{entry.qty}</td>
-                            <td className="text-right">{entry.isForwarded ? 'Fwd' : (entry.rate || 0).toFixed(2)}</td>
-                            <td className="text-right">{entry.isForwarded ? 'Fwd' : (entry.total || 0).toFixed(2)}</td>
+                            <td className="text-right">{entry.isForwarded ? 'Fwd' : (Number(entry.rate) || 0).toFixed(2)}</td>
+                            <td className="text-right">{entry.isForwarded ? 'Fwd' : (Number(entry.total) || 0).toFixed(2)}</td>
                         </tr>
                     ))}
                 </tbody>
@@ -79,7 +77,7 @@ export const ThermalLayout = ({ billData, pageUrl }: { billData: any, pageUrl: s
             <footer className="text-center pt-2 border-t border-dashed border-black text-[10px]">
                 <p>Thank you for your business!</p>
                  <div className="grid grid-cols-2 gap-4 mt-2">
-                    <BusinessCardQR size={60} />
+                    <BusinessCardQR size={92} />
                 </div>
             </footer>
         </div>

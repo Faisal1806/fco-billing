@@ -51,8 +51,8 @@ export const ThermalLayout = ({ billData, pageUrl }: { billData: any, pageUrl: s
                         <tr key={i} className="border-b border-dashed border-black">
                             <td className="text-left py-1">{entry.variety} ({entry.type})</td>
                             <td className="text-right">{entry.qty}</td>
-                            <td className="text-right">{entry.isForwarded ? 'Fwd' : (entry.rate || 0).toFixed(2)}</td>
-                            <td className="text-right">{entry.isForwarded ? 'Fwd' : (entry.total || 0).toFixed(2)}</td>
+                            <td className="text-right">{entry.isForwarded ? 'Fwd' : (Number(entry.rate) || 0).toFixed(2)}</td>
+                            <td className="text-right">{entry.isForwarded ? 'Fwd' : (Number(entry.total) || 0).toFixed(2)}</td>
                         </tr>
                     ))}
                 </tbody>

@@ -24,8 +24,7 @@ import { saveDocument, deleteDocument, getDocuments } from '@/lib/actions';
 import { Checkbox } from './ui/checkbox';
 import { Progress } from './ui/progress';
 import { Alert, AlertDescription } from './ui/alert';
-import { calculateCommissionDeductions } from '@/lib/commission';
-import { calculateLabour } from '@/lib/labour';
+import { calculateInvoiceTotals } from '@/lib/commission';
 
 
 
@@ -327,15 +326,14 @@ export function BillMakingTab() {
     });
 
     const totalGrossSale = subtotal;
-
-    const labour = calculateLabour(totalQty);
-    const association = totalQty * 0.1;
-    const security = totalQty * 0.9;
-    const { commissionAmount, securityCharges } = calculateCommissionDeductions(totalGrossSale);
     const resolvedPostage = postageInput === '' ? 8 : (Number(postageInput) || 8);
-
-    const totalExp = (Number(freight) || 0) + labour + association + security + commissionAmount + securityCharges + resolvedPostage;
-    const netSale = totalGrossSale - totalExp;
+    const invoiceTotals = calculateInvoiceTotals({
+      grossSale: totalGrossSale,
+      totalQty,
+      freight: Number(freight) || 0,
+      postage: resolvedPostage,
+      otherExpenses: 0,
+    });
 
     return {
       pattiQty,
@@ -346,16 +344,16 @@ export function BillMakingTab() {
       sgst: 0,
       totalTax: 0,
       totalGrossSale,
-      commission: commissionAmount,
-      commissionAmount,
+      commission: invoiceTotals.commissionAmount,
+      commissionAmount: invoiceTotals.commissionAmount,
       postage: Number(resolvedPostage.toFixed(2)),
-      serviceCharges: securityCharges,
-      securityCharges,
-      labour,
-      association,
-      security,
-      totalExp,
-      netSale,
+      serviceCharges: invoiceTotals.serviceCharges,
+      securityCharges: invoiceTotals.securityCharges,
+      labour: invoiceTotals.labour,
+      association: invoiceTotals.association,
+      security: invoiceTotals.security,
+      totalExp: invoiceTotals.totalExpenses,
+      netSale: invoiceTotals.netSale,
       rowGross,
     };
 }, [rows, freight, postageInput]);
@@ -485,6 +483,7 @@ export function BillMakingTab() {
         securityCharges: Number(totals.securityCharges.toFixed(2)),
         postage: Number((totals.postage ?? 8).toFixed(2)),
         serviceCharges: Number(totals.securityCharges.toFixed(2)),
+        otherExpenses: 0,
         totalExpenses: Number(totals.totalExp.toFixed(2)),
         netSale: Number(totals.netSale.toFixed(2)),
       },
@@ -825,7 +824,8 @@ export function BillMakingTab() {
                     </h3>
                     <div className="space-y-2 text-sm font-bold">
                         <div className="flex justify-between items-center opacity-60"><span>LABOUR (Q×3)</span> <span>₹{totals.labour.toLocaleString()}</span></div>
-                        <div className="flex justify-between items-center opacity-60"><span>COMMISSION (12%)</span> <span>₹{totals.commission.toLocaleString()}</span></div>
+                        <div className="flex justify-between items-center opacity-60"><span>COMMISSION (6%)</span> <span>₹{totals.commission.toLocaleString()}</span></div>
+                        <div className="flex justify-between items-center opacity-60"><span>S. CHARGES (6%)</span><span>₹{totals.securityCharges.toLocaleString()}</span></div>
                         <div className="flex justify-between items-center text-lg pt-2 border-t border-white/5">
                             <span className="opacity-60 text-xs uppercase">FREIGHT CHARGE</span>
                             <Input

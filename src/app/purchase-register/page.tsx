@@ -261,12 +261,9 @@ export default function PurchaseRegisterPage() {
     toast({ title: "Purchase Bill Deleted", description: `Bill #${billNo} has been deleted locally.`});
 
     try {
-      // The deleteDocument signature in the lib may differ in TS types across environments.
-      // Suppress TS here to allow runtime call with billNo.
-      // @ts-ignore
       await deleteDocument('purchases', billNo);
     } catch (e) {
-        console.error("Cloud delete failed but local was successful", e);
+      console.error("Cloud delete failed but local was successful", e);
     }
   }
 

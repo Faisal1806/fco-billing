@@ -10,6 +10,7 @@ import { ClassicA4Layout } from "@/components/invoice-templates/classic-a4";
 import { ModernDarkA4Layout } from "@/components/invoice-templates/modern-dark-a4";
 import { ModernLightA4Layout } from "@/components/invoice-templates/modern-light-a4";
 import { getDocument } from "@/lib/actions";
+import { normalizeInvoiceData } from '@/lib/commission';
 import { usePrintOrientation } from '@/components/print-orientation-provider';
 import { PrintOrientationSelector } from '@/components/print-orientation-selector';
 
@@ -46,7 +47,7 @@ export default function PublicBillPage({ params }: { params: { id: string } }) {
             const { success, data: firestoreData, error } = await getDocument(`bills/${params.id}`);
             
             if (success && firestoreData) {
-                setBillData(firestoreData);
+                setBillData(normalizeInvoiceData(firestoreData));
             } else {
                 toast({
                     variant: "destructive",

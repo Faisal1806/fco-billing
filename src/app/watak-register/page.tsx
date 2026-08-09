@@ -47,6 +47,7 @@ import { motion } from 'framer-motion';
 import { ClassicA4Layout } from '@/components/invoice-templates/classic-a4';
 import html2canvas from 'html2canvas';
 import { useAppState } from '@/contexts/app-state-context';
+import { normalizeInvoiceData } from '@/lib/commission';
 
 export interface WatakEntry {
     id: string;
@@ -183,8 +184,9 @@ export default function SalesRegisterPage() {
         if (invoicesResult.success && invoicesResult.data) {
             invoicesResult.data.forEach((watak: any) => {
                 if (watak.date && Number(String(watak.date).split(/[-/]/).find((p: string) => p.length === 4)) === selectedYear) {
-                    items.push(watak);
-                    if (watak.customerName) addPartyToMap(watak.customerName);
+                    const normalizedWatak = normalizeInvoiceData(watak);
+                    items.push(normalizedWatak);
+                    if (normalizedWatak.customerName) addPartyToMap(normalizedWatak.customerName);
                 }
             });
         }
