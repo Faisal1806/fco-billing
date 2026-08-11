@@ -31,7 +31,7 @@ function calculateInvoiceTotals({
 } = {}) {
   const grossSaleValue = roundAmount(grossSale);
   const safeQty = Number(totalQty) || 0;
-  const labour = roundAmount(safeQty * 3.5);
+  const labour = roundAmount(safeQty * 3);
   const association = roundAmount(safeQty * 0.1);
   const security = roundAmount(safeQty * 0.9);
   const { commissionAmount, securityCharges } = calculateCommissionDeductions(grossSaleValue);
