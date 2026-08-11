@@ -101,12 +101,7 @@ export default function SettingsPage() {
     const [dailySummaryEnabled, setDailySummaryEnabled] = React.useState(true);
     const [activeAccent, setActiveAccent] = React.useState('142 76% 45%');
 
-     const fetchTokens = async () => {
-        const { success, data } = await getDocuments('fcm-tokens');
-        if (success && data) {
-            setFcmTokens(data);
-        }
-    };
+   
 
     React.useEffect(() => {
         const savedStyle = localStorage.getItem('invoiceStyle');
@@ -118,7 +113,6 @@ export default function SettingsPage() {
             setActiveAccent(savedAccent);
             document.documentElement.style.setProperty('--accent', savedAccent);
         }
-        fetchTokens();
     }, []);
 
     const handleStyleChange = (style: string) => {
@@ -331,7 +325,6 @@ export default function SettingsPage() {
     const handleDeleteToken = async (tokenId: string) => {
         try {
             await deleteDocument('fcm-tokens', tokenId);
-            fetchTokens();
             toast({ title: 'Node Unregistered', description: 'The device has been disconnected from push services.'});
         } catch (error) {
             toast({ variant: 'destructive', title: 'Removal Failed', description: 'Could not remove device node.'});

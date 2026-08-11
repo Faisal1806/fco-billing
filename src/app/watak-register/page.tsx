@@ -153,50 +153,238 @@ export default function SalesRegisterPage() {
   const [partyNameMap, setPartyNameMap] = React.useState<Map<string, string>>(new Map());
   const [availableYears, setAvailableYears] = React.useState<number[]>([]);
 
-  const fetchWataks = React.useCallback(async () => {
+ const fetchWataks = React.useCallback(async () => {
     setIsLoading(true);
-    if(typeof window !== 'undefined') {
-        const items: any[] = wataks || [];
-        const growerMap = new Map<string, string>(); // Map from canonical name -> canonical name
-        const itemYear = items?.[0]?.date
-  ? Number(String(items?.[0]?.date).split(/[-/]/).find(part => part.length === 4))
-  : null;
+
+    if (typeof window === 'undefined') {
+        setIsLoading(false);
+        return;
+    }
+
+    try {
+        const invoiceMap = new Map<string, WatakEntry>();
+        const growerMap = new Map<string, string>();
 
         const addPartyToMap = (name: string) => {
-             const canonical = getCanonicalName(name);
-             if (!growerMap.has(canonical)) {
+            if (!name) return;
+
+            const canonical = getCanonicalName(name);
+
+            if (!growerMap.has(canonical)) {
                 growerMap.set(canonical, name);
             }
         };
 
-        defaultGrowers.forEach(p => addPartyToMap(p.name));
+        const getInvoiceYear = (date: unknown): number | null => {
+            if (!date) return null;
 
-        // Fetch parties from MongoDB
-        const partiesResult = await fetch('/api/documents?prefix=party-').then(r => r.json());
-        if (partiesResult.success && partiesResult.data) {
-            partiesResult.data.forEach((party: any) => {
-                if (party.name) addPartyToMap(party.name);
-            });
-        }
+            const value = String(date);
 
-        // Fetch invoices from MongoDB
-        const invoicesResult = await fetch('/api/documents?prefix=invoice-').then(r => r.json());
-        if (invoicesResult.success && invoicesResult.data) {
-            invoicesResult.data.forEach((watak: any) => {
-                if (watak.date && Number(String(watak.date).split(/[-/]/).find((p: string) => p.length === 4)) === selectedYear) {
-                    const normalizedWatak = normalizeInvoiceData(watak);
-                    items.push(normalizedWatak);
-                    if (normalizedWatak.customerName) addPartyToMap(normalizedWatak.customerName);
+            // Handles YYYY-MM-DD, DD/MM/YYYY, ISO dates, etc.
+            const yearMatch = value.match(/\b(20\d{2})\b/);
+
+            return yearMatch ? Number(yearMatch[1]) : null;
+        };
+
+        const getInvoiceKey = (invoice: any, fallbackKey?: string) => {
+            return String(
+                invoice?.id ??
+                invoice?.sNo ??
+                invoice?.invoiceNo ??
+                invoice?.watakNo ??
+                fallbackKey ??
+                ''
+            );
+        };
+
+        // ---------------------------------------------------------
+        // DEFAULT GROWERS
+        // ---------------------------------------------------------
+        defaultGrowers.forEach((p) => addPartyToMap(p.name));
+
+        // ---------------------------------------------------------
+        // LOCAL PARTIES
+        // ---------------------------------------------------------
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+
+            if (!key || !key.startsWith('party-')) continue;
+
+            try {
+                const party = JSON.parse(localStorage.getItem(key) || '');
+
+                if (party?.name) {
+                    addPartyToMap(party.name);
                 }
-            });
+            } catch (error) {
+                console.warn('Could not parse local party:', key, error);
+            }
         }
-        setWataks(items.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+
+        // ---------------------------------------------------------
+        // MONGODB PARTIES
+        // ---------------------------------------------------------
+        try {
+            const partiesResponse = await fetch('/api/documents?prefix=party-');
+
+            if (partiesResponse.ok) {
+                const partiesResult = await partiesResponse.json();
+
+                if (partiesResult.success && Array.isArray(partiesResult.data)) {
+                    partiesResult.data.forEach((party: any) => {
+                        if (party?.name) {
+                            addPartyToMap(party.name);
+                        }
+                    });
+                }
+            }
+        } catch (error) {
+            console.warn('Could not fetch parties from cloud:', error);
+        }
+
+        // ---------------------------------------------------------
+        // 1. LOAD SAVED LOCAL INVOICES
+        // ---------------------------------------------------------
+        for (let i = 0; i < localStorage.length; i++) {
+            const storageKey = localStorage.key(i);
+
+            if (!storageKey || !storageKey.startsWith('invoice-')) {
+                continue;
+            }
+
+            try {
+                const raw = localStorage.getItem(storageKey);
+
+                if (!raw) continue;
+
+                const invoice = JSON.parse(raw);
+
+                if (!invoice || !invoice.date) continue;
+
+                const invoiceYear = getInvoiceYear(invoice.date);
+
+                if (invoiceYear !== selectedYear) continue;
+
+                const normalizedWatak = normalizeInvoiceData(invoice);
+
+                if (!normalizedWatak) continue;
+
+                const key = getInvoiceKey(
+                    normalizedWatak,
+                    storageKey.replace(/^invoice-/, '')
+                );
+
+                if (!key) continue;
+
+                invoiceMap.set(key, normalizedWatak);
+
+                if (normalizedWatak.customerName) {
+                    addPartyToMap(normalizedWatak.customerName);
+                }
+            } catch (error) {
+                console.warn(
+                    'Could not parse local invoice:',
+                    storageKey,
+                    error
+                );
+            }
+        }
+
+        // ---------------------------------------------------------
+        // 2. LOAD CLOUD INVOICES
+        // ---------------------------------------------------------
+        try {
+            const invoicesResponse = await fetch(
+                '/api/documents?prefix=invoice-'
+            );
+
+            if (invoicesResponse.ok) {
+                const invoicesResult = await invoicesResponse.json();
+
+                if (
+                    invoicesResult.success &&
+                    Array.isArray(invoicesResult.data)
+                ) {
+                    invoicesResult.data.forEach((invoice: any) => {
+                        if (!invoice?.date) return;
+
+                        const invoiceYear = getInvoiceYear(invoice.date);
+
+                        if (invoiceYear !== selectedYear) return;
+
+                        const normalizedWatak =
+                            normalizeInvoiceData(invoice);
+
+                        if (!normalizedWatak) return;
+
+                        const key = getInvoiceKey(normalizedWatak);
+
+                        if (!key) return;
+
+                        /*
+                         * Cloud data is added only if the invoice
+                         * isn't already present locally.
+                         * This prevents double-counting the same invoice.
+                         */
+                        if (!invoiceMap.has(key)) {
+                            invoiceMap.set(key, normalizedWatak);
+                        }
+
+                        if (normalizedWatak.customerName) {
+                            addPartyToMap(
+                                normalizedWatak.customerName
+                            );
+                        }
+                    });
+                }
+            }
+        } catch (error) {
+            console.warn(
+                'Could not fetch invoices from cloud:',
+                error
+            );
+        }
+
+        // ---------------------------------------------------------
+        // 3. FINAL REGISTER DATA
+        // ---------------------------------------------------------
+        const items = Array.from(invoiceMap.values());
+
+        items.sort(
+            (a, b) =>
+                new Date(b.date).getTime() -
+                new Date(a.date).getTime()
+        );
+
+        // ---------------------------------------------------------
+        // 4. UPDATE REGISTER
+        // ---------------------------------------------------------
+        setWataks(items);
+
         setPartyNameMap(growerMap);
-        const uniqueGrowers = ['All Growers', ...Array.from(growerMap.values())].sort();
+
+        const uniqueGrowers = [
+            'All Growers',
+            ...Array.from(growerMap.values()),
+        ].sort((a, b) => a.localeCompare(b));
+
         setGrowers(uniqueGrowers);
+
+    } catch (error) {
+        console.error('Failed to load Watak Register:', error);
+
+        toast({
+            variant: 'destructive',
+            title: 'Watak Register Loading Failed',
+            description:
+                'Could not load saved invoices. Please refresh and try again.',
+        });
+
+        setWataks([]);
+    } finally {
+        setIsLoading(false);
     }
-    setIsLoading(false);
-  }, [selectedYear]);
+}, [selectedYear, toast]);
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {

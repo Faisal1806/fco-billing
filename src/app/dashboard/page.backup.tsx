@@ -2,10 +2,10 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { sidebarSections } from '@/components/Sidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, ShoppingCart, Users, DollarSign, Calendar, BarChart, FileText, BookOpen, PlusCircle, Award, Loader2, RefreshCw, Cloud, Sparkles, LayoutDashboard, Search, Clock, ShieldCheck, Receipt, Wallet, Percent, Package, Activity } from 'lucide-react';
+import { TrendingUp, ShoppingCart, Users, DollarSign, Calendar, BarChart, FileText, BookOpen, PlusCircle, Award, Loader2, RefreshCw, Cloud, Sparkles, LayoutDashboard, Search, Clock, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SummaryCard } from '@/components/ui/summary-card';
@@ -13,40 +13,6 @@ import { useAppState } from '@/contexts/app-state-context';
 import { Badge } from '@/components/ui/badge';
 import { MarketInsights } from '@/components/MarketInsights';
 import { Input } from '@/components/ui/input';
-
-const toNumber = (value: unknown): number => {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : 0;
-};
-
-const formatINR = (value: unknown): string =>
-    `₹${toNumber(value).toLocaleString('en-IN', {
-        maximumFractionDigits: 2,
-    })}`;
-
-const formatNumber = (value: unknown): string =>
-    toNumber(value).toLocaleString('en-IN', {
-        maximumFractionDigits: 2,
-    });
-
-type DashboardStats = {
-    todaySales: number;
-    todayPatti: number;
-    todayDabba: number;
-    monthSales: number;
-    yearGrossSales: number;
-    yearNetSales: number;
-    yearExpenses: number;
-    pattiReceived: number;
-    dabbaReceived: number;
-    pattiSold: number;
-    dabbaSold: number;
-    pattiSent: number;
-    dabbaSent: number;
-    yearBills: number;
-    todayBills: number;
-    monthBills: number;
-};
 
 const Greeting = () => {
     const [greeting, setGreeting] = React.useState('Good Day');
@@ -130,15 +96,13 @@ export default function DashboardPage() {
   const allNavItems = sidebarSections.flatMap(section => section.items);
   const { selectedYear, setSelectedYear } = useAppState();
   const router = useRouter();
-
   const [isMounted, setIsMounted] = React.useState(false);
   const [availableYears, setAvailableYears] = React.useState<number[]>([]);
   const [isSyncing, setIsSyncing] = React.useState(false);
   const [globalSearch, setGlobalSearch] = React.useState('');
-  const [lastRefresh, setLastRefresh] = React.useState('—');
-  const [refreshKey, setRefreshKey] = React.useState(0);
-
-  const [stats, setStats] = React.useState<DashboardStats>({
+  const [lastBackup, setLastBackup] = React.useState('Syncing...');
+  
+  const [stats, setStats] = React.useState<any>({ 
     todaySales: 0,
     todayPatti: 0,
     todayDabba: 0,
@@ -152,354 +116,149 @@ export default function DashboardPage() {
     dabbaSold: 0,
     pattiSent: 0,
     dabbaSent: 0,
-    yearBills: 0,
-    todayBills: 0,
-    monthBills: 0,
   });
-
   const [loyaltyStats, setLoyaltyStats] = React.useState({
-    totalPoints: 0,
-    redeemedMonth: 0,
-    topGrower: { name: 'N/A', points: 0 }
-  });
-
-  const [topGrowers, setTopGrowers] = React.useState<{name: string, netSales: number}[]>([]);
-
-  const refreshDashboard = React.useCallback(() => {
-    if (typeof window === 'undefined') return;
-
-    setIsSyncing(true);
-
-    const today = new Date();
-    const currentMonth = today.getMonth();
-
-    const newStats: DashboardStats = {
-      todaySales: 0,
-      todayPatti: 0,
-      todayDabba: 0,
-      monthSales: 0,
-      yearGrossSales: 0,
-      yearNetSales: 0,
-      yearExpenses: 0,
-      pattiReceived: 0,
-      dabbaReceived: 0,
-      pattiSold: 0,
-      dabbaSold: 0,
-      pattiSent: 0,
-      dabbaSent: 0,
-      yearBills: 0,
-      todayBills: 0,
-      monthBills: 0,
-    };
-
-    const newLoyaltyStats = {
       totalPoints: 0,
       redeemedMonth: 0,
       topGrower: { name: 'N/A', points: 0 }
-    };
-
-    const growerSales: Record<string, number> = {};
-    const years = new Set<number>([today.getFullYear()]);
-
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (!key) continue;
-
-      const rawValue = localStorage.getItem(key);
-      if (!rawValue) continue;
-
-      let data: any;
-      try {
-        data = JSON.parse(rawValue);
-      } catch {
-        continue;
-      }
-
-      if (!data || typeof data !== 'object') continue;
-
-      const rawDate = data.date || data.createdAt || data.updatedAt;
-      if (!rawDate) continue;
-
-      const dateObj = new Date(rawDate);
-      if (Number.isNaN(dateObj.getTime())) continue;
-
-      const dataYear = dateObj.getFullYear();
-      years.add(dataYear);
-
-      const isSelectedYear = dataYear === selectedYear;
-      const isToday = dateObj.toDateString() === today.toDateString();
-      const isCurrentMonthOfSelectedYear =
-        isSelectedYear && dateObj.getMonth() === currentMonth;
-
-      if (key.startsWith('invoice-')) {
-        const totals = data.totals || {};
-
-        // IMPORTANT: force every stored value to Number().
-        // Some older records contain numeric values as strings; using +=
-        // directly on those values causes dashboard values such as
-        // "16072416072.4".
-        const grossSale = toNumber(
-          totals.grossSale ?? totals.subtotal ?? data.grossSale
-        );
-
-        const netSale = toNumber(
-          totals.netSale ?? data.netSale
-        );
-
-        const expenses = toNumber(
-          totals.totalExpenses ?? data.totalExpenses
-        );
-
-        const pattiQty = toNumber(totals.pattiQty);
-        const dabbaQty = toNumber(totals.dabbaQty);
-
-        if (isSelectedYear) {
-          newStats.yearGrossSales += grossSale;
-          newStats.yearNetSales += netSale;
-          newStats.yearExpenses += expenses;
-          newStats.pattiSold += pattiQty;
-          newStats.dabbaSold += dabbaQty;
-          newStats.yearBills += 1;
-
-          if (isToday) {
-            newStats.todaySales += netSale;
-            newStats.todayPatti += pattiQty;
-            newStats.todayDabba += dabbaQty;
-            newStats.todayBills += 1;
-          }
-
-          if (isCurrentMonthOfSelectedYear) {
-            newStats.monthSales += netSale;
-            newStats.monthBills += 1;
-          }
-
-          const customerName = String(data.customerName || '').trim();
-          if (customerName) {
-            growerSales[customerName] =
-              (growerSales[customerName] || 0) + netSale;
-          }
-        }
-      }
-
-      if (key.startsWith('receipt-') && isSelectedYear) {
-        const entries = Array.isArray(data.entries) ? data.entries : [];
-
-        const patti = entries.reduce(
-          (sum: number, entry: any) => sum + toNumber(entry.peti ?? entry.patti),
-          0
-        );
-
-        const dabba = entries.reduce(
-          (sum: number, entry: any) => sum + toNumber(entry.daba ?? entry.dabba),
-          0
-        );
-
-        newStats.pattiReceived += patti;
-        newStats.dabbaReceived += dabba;
-      }
-
-      if (key.startsWith('challan-') && isSelectedYear) {
-        newStats.pattiSent += toNumber(data.totalPetti ?? data.patti ?? data.totalPatti);
-        newStats.dabbaSent += toNumber(data.totalDabba ?? data.dabba);
-      }
-
-      if (key.startsWith('advance-') && isSelectedYear) {
-        const amount = toNumber(data.amount);
-        if (
-          String(data.type || '').toLowerCase() === 'discount' &&
-          dateObj.getMonth() === currentMonth
-        ) {
-          newLoyaltyStats.redeemedMonth += amount;
-        }
-      }
-    }
-
-    const extractedYears = Array.from(years);
-    if (!extractedYears.includes(2025)) extractedYears.push(2025);
-    if (!extractedYears.includes(today.getFullYear())) {
-      extractedYears.push(today.getFullYear());
-    }
-
-    const sortedYears = extractedYears.sort((a, b) => b - a);
-    setAvailableYears(sortedYears);
-
-    if (!sortedYears.includes(selectedYear)) {
-      setSelectedYear(sortedYears[0] ?? today.getFullYear());
-    }
-
-    const totalNetSales = Object.values(growerSales).reduce(
-      (sum, sale) => sum + toNumber(sale),
-      0
-    );
-
-    newLoyaltyStats.totalPoints = Math.floor(totalNetSales * 0.01);
-
-    const sortedGrowers = Object.entries(growerSales)
-      .sort(([, a], [, b]) => b - a);
-
-    if (sortedGrowers.length > 0) {
-      newLoyaltyStats.topGrower = {
-        name: sortedGrowers[0][0],
-        points: Math.floor(toNumber(sortedGrowers[0][1]) * 0.01),
-      };
-    }
-
-    setTopGrowers(
-      sortedGrowers
-        .slice(0, 5)
-        .map(([name, netSales]) => ({
-          name,
-          netSales: toNumber(netSales),
-        }))
-    );
-
-    setStats(newStats);
-    setLoyaltyStats(newLoyaltyStats);
-    setLastRefresh(
-      new Date().toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-    );
-
-    window.setTimeout(() => setIsSyncing(false), 350);
-  }, [selectedYear, setSelectedYear]);
+  });
+   const [topGrowers, setTopGrowers] = React.useState<{name: string, netSales: number}[]>([]);
 
   React.useEffect(() => {
     setIsMounted(true);
+    setLastBackup(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
   }, []);
+  // Re-fetch when MongoDB sync completes
+React.useEffect(() => {
+  const handler = () => {
+    setIsMounted(false);
+    setTimeout(() => setIsMounted(true), 50);
+  };
+  window.addEventListener('mongodb-synced', handler);
+  return () => window.removeEventListener('mongodb-synced', handler);
+}, []);
 
   React.useEffect(() => {
-    if (!isMounted) return;
-    refreshDashboard();
-  }, [isMounted, refreshDashboard, refreshKey]);
+    if (isMounted) {
+        const today = new Date();
+        const currentMonth = today.getMonth();
+        
+        let newStats = { 
+            todaySales: 0, todayPatti: 0, todayDabba: 0, monthSales: 0,
+            yearGrossSales: 0, yearNetSales: 0, yearExpenses: 0,
+            pattiReceived: 0, dabbaReceived: 0, pattiSold: 0, dabbaSold: 0,
+            pattiSent: 0, dabbaSent: 0
+        };
+        let newLoyaltyStats = { totalPoints: 0, redeemedMonth: 0, topGrower: { name: 'N/A', points: 0 } };
+        const growerSales: {[key: string]: number} = {};
+        
+        const years = new Set<number>([today.getFullYear()]);
 
-  React.useEffect(() => {
-    const handleSync = () => {
-      setRefreshKey(key => key + 1);
-    };
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (!key) continue;
 
-    const handleStorage = () => {
-      setRefreshKey(key => key + 1);
-    };
+            let data;
+            try {
+                data = JSON.parse(localStorage.getItem(key)!);
+            } catch { continue; }
+            if (data.date || data.createdAt) {
 
-    window.addEventListener('mongodb-synced', handleSync);
-    window.addEventListener('storage', handleStorage);
+    const rawDate = data.date || data.createdAt;
+    const dateObj = new Date(rawDate);
 
-    return () => {
-      window.removeEventListener('mongodb-synced', handleSync);
-      window.removeEventListener('storage', handleStorage);
-    };
-  }, []);
+    if (!isNaN(dateObj.getTime())) {
 
-  const grossProfitMargin =
-    stats.yearGrossSales > 0
-      ? Math.max(
-          0,
-          Math.min(100, (stats.yearNetSales / stats.yearGrossSales) * 100)
-        )
-      : 0;
+        years.add(dateObj.getFullYear());
 
-  const expenseRatio =
-    stats.yearGrossSales > 0
-      ? Math.max(0, (stats.yearExpenses / stats.yearGrossSales) * 100)
-      : 0;
+        if (dateObj.getFullYear() === selectedYear) {
 
-  const averageBill =
-    stats.yearBills > 0
-      ? stats.yearNetSales / stats.yearBills
-      : 0;
+           
+                        if(key.startsWith('invoice-')) {
+                            newStats.yearGrossSales += data.totals?.grossSale || 0;
+                            newStats.yearNetSales += data.totals?.netSale || 0;
+                            newStats.yearExpenses += data.totals?.totalExpenses || 0;
+                            newStats.pattiSold += data.totals?.pattiQty || 0;
+                            newStats.dabbaSold += data.totals?.dabbaQty || 0;
+                            
+                            if(dateObj.toDateString() === today.toDateString()) {
+                                newStats.todaySales += data.totals?.netSale || 0;
+                                newStats.todayPatti += data.totals?.pattiQty || 0;
+                                newStats.todayDabba += data.totals?.dabbaQty || 0;
+                            }
+                            if (dateObj.getMonth() === currentMonth) {
+                                newStats.monthSales += data.totals?.netSale || 0;
+                            }
+                            if (data.customerName) {
+                                growerSales[data.customerName] = (growerSales[data.customerName] || 0) + (data.totals?.netSale || 0);
+                            }
+                        }
+                        if(key.startsWith('receipt-')) {
+                             const patti = (data.entries || []).reduce((acc: number, e: any) => acc + (Number(e.peti) || 0), 0);
+                             const dabba = (data.entries || []).reduce((acc: number, e: any) => acc + (Number(e.daba) || 0), 0);
+                             newStats.pattiReceived += patti;
+                             newStats.dabbaReceived += dabba;
+                        }
+                        if(key.startsWith('challan-')) {
+                            newStats.pattiSent += data.totalPetti || 0;
+                            newStats.dabbaSent += data.totalDabba || 0;
+                        }
+                        if(key.startsWith('advance-')) {
+                            if (data.type === 'Discount' && dateObj.getMonth() === currentMonth) {
+                                newLoyaltyStats.redeemedMonth += data.amount || 0;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        const extractedYears = Array.from(years);
 
-  const totalInward =
-   Number(stats.pattiReceived || 0) + Number(stats.dabbaReceived || 0);
+if (!extractedYears.includes(2025)) {
+    extractedYears.push(2025);
+}
 
-  const totalOutward =
-    stats.pattiSent + stats.dabbaSent;
-const inwardStock =
-  Number(stats.pattiReceived || 0) +
-  Number(stats.dabbaReceived || 0);
+setAvailableYears(extractedYears.sort((a, b) => b - a));
+if (!extractedYears.includes(selectedYear)) {
+    setSelectedYear(extractedYears[0]);
+}
 
-const outwardStock =
-  Number(stats.pattiSent || 0) +
-  Number(stats.dabbaSent || 0);
+        
 
+        newLoyaltyStats.totalPoints = Math.floor(Object.values(growerSales).reduce((acc, sale) => acc + sale, 0) * 0.01);
+        const sortedGrowers = Object.entries(growerSales).sort(([,a],[,b]) => b-a);
+        if(sortedGrowers.length > 0) {
+            newLoyaltyStats.topGrower = {
+                name: sortedGrowers[0][0],
+                points: Math.floor(sortedGrowers[0][1] * 0.01),
+            }
+        }
+        setTopGrowers(sortedGrowers.slice(0, 5).map(([name, netSales]) => ({name, netSales})));
+
+        setStats(newStats);
+        setLoyaltyStats(newLoyaltyStats);
+    }
+  }, [selectedYear, isMounted]);
+
+  const grossProfitMargin = stats.yearGrossSales > 0 ? ((stats.yearNetSales / stats.yearGrossSales) * 100).toFixed(0) : 0;
+  
   const summaryCards = [
-    {
-      title: "Today's Net Sales",
-      value: formatINR(stats.todaySales),
-      description: `${formatNumber(stats.todayBills)} bills • ${formatNumber(stats.todayPatti)} Patti / ${formatNumber(stats.todayDabba)} Dabba`,
-      icon: DollarSign
-    },
-    {
-      title: "This Month",
-      value: formatINR(stats.monthSales),
-      description: `${formatNumber(stats.monthBills)} bills closed in ${new Date().toLocaleString('en-IN', { month: 'long' })} ${selectedYear}`,
-      icon: TrendingUp
-    },
-    {
-      title: `${selectedYear} Gross`,
-      value: formatINR(stats.yearGrossSales),
-      description: `${formatNumber(stats.yearBills)} sale bills recorded for the selected year`,
-      icon: BarChart
-    },
-    {
-      title: "Net Efficiency",
-      value: `${grossProfitMargin.toFixed(0)}%`,
-      description: `${formatINR(stats.yearNetSales)} net sales after ${formatINR(stats.yearExpenses)} expenses`,
-      icon: Award
-    },
+    { title: "Today's Yield", value: `₹${stats.todaySales}`, description: `${stats.todayPatti} Patti / ${stats.todayDabba} Dabba transactions finalized today.`, icon: DollarSign },
+    { title: "Monthly Index", value: `₹${stats.monthSales}`, description: `Consolidated net revenue performance for the current calendar month.`, icon: TrendingUp },
+    { title: "YTD Gross", value: `₹${stats.yearGrossSales}`, description: `Aggregated seasonal gross revenue for the entire ${selectedYear} mandate.`, icon: BarChart },
+    { title: "Net Efficiency", value: `${grossProfitMargin}%`, description: `Calculated operational profitability margin after mandated expenses.`, icon: Award },
     { title: "Inward Nodes", value: (stats.pattiReceived + stats.dabbaReceived).toString(), description: `Total supply units processed into the F.Co mandi network.`, icon: ShoppingCart },
-
-{ title: "Outward Log", value: (stats.pattiSent + stats.dabbaSent).toString(), description: `Global unit distribution tracked via delivery note protocols.`, icon: Users },
-    {
-      title: "Year Expenses",
-      value: formatINR(stats.yearExpenses),
-      description: `${expenseRatio.toFixed(0)}% of gross sales consumed by expenses`,
-      icon: Wallet
-    },
-    {
-      title: "Average Net Bill",
-      value: formatINR(averageBill),
-      description: `Average realized net value across ${formatNumber(stats.yearBills)} bills`,
-      icon: Receipt
-    },
-  ];
-
-  const premiumMetrics = [
-    {
-      label: "NET SALES",
-      value: formatINR(stats.yearNetSales),
-      icon: Activity,
-    },
-    {
-      label: "EXPENSE LOAD",
-      value: `${expenseRatio.toFixed(1)}%`,
-      icon: Percent,
-    },
-    {
-      label: "SALE UNITS",
-      value: formatNumber(stats.pattiSold + stats.dabbaSold),
-      icon: Package,
-    },
-    {
-      label: "LOYALTY POINTS",
-      value: formatNumber(loyaltyStats.totalPoints),
-      icon: Award,
-    },
+    { title: "Outward Log", value: (stats.pattiSent + stats.dabbaSent).toString(), description: `Global unit distribution tracked via delivery note protocols.`, icon: Users },
   ];
 
   const handleGlobalSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && globalSearch.trim()) {
-      router.push(`/smart-search?q=${encodeURIComponent(globalSearch.trim())}`);
-    }
+      if (e.key === 'Enter' && globalSearch.trim()) {
+          router.push(`/smart-search?q=${encodeURIComponent(globalSearch.trim())}`);
+      }
   };
 
   if (!isMounted) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-[#020205]">
-          <Loader2 className="h-12 w-12 animate-spin text-accent" />
-        </div>
-      );
+      return <div className="min-h-screen flex items-center justify-center bg-[#020205]"><Loader2 className="h-16 w-16 animate-spin text-accent" /></div>;
   }
 
   return (
@@ -554,46 +313,18 @@ const outwardStock =
                     </Badge>
                 )}
                 <div className="flex items-center gap-2 text-[9px] font-black text-muted-foreground uppercase tracking-widest mr-2">
-                    <Clock className="h-3 w-3" /> LAST DASHBOARD REFRESH: {lastRefresh}
+                    <Clock className="h-3 w-3" /> LAST CLOUD BACKUP: {lastBackup}
                 </div>
             </div>
         </section>
 
-        {/* Premium KPI Grid */}
-        <motion.div
-            className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6"
+        {/* Spatial Intelligence Grid */}
+        <motion.div 
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10"
             variants={containerVariants}
         >
             {summaryCards.map((card, i) => (
                 <SummaryCard key={i} {...card} />
-            ))}
-        </motion.div>
-
-        {/* Executive Metrics Strip */}
-        <motion.div
-            variants={containerVariants}
-            className="grid grid-cols-2 lg:grid-cols-4 gap-4"
-        >
-            {premiumMetrics.map((metric) => (
-                <div
-                    key={metric.label}
-                    className="group relative overflow-hidden rounded-3xl border border-white/5 bg-white/[0.025] p-6 shadow-xl transition-all duration-500 hover:-translate-y-1 hover:border-accent/30 hover:bg-white/[0.05]"
-                >
-                    <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-accent/10 blur-2xl opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-                    <div className="relative flex items-center justify-between">
-                        <div>
-                            <p className="text-[9px] font-black tracking-[0.25em] text-muted-foreground">
-                                {metric.label}
-                            </p>
-                            <p className="mt-2 text-xl font-black text-white tracking-tight">
-                                {metric.value}
-                            </p>
-                        </div>
-                        <div className="rounded-2xl border border-white/5 bg-white/5 p-3 text-accent transition-transform duration-500 group-hover:scale-110">
-                            <metric.icon className="h-5 w-5" />
-                        </div>
-                    </div>
-                </div>
             ))}
         </motion.div>
 
@@ -610,7 +341,7 @@ const outwardStock =
                 </div>
              </div>
              <div className="flex items-center gap-6">
-                <Select onValueChange={(value) => setSelectedYear(Number(value))} value={String(selectedYear)}>
+                <Select onValueChange={(value) => setSelectedYear(Number(value))} defaultValue={String(selectedYear)}>
                     <SelectTrigger className="w-[220px] h-16 bg-white/5 border-white/10 rounded-2xl font-black text-xs tracking-[0.2em] hover:bg-white/10 transition-all uppercase px-6">
                         <Calendar className="h-5 w-5 mr-4 text-accent" />
                         <SelectValue placeholder="YEAR" />
@@ -621,21 +352,9 @@ const outwardStock =
                         ))}
                     </SelectContent>
                 </Select>
-                <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setRefreshKey(key => key + 1)}
-                    className="h-16 w-16 rounded-2xl border-white/10 bg-white/5 hover:bg-accent hover:text-black transition-all"
-                    title="Refresh Dashboard Data"
-                >
-                    <RefreshCw className={`h-6 w-6 ${isSyncing ? 'animate-spin' : ''}`} />
+                <Button variant="outline" size="icon" className="h-16 w-16 rounded-2xl border-white/10 bg-white/5 hover:bg-accent hover:text-black transition-all" title="Secure Database Status">
+                    <ShieldCheck className="h-6 w-6" />
                 </Button>
-                <div
-                    className="h-16 w-16 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center"
-                    title="Local database protected"
-                >
-                    <ShieldCheck className="h-6 w-6 text-emerald-400" />
-                </div>
              </div>
         </div>
 
