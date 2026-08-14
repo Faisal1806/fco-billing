@@ -5,7 +5,7 @@ const DEFAULT_POSTAGE = 8;
 const DEFAULT_OTHER_EXPENSES = 0;
 
 function roundAmount(value) {
-  return Number(Number(value || 0).toFixed(2));
+  return Math.round(Number(value) || 0);
 }
 
 function calculateCommissionDeductions(grossSale) {

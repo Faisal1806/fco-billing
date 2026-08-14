@@ -247,7 +247,7 @@ if (!extractedYears.includes(selectedYear)) {
     { title: "Monthly Index", value: `₹${stats.monthSales}`, description: `Consolidated net revenue performance for the current calendar month.`, icon: TrendingUp },
     { title: "YTD Gross", value: `₹${stats.yearGrossSales}`, description: `Aggregated seasonal gross revenue for the entire ${selectedYear} mandate.`, icon: BarChart },
     { title: "Net Efficiency", value: `${grossProfitMargin}%`, description: `Calculated operational profitability margin after mandated expenses.`, icon: Award },
-    { title: "Inward Nodes", value: (stats.pattiReceived + stats.dabbaReceived).toString(), description: `Total supply units processed into the F.Co mandi network.`, icon: ShoppingCart },
+    { title: "Inward Nodes", value: formatNumber(stats.pattiSent + stats.dabbaSent), description: `Total supply units processed into the F.Co mandi network.`, icon: ShoppingCart },
     { title: "Outward Log", value: (stats.pattiSent + stats.dabbaSent).toString(), description: `Global unit distribution tracked via delivery note protocols.`, icon: Users },
   ];
 
