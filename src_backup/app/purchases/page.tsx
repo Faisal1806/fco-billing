@@ -48,6 +48,9 @@ export default function PurchasesPage() {
   const [savedPurchases, setSavedPurchases] = useState<any[]>([]);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [purchaseSection, setPurchaseSection] = useState<
+  'customer' | 'own'
+>('customer');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -259,11 +262,57 @@ export default function PurchasesPage() {
             console.error("Cloud delete failed:", error);
         }
     }
+return (
+  <div className="space-y-6">
+    <PageHeader
+      title={
+        purchaseSection === 'customer'
+          ? 'Record Customer Purchase'
+          : 'Record F.Co Purchase'
+      }
+      description={
+        purchaseSection === 'customer'
+          ? 'Enter details for apples purchased from growers at the mandi.'
+          : 'Record apples and other stock purchased by F.Co from suppliers.'
+      }
+      icon={<ShoppingBasket className="h-8 w-8" />}
+      imageUrl="/assets/3d/purchases.png"
+    />
 
-  return (
-    <div className="space-y-6">
-        <PageHeader
-            title="Record New Purchase"
+    {/* PURCHASE SECTION SWITCH */}
+    <div className="flex justify-center">
+      <div className="inline-flex rounded-xl border bg-muted p-1 shadow-sm">
+        <Button
+          type="button"
+          variant={
+            purchaseSection === 'customer'
+              ? 'default'
+              : 'ghost'
+          }
+          className="gap-2 rounded-lg"
+          onClick={() => setPurchaseSection('customer')}
+        >
+          <ArrowDownToLine className="h-4 w-4" />
+          Customer Purchases
+        </Button>
+
+        <Button
+          type="button"
+          variant={
+            purchaseSection === 'own'
+              ? 'default'
+              : 'ghost'
+          }
+          className="gap-2 rounded-lg"
+          onClick={() => setPurchaseSection('own')}
+        >
+          <Store className="h-4 w-4" />
+          F.Co Purchases
+        </Button>
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6"></div>
             description="Enter details for apples purchased from growers at the mandi."
             icon={<ShoppingBasket className="h-8 w-8" />}
             imageUrl="/assets/3d/purchases.png"
