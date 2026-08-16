@@ -1,4 +1,4 @@
-const API_BASE = '/api/documents';
+const STORAGE_PREFIX = 'fco-document:';
 
 type DocumentValue = Record<string, any>;
 
@@ -8,70 +8,77 @@ type ApiResult<T = any> = {
   error?: string;
 };
 
-async function parseResponse<T = any>(
-  response: Response
-): Promise<ApiResult<T>> {
-  const text = await response.text();
-
-  if (!text) {
-    return {
-      success: response.ok,
-      error: response.ok ? undefined : `HTTP ${response.status}`,
-    };
-  }
-
-  try {
-    return JSON.parse(text);
-  } catch {
-    return {
-      success: false,
-      error: text || `HTTP ${response.status}`,
-    };
-  }
+function storageKey(key: string): string {
+  return `${STORAGE_PREFIX}${key}`;
 }
 
+/**
+ * Get the ORIGINAL browser localStorage methods.
+ *
+ * shared-storage.ts may patch localStorage.setItem().
+ * We intentionally bypass that patch here.
+ */
+function getNativeStorageMethods() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const storage = window.localStorage;
+
+  const proto = Object.getPrototypeOf(storage);
+
+  return {
+    storage,
+    setItem: Storage.prototype.setItem.bind(storage),
+    getItem: Storage.prototype.getItem.bind(storage),
+    removeItem: Storage.prototype.removeItem.bind(storage),
+    key: Storage.prototype.key.bind(storage),
+    get length(): number {
+      return storage.length;
+    },
+  };
+}
 
 /**
  * SAVE ONE DOCUMENT
  *
- * Example:
- *
- * saveDocument(
- *   'purchase-123',
- *   {
- *     billNo: '123',
- *     date: '2026-07-27'
- *   }
- * )
+ * Browser-local persistence only.
  */
 export async function saveDocument(
   key: string,
   data: DocumentValue
 ): Promise<ApiResult> {
   try {
-    const response = await fetch(API_BASE, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        key,
-        value: data,
-      }),
-    });
-
-    const result = await parseResponse(response);
-
-    if (!response.ok || !result.success) {
-      throw new Error(result.error || 'Failed to save document');
+    if (typeof window === 'undefined') {
+      return {
+        success: false,
+        error: 'Browser storage is unavailable.',
+      };
     }
+
+    const native = getNativeStorageMethods();
+
+    if (!native) {
+      return {
+        success: false,
+        error: 'Browser storage is unavailable.',
+      };
+    }
+
+    native.setItem(
+      storageKey(key),
+      JSON.stringify(data)
+    );
 
     return {
       success: true,
-      data: result.data,
+      data,
     };
   } catch (error) {
-    console.error(`Failed to save document: ${key}`, error);
+    console.error(
+      `Failed to save document: ${key}`,
+      error
+    );
 
     return {
       success: false,
@@ -83,7 +90,6 @@ export async function saveDocument(
   }
 }
 
-
 /**
  * GET ONE DOCUMENT
  */
@@ -91,33 +97,42 @@ export async function getDocument(
   key: string
 ): Promise<ApiResult> {
   try {
-    const response = await fetch(
-      `${API_BASE}?key=${encodeURIComponent(key)}`,
-      {
-        method: 'GET',
-        cache: 'no-store',
-      }
+    if (typeof window === 'undefined') {
+      return {
+        success: false,
+        error: 'Browser storage is unavailable.',
+      };
+    }
+
+    const native = getNativeStorageMethods();
+
+    if (!native) {
+      return {
+        success: false,
+        error: 'Browser storage is unavailable.',
+      };
+    }
+
+    const raw = native.getItem(
+      storageKey(key)
     );
 
-    const result = await parseResponse(response);
-
-    if (response.status === 404) {
+    if (!raw) {
       return {
         success: false,
         error: 'Document not found',
       };
     }
 
-    if (!response.ok || !result.success) {
-      throw new Error(result.error || 'Failed to load document');
-    }
-
     return {
       success: true,
-      data: result.data,
+      data: JSON.parse(raw),
     };
   } catch (error) {
-    console.error(`Failed to get document: ${key}`, error);
+    console.error(
+      `Failed to get document: ${key}`,
+      error
+    );
 
     return {
       success: false,
@@ -129,48 +144,99 @@ export async function getDocument(
   }
 }
 
-
 /**
  * GET ALL DOCUMENTS
- *
- * Example:
- *
- * getDocuments('purchase-')
- *
- * returns all:
- *
- * purchase-1
- * purchase-2
- * purchase-3
  */
 export async function getDocuments(
   prefix?: string
 ): Promise<ApiResult<any[]>> {
   try {
-    const url = prefix
-      ? `${API_BASE}?prefix=${encodeURIComponent(prefix)}`
-      : API_BASE;
+    if (typeof window === 'undefined') {
+      return {
+        success: false,
+        data: [],
+        error: 'Browser storage is unavailable.',
+      };
+    }
 
-    const response = await fetch(url, {
-      method: 'GET',
-      cache: 'no-store',
-    });
+    const native = getNativeStorageMethods();
 
-    const result = await parseResponse(response);
+    if (!native) {
+      return {
+        success: false,
+        data: [],
+        error: 'Browser storage is unavailable.',
+      };
+    }
 
-    if (!response.ok || !result.success) {
-      throw new Error(result.error || 'Failed to load documents');
+    const documents: Array<{
+      key: string;
+      value: any;
+    }> = [];
+
+    for (
+      let index = 0;
+      index < native.length;
+      index++
+    ) {
+      const fullKey = native.key(index);
+
+      if (!fullKey) {
+        continue;
+      }
+
+      if (
+        !fullKey.startsWith(
+          STORAGE_PREFIX
+        )
+      ) {
+        continue;
+      }
+
+      const documentKey =
+        fullKey.substring(
+          STORAGE_PREFIX.length
+        );
+
+      if (
+        prefix &&
+        !documentKey.startsWith(prefix)
+      ) {
+        continue;
+      }
+
+      try {
+        const raw =
+          native.getItem(fullKey);
+
+        if (!raw) {
+          continue;
+        }
+
+        const value =
+          JSON.parse(raw);
+
+        documents.push({
+          key: documentKey,
+          value,
+        });
+      } catch (error) {
+        console.warn(
+          `Skipping invalid document: ${documentKey}`,
+          error
+        );
+      }
     }
 
     return {
       success: true,
-      data: Array.isArray(result.data)
-        ? result.data
-        : [],
+      data: documents,
     };
   } catch (error) {
     console.error(
-      `Failed to get documents with prefix: ${prefix || 'all'}`,
+      `Failed to get documents with prefix: ${
+        prefix || 'all'
+      }`,
       error
     );
 
@@ -185,7 +251,6 @@ export async function getDocuments(
   }
 }
 
-
 /**
  * DELETE ONE DOCUMENT
  */
@@ -193,24 +258,34 @@ export async function deleteDocument(
   key: string
 ): Promise<ApiResult> {
   try {
-    const response = await fetch(
-      `${API_BASE}?key=${encodeURIComponent(key)}`,
-      {
-        method: 'DELETE',
-      }
-    );
-
-    const result = await parseResponse(response);
-
-    if (!response.ok || !result.success) {
-      throw new Error(result.error || 'Failed to delete document');
+    if (typeof window === 'undefined') {
+      return {
+        success: false,
+        error: 'Browser storage is unavailable.',
+      };
     }
+
+    const native = getNativeStorageMethods();
+
+    if (!native) {
+      return {
+        success: false,
+        error: 'Browser storage is unavailable.',
+      };
+    }
+
+    native.removeItem(
+      storageKey(key)
+    );
 
     return {
       success: true,
     };
   } catch (error) {
-    console.error(`Failed to delete document: ${key}`, error);
+    console.error(
+      `Failed to delete document: ${key}`,
+      error
+    );
 
     return {
       success: false,
@@ -222,12 +297,19 @@ export async function deleteDocument(
   }
 }
 
+/**
+ * Compatibility function.
+ */
 export async function sendPushNotification(
   payload: Record<string, any>
 ): Promise<ApiResult> {
-  console.warn('sendPushNotification is not implemented in this app route.');
+  console.warn(
+    'sendPushNotification is not implemented.'
+  );
+
   return {
     success: false,
-    error: 'sendPushNotification is not implemented',
+    error:
+      'sendPushNotification is not implemented',
   };
 }

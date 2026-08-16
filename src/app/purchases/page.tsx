@@ -315,98 +315,213 @@ export default function PurchasesPage() {
   /* =======================================================
      LOAD CUSTOMER PURCHASES
   ======================================================= */
+const fetchCustomerPurchases = useCallback(async () => {
+  try {
+    const result = await getDocuments('purchase-');
 
-  const fetchCustomerPurchases =
-    useCallback(async () => {
-      try {
-        const result =
-          await getDocuments('purchase-');
+    if (!result.success || !Array.isArray(result.data)) {
+      console.error(
+        'Failed to load customer purchases:',
+        result.error
+      );
 
-        if (!result.success) {
-          setSavedPurchases([]);
-          return;
-        }
+      setSavedPurchases([]);
+      return;
+    }
 
-        const purchases = (
-          result.data || []
-        )
-          .filter(
-            (item: any) =>
-              !String(item.id || '').startsWith(
-                'supplier-purchase-'
-              )
+    const purchases: Purchase[] = result.data
+      .map((item: any) => {
+        // getDocuments() returns:
+        // { key, value }
+        // The actual purchase is inside value.
+        const value =
+          item?.value &&
+          typeof item.value === 'object'
+            ? item.value
+            : item;
+
+        const key =
+          typeof item?.key === 'string'
+            ? item.key
+            : value?.id ||
+              `purchase-${value?.billNo || ''}`;
+
+        return {
+          ...value,
+
+          id:
+            value?.id ||
+            key ||
+            `purchase-${value?.billNo || ''}`,
+
+          documentType:
+            value?.documentType ||
+            'customer-purchase',
+
+          billNo:
+            value?.billNo || '',
+
+          date:
+            value?.date || '',
+
+          growerName:
+            value?.growerName || '',
+
+          purchaseFor:
+            value?.purchaseFor || 'Customer',
+
+          entries:
+            Array.isArray(value?.entries)
+              ? value.entries
+              : [],
+
+          totals:
+            value?.totals || {
+              totalQty: 0,
+              grandTotal: 0,
+            },
+        } as Purchase;
+      })
+      .filter(
+        (purchase) =>
+          purchase.id &&
+          !String(purchase.id).startsWith(
+            'supplier-purchase-'
           )
-          .map((item: any) => ({
-            ...item,
-            id:
-              item.id ||
-              `purchase-${item.billNo}`,
-          }));
+      );
 
-        purchases.sort(
-          (a: Purchase, b: Purchase) =>
-            new Date(b.date).getTime() -
-            new Date(a.date).getTime()
-        );
+    purchases.sort(
+      (a, b) =>
+        new Date(b.date || 0).getTime() -
+        new Date(a.date || 0).getTime()
+    );
 
-        setSavedPurchases(purchases);
-      } catch (error) {
-        console.error(
-          'Failed to load customer purchases:',
-          error
-        );
+    console.log(
+      'CUSTOMER PURCHASES LOADED:',
+      purchases
+    );
 
-        setSavedPurchases([]);
-      }
-    }, []);
+    setSavedPurchases(purchases);
+  } catch (error) {
+    console.error(
+      'Failed to load customer purchases:',
+      error
+    );
 
+    setSavedPurchases([]);
+  }
+}, []);
   /* =======================================================
      LOAD SUPPLIER PURCHASES
   ======================================================= */
 
-  const fetchSupplierPurchases =
-    useCallback(async () => {
-      try {
-        const result =
-          await getDocuments(
-            'supplier-purchase-'
-          );
+ const fetchSupplierPurchases = useCallback(async () => {
+  try {
+    const result = await getDocuments(
+      'supplier-purchase-'
+    );
 
-        if (!result.success) {
-          setSavedSupplierPurchases([]);
-          return;
-        }
+    if (
+      !result.success ||
+      !Array.isArray(result.data)
+    ) {
+      console.error(
+        'Failed to load supplier purchases:',
+        result.error
+      );
 
-        const purchases = (
-          result.data || []
-        ).map((item: any) => ({
-          ...item,
-          id:
-            item.id ||
-            `supplier-purchase-${item.purchaseNo}`,
-        }));
+      setSavedSupplierPurchases([]);
+      return;
+    }
 
-        purchases.sort(
-          (
-            a: SupplierPurchase,
-            b: SupplierPurchase
-          ) =>
-            new Date(b.date).getTime() -
-            new Date(a.date).getTime()
-        );
+    const purchases: SupplierPurchase[] =
+      result.data
+        .map((item: any) => {
+          const value =
+            item?.value &&
+            typeof item.value === 'object'
+              ? item.value
+              : item;
 
-        setSavedSupplierPurchases(
-          purchases
-        );
-      } catch (error) {
-        console.error(
-          'Failed to load supplier purchases:',
-          error
-        );
+          const key =
+            typeof item?.key === 'string'
+              ? item.key
+              : value?.id ||
+                `supplier-purchase-${
+                  value?.purchaseNo || ''
+                }`;
 
-        setSavedSupplierPurchases([]);
-      }
-    }, []);
+          return {
+            ...value,
+
+            id:
+              value?.id ||
+              key ||
+              `supplier-purchase-${
+                value?.purchaseNo || ''
+              }`,
+
+            documentType:
+              value?.documentType ||
+              'supplier-purchase',
+
+            purchaseNo:
+              value?.purchaseNo || '',
+
+            date:
+              value?.date || '',
+
+            supplierName:
+              value?.supplierName || '',
+
+            khata:
+              value?.khata || '',
+
+            entries:
+              Array.isArray(value?.entries)
+                ? value.entries
+                : [],
+
+            totalPurchase:
+              Number(
+                value?.totalPurchase || 0
+              ),
+
+            paid:
+              Number(value?.paid || 0),
+
+            balance:
+              Number(value?.balance || 0),
+
+            notes:
+              value?.notes || '',
+          } as SupplierPurchase;
+        })
+        .filter(Boolean);
+
+    purchases.sort(
+      (a, b) =>
+        new Date(b.date || 0).getTime() -
+        new Date(a.date || 0).getTime()
+    );
+
+    console.log(
+      'SUPPLIER PURCHASES LOADED:',
+      purchases
+    );
+
+    setSavedSupplierPurchases(
+      purchases
+    );
+  } catch (error) {
+    console.error(
+      'Failed to load supplier purchases:',
+      error
+    );
+
+    setSavedSupplierPurchases([]);
+  }
+}, []);
 
   /* =======================================================
      LOAD EVERYTHING

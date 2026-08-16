@@ -194,35 +194,102 @@ const [savedSupplierPurchases, setSavedSupplierPurchases] =
     }
   }, []);
 
-  const fetchPurchases = useCallback(async () => {
-    setIsLoading(true);
+ const fetchPurchases = useCallback(async () => {
+  try {
+    const result = await getDocuments('purchase-');
 
-    try {
-      const result = await getDocuments('purchase-');
+    if (!result.success || !Array.isArray(result.data)) {
+      console.error(
+        'Failed to load customer purchases:',
+        result.error
+      );
 
-      if (result.success) {
-        const purchases = (result.data || []).map((item: any) => ({
-          ...item,
-          id: item.id || `purchase-${item.billNo}`,
-        }));
-
-        setSavedPurchases(
-          purchases.sort(
-            (a: any, b: any) =>
-              new Date(b.date).getTime() -
-              new Date(a.date).getTime()
-          )
-        );
-      } else {
-        setSavedPurchases([]);
-      }
-    } catch (error) {
-      console.error('Failed to load purchases:', error);
       setSavedPurchases([]);
-    } finally {
-      setIsLoading(false);
+      return;
     }
-  }, []);
+
+    const purchases: Purchase[] = result.data
+      .map((item: any) => {
+        // getDocuments() returns:
+        // { key, value }
+        // The actual purchase is inside value.
+        const value =
+          item?.value &&
+          typeof item.value === 'object'
+            ? item.value
+            : item;
+
+        const key =
+          typeof item?.key === 'string'
+            ? item.key
+            : value?.id ||
+              `purchase-${value?.billNo || ''}`;
+
+        return {
+          ...value,
+
+          id:
+            value?.id ||
+            key ||
+            `purchase-${value?.billNo || ''}`,
+
+          documentType:
+            value?.documentType ||
+            'customer-purchase',
+
+          billNo:
+            value?.billNo || '',
+
+          date:
+            value?.date || '',
+
+          growerName:
+            value?.growerName || '',
+
+          purchaseFor:
+            value?.purchaseFor || 'Customer',
+
+          entries:
+            Array.isArray(value?.entries)
+              ? value.entries
+              : [],
+
+          totals:
+            value?.totals || {
+              totalQty: 0,
+              grandTotal: 0,
+            },
+        } as Purchase;
+      })
+      .filter(
+        (purchase) =>
+          purchase.id &&
+          !String(purchase.id).startsWith(
+            'supplier-purchase-'
+          )
+      );
+
+    purchases.sort(
+      (a, b) =>
+        new Date(b.date || 0).getTime() -
+        new Date(a.date || 0).getTime()
+    );
+
+    console.log(
+      'CUSTOMER PURCHASES LOADED:',
+      purchases
+    );
+
+    setSavedPurchases(purchases);
+  } catch (error) {
+    console.error(
+      'Failed to load customer purchases:',
+      error
+    );
+
+    setSavedPurchases([]);
+  }
+}, []);
 
   useEffect(() => {
     fetchPurchases();

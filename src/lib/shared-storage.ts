@@ -1,4 +1,9 @@
-import { deleteDocument, getDocument, getDocuments, saveDocument } from '@/lib/actions';
+import {
+  deleteDocument,
+  getDocument,
+  getDocuments,
+  saveDocument,
+} from '@/lib/actions';
 
 type SharedStorageEnvelope = {
   __fcoSharedStorage: true;
@@ -6,12 +11,18 @@ type SharedStorageEnvelope = {
   value: string;
 };
 
-const STORAGE_SYNC_MARKER = '__fcoSharedStorage';
 let initialized = false;
 let hydrationPromise: Promise<void> | null = null;
 
+// Prevent our own remote synchronization from triggering another
+// localStorage synchronization cycle.
+let syncInProgress = false;
+
 function isBrowser(): boolean {
-  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.localStorage !== 'undefined'
+  );
 }
 
 function getStorage(): Storage | null {
@@ -47,30 +58,70 @@ function unwrapValue(value: unknown): string | null {
   return null;
 }
 
-async function persistRemoteValue(key: string, value: string): Promise<void> {
-  if (!key) {
+/**
+ * Save a localStorage value to the remote document API.
+ *
+ * IMPORTANT:
+ * This function does NOT touch localStorage.
+ * That prevents recursive saveDocument -> localStorage -> saveDocument loops.
+ */
+async function persistRemoteValue(
+  key: string,
+  value: string
+): Promise<void> {
+  if (!key || syncInProgress) {
     return;
   }
 
   try {
-    await saveDocument(key, createEnvelope(value));
+    syncInProgress = true;
+
+    await saveDocument(
+      key,
+      createEnvelope(value)
+    );
   } catch (error) {
-    console.warn('Shared storage sync save failed:', error);
+    console.warn(
+      'Shared storage sync save failed:',
+      error
+    );
+  } finally {
+    syncInProgress = false;
   }
 }
 
-async function removeRemoteValue(key: string): Promise<void> {
-  if (!key) {
+/**
+ * Delete a remote value.
+ *
+ * This also does not touch localStorage.
+ */
+async function removeRemoteValue(
+  key: string
+): Promise<void> {
+  if (!key || syncInProgress) {
     return;
   }
 
   try {
+    syncInProgress = true;
+
     await deleteDocument(key);
   } catch (error) {
-    console.warn('Shared storage sync delete failed:', error);
+    console.warn(
+      'Shared storage sync delete failed:',
+      error
+    );
+  } finally {
+    syncInProgress = false;
   }
 }
 
+/**
+ * Load all remote documents into localStorage.
+ *
+ * We deliberately use the original localStorage methods here,
+ * so hydration itself does not trigger another remote save.
+ */
 async function hydrateFromServer(): Promise<void> {
   const storage = getStorage();
 
@@ -81,37 +132,84 @@ async function hydrateFromServer(): Promise<void> {
   try {
     const result = await getDocuments();
 
-    if (!result.success || !Array.isArray(result.data)) {
+    if (
+      !result.success ||
+      !Array.isArray(result.data)
+    ) {
       return;
     }
 
+    const storageProto =
+      Object.getPrototypeOf(storage) as Storage & {
+        __fcoOriginalSetItem?: Storage['setItem'];
+      };
+
+    const originalSetItem =
+      storageProto.__fcoOriginalSetItem ||
+      Storage.prototype.setItem;
+
     for (const item of result.data) {
-      if (!item || typeof item !== 'object') {
+      if (
+        !item ||
+        typeof item !== 'object'
+      ) {
         continue;
       }
 
-      const key = typeof (item as Record<string, unknown>).key === 'string'
-        ? (item as Record<string, unknown>).key as string
-        : null;
+      const record =
+        item as Record<string, unknown>;
+
+      const key =
+        typeof record.key === 'string'
+          ? record.key
+          : null;
 
       if (!key) {
         continue;
       }
 
-      const remoteValue = unwrapValue(
-      (item as Record<string, unknown>).value ?? item
-    );
+      const remoteValue =
+        unwrapValue(
+          record.value ?? item
+        );
 
-      if (remoteValue !== null && storage.getItem(key) !== remoteValue) {
-        storage.setItem(key, remoteValue);
+      if (
+        remoteValue !== null &&
+        storage.getItem(key) !== remoteValue
+      ) {
+        try {
+          syncInProgress = true;
+
+          originalSetItem.call(
+            storage,
+            key,
+            remoteValue
+          );
+        } catch (error) {
+          console.warn(
+            'Failed to hydrate local value:',
+            key,
+            error
+          );
+        } finally {
+          syncInProgress = false;
+        }
       }
     }
   } catch (error) {
-    console.warn('Shared storage hydration failed:', error);
+    console.warn(
+      'Shared storage hydration failed:',
+      error
+    );
   }
 }
 
-async function hydrateSingleValue(key: string): Promise<void> {
+/**
+ * Load one remote value into localStorage.
+ */
+async function hydrateSingleValue(
+  key: string
+): Promise<void> {
   const storage = getStorage();
 
   if (!storage || !key) {
@@ -119,24 +217,62 @@ async function hydrateSingleValue(key: string): Promise<void> {
   }
 
   try {
-    const result = await getDocument(key);
+    const result =
+      await getDocument(key);
 
     if (!result.success) {
       return;
     }
 
-    const remoteValue = unwrapValue(result.data);
+    const remoteValue =
+      unwrapValue(result.data);
 
-    if (remoteValue !== null && storage.getItem(key) !== remoteValue) {
-      storage.setItem(key, remoteValue);
+    if (
+      remoteValue !== null &&
+      storage.getItem(key) !== remoteValue
+    ) {
+      const storageProto =
+        Object.getPrototypeOf(storage) as Storage & {
+          __fcoOriginalSetItem?: Storage['setItem'];
+        };
+
+      const originalSetItem =
+        storageProto.__fcoOriginalSetItem ||
+        Storage.prototype.setItem;
+
+      try {
+        syncInProgress = true;
+
+        originalSetItem.call(
+          storage,
+          key,
+          remoteValue
+        );
+      } finally {
+        syncInProgress = false;
+      }
     }
   } catch (error) {
-    console.warn('Shared storage hydration failed for key:', key, error);
+    console.warn(
+      'Shared storage hydration failed for key:',
+      key,
+      error
+    );
   }
 }
 
+/**
+ * Install the shared-storage synchronization once.
+ *
+ * The important change is that we keep references to the original
+ * Storage methods and never accidentally call the patched versions
+ * from our synchronization code.
+ */
 export function initializeSharedStorage(): void {
-  if (!isBrowser() || initialized) {
+  if (
+    !isBrowser() ||
+    initialized
+  ) {
     return;
   }
 
@@ -148,87 +284,180 @@ export function initializeSharedStorage(): void {
     return;
   }
 
-  const storageProto = Object.getPrototypeOf(storage) as Storage & {
-    __fcoSharedStoragePatched?: boolean;
-  };
+  const storageProto =
+    Object.getPrototypeOf(storage) as Storage & {
+      __fcoSharedStoragePatched?: boolean;
+      __fcoOriginalSetItem?: Storage['setItem'];
+      __fcoOriginalGetItem?: Storage['getItem'];
+      __fcoOriginalRemoveItem?: Storage['removeItem'];
+      __fcoOriginalClear?: Storage['clear'];
+    };
 
-  if (storageProto.__fcoSharedStoragePatched) {
+  if (
+    storageProto.__fcoSharedStoragePatched
+  ) {
     return;
   }
 
-  const originalSetItem = storageProto.setItem;
-  const originalGetItem = storageProto.getItem;
-  const originalRemoveItem = storageProto.removeItem;
-  const originalClear = storageProto.clear;
+  const originalSetItem =
+    storageProto.setItem.bind(storage);
 
-  storageProto.setItem = function (this: Storage, key: string, value: string): void {
-    originalSetItem.call(this, key, value);
+  const originalGetItem =
+    storageProto.getItem.bind(storage);
 
-    if (key) {
-      void persistRemoteValue(key, value);
-    }
-  };
+  const originalRemoveItem =
+    storageProto.removeItem.bind(storage);
 
-  storageProto.getItem = function (this: Storage, key: string): string | null {
-    const localValue = originalGetItem.call(this, key);
+  const originalClear =
+    storageProto.clear.bind(storage);
 
-    if (localValue !== null) {
-      return localValue;
-    }
+  // Save original methods on the prototype so hydration can
+  // bypass our synchronization hooks.
+  storageProto.__fcoOriginalSetItem =
+    storageProto.setItem;
 
-    if (key) {
-      void hydrateSingleValue(key);
-    }
+  storageProto.__fcoOriginalGetItem =
+    storageProto.getItem;
 
-    return null;
-  };
+  storageProto.__fcoOriginalRemoveItem =
+    storageProto.removeItem;
 
-  storageProto.removeItem = function (this: Storage, key: string): void {
-    originalRemoveItem.call(this, key);
+  storageProto.__fcoOriginalClear =
+    storageProto.clear;
 
-    if (key) {
-      void removeRemoteValue(key);
-    }
-  };
+  storageProto.setItem =
+    function (
+      this: Storage,
+      key: string,
+      value: string
+    ): void {
+      // Always perform the actual localStorage operation first.
+      originalSetItem(
+        key,
+        value
+      );
 
-  storageProto.clear = function (this: Storage): void {
-    const keys: string[] = [];
-
-    for (let index = 0; index < this.length; index += 1) {
-      const key = this.key(index);
-
-      if (key) {
-        keys.push(key);
+      // Do not synchronize values that are being
+      // written internally during hydration.
+      if (
+        key &&
+        !syncInProgress
+      ) {
+        void persistRemoteValue(
+          key,
+          value
+        );
       }
+    };
+
+  storageProto.getItem =
+    function (
+      this: Storage,
+      key: string
+    ): string | null {
+      const localValue =
+        originalGetItem(key);
+
+      // If it exists locally, return immediately.
+      if (
+        localValue !== null
+      ) {
+        return localValue;
+      }
+
+      // Otherwise try to hydrate it from the server.
+      if (
+        key &&
+        !syncInProgress
+      ) {
+        void hydrateSingleValue(key);
+      }
+
+      return null;
+    };
+
+  storageProto.removeItem =
+    function (
+      this: Storage,
+      key: string
+    ): void {
+      originalRemoveItem(key);
+
+      if (
+        key &&
+        !syncInProgress
+      ) {
+        void removeRemoteValue(
+          key
+        );
+      }
+    };
+
+  storageProto.clear =
+    function (
+      this: Storage
+    ): void {
+      const keys: string[] = [];
+
+      for (
+        let index = 0;
+        index < this.length;
+        index += 1
+      ) {
+        const key =
+          this.key(index);
+
+        if (key) {
+          keys.push(key);
+        }
+      }
+
+      originalClear();
+
+      if (!syncInProgress) {
+        for (const key of keys) {
+          void removeRemoteValue(
+            key
+          );
+        }
+      }
+    };
+
+  storageProto.__fcoSharedStoragePatched =
+    true;
+
+  // Initial synchronization.
+  hydrationPromise =
+    hydrateFromServer();
+
+  // Periodically check for remote changes.
+  window.setInterval(
+    () => {
+      void ensureSharedStorageHydrated();
+    },
+    15000
+  );
+
+  window.addEventListener(
+    'focus',
+    () => {
+      void ensureSharedStorageHydrated();
     }
-
-    originalClear.call(this);
-
-    for (const key of keys) {
-      void removeRemoteValue(key);
-    }
-  };
-
-  storageProto.__fcoSharedStoragePatched = true;
-
-  hydrationPromise = hydrateFromServer();
-
-  window.setInterval(() => {
-    void ensureSharedStorageHydrated();
-  }, 15000);
-
-  window.addEventListener('focus', () => {
-    void ensureSharedStorageHydrated();
-  });
+  );
 }
 
+/**
+ * Make sure the browser has received the current
+ * remote shared-storage values.
+ */
 export function ensureSharedStorageHydrated(): Promise<void> {
   if (!isBrowser()) {
     return Promise.resolve();
   }
 
   if (!hydrationPromise) {
-    hydrationPromise = hydrateFromServer();
+    hydrationPromise =
+      hydrateFromServer();
   }
 
   return hydrationPromise;
