@@ -24,7 +24,7 @@ export const ClassicA4Layout = ({
       security: 0,
       commissionAmount: 0,
       securityCharges: 0,
-      postage: 8,
+      postage: 0,
       serviceCharges: 0,
       totalExpenses: 0,
       netSale: 0,
@@ -327,7 +327,7 @@ export const ClassicA4Layout = ({
               <div className="flex justify-between">
                 <span>Postage:</span>
                 <span>
-                  - {money(totals?.postage ?? 8)}
+                  - {money(totals?.postage ?? 0)}
                 </span>
               </div>
 

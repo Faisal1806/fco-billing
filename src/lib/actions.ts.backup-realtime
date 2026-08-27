@@ -1,0 +1,519 @@
+﻿const STORAGE_PREFIX = 'fco-document:';
+
+type DocumentValue = Record<string, any>;
+
+type ApiResult<T = any> = {
+  success: boolean;
+  data?: T;
+  error?: string;
+};
+
+function storageKey(key: string): string {
+  return `${STORAGE_PREFIX}${key}`;
+}
+
+/**
+ * Get the ORIGINAL browser localStorage methods.
+ *
+ * shared-storage.ts may patch localStorage methods.
+ * We intentionally bypass that patch here.
+ */
+function getNativeStorageMethods() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const storage = window.localStorage;
+
+  return {
+    storage,
+    setItem: Storage.prototype.setItem.bind(storage),
+    getItem: Storage.prototype.getItem.bind(storage),
+    removeItem: Storage.prototype.removeItem.bind(storage),
+    key: Storage.prototype.key.bind(storage),
+    get length(): number {
+      return storage.length;
+    },
+  };
+}
+
+/**
+ * SAVE ONE DOCUMENT
+ *
+ * Supports:
+ *
+ * saveDocument(key, data)
+ *
+ * and legacy:
+ *
+ * saveDocument(collection, id, data)
+ */
+export async function saveDocument(
+  key: string,
+  dataOrId: DocumentValue | string,
+  legacyData?: DocumentValue
+): Promise<ApiResult> {
+  try {
+    let documentKey: string;
+    let documentData: DocumentValue;
+
+    if (legacyData !== undefined) {
+      documentKey = `${key}/${String(dataOrId)}`;
+      documentData = legacyData;
+    } else {
+      documentKey = key;
+      documentData = dataOrId as DocumentValue;
+    }
+
+    const response = await fetch('/api/documents', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        key: documentKey,
+        value: documentData,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result?.success) {
+      throw new Error(
+        result?.error ||
+          `MongoDB save failed (${response.status})`
+      );
+    }
+
+    // Keep localStorage as a secondary browser cache.
+    if (typeof window !== 'undefined') {
+      const native = getNativeStorageMethods();
+
+      if (native) {
+        native.setItem(
+          storageKey(documentKey),
+          JSON.stringify(documentData)
+        );
+
+        window.dispatchEvent(
+          new CustomEvent('mongodb-synced', {
+            detail: {
+              key: documentKey,
+              data: documentData,
+            },
+          })
+        );
+      }
+    }
+
+    return {
+      success: true,
+      data: result?.data ?? documentData,
+    };
+  } catch (error) {
+    console.error(
+      `Failed to save document to MongoDB: ${key}`,
+      error
+    );
+
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to save document to MongoDB',
+    };
+  }
+}
+
+/**
+ * GET ONE DOCUMENT
+ *
+ * Supports:
+ *
+ * getDocument(key)
+ *
+ * and:
+ *
+ * getDocument(collection, id)
+ */
+export async function getDocument(
+  key: string,
+  id?: string
+): Promise<ApiResult> {
+  try {
+    const documentKey =
+      id !== undefined
+        ? `${key}/${String(id)}`
+        : key;
+
+    // MongoDB is the source of truth
+    const response = await fetch(
+      `/api/documents?key=${encodeURIComponent(documentKey)}`,
+      {
+        method: 'GET',
+        cache: 'no-store',
+      }
+    );
+
+    const result = await response.json();
+
+    if (response.ok && result?.success) {
+      // Update local cache as secondary cache
+      if (typeof window !== 'undefined') {
+        const native = getNativeStorageMethods();
+
+        if (native) {
+          native.setItem(
+            storageKey(documentKey),
+            JSON.stringify(result.data)
+          );
+        }
+      }
+
+      return {
+        success: true,
+        data: result.data,
+      };
+    }
+
+    if (response.status === 404) {
+      return {
+        success: false,
+        error: 'Document not found',
+      };
+    }
+
+    throw new Error(
+      result?.error ||
+        `MongoDB request failed (${response.status})`
+    );
+  } catch (error) {
+    // MongoDB unavailable → use local cache
+    try {
+      if (typeof window === 'undefined') {
+        return {
+          success: false,
+          error: 'Browser storage is unavailable.',
+        };
+      }
+
+      const native = getNativeStorageMethods();
+
+      if (!native) {
+        return {
+          success: false,
+          error: 'Browser storage is unavailable.',
+        };
+      }
+
+      const documentKey =
+        id !== undefined
+          ? `${key}/${String(id)}`
+          : key;
+
+      const raw = native.getItem(
+        storageKey(documentKey)
+      );
+
+      if (!raw) {
+        return {
+          success: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : 'Document not found',
+        };
+      }
+
+      return {
+        success: true,
+        data: JSON.parse(raw),
+      };
+    } catch {
+      return {
+        success: false,
+        error: 'Failed to load document',
+      };
+    }
+  }
+}
+/**
+ * GET ALL DOCUMENTS
+ *
+ * The second parameter is retained for compatibility
+ * with older modules.
+ *
+ * IMPORTANT:
+ * The returned data array contains the actual stored
+ * document values, not { key, value } wrappers.
+ */
+export async function getDocuments(
+  prefix?: string,
+  _legacyMode?: boolean
+): Promise<ApiResult<any[]>> {
+  try {
+    /*
+     * PRIMARY SOURCE: MongoDB
+     *
+     * The API route returns documents matching the requested
+     * prefix. Example:
+     * /api/documents?prefix=purchase-
+     */
+    if (typeof window !== 'undefined') {
+      const query = prefix
+        ? `?prefix=${encodeURIComponent(prefix)}`
+        : '';
+
+      const response = await fetch(
+        `/api/documents${query}`,
+        {
+          method: 'GET',
+          cache: 'no-store',
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.ok && result?.success && Array.isArray(result.data)) {
+        /*
+         * Keep MongoDB as the source of truth.
+         *
+         * Refresh the local cache with the documents returned
+         * by MongoDB so the application can still work if the
+         * API is temporarily unavailable later.
+         */
+        const native = getNativeStorageMethods();
+
+        if (native) {
+          for (const item of result.data) {
+            try {
+              const value =
+                item?.value &&
+                typeof item.value === 'object'
+                  ? item.value
+                  : item;
+
+              const documentKey =
+                item?.key ||
+                value?.id ||
+                (value?.billNo
+                  ? `purchase-${value.billNo}`
+                  : value?.purchaseNo
+                    ? `supplier-purchase-${value.purchaseNo}`
+                    : null);
+
+              if (documentKey) {
+                native.setItem(
+                  storageKey(String(documentKey)),
+                  JSON.stringify(value)
+                );
+              }
+            } catch (error) {
+              console.warn(
+                'Could not cache MongoDB document:',
+                error
+              );
+            }
+          }
+        }
+
+        return {
+          success: true,
+          data: result.data,
+        };
+      }
+
+      throw new Error(
+        result?.error ||
+          `MongoDB request failed (${response.status})`
+      );
+    }
+
+    throw new Error('Browser storage is unavailable.');
+  } catch (error) {
+    /*
+     * FALLBACK: localStorage
+     *
+     * If MongoDB/API is temporarily unavailable, return the
+     * browser cache instead of making the application appear
+     * completely empty.
+     */
+    try {
+      if (typeof window === 'undefined') {
+        return {
+          success: false,
+          data: [],
+          error: 'Browser storage is unavailable.',
+        };
+      }
+
+      const native = getNativeStorageMethods();
+
+      if (!native) {
+        return {
+          success: false,
+          data: [],
+          error: 'Browser storage is unavailable.',
+        };
+      }
+
+      const documents: any[] = [];
+
+      for (let index = 0; index < native.length; index++) {
+        const fullKey = native.key(index);
+
+        if (!fullKey) {
+          continue;
+        }
+
+        if (!fullKey.startsWith(STORAGE_PREFIX)) {
+          continue;
+        }
+
+        const documentKey = fullKey.substring(
+          STORAGE_PREFIX.length
+        );
+
+        if (
+          prefix &&
+          !documentKey.startsWith(prefix)
+        ) {
+          continue;
+        }
+
+        try {
+          const raw = native.getItem(fullKey);
+
+          if (!raw) {
+            continue;
+          }
+
+          documents.push(JSON.parse(raw));
+        } catch (cacheError) {
+          console.warn(
+            `Skipping invalid cached document: ${documentKey}`,
+            cacheError
+          );
+        }
+      }
+
+      return {
+        success: true,
+        data: documents,
+      };
+    } catch (fallbackError) {
+      console.error(
+        'Failed to load documents from MongoDB and local cache:',
+        fallbackError
+      );
+
+      return {
+        success: false,
+        data: [],
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to load documents',
+      };
+    }
+  }
+}
+
+/**
+ * DELETE ONE DOCUMENT
+ *
+ * Supports:
+ *
+ * deleteDocument(key)
+ *
+ * and legacy:
+ *
+ * deleteDocument(collection, id)
+ */
+export async function deleteDocument(
+  key: string,
+  id?: string
+): Promise<ApiResult> {
+  try {
+    const documentKey =
+      id !== undefined
+        ? `${key}/${String(id)}`
+        : key;
+
+    // Delete from MongoDB first
+    const response = await fetch(
+      `/api/documents?key=${encodeURIComponent(documentKey)}`,
+      {
+        method: 'DELETE',
+        cache: 'no-store',
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result?.success) {
+      throw new Error(
+        result?.error ||
+          `MongoDB delete failed (${response.status})`
+      );
+    }
+
+    // Remove local cache after MongoDB succeeds
+    if (typeof window !== 'undefined') {
+      const native = getNativeStorageMethods();
+
+      if (native) {
+        native.removeItem(
+          storageKey(documentKey)
+        );
+
+        window.dispatchEvent(
+          new CustomEvent('mongodb-deleted', {
+            detail: {
+              key: documentKey,
+            },
+          })
+        );
+      }
+    }
+
+    return {
+      success: true,
+      data: result,
+    };
+  } catch (error) {
+    console.error(
+      `Failed to delete document from MongoDB: ${key}`,
+      error
+    );
+
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to delete document from MongoDB',
+    };
+  }
+}
+
+/**
+ * Compatibility function.
+ */
+export async function sendPushNotification(
+  payload: Record<string, any>
+): Promise<ApiResult> {
+  console.warn(
+    'sendPushNotification is not implemented.',
+    payload
+  );
+
+  return {
+    success: false,
+    error:
+      'sendPushNotification is not implemented',
+  };
+}
+
+

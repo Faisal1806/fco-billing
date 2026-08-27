@@ -29,7 +29,7 @@ export default async function connectDB() {
   }
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI, {
+    cached.promise = mongoose.connect(MONGODB_URI!,  {
       dbName: process.env.MONGODB_DB || 'fco_billing',
       bufferCommands: false,
     });
@@ -39,3 +39,4 @@ export default async function connectDB() {
 
   return cached.conn;
 }
+

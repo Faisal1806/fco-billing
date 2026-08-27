@@ -315,6 +315,21 @@ export default function PurchasesPage() {
   /* =======================================================
      LOAD CUSTOMER PURCHASES
   ======================================================= */
+const readLocalCustomerPurchases = (): Purchase[] => {
+  if (typeof window === 'undefined') return [];
+  const purchases: Purchase[] = [];
+  for (let i = 0; i < window.localStorage.length; i++) {
+    const key = window.localStorage.key(i);
+    if (!key || !key.startsWith('purchase-') || key.startsWith('supplier-purchase-')) continue;
+    try {
+      const raw = JSON.parse(window.localStorage.getItem(key) || 'null');
+      if (!raw || typeof raw !== 'object') continue;
+      purchases.push({ ...raw, id: raw.id || key, documentType: raw.documentType || 'customer-purchase', billNo: String(raw.billNo || ''), date: String(raw.date || ''), growerName: String(raw.growerName || ''), purchaseFor: raw.purchaseFor || (raw.growerName === 'F.Co (Own Stock)' ? 'Own Stock (F.Co)' : 'Customer'), entries: Array.isArray(raw.entries) ? raw.entries.map((e: any) => ({ ...e, qty: Math.round(Number(e?.qty) || 0), rate: Math.round(Number(e?.rate) || 0), total: Math.round(Number(e?.total) || ((Number(e?.qty) || 0) * (Number(e?.rate) || 0))) })) : [], totals: { totalQty: Math.round(Number(raw.totals?.totalQty) || 0), grandTotal: Math.round(Number(raw.totals?.grandTotal) || 0) } } as Purchase);
+    } catch (error) { console.error('Invalid local purchase:', key, error); }
+  }
+  return purchases.sort((a,b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
+};
+
 const fetchCustomerPurchases = useCallback(async () => {
   try {
     const result = await getDocuments('purchase-');
@@ -325,7 +340,7 @@ const fetchCustomerPurchases = useCallback(async () => {
         result.error
       );
 
-      setSavedPurchases([]);
+      setSavedPurchases(readLocalCustomerPurchases());
       return;
     }
 
@@ -372,14 +387,13 @@ const fetchCustomerPurchases = useCallback(async () => {
 
           entries:
             Array.isArray(value?.entries)
-              ? value.entries
+              ? value.entries.map((entry: any) => ({ ...entry, qty: Math.round(Number(entry?.qty) || 0), rate: Math.round(Number(entry?.rate) || 0), total: Math.round(Number(entry?.total) || ((Number(entry?.qty) || 0) * (Number(entry?.rate) || 0))) }))
               : [],
 
-          totals:
-            value?.totals || {
-              totalQty: 0,
-              grandTotal: 0,
-            },
+          totals: {
+            totalQty: Math.round(Number(value?.totals?.totalQty) || 0),
+            grandTotal: Math.round(Number(value?.totals?.grandTotal) || 0),
+          },
         } as Purchase;
       })
       .filter(
@@ -408,14 +422,28 @@ const fetchCustomerPurchases = useCallback(async () => {
       error
     );
 
-    setSavedPurchases([]);
+    setSavedPurchases(readLocalCustomerPurchases());
   }
 }, []);
   /* =======================================================
      LOAD SUPPLIER PURCHASES
   ======================================================= */
+const readLocalSupplierPurchases = (): SupplierPurchase[] => {
+  if (typeof window === 'undefined') return [];
+  const purchases: SupplierPurchase[] = [];
+  for (let i = 0; i < window.localStorage.length; i++) {
+    const key = window.localStorage.key(i);
+    if (!key || !key.startsWith('supplier-purchase-')) continue;
+    try {
+      const raw = JSON.parse(window.localStorage.getItem(key) || 'null');
+      if (!raw || typeof raw !== 'object') continue;
+      purchases.push({ ...raw, id: raw.id || key, documentType: raw.documentType || 'supplier-purchase', purchaseNo: String(raw.purchaseNo || ''), date: String(raw.date || ''), supplierName: String(raw.supplierName || ''), khata: String(raw.khata || ''), entries: Array.isArray(raw.entries) ? raw.entries.map((e: any) => ({ ...e, qty: Math.round(Number(e?.qty) || 0), rate: Math.round(Number(e?.rate) || 0), amount: Math.round(Number(e?.amount) || ((Number(e?.qty) || 0) * (Number(e?.rate) || 0))) })) : [], totalPurchase: Math.round(Number(raw.totalPurchase) || 0), paid: Math.round(Number(raw.paid) || 0), balance: Math.round(Number(raw.balance) || 0), notes: String(raw.notes || '') } as SupplierPurchase);
+    } catch (error) { console.error('Invalid local supplier purchase:', key, error); }
+  }
+  return purchases.sort((a,b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
+};
 
- const fetchSupplierPurchases = useCallback(async () => {
+const fetchSupplierPurchases = useCallback(async () => {
   try {
     const result = await getDocuments(
       'supplier-purchase-'
@@ -430,7 +458,7 @@ const fetchCustomerPurchases = useCallback(async () => {
         result.error
       );
 
-      setSavedSupplierPurchases([]);
+      setSavedSupplierPurchases(readLocalSupplierPurchases());
       return;
     }
 
@@ -963,8 +991,7 @@ const fetchCustomerPurchases = useCallback(async () => {
             rate:
               Number(row.rate) || 0,
             total:
-              (Number(row.qty) || 0) *
-              (Number(row.rate) || 0),
+              Math.round((Number(row.qty) || 0) * (Number(row.rate) || 0)),
           }));
 
       const purchaseData: Purchase = {
@@ -989,7 +1016,7 @@ const fetchCustomerPurchases = useCallback(async () => {
             customerTotals.totalQty,
 
           grandTotal:
-            customerTotals.grandTotal,
+            Math.round(customerTotals.grandTotal),
         },
       };
 
@@ -1092,20 +1119,18 @@ const fetchCustomerPurchases = useCallback(async () => {
             rate:
               Number(row.rate) || 0,
             amount:
-              (Number(row.qty) || 0) *
-              (Number(row.rate) || 0),
+              Math.round((Number(row.qty) || 0) * (Number(row.rate) || 0)),
           }));
 
       const totalPurchase =
-        entries.reduce(
+        Math.round(entries.reduce(
           (sum, row) =>
             sum +
             Number(row.amount || 0),
           0
-        );
+        ));
 
-      const paid =
-        Number(supplierPaid) || 0;
+      const paid = Math.round(Number(supplierPaid) || 0);
 
       const balance =
         totalPurchase - paid;
@@ -1808,12 +1833,12 @@ const fetchCustomerPurchases = useCallback(async () => {
 
                   <TableCell className="text-right font-medium">
                     ₹
-                    {Number(
+                    {Math.round(Number(
                       customerTotals
                         .rowTotals[
                         index
                       ] || 0
-                    ).toFixed(2)}
+                    ))}
                   </TableCell>
 
                   <TableCell>

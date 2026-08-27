@@ -1,7 +1,7 @@
 const COMMISSION_RATE = 0.06;
 const SECURITY_CHARGES_RATE = 0.06;
 const COMBINED_COMMISSION_AND_SECURITY_RATE = COMMISSION_RATE + SECURITY_CHARGES_RATE;
-const DEFAULT_POSTAGE = 8;
+const DEFAULT_POSTAGE = 0;
 const DEFAULT_OTHER_EXPENSES = 0;
 
 function roundAmount(value) {
@@ -71,7 +71,7 @@ function normalizeInvoiceData(billData = {}) {
     }, 0)
   );
   const freight = roundAmount(billData.freight || billData.totals?.freight || 0);
-  const postage = roundAmount(billData.totals?.postage ?? 8);
+  const postage = roundAmount(billData.totals?.postage ?? 0);
   const otherExpenses = roundAmount(billData.totals?.otherExpenses ?? 0);
   const calculated = calculateInvoiceTotals({
     grossSale: billData.totals?.grossSale ?? grossSale,

@@ -14,14 +14,20 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguage] = useState<Language>('en');
 
-  const t = useCallback((key: TranslationKey, ...args: any[]) => {
+  const t = useCallback((key: TranslationKey, ...args: any[]): string => {
     const translation = translations[language][key];
     if (typeof translation === 'function') {
-      return translation(...args);
+      return String((translation as (...args: any[]) => string)(...args));
     }
-    return translation || translations['en'][key];
+    if (typeof translation === 'string') {
+      return translation;
+    }
+    const fallback = translations.en[key];
+    if (typeof fallback === 'function') {
+      return String((fallback as (...args: any[]) => string)(...args));
+    }
+    return String(fallback ?? key);
   }, [language]);
-
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t }}>
@@ -39,5 +45,6 @@ export const useLanguage = () => {
   }
   return context;
 };
+
 
 

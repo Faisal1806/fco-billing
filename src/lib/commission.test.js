@@ -23,7 +23,7 @@ test('calculates invoice totals using the shared expense formula', () => {
     grossSale: 15000,
     totalQty: 16,
     freight: 160,
-    postage: 8,
+    postage: 0,
     otherExpenses: 0,
   });
 
@@ -47,7 +47,7 @@ test('applies commission and security charges at a combined 12% total rate', () 
 test('uses default postage and other expenses when missing', () => {
   const result = calculateInvoiceTotals({ grossSale: 1000, totalQty: 0, freight: 0 });
 
-  assert.equal(result.postage, 8);
+  assert.equal(result.postage, 0);
   assert.equal(result.otherExpenses, 0);
   assert.equal(result.totalExpenses, 128);
   assert.equal(result.netSale, 872);

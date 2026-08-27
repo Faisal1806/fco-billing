@@ -51,7 +51,7 @@ export function BillMakingTab() {
   const [date, setDate] = useState('');
   const [date2, setDate2] = useState('');
   const [freight, setFreight] = useState<number>(0);
-  const [postageInput, setPostageInput] = useState('8');
+  const [postageInput, setPostageInput] = useState('0');
   const [rows, setRows] = useState<Row[]>(initialRows);
   const [selectedReceiptNo, setSelectedReceiptNo] = useState('');
   const [quickEntry, setQuickEntry] = useState('');
@@ -326,7 +326,7 @@ export function BillMakingTab() {
     });
 
     const totalGrossSale = subtotal;
-    const resolvedPostage = postageInput === '' ? 8 : (Number(postageInput) || 8);
+    const resolvedPostage = postageInput === '' ? 0 : (Number(postageInput) || 0);
     const invoiceTotals = calculateInvoiceTotals({
       grossSale: totalGrossSale,
       totalQty,
@@ -390,7 +390,7 @@ export function BillMakingTab() {
         setDate(new Date().toISOString().split('T')[0]);
         setDate2('');
         setFreight(0);
-        setPostageInput('8');
+        setPostageInput('0');
         setRows(initialRows);
         setIsEditing(false);
         setSelectedReceiptNo('');
@@ -407,7 +407,7 @@ export function BillMakingTab() {
     setDate(watak.date);
     setDate2(watak.date2 || '');
     setFreight(watak.freight || 0);
-    setPostageInput(watak.totals?.postage !== undefined ? String(watak.totals.postage) : '8');
+    setPostageInput(watak.totals?.postage !== undefined ? String(watak.totals.postage) : '0');
     setRows(watak.entries.length > 0 ? watak.entries : initialRows);
     setSelectedReceiptNo(watak.linkedReceiptNo || '');
     setIsEditing(true);
@@ -480,12 +480,13 @@ export function BillMakingTab() {
         association: Number(totals.association.toFixed(2)),
         security: Number(totals.security.toFixed(2)),
         commissionAmount: Number(totals.commissionAmount.toFixed(2)),
-        securityCharges: Number(totals.securityCharges.toFixed(2)),
-        postage: Number((totals.postage ?? 8).toFixed(2)),
-        serviceCharges: Number(totals.securityCharges.toFixed(2)),
+        securityCharges: Number((totals.securityCharges ?? 0).toFixed(2)),
+        postage: Number((totals.postage ?? 0).toFixed(2)),
+        serviceCharges: Number((totals.serviceCharges ?? 0).toFixed(2)),
+
         otherExpenses: 0,
-        totalExpenses: Number(totals.totalExp.toFixed(2)),
-        netSale: Number(totals.netSale.toFixed(2)),
+        totalExpenses: Number((totals.totalExp ?? 0).toFixed(2)),
+        netSale: Number((totals.netSale ?? 0).toFixed(2)),  
       },
       linkedReceiptNo: selectedReceiptNo,
     };

@@ -19,7 +19,6 @@ import { PlusCircle, Trash2, FilePenLine, FilePlus, FileText, Search } from 'luc
 import { FaWhatsapp } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
-import type { ReceiptExtractOutput } from '@/ai/flows/extract-receipt-flow';
 import { Badge } from '@/components/ui/badge';
 import { PartySelector } from './party-selector';
 
@@ -435,6 +434,7 @@ export function ReceiptMakingTab() {
     </div>
   );
 }
+
 
 
 

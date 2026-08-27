@@ -32,7 +32,7 @@ export default function RateList() {
                     watak.entries.forEach(entry => {
                         const rate = entry.rate;
                         // Handle both old and new entry formats
-                        const type = (entry as any).type || (entry.peti > 0 ? 'Patti' : 'Dabba');
+                        const type = (entry as any).type || (((entry as any).peti ?? 0) > 0 ? 'Patti' : 'Dabba');
                         const variety = entry.variety;
 
                         if (variety && rate > 0) {

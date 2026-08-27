@@ -92,7 +92,8 @@ export const SummaryCard = ({
                 style={{ 
                     background: useTransform(
                         [mouseXSpring, mouseYSpring],
-                        ([mx, my]) => `radial-gradient(circle at ${(mx + 0.5) * 100}% ${(my + 0.5) * 100}%, rgba(30,127,79,0.15) 0%, transparent 70%)`
+                        ([mx, my]: any[]) =>
+    `radial-gradient(circle at ${(mx + 0.5) * 100}% ${(my + 0.5) * 100}%, rgba(30,127,79,0.15) 0%, transparent 70%)`
                     )
                 }}
             />
@@ -122,5 +123,7 @@ export const SummaryCard = ({
     </motion.div>
   );
 };
+
+
 
 
