@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import FcoDocument from '@/lib/models/document';
 
@@ -185,3 +185,5 @@ export async function DELETE(req: NextRequest) {
     );
   }
 }
+
+
