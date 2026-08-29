@@ -56,7 +56,11 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: documents.map((document: any) => ({ ...document.value, id: document.key, key: document.key, value: document.value })),
+      data: documents.map((document: any) => ({
+        id: document.key,
+        key: document.key,
+        ...document.value,
+      })),
     });
   } catch (error) {
     console.error('GET /api/documents failed:', error);

@@ -240,91 +240,92 @@ export async function getDocuments(
   _legacyMode?: boolean
 ): Promise<ApiResult<any[]>> {
   try {
-    if (typeof window === 'undefined') {
-      throw new Error('Browser storage is unavailable.');
-    }
+    /*
+     * PRIMARY SOURCE: MongoDB
+     *
+     * The API route returns documents matching the requested
+     * prefix. Example:
+     * /api/documents?prefix=purchase-
+     */
+    if (typeof window !== 'undefined') {
+      const query = prefix
+        ? `?prefix=${encodeURIComponent(prefix)}`
+        : '';
 
-    const query = prefix
-      ? `?prefix=${encodeURIComponent(prefix)}`
-      : '';
+      const response = await fetch(
+        `/api/documents${query}`,
+        {
+          method: 'GET',
+          cache: 'no-store',
+        }
+      );
 
-    const response = await fetch(
-      `/api/documents${query}`,
-      {
-        method: 'GET',
-        cache: 'no-store',
+      const result = await response.json();
+
+      if (response.ok && result?.success && Array.isArray(result.data)) {
+        /*
+         * Keep MongoDB as the source of truth.
+         *
+         * Refresh the local cache with the documents returned
+         * by MongoDB so the application can still work if the
+         * API is temporarily unavailable later.
+         */
+        const native = getNativeStorageMethods();
+
+        if (native) {
+          for (const item of result.data) {
+            try {
+              const value =
+                item?.value &&
+                typeof item.value === 'object'
+                  ? item.value
+                  : item;
+
+              const documentKey =
+                item?.key ||
+                value?.id ||
+                (value?.billNo
+                  ? `purchase-${value.billNo}`
+                  : value?.purchaseNo
+                    ? `supplier-purchase-${value.purchaseNo}`
+                    : null);
+
+              if (documentKey) {
+                native.setItem(
+                  storageKey(String(documentKey)),
+                  JSON.stringify(value)
+                );
+              }
+            } catch (error) {
+              console.warn(
+                'Could not cache MongoDB document:',
+                error
+              );
+            }
+          }
+        }
+
+        return {
+          success: true,
+          data: result.data,
+        };
       }
-    );
 
-    const result = await response.json();
-
-    if (
-      !response.ok ||
-      !result?.success ||
-      !Array.isArray(result.data)
-    ) {
       throw new Error(
         result?.error ||
           `MongoDB request failed (${response.status})`
       );
     }
 
-    const native = getNativeStorageMethods();
-
-    const documents = result.data
-      .filter(
-        (item: any) =>
-          item &&
-          typeof item === 'object'
-      )
-      .map((item: any) => {
-        const key =
-          typeof item.key === 'string'
-            ? item.key
-            : typeof item.id === 'string'
-              ? item.id
-              : '';
-
-        const value =
-          item.value &&
-          typeof item.value === 'object'
-            ? item.value
-            : (() => {
-                const copy = { ...item };
-                delete copy.key;
-                delete copy.id;
-                delete copy.value;
-                return copy;
-              })();
-
-        if (native && key) {
-          try {
-            native.setItem(
-              storageKey(key),
-              JSON.stringify(value)
-            );
-          } catch (error) {
-            console.warn(
-              'Could not cache MongoDB document:',
-              key,
-              error
-            );
-          }
-        }
-
-        return {
-          ...value,
-          id: key,
-          key,
-          value,
-        };
-      });
-
-    return {
-      success: true,
-      data: documents,
-    };
+    throw new Error('Browser storage is unavailable.');
   } catch (error) {
+    /*
+     * FALLBACK: localStorage
+     *
+     * If MongoDB/API is temporarily unavailable, return the
+     * browser cache instead of making the application appear
+     * completely empty.
+     */
     try {
       if (typeof window === 'undefined') {
         return {
@@ -346,24 +347,20 @@ export async function getDocuments(
 
       const documents: any[] = [];
 
-      for (
-        let index = 0;
-        index < native.length;
-        index++
-      ) {
+      for (let index = 0; index < native.length; index++) {
         const fullKey = native.key(index);
 
-        if (
-          !fullKey ||
-          !fullKey.startsWith(STORAGE_PREFIX)
-        ) {
+        if (!fullKey) {
           continue;
         }
 
-        const documentKey =
-          fullKey.substring(
-            STORAGE_PREFIX.length
-          );
+        if (!fullKey.startsWith(STORAGE_PREFIX)) {
+          continue;
+        }
+
+        const documentKey = fullKey.substring(
+          STORAGE_PREFIX.length
+        );
 
         if (
           prefix &&
@@ -373,27 +370,13 @@ export async function getDocuments(
         }
 
         try {
-          const raw =
-            native.getItem(fullKey);
+          const raw = native.getItem(fullKey);
 
           if (!raw) {
             continue;
           }
 
-          const value =
-            JSON.parse(raw);
-
-          documents.push({
-            ...(
-              value &&
-              typeof value === 'object'
-                ? value
-                : {}
-            ),
-            id: documentKey,
-            key: documentKey,
-            value,
-          });
+          documents.push(JSON.parse(raw));
         } catch (cacheError) {
           console.warn(
             `Skipping invalid cached document: ${documentKey}`,

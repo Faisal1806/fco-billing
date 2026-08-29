@@ -168,7 +168,10 @@ async function hydrateFromServer(): Promise<void> {
         continue;
       }
 
-      const remoteValue = unwrapValue(record.value);
+      const remoteValue =
+        unwrapValue(
+          record.value ?? item
+        );
 
       if (
         remoteValue !== null &&
@@ -428,7 +431,12 @@ export function initializeSharedStorage(): void {
     hydrateFromServer();
 
   // Periodically check for remote changes.
-  window.setInterval(() => { void ensureSharedStorageHydrated(); }, 2000);
+  window.setInterval(
+    () => {
+      void ensureSharedStorageHydrated();
+    },
+    2000
+  );
 
   window.addEventListener(
     'focus',
