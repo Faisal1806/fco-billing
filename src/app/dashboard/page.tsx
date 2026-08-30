@@ -19,14 +19,15 @@ const toNumber = (value: unknown): number => {
     return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const wholeNumber = (value: unknown): number =>
-    Math.round(toNumber(value));
-
 const formatINR = (value: unknown): string =>
-    `₹${wholeNumber(value).toLocaleString('en-IN')}`;
+    `₹${toNumber(value).toLocaleString('en-IN', {
+        maximumFractionDigits: 2,
+    })}`;
 
 const formatNumber = (value: unknown): string =>
-    wholeNumber(value).toLocaleString('en-IN');
+    toNumber(value).toLocaleString('en-IN', {
+        maximumFractionDigits: 2,
+    });
 
 type DashboardStats = {
     todaySales: number;
@@ -447,10 +448,9 @@ const outwardStock =
       description: `${formatINR(stats.yearNetSales)} net sales after ${formatINR(stats.yearExpenses)} expenses`,
       icon: Award
     },
-    { title: "Inward Nodes", value: formatNumber(stats.pattiReceived + stats.dabbaReceived), description: `Total supply units processed into the F.Co mandi network.`, icon: ShoppingCart },
-{
-  title: "Outward Log",
-  value: formatNumber(stats.pattiSent + stats.dabbaSent), description: `Global unit distribution tracked via delivery note protocols.`, icon: Users },
+    { title: "Inward Nodes", value: (stats.pattiReceived + stats.dabbaReceived).toString(), description: `Total supply units processed into the F.Co mandi network.`, icon: ShoppingCart },
+
+{ title: "Outward Log", value: (stats.pattiSent + stats.dabbaSent).toString(), description: `Global unit distribution tracked via delivery note protocols.`, icon: Users },
     {
       title: "Year Expenses",
       value: formatINR(stats.yearExpenses),
@@ -473,7 +473,7 @@ const outwardStock =
     },
     {
       label: "EXPENSE LOAD",
-      value: `${Math.round(expenseRatio)}%`,
+      value: `${expenseRatio.toFixed(1)}%`,
       icon: Percent,
     },
     {

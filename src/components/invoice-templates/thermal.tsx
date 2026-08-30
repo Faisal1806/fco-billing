@@ -15,7 +15,7 @@ export const ThermalLayout = ({ billData, pageUrl }: { billData: any, pageUrl: s
             labour: 0, 
             commissionAmount: 0,
             securityCharges: 0,
-            postage: 0,
+            postage: 8,
             serviceCharges: 0,
             association: 0, 
             security: 0, 
@@ -65,7 +65,7 @@ export const ThermalLayout = ({ billData, pageUrl }: { billData: any, pageUrl: s
                 <div className="flex justify-between"><span>Labour:</span><span>- {(totals?.labour || 0).toFixed(2)}</span></div>
                 <div className="flex justify-between"><span>Commission:</span><span>- {(Number(totals?.commissionAmount ?? 0) || 0).toFixed(2)}</span></div>
                 <div className="flex justify-between"><span>S. Charges:</span><span>- {(Number(totals?.securityCharges ?? totals?.serviceCharges ?? 0) || 0).toFixed(2)}</span></div>
-                <div className="flex justify-between"><span>Postage:</span><span>- {(Number(totals?.postage ?? 0) || 0).toFixed(2)}</span></div>
+                <div className="flex justify-between"><span>Postage:</span><span>- {(Number(totals?.postage ?? 8) || 8).toFixed(2)}</span></div>
                 <div className="flex justify-between"><span>Association:</span><span>- {(totals?.association || 0).toFixed(2)}</span></div>
                 <div className="flex justify-between"><span>Security:</span><span>- {(totals?.security || 0).toFixed(2)}</span></div>
                 <div className="flex justify-between"><span>Other Exp:</span><span>- {((totals?.association || 0) + (totals?.security || 0)).toFixed(2)}</span></div>
