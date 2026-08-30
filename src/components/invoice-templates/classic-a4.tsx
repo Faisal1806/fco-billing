@@ -1,4 +1,4 @@
-﻿import { Logo } from "@/components/logo";
+import { Logo } from "@/components/logo";
 import BusinessCardQR from "@/components/BusinessCardQR";
 
 export const ClassicA4Layout = ({
@@ -40,7 +40,7 @@ export const ClassicA4Layout = ({
 
   const money = (value: unknown) => {
     const number = Number(value) || 0;
-    return `â‚¹${number.toFixed(2)}`;
+    return `₹${number.toFixed(2)}`;
   };
 
   const formatDate = (value: string) => {
@@ -58,10 +58,7 @@ export const ClassicA4Layout = ({
   return (
     <div className="invoice-paper relative mx-auto flex h-[208mm] w-[146mm] flex-col overflow-hidden border border-green-700 bg-white p-2 font-serif text-black shadow-lg print:shadow-none">
       
-      {/* Watermark */}
-      <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center">
-        <Logo className="h-40 w-40 opacity-10" />
-      </div>
+
 
       <div className="relative z-10 flex flex-grow flex-col">
 
@@ -370,5 +367,6 @@ export const ClassicA4Layout = ({
     </div>
   );
 };
+
 
 
