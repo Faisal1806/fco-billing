@@ -1,0 +1,8 @@
+
+@media print {
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-family: "Poppins", "Noto Nastaliq Urdu", serif;
+  }
+}

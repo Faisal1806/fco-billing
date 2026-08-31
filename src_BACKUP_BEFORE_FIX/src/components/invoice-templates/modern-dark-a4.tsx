@@ -1,0 +1,146 @@
+
+import { Logo } from "@/components/logo";
+import BusinessCardQR from "@/components/BusinessCardQR";
+import { Separator } from "@/components/ui/separator";
+
+export const ModernDarkA4Layout = ({ billData, pageUrl }: { billData: any, pageUrl: string }) => {
+    const { 
+        sNo = '', 
+        date = '', 
+        date2 = '', 
+        customerName = '', 
+        watakNo = '', 
+        khata = '', 
+        entries = [], 
+        totals = { 
+            grossSale: 0, 
+            labour: 0, 
+            association: 0, 
+            security: 0, 
+            commissionAmount: 0,
+            securityCharges: 0,
+            postage: 8,
+            serviceCharges: 0,
+            totalExpenses: 0, 
+            netSale: 0,
+            totalQty: 0,
+            pattiQty: 0,
+            dabbaQty: 0
+        }, 
+        freight = 0 
+    } = billData || {};
+    
+    return (
+        <div className="w-[146mm] h-[208mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-[6mm] border border-green-700 flex flex-col relative font-serif overflow-hidden">
+            <div className="absolute inset-0 flex items-center justify-center z-0">
+                <Logo className="w-96 h-96 opacity-[0.02]" />
+            </div>
+             <div className="relative z-10 flex flex-col flex-grow">
+                <header className="bg-gradient-to-r from-green-500/80 to-teal-500/80 text-white p-4 rounded-xl shadow-lg">
+                    <div className="flex justify-between items-center">
+                        <div className="text-left text-sm font-bold flex items-center gap-2">
+                           <Logo className="h-8 w-8"/> F.Co
+                        </div>
+                        <div className="text-center">
+                            <h2 className="text-xl font-bold tracking-wider">FIRDOUS AHMAD & COMPANY</h2>
+                            <p className="mt-1 text-[10px] opacity-80">Fruit Merchants & Commission Agents</p>
+                            <p className="text-[8px] opacity-80">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
+                        </div>
+                        <div className="text-right text-sm font-bold flex items-center gap-2">
+                           F.Co <Logo className="h-8 w-8"/>
+                        </div>
+                    </div>
+                </header>
+
+                <main className="bg-gray-800/50 p-4 rounded-b-xl flex-grow mt-4">
+                    <div className="grid grid-cols-2 gap-4 border-b border-gray-700 pb-3 mb-3 text-sm">
+                        <div>
+                            <h2 className="font-semibold text-gray-400">Bill To: / <span className="font-urdu">بل بنام</span></h2>
+                            <p className="font-bold text-base text-white">{customerName}</p>
+                            {khata && <p className="text-gray-400">Khata: {khata}</p>}
+                        </div>
+                        <div className="text-right text-xs text-gray-400">
+                             <p><strong>Bill No:</strong> <span className="text-white font-mono">{sNo}</span></p>
+                             <p><strong>Date:</strong> <span className="text-white font-mono">{date ? new Date(date).toLocaleDateString('en-GB') : 'N/A'}</span></p>
+                             {date2 && <p><strong>Date 2:</strong> <span className="text-white font-mono">{new Date(date2).toLocaleDateString('en-GB')}</span></p>}
+                             <p><strong>Watak No:</strong> <span className="text-white font-mono">{watakNo}</span></p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-5 gap-6 text-xs">
+                        <div className="col-span-3">
+                            <table className="w-full">
+                                <thead className="text-gray-400 uppercase">
+                                    <tr className="border-b border-gray-700">
+                                        <th className="pb-2 text-left">Type</th>
+                                        <th className="pb-2 text-left">Variety</th>
+                                        <th className="pb-2 text-center">Qty</th>
+                                        <th className="pb-2 text-right">Rate</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {entries.map((entry: any, index: number) => (
+                                        <tr key={index} className="border-b border-gray-700/50">
+                                            <td className="py-2">{entry.type}</td>
+                                            <td className="py-2">{entry.variety}</td>
+                                            <td className="py-2 text-center font-mono">{entry.qty}</td>
+                                            <td className="py-2 text-right font-mono">{entry.isForwarded ? 'Forward' : `₹${(Number(entry.rate) || 0).toFixed(2)}`}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div className="col-span-2 border-l border-gray-700 pl-6">
+                            <h3 className="text-gray-400 uppercase font-semibold pb-2 border-b border-gray-700">Expenses</h3>
+                             <div className="space-y-2 mt-2">
+                                <div className="flex justify-between items-center"><span className="text-gray-400">Freight</span><span className="font-mono">₹{(freight || 0).toFixed(2)}</span></div>
+                                <div className="flex justify-between items-center"><span className="text-gray-400">Labour</span><span className="font-mono">₹{(totals?.labour || 0).toFixed(2)}</span></div>
+                                <div className="flex justify-between items-center"><span className="text-gray-400">Association</span><span className="font-mono">₹{(totals?.association || 0).toFixed(2)}</span></div>
+                                <div className="flex justify-between items-center"><span className="text-gray-400">Security</span><span className="font-mono">₹{(totals?.security || 0).toFixed(2)}</span></div>
+                                <div className="flex justify-between items-center font-semibold pt-1 border-t border-gray-700/50"><span className="text-gray-300">Commission</span><span className="font-mono">₹{(Number(totals?.commissionAmount ?? 0) || 0).toFixed(2)}</span></div>
+                                <div className="flex justify-between items-center font-semibold"><span className="text-gray-300">S. Charges</span><span className="font-mono">₹{(Number(totals?.securityCharges ?? totals?.serviceCharges ?? 0) || 0).toFixed(2)}</span></div>
+                                <div className="flex justify-between items-center font-semibold"><span className="text-gray-300">Postage</span><span className="font-mono">₹{(Number(totals?.postage ?? 8) || 8).toFixed(2)}</span></div>
+                                <div className="flex justify-between items-center font-bold text-base pt-1 border-t border-gray-700"><span className="text-gray-200">Total Expenses</span><span className="font-mono">₹{(totals?.totalExpenses || 0).toFixed(2)}</span></div>
+                                <div className="flex justify-between items-center font-bold text-lg text-green-400"><span className="text-gray-200">Net Sale</span><span className="font-mono">₹{(totals?.netSale || 0).toFixed(2)}</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-6 grid grid-cols-5 gap-6">
+                        <div className="col-span-3 text-xs">
+                             <p className="text-gray-400"><strong>Total Quantity:</strong> <span className="font-mono text-gray-300">{totals?.totalQty || 0} (Patti: {totals?.pattiQty || 0}, Dabba: {totals?.dabbaQty || 0})</span></p>
+                        </div>
+                         <div className="col-span-2 space-y-1 text-sm border-l border-gray-700 pl-6">
+                            <div className="flex justify-between items-center text-gray-400">
+                                <span>Gross Sale:</span>
+                                <span className="font-mono">₹{(totals?.grossSale || 0).toFixed(2)}</span>
+                             </div>
+                             <div className="flex justify-between items-center text-gray-400">
+                                <span>Total Expenses:</span>
+                                <span className="font-mono">- ₹{(totals?.totalExpenses || 0).toFixed(2)}</span>
+                            </div>
+                            <Separator className="my-2 bg-gray-600" />
+                             <div className="flex justify-between items-center text-lg font-bold text-green-400 pt-1">
+                                <span >Net Sale:</span>
+                                <span className="font-mono">₹{(totals?.netSale || 0).toFixed(2)}</span>
+                             </div>
+                        </div>
+                    </div>
+                </main>
+
+                <footer className="flex justify-between items-end mt-auto pt-4 border-t border-gray-700 text-xs">
+                    <div className="grid grid-cols-1">
+                        <BusinessCardQR size={92} />
+                    </div>
+                    <div className="text-right text-gray-400">
+                        <p className="font-signature text-3xl text-gray-200">Faisal</p>
+                        <p className="font-bold -mt-2">Sign. of Manager</p>
+                    </div>
+                </footer>
+            </div>
+        </div>
+    );
+};
+
+

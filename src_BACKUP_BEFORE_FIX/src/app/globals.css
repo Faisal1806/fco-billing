@@ -1,0 +1,126 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Noto+Nastaliq+Urdu:wght@400;600&family=Dancing+Script:wght@700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 5% 10%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 150 62% 31%; /* Deep Green #1E7F4F */
+    --primary-foreground: 0 0% 98%;
+    --secondary: 1 78% 55%; /* Mandi Red #E53935 */
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 150 62% 31%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 1 78% 55%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 150 62% 31%;
+    --radius: 1.5rem;
+
+    --star-background: hsl(var(--muted));
+  }
+
+  .dark {
+    --background: 230 25% 4%;
+    --foreground: 0 0% 100%;
+    --card: 230 25% 7%;
+    --card-foreground: 0 0% 100%;
+    --primary: 150 62% 31%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 1 78% 55%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 230 25% 15%;
+    --muted-foreground: 230 10% 70%;
+    --accent: 150 62% 31%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 1 78% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 230 25% 15%;
+    --input: 230 25% 15%;
+    --ring: 150 62% 31%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased selection:bg-primary/30;
+    font-family: 'Poppins', sans-serif;
+    background-attachment: fixed;
+  }
+  .font-urdu {
+    font-family: 'Noto Nastaliq Urdu', serif;
+  }
+  .font-signature {
+    font-family: 'Dancing Script', cursive;
+  }
+}
+
+@layer components {
+    .glass-panel {
+        @apply bg-card/40 backdrop-blur-2xl border border-white/10 shadow-2xl;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05), 0 20px 50px rgba(0, 0, 0, 0.3);
+    }
+    
+    .glass-panel-hover {
+        @apply transition-all duration-500 hover:bg-card/60 hover:border-primary/40 hover:shadow-primary/5;
+    }
+
+    .neon-glow-container:hover .neon-glow-icon {
+        color: hsl(var(--primary));
+        filter: drop-shadow(0 0 12px hsl(var(--primary)));
+    }
+
+    .btn-gradient-primary {
+        @apply bg-gradient-to-br from-[#1E7F4F] to-[#145a32] hover:from-[#23a06a] hover:to-[#1E7F4F] text-white shadow-xl shadow-green-900/20 transition-all duration-300 active:scale-95 rounded-2xl font-bold;
+    }
+
+    .btn-gradient-secondary {
+        @apply bg-gradient-to-br from-[#E53935] to-[#b71c1c] hover:from-[#ef5350] hover:to-[#E53935] text-white shadow-xl shadow-red-900/20 transition-all duration-300 active:scale-95 rounded-2xl font-bold;
+    }
+
+    .text-balance {
+        text-wrap: balance;
+    }
+
+    .cyber-border {
+        position: relative;
+    }
+    .cyber-border::after {
+        content: '';
+        position: absolute;
+        inset: -1px;
+        background: linear-gradient(45deg, transparent, rgba(30, 127, 79, 0.3), transparent);
+        z-index: -1;
+        border-radius: inherit;
+    }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-background;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-white/10 rounded-full border-2 border-solid border-background hover:bg-white/20 transition-colors;
+}
+
+@media print {
+  .print-area-a4, .print-area-thermal {
+    display: none;
+  }
+}
