@@ -7,11 +7,11 @@ interface PageHeaderProps {
     title: string;
     description: string;
     icon: React.ReactNode;
-    imageUrl: string;
+    imageUrl?: string;
     className?: string;
 }
 
-const PageHeader = ({ title, description, icon, imageUrl, className }: PageHeaderProps) => {
+const PageHeader = ({ title, description, icon, className }: PageHeaderProps) => {
     return (
         <motion.div 
             initial={{ opacity: 0, y: -30, filter: "blur(10px)" }}
@@ -22,16 +22,6 @@ const PageHeader = ({ title, description, icon, imageUrl, className }: PageHeade
                 className
             )}
         >
-            {/* Immersive Parallax Layer */}
-            <motion.div
-                initial={{ scale: 1.2, opacity: 0 }}
-                animate={{ scale: 1, opacity: 0.4 }}
-                transition={{ duration: 2 }}
-                className="absolute inset-0 bg-cover bg-center"
-                style={{ backgroundImage: `url(${imageUrl})` }}
-            />
-            
-            {/* Cinematic Gradient Overlays */}
             <div className="absolute inset-0 bg-gradient-to-r from-background via-background/90 to-transparent" />
             <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />
 
@@ -80,6 +70,9 @@ const PageHeader = ({ title, description, icon, imageUrl, className }: PageHeade
 };
 
 export default PageHeader;
+
+
+
 
 
 
