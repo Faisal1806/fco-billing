@@ -1,6 +1,8 @@
-import mongoose from 'mongoose';
+﻿import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_URI: string = process.env.MONGODB_URI || (() => {
+  throw new Error('MONGODB_URI is not defined');
+})();
 
 if (!MONGODB_URI) {
   throw new Error('MONGODB_URI is not defined');
@@ -29,13 +31,18 @@ export default async function connectDB() {
   }
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI!,  {
+    cached.promise = mongoose.connect(MONGODB_URI!, {
       dbName: process.env.MONGODB_DB || 'fco_billing',
       bufferCommands: false,
     });
   }
 
-  cached.conn = await cached.promise;
+  try {
+    cached.conn = await cached.promise;
+  } catch (error) {
+    cached.promise = null;
+    throw error;
+  }
 
   return cached.conn;
 }

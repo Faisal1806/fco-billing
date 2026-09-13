@@ -20,4 +20,3 @@ const FcoDocument: Model<IDocument> =
   mongoose.model<IDocument>('FcoDocument', DocumentSchema);
 
 export default FcoDocument;
-

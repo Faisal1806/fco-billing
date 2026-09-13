@@ -51,7 +51,7 @@ export function BillMakingTab() {
   const [date, setDate] = useState('');
   const [date2, setDate2] = useState('');
   const [freight, setFreight] = useState<number>(0);
-  const [postageInput, setPostageInput] = useState('0');
+  const [postageInput, setPostageInput] = useState('8');
   const [rows, setRows] = useState<Row[]>(initialRows);
   const [selectedReceiptNo, setSelectedReceiptNo] = useState('');
   const [quickEntry, setQuickEntry] = useState('');
@@ -326,7 +326,7 @@ export function BillMakingTab() {
     });
 
     const totalGrossSale = subtotal;
-    const resolvedPostage = postageInput === '' ? 0 : (Number(postageInput) || 0);
+    const resolvedPostage = Math.min(10, Math.max(0, postageInput === '' ? 8 : (Number(postageInput) || 0)));
     const invoiceTotals = calculateInvoiceTotals({
       grossSale: totalGrossSale,
       totalQty,
@@ -346,7 +346,7 @@ export function BillMakingTab() {
       totalGrossSale,
       commission: invoiceTotals.commissionAmount,
       commissionAmount: invoiceTotals.commissionAmount,
-      postage: Number(resolvedPostage.toFixed(2)),
+      postage: Math.round(resolvedPostage),
       serviceCharges: invoiceTotals.serviceCharges,
       securityCharges: invoiceTotals.securityCharges,
       labour: invoiceTotals.labour,
@@ -407,7 +407,7 @@ export function BillMakingTab() {
     setDate(watak.date);
     setDate2(watak.date2 || '');
     setFreight(watak.freight || 0);
-    setPostageInput(watak.totals?.postage !== undefined ? String(watak.totals.postage) : '0');
+    setPostageInput(watak.totals?.postage !== undefined ? String(watak.totals.postage) : '8');
     setRows(watak.entries.length > 0 ? watak.entries : initialRows);
     setSelectedReceiptNo(watak.linkedReceiptNo || '');
     setIsEditing(true);
@@ -481,7 +481,7 @@ export function BillMakingTab() {
         security: Number(totals.security.toFixed(2)),
         commissionAmount: Number(totals.commissionAmount.toFixed(2)),
         securityCharges: Number((totals.securityCharges ?? 0).toFixed(2)),
-        postage: Number((totals.postage ?? 0).toFixed(2)),
+        postage: Math.round(Math.min(10, Math.max(0, totals.postage ?? 8))),
         serviceCharges: Number((totals.serviceCharges ?? 0).toFixed(2)),
 
         otherExpenses: 0,
@@ -843,8 +843,11 @@ export function BillMakingTab() {
                                 type="number"
                                 className="w-32 h-10 text-right rounded-xl bg-white/5 border-white/10 font-black text-accent"
                                 value={postageInput}
-                                onChange={e => setPostageInput(e.target.value)}
+                                onChange={e => { const value = e.target.value; if (value === '') { setPostageInput(''); return; } const numericValue = Math.min(10, Math.max(0, Number(value) || 0)); setPostageInput(String(numericValue)); }}
                                 disabled={formDisabled}
+                                min={0}
+                                max={10}
+                                step={1}
                                 placeholder="8"
                             />
                         </div>

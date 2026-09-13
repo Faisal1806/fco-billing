@@ -21,12 +21,12 @@ const toNumber = (value: unknown): number => {
 
 const formatINR = (value: unknown): string =>
     `₹${toNumber(value).toLocaleString('en-IN', {
-        maximumFractionDigits: 2,
+        maximumFractionDigits: 0,
     })}`;
 
 const formatNumber = (value: unknown): string =>
     toNumber(value).toLocaleString('en-IN', {
-        maximumFractionDigits: 2,
+        maximumFractionDigits: 0,
     });
 
 type DashboardStats = {
