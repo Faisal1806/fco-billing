@@ -41,7 +41,7 @@ export default function DocumentLayout({ type, children }: Props) {
 
         {/* Footer */}
         <div className="bg-white rounded-b-2xl shadow-lg w-full p-4 text-sm text-gray-500 text-center border-t print:shadow-none">
-          Your Satisfaction is Our Success â€“ Subject to Sopore Jurisdiction Only
+          Your Satisfaction is Our Success – Subject to Sopore Jurisdiction Only
         </div>
       </div>
     </div>

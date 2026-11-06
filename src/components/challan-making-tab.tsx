@@ -1,8 +1,7 @@
-
+﻿
 'use client';
 
 import * as React from 'react';
-import { useAppState } from '@/contexts/app-state-context';
 import {
   Card,
   CardContent,
@@ -18,7 +17,12 @@ import { PlusCircle, Trash2, FilePenLine, FilePlus, FileText, Search } from 'luc
 import { FaWhatsapp } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
-import { saveDocument, deleteDocument } from '@/lib/actions';
+import {
+  saveDocument,
+  deleteDocument,
+  getBusinessDocuments,
+} from '@/lib/actions';
+import { BUSINESS_YEAR, getDocumentDateYear } from '@/lib/document-utils';
 import { Badge } from '@/components/ui/badge';
 import { PartySelector } from './party-selector';
 
@@ -64,7 +68,7 @@ const normalizeForId = (name: string) => {
 }
 
 export function ChallanMakingTab() {
-  const { selectedYear } = useAppState();
+  const selectedYear = BUSINESS_YEAR;
   const { toast } = useToast();
   const router = useRouter();
 
@@ -93,48 +97,67 @@ export function ChallanMakingTab() {
     if (typeof window !== 'undefined') {
       setUserRole(localStorage.getItem('userRole'));
     }
-    fetchChallans();
+    void fetchChallans();
   }, []);
 
-  const fetchChallans = () => {
-    const challans = [];
-    let maxNo = 0;
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('challan-')) {
-            try {
-                const challan = JSON.parse(localStorage.getItem(key)!);
-                challans.push(challan);
-                const currentNo = parseInt(challan.challanNo, 10);
-                if (!isNaN(currentNo) && currentNo > maxNo) {
-                    maxNo = currentNo;
-                }
-            } catch(e) {
-                console.error("Failed to parse challan from local storage", e);
-            }
-        }
-    }
-    setSavedChallans(challans.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-    if (!isEditing) {
-        setDetails(prev => ({...prev, challanNo: (maxNo + 1).toString()}));
+  const fetchChallans = async () => {
+    try {
+      const result = await getBusinessDocuments('challan-');
+      if (!result.success || !Array.isArray(result.data)) {
+        throw new Error(result.error || 'Could not load delivery notes.');
+      }
+
+      const challans = result.data.filter(
+        challan => getDocumentDateYear(challan.date) === selectedYear
+      );
+      const maxNo = challans.reduce((max, challan) => {
+        const currentNo = Number.parseInt(String(challan.challanNo), 10);
+        return Number.isFinite(currentNo) ? Math.max(max, currentNo) : max;
+      }, 0);
+
+      setSavedChallans(
+        challans.sort(
+          (a, b) =>
+            new Date(b.date).getTime() - new Date(a.date).getTime()
+        )
+      );
+      if (!isEditing) {
+        setDetails(prev => ({ ...prev, challanNo: String(maxNo + 1) }));
+      }
+    } catch (error) {
+      console.error('Delivery note load failed:', error);
+      setSavedChallans([]);
+      toast({
+        variant: 'destructive',
+        title: 'Delivery Notes Failed',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Could not load delivery notes.',
+      });
     }
   };
   
   const yearlyCount = React.useMemo(() => {
     if(!savedChallans) return 0;
-    const currentYear = new Date().getFullYear();
-    return savedChallans.filter(c => c?.date ? Number(String(c.date).split(/[-/]/).find(p => p.length === 4)) === selectedYear : false).length;
-  }, [savedChallans]);
+    return savedChallans.filter(
+      challan => getDocumentDateYear(challan?.date) === selectedYear
+    ).length;
+  }, [savedChallans, selectedYear]);
 
   const filteredChallans = React.useMemo(() => {
-    if (!searchTerm) return savedChallans;
-    const lowerCaseSearch = searchTerm.toLowerCase();
-    return savedChallans.filter(challan => 
-      challan.challanNo?.toLowerCase().includes(lowerCaseSearch) ||
-      challan.toMs?.toLowerCase().includes(lowerCaseSearch) ||
-      challan.vehicleNo?.toLowerCase().includes(lowerCaseSearch)
+    const yearChallans = savedChallans.filter(
+      challan => getDocumentDateYear(challan?.date) === selectedYear
     );
-  }, [savedChallans, searchTerm]);
+    if (!searchTerm) return yearChallans;
+    const lowerCaseSearch = searchTerm.toLowerCase();
+    const normalize = (value: unknown) => String(value ?? '').trim().toLowerCase();
+    return yearChallans.filter(challan =>
+      normalize(challan.challanNo).includes(lowerCaseSearch) ||
+      normalize(challan.toMs).includes(lowerCaseSearch) ||
+      normalize(challan.vehicleNo).includes(lowerCaseSearch)
+    );
+  }, [savedChallans, searchTerm, selectedYear]);
 
 
   const handleEntryUpdate = (
@@ -192,18 +215,33 @@ export function ChallanMakingTab() {
         totalPetti,
         totalDabba,
         totalNugs
-    };
-    
-    localStorage.setItem(`challan-${challanId}`, JSON.stringify(challanData));
-    
-    toast({
-      title: isEditing ? 'Delivery Note Updated!' : 'Delivery Note Saved!',
-      description: 'The delivery note has been successfully saved.',
-      isSuccess: true,
-    });
+    };    try {
+      const result = await saveDocument(`challan-${challanId}`, challanData);
 
-    fetchChallans(); // Re-fetch to update list
-    setIsEditing(true);
+      if (!result.success) {
+        throw new Error(result.error || 'MongoDB save failed');
+      }
+
+      toast({
+        title: isEditing ? 'Delivery Note Updated' : 'Delivery Note Saved',
+        description: 'The delivery note has been saved locally and synced when MongoDB is available.',
+        isSuccess: true,
+      });
+
+      await fetchChallans();
+      setIsEditing(true);
+    } catch (error) {
+      console.error('Challan save failed:', error);
+
+      toast({
+        variant: 'destructive',
+        title: 'Delivery Note Save Failed',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'The delivery note could not be saved to MongoDB.',
+      });
+    }
   };
 
    const handleViewChallan = () => {
@@ -276,7 +314,7 @@ export function ChallanMakingTab() {
         });
     }
 
-    fetchChallans(); // Re-fetch to update list
+    void fetchChallans(); // Re-fetch to update list
     if (details.challanNo === challan.challanNo && details.toMs === challan.toMs) {
         resetForm();
     }
@@ -287,14 +325,14 @@ export function ChallanMakingTab() {
         <Card className="lg:col-span-2">
             <CardHeader>
                 <div className="flex justify-between items-center">
-                    <div className="text-sm font-bold">ðŸŽ F.Co</div>
+                    <div className="text-sm font-bold">ðŸ›ï¸ F.Co</div>
                     <div className="text-center flex-1">
                         <h2 className="text-2xl font-bold">F.Co - FIRDOUS AHMAD & COMPANY</h2>
                         <p className="text-sm text-muted-foreground">Fruit Merchants & Commission Agents</p>
                         <p className="text-xs text-muted-foreground">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
                          <p className="text-xs text-muted-foreground">Prop: Firdous Ahmad Lone (Nadihal) | Cell: 7006136330, 9797002164, 9906740921 | Email: lone07936@gmail.com</p>
                     </div>
-                    <div className="text-sm font-bold">ðŸŽ F.Co</div>
+                    <div className="text-sm font-bold">ðŸ›ï¸ F.Co</div>
                      {isEditing && (
                         <Button variant="outline" size="sm" onClick={resetForm} className="gap-2 ml-4">
                             <FilePlus className="h-4 w-4" />
@@ -440,7 +478,6 @@ export function ChallanMakingTab() {
     </div>
   );
 }
-
 
 
 

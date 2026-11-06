@@ -111,7 +111,7 @@ export default function DailyRateBoard() {
         msg += `*DAILY FRUIT RATES - ${dateStr}*\n\n`;
         
         entries.forEach(e => {
-            msg += `- ${e.name}: *â‚¹${e.minRate} - â‚¹${e.maxRate}*\n`;
+            msg += `- ${e.name}: *₹${e.minRate} - ₹${e.maxRate}*\n`;
         });
 
         msg += `\nThank you for your business\n`;
@@ -228,8 +228,8 @@ export default function DailyRateBoard() {
                             {entries.length > 0 ? entries.map((e, i) => (
                                 <TableRow key={e.id} className={i % 2 === 0 ? 'bg-green-50/50' : 'bg-white'}>
                                     <TableCell className="font-bold py-4 text-lg border-b border-green-100">{e.name}</TableCell>
-                                    <TableCell className="text-right py-4 font-mono text-xl border-b border-green-100">â‚¹{e.minRate}</TableCell>
-                                    <TableCell className="text-right py-4 font-mono text-xl font-bold border-b border-green-100">â‚¹{e.maxRate}</TableCell>
+                                    <TableCell className="text-right py-4 font-mono text-xl border-b border-green-100">₹{e.minRate}</TableCell>
+                                    <TableCell className="text-right py-4 font-mono text-xl font-bold border-b border-green-100">₹{e.maxRate}</TableCell>
                                     <TableCell className="print-hidden p-0 w-8 border-b border-green-100">
                                         <Button variant="ghost" size="icon" onClick={() => handleRemoveEntry(e.id)} className="h-8 w-8 opacity-0 group-hover:opacity-100">
                                             <Trash2 className="h-4 w-4 text-destructive" />

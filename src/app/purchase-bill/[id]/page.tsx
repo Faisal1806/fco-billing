@@ -25,16 +25,29 @@ interface PurchaseData {
     billNo: string;
     date: string;
     growerName: string;
-    entries: {
+    partyName?: string;
+    customerName?: string;
+    partyId?: string;
+    purchaseFor?: string;
+    entries?: {
         type: 'Patti' | 'Dabba';
         variety: string;
         qty: number;
         rate: number;
         total: number;
     }[];
-    totals: {
-      totalQty: number;
-      grandTotal: number;
+    items?: Array<{
+        type?: 'Patti' | 'Dabba';
+        variety?: string;
+        quantity?: number;
+        qty?: number;
+        rate?: number;
+        total?: number;
+        amount?: number;
+    }>;
+    totals?: {
+      totalQty?: number;
+      grandTotal?: number;
     }
 }
 
@@ -72,26 +85,49 @@ export default function PurchaseBillPage({ params }: { params: { id:string } }) 
 
             let data: PurchaseData | null = null;
             const docId = `purchase-${params.id}`;
+            const candidateKeys = [docId, `purchases/${docId}`];
+            let errorText: string | undefined;
 
-            const { success, data: firestoreData, error } = await getDocument(`purchases/${docId}`);
-
-            if (success && firestoreData) {
-                data = firestoreData as PurchaseData;
-            } else {
-                const localData = localStorage.getItem(docId);
-                if (localData) {
-                    data = JSON.parse(localData);
-                } else {
-                    toast({
-                        variant: "destructive",
-                        title: "Not Found",
-                        description: error || "The purchase bill was not found."
-                    });
+            for (const key of candidateKeys) {
+                const { success, data: firestoreData, error } = await getDocument(key);
+                if (success && firestoreData) {
+                    data = firestoreData as PurchaseData;
+                    break;
                 }
+                if (error && !errorText) {
+                    errorText = error;
+                }
+            }
+
+            if (!data) {
+                for (const key of candidateKeys) {
+                    const localData = localStorage.getItem(key);
+                    if (localData) {
+                        data = JSON.parse(localData);
+                        break;
+                    }
+                }
+            }
+
+            if (!data) {
+                toast({
+                    variant: "destructive",
+                    title: "Not Found",
+                    description: errorText || "The purchase bill was not found."
+                });
             }
             
             if (data) {
-                setBillData(data);
+                const normalizedData: PurchaseData = {
+                    ...data,
+                    growerName: String(
+                        data.growerName ||
+                        data.partyName ||
+                        data.customerName ||
+                        (data.purchaseFor === 'Own Stock (F.Co)' ? 'F.Co (Own Stock)' : '')
+                    ),
+                };
+                setBillData(normalizedData);
             }
             setLoading(false);
         };
@@ -194,34 +230,47 @@ export default function PurchaseBillPage({ params }: { params: { id:string } }) 
         );
     }
 
-    const { billNo, date, growerName, entries, totals } = billData;
-    
+    const rawEntries = Array.isArray(billData.entries)
+        ? billData.entries
+        : Array.isArray(billData.items)
+            ? billData.items.map((item) => ({
+                type: item.type === 'Dabba' ? 'Dabba' : 'Patti',
+                variety: String(item.variety || ''),
+                qty: Number(item.quantity ?? item.qty ?? 0),
+                rate: Number(item.rate ?? 0),
+                total: Number(item.total ?? item.amount ?? 0),
+            }))
+            : [];
+
+    const entries = rawEntries.filter((entry) => entry && typeof entry === 'object');
+    const totals = {
+        totalQty: Number(billData.totals?.totalQty ?? entries.reduce((sum, entry) => sum + (Number(entry.qty) || 0), 0)),
+        grandTotal: Number(billData.totals?.grandTotal ?? entries.reduce((sum, entry) => sum + (Number(entry.total) || 0), 0)),
+    };
+    const { billNo, date, growerName } = billData;
+    const formatCurrency = (value: number) => `₹${Number.isFinite(value) ? value.toFixed(2) : '0.00'}`;
+
     const A4Layout = () => (
-         <div className="w-[146mm] h-[208mm] overflow-hidden bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-2 border border-green-700 flex flex-col relative font-serif mx-auto">
-            {/* Watermark */}
-            <div className="absolute inset-0 flex items-center justify-center z-0">
-               <Logo className="w-40 h-40 opacity-10" />
-            </div>
-            
+         <div className="w-[146mm] h-[208mm] overflow-hidden bg-white text-black shadow-lg print:shadow-none p-2 border border-slate-200 flex flex-col relative font-serif mx-auto">
             <div className="relative z-10 flex flex-col flex-grow">
 
                 {/* Header */}
-                <header className="text-center border-b-2 border-green-700 pb-2">
+                <header className="text-center border-b border-slate-300 pb-2">
                     <div className="flex justify-between items-start">
-                         <div className="text-left text-sm font-bold">
-                            <p>ðŸŽ F.Co</p>
+                         <div className="text-left text-sm font-bold text-red-600">
+                            <p>🍎 F.Co</p>
                          </div>
                          <div className="flex-grow">
                             <div className="text-xs">
                                  <p className="font-bold">Prop: Firdous Ahmad Lone (Nadihal)</p>
                                  <p>Cell: 7006136330, 9797002164, 9906740921</p>
                             </div>
-                            <h1 className="text-2xl font-bold text-green-800">FIRDOUS AHMAD & COMPANY</h1>
+                            <h1 className="text-2xl font-bold text-slate-900">FIRDOUS AHMAD & COMPANY</h1>
                             <p className="text-xs font-semibold">Fruit Merchants & Commission Agents</p>
                             <p className="text-xs">SHED NO. 13, FUD NO. 12-A FRUIT MANDI APPLE TOWN, SOPORE - KMR.</p>
                          </div>
-                         <div className="text-right text-sm font-bold">
-                            <p>ðŸŽ F.Co</p>
+                         <div className="text-right text-sm font-bold text-red-600">
+                            <p>🍎 F.Co</p>
                          </div>
                     </div>
                 </header>
@@ -229,7 +278,7 @@ export default function PurchaseBillPage({ params }: { params: { id:string } }) 
                 {/* Bill Info */}
                 <section className="flex justify-between items-end my-2 text-sm">
                     <div className="flex-1">
-                        <p><strong>No:</strong> {billNo}</p>
+                        <p><strong>BILL NO.</strong> {billNo}</p>
                         <p><strong>M/s:</strong> {growerName}</p>
                     </div>
                     <div className="text-right">
@@ -241,22 +290,22 @@ export default function PurchaseBillPage({ params }: { params: { id:string } }) 
                 <main className="flex-grow">
                     <table className="w-full text-sm border-collapse">
                         <thead>
-                            <tr className="border-y-2 border-green-700">
-                                <th className="p-1 border-x border-green-600 w-[15%]">Petti</th>
-                                <th className="p-1 border-x border-green-600 w-[15%]">Dabba</th>
-                                <th className="p-1 border-x border-green-600">VARIETY</th>
-                                <th className="p-1 border-x border-green-600 w-[20%]">RATE</th>
-                                <th className="p-1 border-x border-green-600 w-[25%]">AMOUNT</th>
+                            <tr className="border-y border-slate-300">
+                                <th className="p-1 border-x border-slate-300 w-[15%]">Petti</th>
+                                <th className="p-1 border-x border-slate-300 w-[15%]">Dabba</th>
+                                <th className="p-1 border-x border-slate-300">VARIETY</th>
+                                <th className="p-1 border-x border-slate-300 w-[20%]">RATE</th>
+                                <th className="p-1 border-x border-slate-300 w-[25%]">AMOUNT</th>
                             </tr>
                         </thead>
                         <tbody>
                             {entries.map((entry, index) => (
-                                <tr key={index} className="border-b border-green-600/50 h-8">
-                                    <td className="p-1 border-x border-green-600 text-center">{entry.type === 'Patti' ? entry.qty : ''}</td>
-                                    <td className="p-1 border-x border-green-600 text-center">{entry.type === 'Dabba' ? entry.qty : ''}</td>
-                                    <td className="p-1 border-x border-green-600">{entry.variety}</td>
-                                    <td className="p-1 border-x border-green-600 text-right">â‚¹{entry.rate.toFixed(2)}</td>
-                                    <td className="p-1 border-x border-green-600 text-right font-semibold">â‚¹{entry.total.toFixed(2)}</td>
+                                <tr key={index} className="border-b border-slate-200 h-8">
+                                    <td className="p-1 border-x border-slate-200 text-center">{entry.type === 'Patti' ? entry.qty : ''}</td>
+                                    <td className="p-1 border-x border-slate-200 text-center">{entry.type === 'Dabba' ? entry.qty : ''}</td>
+                                    <td className="p-1 border-x border-slate-200">{entry.variety}</td>
+                                    <td className="p-1 border-x border-slate-200 text-right">{formatCurrency(entry.rate)}</td>
+                                    <td className="p-1 border-x border-slate-200 text-right font-semibold">{formatCurrency(entry.total)}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -266,10 +315,10 @@ export default function PurchaseBillPage({ params }: { params: { id:string } }) 
                 {/* Footer */}
                 <footer className="mt-auto pt-2 text-sm">
                     <div className="flex justify-end">
-                       <div className="w-2/5 p-1 border-2 border-green-700">
+                       <div className="w-2/5 p-1 border border-slate-300">
                           <div className="flex justify-between font-bold">
                             <span>G. Total</span>
-                            <span>â‚¹{totals.grandTotal.toFixed(2)}</span>
+                            <span>{formatCurrency(totals.grandTotal)}</span>
                           </div>
                        </div>
                     </div>
@@ -292,7 +341,7 @@ export default function PurchaseBillPage({ params }: { params: { id:string } }) 
     );
     
     const ThermalLayout = () => (
-        <div className="w-[80mm] bg-white text-black p-2 font-mono text-[10px] leading-tight">
+        <div className="w-[80mm] bg-white text-black p-2 font-mono text-[10px] leading-tight border border-slate-200">
             <header className="text-center space-y-1">
                 <h1 className="text-sm font-bold">Firdous Ahmad & Company</h1>
                 <p>Fruit Merchants & Commission Agents, Sopore</p>
@@ -324,7 +373,7 @@ export default function PurchaseBillPage({ params }: { params: { id:string } }) 
                 </tbody>
             </table>
              <div className="my-2 border-t-2 border-black pt-1 space-y-1 text-sm font-bold">
-                <div className="flex justify-between"><span>GRAND TOTAL:</span><span>â‚¹{totals.grandTotal.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span>GRAND TOTAL:</span><span>{formatCurrency(totals.grandTotal)}</span></div>
             </div>
             <footer className="text-center pt-2 border-t border-dashed border-black">
                 <p>Thank you for your business!</p>
@@ -347,7 +396,7 @@ export default function PurchaseBillPage({ params }: { params: { id:string } }) 
 
 
     return (
-        <div className="bg-gray-200 dark:bg-gray-900 font-sans print:bg-white flex flex-col md:flex-row gap-8 justify-center p-4 md:p-8">
+        <div className="bg-white font-sans print:bg-white flex flex-col md:flex-row gap-8 justify-center p-4 md:p-8">
             <style jsx global>{`
                 .font-signature {
                     font-family: 'Dancing Script', cursive;

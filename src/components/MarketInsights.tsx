@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BrainCircuit, TrendingUp, TrendingDown, Users, Apple, Wallet, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { getBusinessDocuments } from '@/lib/actions';
+import { getDocumentDateYear, parseDocumentDate } from '@/lib/document-utils';
 
 interface InsightData {
     averageRateThisWeek: number;
@@ -21,6 +23,8 @@ export const MarketInsights = ({ selectedYear }: { selectedYear: number }) => {
     const [insights, setInsights] = React.useState<InsightData | null>(null);
 
     React.useEffect(() => {
+      let cancelled = false;
+      const loadInsights = async () => {
         const today = new Date();
         const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
         const twoWeeksAgo = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000);
@@ -35,17 +39,18 @@ export const MarketInsights = ({ selectedYear }: { selectedYear: number }) => {
         const customerSales: { [key: string]: number } = {};
         let totalComm = 0;
 
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (!key?.startsWith('invoice-')) continue;
+        try {
+            const result = await getBusinessDocuments('invoice-');
+            if (!result.success || !Array.isArray(result.data)) {
+                throw new Error(result.error || 'Could not load invoice insights.');
+            }
 
-            try {
-                const data = JSON.parse(localStorage.getItem(key)!);
-                const date = new Date(data.date);
-                if (date.getFullYear() !== selectedYear) continue;
+            for (const data of result.data) {
+                const date = parseDocumentDate(data.date);
+                if (!date || getDocumentDateYear(data.date) !== selectedYear) continue;
 
                 // Rate Trends
-                data.entries.forEach((e: any) => {
+                (Array.isArray(data.entries) ? data.entries : []).forEach((e: any) => {
                     const rate = Number(e.rate) || 0;
                     const qty = Number(e.qty) || 0;
                     const variety = e.variety || 'Unknown';
@@ -72,7 +77,10 @@ export const MarketInsights = ({ selectedYear }: { selectedYear: number }) => {
                 // Commission Logic
                 totalComm += data.totals?.commissionAmount || 0;
 
-            } catch (e) { console.error(e); }
+            }
+        } catch (error) {
+            console.error('Market insights load failed:', error);
+            return;
         }
 
         const avgThis = thisWeekQty > 0 ? thisWeekSum / thisWeekQty : 0;
@@ -82,7 +90,7 @@ export const MarketInsights = ({ selectedYear }: { selectedYear: number }) => {
         const topV = Object.entries(varietyCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
         const topG = Object.entries(growerSales).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
 
-        setInsights({
+        if (!cancelled) setInsights({
             averageRateThisWeek: avgThis,
             averageRateLastWeek: avgLast,
             topVariety: topV,
@@ -91,6 +99,12 @@ export const MarketInsights = ({ selectedYear }: { selectedYear: number }) => {
             estCommission: totalComm,
             rateChange: change
         });
+      };
+
+      void loadInsights();
+      return () => {
+        cancelled = true;
+      };
     }, [selectedYear]);
 
     if (!insights) return null;
@@ -116,7 +130,7 @@ export const MarketInsights = ({ selectedYear }: { selectedYear: number }) => {
                     </div>
                     <div className="space-y-4">
                         <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Avg Rate (Last 7 Days)</p>
-                        <h3 className="text-4xl font-black text-white tracking-tighter">â‚¹{Math.round(insights.averageRateThisWeek).toLocaleString()}</h3>
+                        <h3 className="text-4xl font-black text-white tracking-tighter">₹{Math.round(insights.averageRateThisWeek).toLocaleString()}</h3>
                         <div className="flex items-center gap-2">
                             {insights.rateChange >= 0 ? (
                                 <div className="flex items-center text-emerald-400 font-black text-xs">
@@ -172,7 +186,7 @@ export const MarketInsights = ({ selectedYear }: { selectedYear: number }) => {
                     </div>
                     <div className="space-y-4">
                         <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Estimated Comm. Income</p>
-                        <h3 className="text-4xl font-black text-white tracking-tighter">â‚¹{Math.round(insights.estCommission).toLocaleString()}</h3>
+                        <h3 className="text-4xl font-black text-white tracking-tighter">₹{Math.round(insights.estCommission).toLocaleString()}</h3>
                         <p className="text-[10px] text-muted-foreground font-bold uppercase">Projected revenue based on current Mandi mandates.</p>
                     </div>
                 </motion.div>
@@ -196,6 +210,5 @@ export const MarketInsights = ({ selectedYear }: { selectedYear: number }) => {
         </section>
     );
 };
-
 
 

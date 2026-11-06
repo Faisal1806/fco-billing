@@ -1,4 +1,4 @@
-
+﻿
 'use client'
 
 import * as React from 'react';
@@ -15,6 +15,7 @@ import { ModernLightA4Layout } from "@/components/invoice-templates/modern-light
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { getDocument } from "@/lib/actions";
+import { unwrapSharedStorageValue } from '@/lib/document-utils';
 import { normalizeInvoiceData } from '@/lib/commission';
 import { usePrintOrientation } from '@/components/print-orientation-provider';
 import { PrintOrientationSelector } from '@/components/print-orientation-selector';
@@ -86,24 +87,34 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             setLoading(true);
 
             let data: BillData | null = null;
-            const localData = localStorage.getItem(`invoice-${params.id}`);
-            if (localData) {
+
+            const { success, data: cloudData, error } = await getDocument(`invoice-${params.id}`);
+
+            if (success && cloudData) {
+                const normalizedData =
+                    unwrapSharedStorageValue(cloudData);
+
+                if (
+                    normalizedData &&
+                    typeof normalizedData === 'object' &&
+                    !Array.isArray(normalizedData)
+                ) {
+                    data = normalizedData as BillData;
+                }
+
                 try {
-                    data = JSON.parse(localData) as BillData;
+                    if (data) {
+                        localStorage.setItem(`invoice-${params.id}`, JSON.stringify(data));
+                    }
                 } catch (e) {
-                    toast({ variant: "destructive", title: "Local Data Corrupted" });
+                    console.warn("Could not update invoice local cache:", e);
                 }
             } else {
-                const { success, data: firestoreData, error } = await getDocument(`bills/${params.id}`);
-                if (success && firestoreData) {
-                    data = firestoreData as BillData;
-                } else {
-                     toast({
-                        variant: "destructive",
-                        title: "Invoice Not Found",
-                        description: error || "The invoice may not exist on this device or in the cloud."
-                    });
-                }
+                toast({
+                    variant: "destructive",
+                    title: "Invoice Load Failed",
+                    description: error || "The invoice could not be loaded from MongoDB."
+                });
             }
 
 
@@ -408,5 +419,4 @@ const handleDownloadPdf = async () => {
         </div>
     );
 }
-
 

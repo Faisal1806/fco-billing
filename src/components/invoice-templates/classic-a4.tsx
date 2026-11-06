@@ -40,7 +40,7 @@ export const ClassicA4Layout = ({
 
   const money = (value: unknown) => {
     const number = Number(value) || 0;
-    return `₹${number.toFixed(2)}`;
+    return `${number.toFixed(2)}`;
   };
 
   const formatDate = (value: string) => {

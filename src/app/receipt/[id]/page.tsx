@@ -1,4 +1,4 @@
-
+﻿
 'use client'
 
 import { useEffect, useState, useRef } from "react";
@@ -15,6 +15,7 @@ import jsPDF from 'jspdf';
 import QRCode from 'qrcode.react';
 import { useSearchParams } from "next/navigation";
 import { getDocument } from "@/lib/actions";
+import { unwrapSharedStorageValue } from "@/lib/document-utils";
 import { motion } from 'framer-motion';
 import { usePrintOrientation } from '@/components/print-orientation-provider';
 import { PrintOrientationSelector } from '@/components/print-orientation-selector';
@@ -69,30 +70,40 @@ export default function PaymentPage({ params }: { params: { id: string } }) {
 
             let data: ReceiptData | null = null;
             const docId = `receipt-${params.id}`;
-            
-            if (isPublicView) {
-                // getDocument expects a single document path string
-                const { success, data: firestoreData, error } = await getDocument(`receipts/${params.id}`);
-                if (success && firestoreData) {
-                    data = firestoreData as ReceiptData;
+
+            try {
+                // Use the same MongoDB document key as the receipt save logic.
+                const { success, data: remoteData, error } = await getDocument(docId);
+
+                if (success && remoteData) {
+                    const normalizedData =
+                        unwrapSharedStorageValue(remoteData);
+
+                    if (
+                        normalizedData &&
+                        typeof normalizedData === 'object' &&
+                        !Array.isArray(normalizedData)
+                    ) {
+                        data = normalizedData as ReceiptData;
+                    }
                 } else {
-                    toast({ variant: "destructive", title: "Not Found", description: error });
+                    toast({
+                        variant: "destructive",
+                        title: "Receipt Load Failed",
+                        description: error || "This receipt could not be loaded from the database."
+                    });
                 }
-            } else {
-                const storedReceipt = localStorage.getItem(docId);
-                if (storedReceipt) {
-                    data = JSON.parse(storedReceipt);
-                }
+            } catch (error) {
+                toast({
+                    variant: "destructive",
+                    title: "Receipt Load Failed",
+                    description: error instanceof Error
+                        ? error.message
+                        : "This receipt could not be loaded from the database."
+                });
             }
-            
             if (data) {
                 setReceiptData(data);
-            } else if (!isPublicView) {
-                 toast({
-                    variant: "destructive",
-                    title: "Receipt Not Found",
-                    description: "The requested receipt was not found on this device."
-                });
             }
             
             setLoading(false);
@@ -202,12 +213,12 @@ export default function PaymentPage({ params }: { params: { id: string } }) {
     const A4Layout = () => (
          <div className="w-[105mm] min-h-[148mm] mx-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg print:shadow-none p-6 flex flex-col">
                 <header className="bg-gradient-to-r from-yellow-400 via-orange-500 to-amber-600 text-white p-4 rounded-t-xl shadow-md flex justify-between items-center">
-                    <div className="text-sm font-bold">ðŸŽ F.Co</div>
+                    <div className="text-sm font-bold">ðŸ›ï¸ F.Co</div>
                     <div className="text-center">
                         <h1 className="text-xl font-bold">GOODS RECEIPT</h1>
                         <p className="text-xs">FIRDOUS AHMAD & COMPANY</p>
                     </div>
-                    <div className="text-sm font-bold">ðŸŽ F.Co</div>
+                    <div className="text-sm font-bold">ðŸ›ï¸ F.Co</div>
                 </header>
                 <main className="flex-grow bg-white dark:bg-gray-800 p-4 -mt-2 rounded-b-xl shadow-lg">
                      <div className="grid grid-cols-2 gap-2 text-xs border-b pb-2 mb-2">
@@ -384,4 +395,3 @@ export default function PaymentPage({ params }: { params: { id: string } }) {
 }
 
     
-

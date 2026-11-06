@@ -1,8 +1,7 @@
-
+﻿
 'use client';
 
 import * as React from 'react';
-import { useAppState } from '@/contexts/app-state-context';
 import {
   Card,
   CardContent,
@@ -20,7 +19,26 @@ import { FaWhatsapp } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { PartySelector } from './party-selector';
+import {
+  saveDocument,
+  getBusinessDocuments,
+  getDocument,
+  deleteDocument,
+} from '@/lib/actions';
+import {
+  formatDocumentDate,
+  getDocumentDateYear,
+  parseDocumentDate,
+  unwrapSharedStorageValue,
+} from '@/lib/document-utils';
 
 
 type ReceiptEntry = {
@@ -82,7 +100,7 @@ const ReceiptEntryRow = ({
 const SUCCESS_SOUND_URL = 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3';
 
 export function ReceiptMakingTab() {
-  const { selectedYear } = useAppState();
+  const selectedYear = 2026;
   const { toast } = useToast();
   const router = useRouter();
 
@@ -118,38 +136,98 @@ export function ReceiptMakingTab() {
     fetchReceipts();
   }, []);
 
-  const fetchReceipts = () => {
-    let maxNo = 0;
-    const receipts = [];
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('receipt-')) {
-            const receipt = JSON.parse(localStorage.getItem(key)!);
-            receipts.push(receipt);
-            const currentNo = parseInt(receipt.no, 10);
-            if (!isNaN(currentNo) && currentNo > maxNo) {
-                maxNo = currentNo;
-            }
+const fetchReceipts = async () => {
+  try {
+    const result = await getBusinessDocuments('receipt-');
+
+    if (!result.success) {
+      throw new Error(result.error || 'Unable to load receipts from MongoDB');
+    }
+
+    const documents = Array.isArray(result.data) ? result.data : [];
+
+    const receipts = documents
+      .map((item: any) => {
+        if (!item || typeof item !== 'object') return null;
+
+        const storedReceipt =
+          item.value && typeof item.value === 'object'
+            ? item.value
+            : item;
+        const receipt = unwrapSharedStorageValue(storedReceipt);
+
+        const key = String(item.key ?? item.id ?? '');
+
+        if (
+          !key.startsWith('receipt-') ||
+          !receipt ||
+          typeof receipt !== 'object' ||
+          Array.isArray(receipt)
+        ) {
+          return null;
         }
-    }
-    setSavedReceipts(receipts.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+
+        return receipt as Record<string, any>;
+      })
+      .filter(
+        (receipt: any) =>
+          receipt &&
+          receipt.no !== undefined &&
+          receipt.no !== null
+      );
+
+    receipts.sort(
+      (a: any, b: any) =>
+        (parseDocumentDate(b.date)?.getTime() ?? 0) -
+        (parseDocumentDate(a.date)?.getTime() ?? 0)
+    );
+
+    setSavedReceipts(receipts);
+
+    const maxNo = receipts.reduce((max: number, receipt: any) => {
+      const number = Number.parseInt(String(receipt.no), 10);
+      return Number.isFinite(number) ? Math.max(max, number) : max;
+    }, 0);
+
     if (!isEditing) {
-        setReceiptDetails(prev => ({ ...prev, no: (maxNo + 1).toString() }));
+      setReceiptDetails(prev => ({
+        ...prev,
+        no: String(maxNo + 1),
+      }));
     }
-  };
-  
+  } catch (error) {
+    setSavedReceipts([]);
+    console.error('Receipt list load failed:', error);
+
+    toast({
+      variant: 'destructive',
+      title: 'Receipt List Failed',
+      description:
+        error instanceof Error
+          ? error.message
+          : 'Could not load receipts from MongoDB.',
+    });
+  }
+};
+
   const yearlyCount = React.useMemo(() => {
-    if(!savedReceipts) return 0;
-    const currentYear = new Date().getFullYear();
-    return savedReceipts.filter(r => r?.date ? Number(String(r.date).split(/[-/]/).find(p => p.length === 4)) === selectedYear : false).length;
+    return savedReceipts.filter(
+      receipt => getDocumentDateYear(receipt?.date) === selectedYear
+    ).length;
   }, [savedReceipts]);
 
+  const availableYears = [selectedYear];
+
   const filteredReceipts = React.useMemo(() => {
-    if (!searchTerm) return savedReceipts;
+    const yearReceipts = savedReceipts.filter(
+      receipt => getDocumentDateYear(receipt?.date) === selectedYear
+    );
+    if (!searchTerm) return yearReceipts;
     const lowerCaseSearch = searchTerm.toLowerCase();
-    return savedReceipts.filter(receipt => 
-      receipt.no?.toLowerCase().includes(lowerCaseSearch) ||
-      receipt.customerName?.toLowerCase().includes(lowerCaseSearch)
+    const normalize = (value: unknown) => String(value ?? '').trim().toLowerCase();
+    return yearReceipts.filter(receipt =>
+      normalize(receipt.no).includes(lowerCaseSearch) ||
+      normalize(receipt.customerName).includes(lowerCaseSearch)
     );
   }, [savedReceipts, searchTerm]);
 
@@ -201,19 +279,35 @@ export function ReceiptMakingTab() {
         ...receiptDetails,
         entries: entries.filter(e => e.khata || e.peti > 0 || e.daba > 0),
         totalNugs,
-    };
-    
-    localStorage.setItem(`receipt-${receiptId}`, JSON.stringify(receiptData));
-    playSuccessSound();
-    
-    fetchReceipts(); 
-    setIsEditing(true);
+    };    try {
+      const result = await saveDocument(`receipt-${receiptId}`, receiptData);
 
-    toast({
-      title: isEditing ? 'Receipt Updated!' : 'Receipt Saved!',
-      description: 'The goods receipt has been successfully indexed in the terminal.',
-      isSuccess: !isEditing, 
-    });
+      if (!result.success) {
+        throw new Error(result.error || 'MongoDB save failed');
+      }
+
+      playSuccessSound();
+
+      await fetchReceipts();
+      setIsEditing(true);
+
+      toast({
+        title: isEditing ? 'Receipt Updated' : 'Receipt Saved',
+        description: 'The goods receipt has been saved to MongoDB.',
+        isSuccess: true,
+      });
+    } catch (error) {
+      console.error('Receipt save failed:', error);
+
+      toast({
+        variant: 'destructive',
+        title: 'Receipt Save Failed',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'The receipt could not be saved to MongoDB.',
+      });
+    }
   };
 
   const handleViewReceipt = () => {
@@ -257,39 +351,69 @@ export function ReceiptMakingTab() {
   };
 
   const handleDeleteReceipt = async (receiptId: string) => {
-    if(userRole !== 'admin') {
-        toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to delete receipts.' });
-        return;
-    }
-
-    if(!window.confirm(`Are you sure you want to delete Receipt #${receiptId}? This action cannot be undone.`)) {
-        return;
-    }
-    
-    localStorage.removeItem(`receipt-${receiptId}`);
-
-    fetchReceipts();
+  if (userRole !== 'admin') {
     toast({
-        title: "Receipt Deleted",
-        description: `Receipt #${receiptId} has been successfully deleted.`
+      variant: 'destructive',
+      title: 'Permission Denied',
+      description: 'You do not have permission to delete receipts.',
     });
-    
-    if (receiptDetails.no === receiptId) {
-        resetForm();
+    return;
+  }
+
+  if (
+    !window.confirm(
+      `Are you sure you want to delete Receipt #${receiptId}? This action cannot be undone.`
+    )
+  ) {
+    return;
+  }
+
+  try {
+    const result = await deleteDocument(`receipt-${receiptId}`);
+
+    if (!result.success) {
+      throw new Error(result.error || 'MongoDB deletion failed');
     }
-  };
+
+    if (!result.deleted) {
+      throw new Error('Receipt was not found in MongoDB.');
+    }
+
+    await fetchReceipts();
+
+    toast({
+      title: 'Receipt Deleted',
+      description: `Receipt #${receiptId} has been deleted.`,
+    });
+
+    if (receiptDetails.no === receiptId) {
+      resetForm();
+    }
+  } catch (error) {
+    console.error('Receipt deletion failed:', error);
+
+    toast({
+      variant: 'destructive',
+      title: 'Delete Failed',
+      description:
+        error instanceof Error
+          ? error.message
+          : 'The receipt could not be deleted from MongoDB.',
+    });
+  }
+};
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
         <Card className="md:col-span-2 glass-panel rounded-[3rem] border-white/5 overflow-hidden shadow-2xl">
             <CardHeader className="bg-white/[0.03] border-b border-white/5 p-10">
                 <div className="flex justify-between items-center">
-                    <div className="text-[10px] font-black uppercase tracking-[0.4em] text-accent">ðŸŽ F.Co INWARD</div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.4em] text-accent">ðŸ›ï¸ F.Co INWARD</div>
                     <div className="text-center flex-1">
                         <h2 className="text-2xl font-black tracking-tighter uppercase">GOODS RECEIPT TERMINAL</h2>
                         <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] mt-1">Inward Logistics Manifest Engine</p>
                     </div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.4em] text-accent">F.Co INWARD ðŸŽ</div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.4em] text-accent">F.Co INWARD ðŸ›ï¸</div>
                 </div>
             </CardHeader>
             <CardContent className="p-10 space-y-10">
@@ -386,8 +510,26 @@ export function ReceiptMakingTab() {
                  <div className="flex items-center justify-between gap-6">
                     <div>
                         <CardTitle className="text-xl font-black tracking-tight uppercase">Recent Loads</CardTitle>
-                        <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1">{yearlyCount} Manifests Active</p>
+                        <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1">{yearlyCount} Manifests Active In {selectedYear}</p>
                     </div>
+                    <div className="flex items-center gap-2">
+                    <Select
+                        value={String(selectedYear)}
+                    >
+                        <SelectTrigger
+                            aria-label="Receipt year"
+                            className="w-28 h-12 rounded-xl bg-white/5 border-white/10 font-bold text-[10px]"
+                        >
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {availableYears.map(year => (
+                                <SelectItem key={year} value={String(year)}>
+                                    {year}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                     <div className="relative w-full max-w-[150px]">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
                         <Input 
@@ -396,6 +538,7 @@ export function ReceiptMakingTab() {
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
+                    </div>
                     </div>
                 </div>
             </CardHeader>
@@ -407,7 +550,7 @@ export function ReceiptMakingTab() {
                                 <div>
                                     <p className="text-xs font-black text-accent uppercase tracking-widest mb-1">Receipt #{receipt.no}</p>
                                     <p className="text-base font-black tracking-tight text-white">{receipt.customerName}</p>
-                                    <p className="text-[9px] text-muted-foreground font-black uppercase tracking-widest mt-1">{new Date(receipt.date).toLocaleDateString()}</p>
+                                    <p className="text-[9px] text-muted-foreground font-black uppercase tracking-widest mt-1">{formatDocumentDate(receipt.date)}</p>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Button variant="ghost" size="icon" onClick={() => loadReceiptForEdit(receipt)} className="h-10 w-10 rounded-xl hover:bg-white/10">
@@ -421,10 +564,10 @@ export function ReceiptMakingTab() {
                                 </div>
                             </div>
                         ))}
-                         {savedReceipts.length === 0 && (
+                         {filteredReceipts.length === 0 && (
                             <div className="p-20 text-center space-y-4 opacity-30">
                                 <Search className="h-12 w-12 mx-auto" />
-                                <p className="text-xs font-black uppercase tracking-widest">No inward manifests indexed</p>
+                                <p className="text-xs font-black uppercase tracking-widest">No inward manifests indexed for {selectedYear}</p>
                             </div>
                          )}
                     </div>
@@ -434,9 +577,5 @@ export function ReceiptMakingTab() {
     </div>
   );
 }
-
-
-
-
 
 

@@ -23,6 +23,7 @@ import '@/app/khata/print.css';
 import { motion } from 'framer-motion';
 import { usePrintOrientation } from '@/components/print-orientation-provider';
 import { PrintOrientationSelector } from '@/components/print-orientation-selector';
+import { BUSINESS_YEAR, getDocumentDateYear } from '@/lib/document-utils';
 
 
 type CreditRow = {
@@ -70,7 +71,10 @@ export default function StatementOfAccountPage() {
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key?.startsWith('manual-statement-')) {
-                    statements.push(JSON.parse(localStorage.getItem(key)!));
+                    const statement = JSON.parse(localStorage.getItem(key)!);
+                    if (getDocumentDateYear(statement.statementDate) === BUSINESS_YEAR) {
+                        statements.push(statement);
+                    }
                 }
             }
             // Sort by statement number (sNo)
@@ -188,7 +192,7 @@ export default function StatementOfAccountPage() {
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor('#DC2626');
-    doc.text('ðŸŽ', margin, margin);
+    doc.text('🏛️', margin, margin);
     doc.setTextColor('#000000');
     doc.setFont('helvetica', 'normal');
     doc.text('Mob: 9797002164, 7006136330, 9906740921', pageWidth - margin, margin, { align: 'right' });
@@ -210,7 +214,7 @@ export default function StatementOfAccountPage() {
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor('#DC2626');
-    doc.text('ðŸŽ', pageWidth - margin - 5, margin);
+    doc.text('🏛️', pageWidth - margin - 5, margin);
     doc.setTextColor('#000000');
 
     // Bill Info
@@ -290,11 +294,11 @@ export default function StatementOfAccountPage() {
     
     const summaryX = margin;
     doc.text('Total Credit (Jama):', summaryX, finalY);
-    doc.text(`â‚¹${creditTotals.netSale.toLocaleString('en-IN')}`, pageWidth - margin, finalY, { align: 'right' });
+    doc.text(`₹${creditTotals.netSale.toLocaleString('en-IN')}`, pageWidth - margin, finalY, { align: 'right' });
     
     finalY += 7;
     doc.text('Total Debit (Kharch):', summaryX, finalY);
-    doc.text(`- â‚¹${totalDebit.toLocaleString('en-IN')}`, pageWidth - margin, finalY, { align: 'right' });
+    doc.text(`- ₹${totalDebit.toLocaleString('en-IN')}`, pageWidth - margin, finalY, { align: 'right' });
 
     finalY += 2;
     doc.setLineWidth(0.5);
@@ -305,11 +309,11 @@ export default function StatementOfAccountPage() {
     if (finalBalance >= 0) {
         doc.setTextColor('#16A34A'); // Green
         doc.text('Jama (Profit/Credit):', summaryX, finalY);
-        doc.text(`â‚¹${finalBalance.toLocaleString('en-IN')}`, pageWidth - margin, finalY, { align: 'right' });
+        doc.text(`₹${finalBalance.toLocaleString('en-IN')}`, pageWidth - margin, finalY, { align: 'right' });
     } else {
         doc.setTextColor('#DC2626'); // Red
         doc.text('Baqaya (Balance/Due):', summaryX, finalY);
-        doc.text(`â‚¹${Math.abs(finalBalance).toLocaleString('en-IN')}`, pageWidth - margin, finalY, { align: 'right' });
+        doc.text(`₹${Math.abs(finalBalance).toLocaleString('en-IN')}`, pageWidth - margin, finalY, { align: 'right' });
     }
     
     // Signature
@@ -361,9 +365,9 @@ export default function StatementOfAccountPage() {
             <Card className="bg-card/70 backdrop-blur-sm">
                 <CardHeader className="text-center">
                     <div className="text-muted-foreground flex justify-between items-center text-xs">
-                        <span className="font-bold text-lg text-red-600">ðŸŽ</span>
+                        <span className="font-bold text-lg text-red-600">🏛️</span>
                         <span>Mob: 9797002164, 7006136330, 9906740921</span>
-                        <span className="font-bold text-lg text-red-600">ðŸŽ</span>
+                        <span className="font-bold text-lg text-red-600">🏛️</span>
                     </div>
                     <div className="flex items-center justify-center gap-4 py-2">
                         <div className="text-center">
@@ -426,9 +430,9 @@ export default function StatementOfAccountPage() {
                             <span className="col-span-2">Total:</span>
                             <span className="col-span-1">{creditTotals.peti}</span>
                             <span className="col-span-1">{creditTotals.daba}</span>
-                            <span className="col-span-1 text-right pr-1">â‚¹{creditTotals.grossSale.toLocaleString('en-IN')}</span>
-                            <span className="col-span-1 text-right pr-1">â‚¹{creditTotals.expenses.toLocaleString('en-IN')}</span>
-                            <span className="col-span-1 text-right pr-1">â‚¹{creditTotals.netSale.toLocaleString('en-IN')}</span>
+                            <span className="col-span-1 text-right pr-1">₹{creditTotals.grossSale.toLocaleString('en-IN')}</span>
+                            <span className="col-span-1 text-right pr-1">₹{creditTotals.expenses.toLocaleString('en-IN')}</span>
+                            <span className="col-span-1 text-right pr-1">₹{creditTotals.netSale.toLocaleString('en-IN')}</span>
                             </div>
                         </div>
                         {/* DEBIT Column */}
@@ -453,7 +457,7 @@ export default function StatementOfAccountPage() {
                             <Separator className="my-2 bg-border" />
                             <div className="grid grid-cols-3 gap-1 font-bold text-sm">
                                 <span className="col-span-2 text-right pr-1">Total Debit (Kharch):</span>
-                                <span className="col-span-1 text-right pr-1">â‚¹{totalDebit.toLocaleString('en-IN')}</span>
+                                <span className="col-span-1 text-right pr-1">₹{totalDebit.toLocaleString('en-IN')}</span>
                             </div>
                         </div>
                     </div>
@@ -463,25 +467,25 @@ export default function StatementOfAccountPage() {
                         <div className="space-y-2 text-right pr-4 border-r-2 border-border">
                             <div className="flex justify-end items-center font-bold">
                                 <span className="text-lg">Total Credit (Jama):</span>
-                                <span className="ml-4 text-lg">â‚¹{creditTotals.netSale.toLocaleString('en-IN')}</span>
+                                <span className="ml-4 text-lg">₹{creditTotals.netSale.toLocaleString('en-IN')}</span>
                             </div>
                         </div>
                         <div className="space-y-2 text-right pr-4">
                             <div className="flex justify-end items-center font-bold">
                                 <span className="text-lg">Total Debit (Kharch):</span>
-                                <span className="ml-4 text-lg">â‚¹{totalDebit.toLocaleString('en-IN')}</span>
+                                <span className="ml-4 text-lg">₹{totalDebit.toLocaleString('en-IN')}</span>
                             </div>
                             <Separator className="bg-border" />
                             <div className="flex justify-end items-center font-bold">
                                 {finalBalance >= 0 ? (
                                     <>
                                     <span className="text-lg text-green-500">Jama (Profit/Credit):</span>
-                                    <span className="ml-4 text-lg text-green-500">â‚¹{finalBalance.toLocaleString('en-IN')}</span>
+                                    <span className="ml-4 text-lg text-green-500">₹{finalBalance.toLocaleString('en-IN')}</span>
                                     </>
                                 ) : (
                                     <>
                                     <span className="text-lg text-red-500">Baqaya (Balance/Due):</span>
-                                    <span className="ml-4 text-lg text-red-500">â‚¹{Math.abs(finalBalance).toLocaleString('en-IN')}</span>
+                                    <span className="ml-4 text-lg text-red-500">₹{Math.abs(finalBalance).toLocaleString('en-IN')}</span>
                                     </>
                                 )}
                             </div>
@@ -550,6 +554,5 @@ export default function StatementOfAccountPage() {
     </div>
   );
 }
-
 
 

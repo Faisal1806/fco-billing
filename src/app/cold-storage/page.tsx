@@ -25,10 +25,11 @@ import {
 import { PlusCircle, ArrowUpRightFromSquare, Snowflake, Loader2, Trash2, Edit, Box } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { saveDocument, deleteDocument, sendPushNotification, getDocuments } from '@/lib/actions';
+import { saveDocument, deleteDocument, sendPushNotification, getDocuments, getBusinessDocuments } from '@/lib/actions';
 import { motion } from 'framer-motion';
 import { Progress } from '@/components/ui/progress';
 import PageHeader from '@/components/PageHeader';
+import { formatDocumentDate, parseDocumentDate } from '@/lib/document-utils';
 
 const STORAGE_PREFIX = 'cs-';
 
@@ -77,7 +78,7 @@ const StockCard = ({ item, onReleaseClick, onDeleteClick, userRole }: { item: St
                         <Progress value={stockPercentage} className="h-3" />
                          {isLowStock && <div className="absolute inset-0 bg-red-500/50 rounded-full animate-pulse"></div>}
                     </div>
-                    <p className="text-xs text-muted-foreground">Date In: {new Date(item.dateIn).toLocaleDateString('en-GB')}</p>
+                    <p className="text-xs text-muted-foreground">Date In: {formatDocumentDate(item.dateIn)}</p>
                 </div>
             </CardContent>
             <CardFooter className="bg-black/10 p-2 flex justify-end">
@@ -114,30 +115,55 @@ export default function ColdStoragePage() {
     }
      const fetchTokens = async () => {
         const { success, data } = await getDocuments('fcm-tokens', true);
-        if (success && data) {
-            setFcmTokens(data.map(t => t.token));
+        if (success && Array.isArray(data)) {
+            setFcmTokens(data.map((t: any) => t.token));
         }
     };
     fetchTokens();
   }, []);
 
-  const fetchStock = () => {
+  const fetchStock = async () => {
     setIsLoading(true);
-    if(typeof window !== 'undefined') {
-        const items = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if(key?.startsWith(STORAGE_PREFIX)) {
-                items.push(JSON.parse(localStorage.getItem(key)!));
-            }
+    try {
+        const result = await getBusinessDocuments([STORAGE_PREFIX, 'cold-storage/']);
+        if (!result.success || !Array.isArray(result.data)) {
+            throw new Error(result.error || 'Could not load cold storage stock.');
         }
-        setStock(items.sort((a,b) => new Date(b.dateIn).getTime() - new Date(a.dateIn).getTime()));
+        const itemsById = new Map<string, StockItem>();
+        result.data.forEach(item => {
+            const id = String(item.id || item.key || '');
+            if (!id) return;
+            itemsById.set(id, {
+                ...item,
+                id,
+                dateIn: String(item.dateIn || ''),
+                grower: String(item.grower || ''),
+                item: String(item.item || ''),
+                chamberNo: String(item.chamberNo || ''),
+                initialQty: Number(item.initialQty) || 0,
+                currentQty: Number(item.currentQty) || 0,
+                outwardHistory: Array.isArray(item.outwardHistory) ? item.outwardHistory : [],
+            } as StockItem);
+        });
+        setStock(Array.from(itemsById.values()).sort((a,b) =>
+            (parseDocumentDate(b.dateIn)?.getTime() ?? 0) -
+            (parseDocumentDate(a.dateIn)?.getTime() ?? 0)
+        ));
+    } catch (error) {
+        console.error('Cold storage load failed:', error);
+        setStock([]);
+        toast({
+            variant: 'destructive',
+            title: 'Cold Storage Failed',
+            description: error instanceof Error ? error.message : 'Could not load cold storage stock.',
+        });
+    } finally {
+        setIsLoading(false);
     }
-    setIsLoading(false);
   }
 
   useEffect(() => {
-    fetchStock();
+    void fetchStock();
   }, [toast]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -182,7 +208,7 @@ export default function ColdStoragePage() {
         toast({ variant: 'destructive', title: 'Sync Failed', description: 'Saved locally, but failed to sync to cloud.' });
     }
 
-    fetchStock();
+    void fetchStock();
     setIsDialogOpen(false);
     setFormState(emptyFormState);
   };
@@ -225,7 +251,7 @@ export default function ColdStoragePage() {
         toast({variant: 'destructive', title: 'Sync Failed', description: 'Updated locally, but failed to sync to cloud.'});
     }
 
-    fetchStock();
+    void fetchStock();
     setIsOutwardDialogOpen(false);
     setSelectedStock(null);
     setOutwardQty(0);
@@ -248,7 +274,7 @@ export default function ColdStoragePage() {
         toast({variant: 'destructive', title: 'Cloud Delete Failed', description: 'Record removed locally.'});
     }
     
-    fetchStock();
+    void fetchStock();
   }
 
   return (
@@ -350,6 +376,4 @@ export default function ColdStoragePage() {
     </div>
   );
 }
-
-
 

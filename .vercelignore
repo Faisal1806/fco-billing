@@ -1,0 +1,10 @@
+﻿node_modules
+.next
+.vercel
+.git
+backups
+src_backup
+*_backup
+.env
+.env.*
+!.env.example

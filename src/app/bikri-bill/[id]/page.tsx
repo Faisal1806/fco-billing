@@ -194,8 +194,8 @@ export default function BikriBillPage({ params }: { params: { id: string } }) {
                             <TableCell>{e.type}</TableCell>
                             <TableCell>{e.variety}</TableCell>
                             <TableCell className="text-right">{e.qty}</TableCell>
-                            <TableCell className="text-right">â‚¹{e.rate.toFixed(2)}</TableCell>
-                            <TableCell className="text-right font-medium">â‚¹{e.total.toFixed(2)}</TableCell>
+                            <TableCell className="text-right">₹{e.rate.toFixed(2)}</TableCell>
+                            <TableCell className="text-right font-medium">₹{e.total.toFixed(2)}</TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
@@ -236,35 +236,35 @@ export default function BikriBillPage({ params }: { params: { id: string } }) {
                      <div>
                         <h3 className="text-lg font-bold mb-2">Expenses</h3>
                         <div className="space-y-2 text-sm">
-                            <div className="flex justify-between"><span>Calculated Freight:</span> <span className="font-mono">â‚¹{billData.calculation.calculatedFreight.toFixed(2)}</span></div>
-                            <div className="flex justify-between"><span>Commission:</span> <span className="font-mono">â‚¹{billData.calculation.commissionAmount.toFixed(2)}</span></div>
-                            <div className="flex justify-between"><span>S. Charges:</span> <span className="font-mono">â‚¹{(billData.calculation.securityCharges ?? billData.calculation.serviceCharges ?? 0).toFixed(2)}</span></div>
-                            <div className="flex justify-between"><span>Other Expenses:</span> <span className="font-mono">â‚¹{billData.expenses.toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span>Calculated Freight:</span> <span className="font-mono">₹{billData.calculation.calculatedFreight.toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span>Commission:</span> <span className="font-mono">₹{billData.calculation.commissionAmount.toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span>S. Charges:</span> <span className="font-mono">₹{(billData.calculation.securityCharges ?? billData.calculation.serviceCharges ?? 0).toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span>Other Expenses:</span> <span className="font-mono">₹{billData.expenses.toFixed(2)}</span></div>
                             <Separator className="my-1"/>
-                            <div className="flex justify-between font-bold"><span>Total Expenses:</span> <span className="font-mono">â‚¹{billData.calculation.totalExpenses.toFixed(2)}</span></div>
+                            <div className="flex justify-between font-bold"><span>Total Expenses:</span> <span className="font-mono">₹{billData.calculation.totalExpenses.toFixed(2)}</span></div>
                         </div>
                     </div>
                      <div className="bg-muted p-4 rounded-lg">
                         <h3 className="text-lg font-bold mb-2">Final Calculation</h3>
                         {isForwarding ? (
                             <div className="space-y-2 text-sm">
-                                <div className="flex justify-between"><span>Gross Sale:</span> <span className="font-mono font-medium">â‚¹{billData.calculation.grossSale.toFixed(2)}</span></div>
-                                <div className="flex justify-between text-destructive"><span>(-) Total Expenses:</span> <span className="font-mono font-medium">â‚¹{billData.calculation.totalExpenses.toFixed(2)}</span></div>
+                                <div className="flex justify-between"><span>Gross Sale:</span> <span className="font-mono font-medium">₹{billData.calculation.grossSale.toFixed(2)}</span></div>
+                                <div className="flex justify-between text-destructive"><span>(-) Total Expenses:</span> <span className="font-mono font-medium">₹{billData.calculation.totalExpenses.toFixed(2)}</span></div>
                                 <Separator className="my-2" />
                                 <div className="flex justify-between font-bold text-xl text-green-600">
                                     <span>Net Sale Payable:</span>
-                                    <span>â‚¹{billData.calculation.netSalePayableToGrower?.toFixed(2) || '0.00'}</span>
+                                    <span>₹{billData.calculation.netSalePayableToGrower?.toFixed(2) || '0.00'}</span>
                                 </div>
                             </div>
                         ) : (
                              <div className="space-y-2 text-sm">
-                                <div className="flex justify-between"><span>Gross Sale:</span> <span className="font-mono font-medium">â‚¹{billData.calculation.grossSale.toFixed(2)}</span></div>
-                                <div className="flex justify-between text-destructive"><span>(-) Total Purchase Cost:</span> <span className="font-mono font-medium">â‚¹{billData.calculation.totalPurchaseCost.toFixed(2)}</span></div>
-                                <div className="flex justify-between text-destructive"><span>(-) Total Expenses:</span> <span className="font-mono font-medium">â‚¹{billData.calculation.totalExpenses.toFixed(2)}</span></div>
+                                <div className="flex justify-between"><span>Gross Sale:</span> <span className="font-mono font-medium">₹{billData.calculation.grossSale.toFixed(2)}</span></div>
+                                <div className="flex justify-between text-destructive"><span>(-) Total Purchase Cost:</span> <span className="font-mono font-medium">₹{billData.calculation.totalPurchaseCost.toFixed(2)}</span></div>
+                                <div className="flex justify-between text-destructive"><span>(-) Total Expenses:</span> <span className="font-mono font-medium">₹{billData.calculation.totalExpenses.toFixed(2)}</span></div>
                                 <Separator className="my-2" />
                                 <div className={`flex justify-between font-bold text-xl ${billData.calculation.netProfitOrLoss && billData.calculation.netProfitOrLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                     <span>Net Profit / Loss:</span>
-                                    <span>â‚¹{billData.calculation.netProfitOrLoss?.toFixed(2) || '0.00'}</span>
+                                    <span>₹{billData.calculation.netProfitOrLoss?.toFixed(2) || '0.00'}</span>
                                 </div>
                             </div>
                         )}

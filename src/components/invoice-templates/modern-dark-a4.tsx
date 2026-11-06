@@ -84,7 +84,7 @@ export const ModernDarkA4Layout = ({ billData, pageUrl }: { billData: any, pageU
                                             <td className="py-2">{entry.type}</td>
                                             <td className="py-2">{entry.variety}</td>
                                             <td className="py-2 text-center font-mono">{entry.qty}</td>
-                                            <td className="py-2 text-right font-mono">{entry.isForwarded ? 'Forward' : `₹${(Number(entry.rate) || 0).toFixed(2)}`}</td>
+                                            <td className="py-2 text-right font-mono">{entry.isForwarded ? 'Forward' : `${(Number(entry.rate) || 0).toFixed(2)}`}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -94,15 +94,15 @@ export const ModernDarkA4Layout = ({ billData, pageUrl }: { billData: any, pageU
                         <div className="col-span-2 border-l border-gray-700 pl-6">
                             <h3 className="text-gray-400 uppercase font-semibold pb-2 border-b border-gray-700">Expenses</h3>
                              <div className="space-y-2 mt-2">
-                                <div className="flex justify-between items-center"><span className="text-gray-400">Freight</span><span className="font-mono">₹{(freight || 0).toFixed(2)}</span></div>
-                                <div className="flex justify-between items-center"><span className="text-gray-400">Labour</span><span className="font-mono">₹{(totals?.labour || 0).toFixed(2)}</span></div>
-                                <div className="flex justify-between items-center"><span className="text-gray-400">Association</span><span className="font-mono">₹{(totals?.association || 0).toFixed(2)}</span></div>
-                                <div className="flex justify-between items-center"><span className="text-gray-400">Security</span><span className="font-mono">₹{(totals?.security || 0).toFixed(2)}</span></div>
-                                <div className="flex justify-between items-center font-semibold pt-1 border-t border-gray-700/50"><span className="text-gray-300">Commission</span><span className="font-mono">₹{(Number(totals?.commissionAmount ?? 0) || 0).toFixed(2)}</span></div>
-                                <div className="flex justify-between items-center font-semibold"><span className="text-gray-300">S. Charges</span><span className="font-mono">₹{(Number(totals?.securityCharges ?? totals?.serviceCharges ?? 0) || 0).toFixed(2)}</span></div>
-                                <div className="flex justify-between items-center font-semibold"><span className="text-gray-300">Postage</span><span className="font-mono">₹{(Number(totals?.postage ?? 8) || 8).toFixed(2)}</span></div>
-                                <div className="flex justify-between items-center font-bold text-base pt-1 border-t border-gray-700"><span className="text-gray-200">Total Expenses</span><span className="font-mono">₹{(totals?.totalExpenses || 0).toFixed(2)}</span></div>
-                                <div className="flex justify-between items-center font-bold text-lg text-green-400"><span className="text-gray-200">Net Sale</span><span className="font-mono">₹{(totals?.netSale || 0).toFixed(2)}</span></div>
+                                <div className="flex justify-between items-center"><span className="text-gray-400">Freight</span><span className="font-mono">{(freight || 0).toFixed(2)}</span></div>
+                                <div className="flex justify-between items-center"><span className="text-gray-400">Labour</span><span className="font-mono">{(totals?.labour || 0).toFixed(2)}</span></div>
+                                <div className="flex justify-between items-center"><span className="text-gray-400">Association</span><span className="font-mono">{(totals?.association || 0).toFixed(2)}</span></div>
+                                <div className="flex justify-between items-center"><span className="text-gray-400">Security</span><span className="font-mono">{(totals?.security || 0).toFixed(2)}</span></div>
+                                <div className="flex justify-between items-center font-semibold pt-1 border-t border-gray-700/50"><span className="text-gray-300">Commission</span><span className="font-mono">{(Number(totals?.commissionAmount ?? 0) || 0).toFixed(2)}</span></div>
+                                <div className="flex justify-between items-center font-semibold"><span className="text-gray-300">S. Charges</span><span className="font-mono">{(Number(totals?.securityCharges ?? totals?.serviceCharges ?? 0) || 0).toFixed(2)}</span></div>
+                                <div className="flex justify-between items-center font-semibold"><span className="text-gray-300">Postage</span><span className="font-mono">{(Number(totals?.postage ?? 8) || 8).toFixed(2)}</span></div>
+                                <div className="flex justify-between items-center font-bold text-base pt-1 border-t border-gray-700"><span className="text-gray-200">Total Expenses</span><span className="font-mono">{(totals?.totalExpenses || 0).toFixed(2)}</span></div>
+                                <div className="flex justify-between items-center font-bold text-lg text-green-400"><span className="text-gray-200">Net Sale</span><span className="font-mono">{(totals?.netSale || 0).toFixed(2)}</span></div>
                             </div>
                         </div>
                     </div>
@@ -114,16 +114,16 @@ export const ModernDarkA4Layout = ({ billData, pageUrl }: { billData: any, pageU
                          <div className="col-span-2 space-y-1 text-sm border-l border-gray-700 pl-6">
                             <div className="flex justify-between items-center text-gray-400">
                                 <span>Gross Sale:</span>
-                                <span className="font-mono">₹{(totals?.grossSale || 0).toFixed(2)}</span>
+                                <span className="font-mono">{(totals?.grossSale || 0).toFixed(2)}</span>
                              </div>
                              <div className="flex justify-between items-center text-gray-400">
                                 <span>Total Expenses:</span>
-                                <span className="font-mono">- ₹{(totals?.totalExpenses || 0).toFixed(2)}</span>
+                                <span className="font-mono">- {(totals?.totalExpenses || 0).toFixed(2)}</span>
                             </div>
                             <Separator className="my-2 bg-gray-600" />
                              <div className="flex justify-between items-center text-lg font-bold text-green-400 pt-1">
                                 <span >Net Sale:</span>
-                                <span className="font-mono">₹{(totals?.netSale || 0).toFixed(2)}</span>
+                                <span className="font-mono">{(totals?.netSale || 0).toFixed(2)}</span>
                              </div>
                         </div>
                     </div>

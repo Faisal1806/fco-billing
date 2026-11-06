@@ -26,12 +26,14 @@ import { PlusCircle, Trash2, Banknote, Loader2, Gift, ArrowLeftRight, PiggyBank 
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { PartySelector } from '@/components/party-selector';
-import { saveDocument, deleteDocument, sendPushNotification, getDocuments } from '@/lib/actions';
+import { saveDocument, deleteDocument, sendPushNotification, getDocuments, getBusinessDocuments } from '@/lib/actions';
+import { BUSINESS_YEAR, formatDocumentDate, getDocumentDateYear, parseDocumentDate } from '@/lib/document-utils';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import PageHeader from '@/components/PageHeader';
 
 const STORAGE_PREFIX = 'advance-';
+const ADVANCE_PREFIXES = [STORAGE_PREFIX, 'advances/'];
 
 type AdvanceEntry = {
     id: string;
@@ -94,26 +96,47 @@ export default function AdvancesPage() {
         fetchTokens();
     }, []);
 
-    const fetchEntries = () => {
+    const fetchEntries = async () => {
         setIsLoading(true);
-        if(typeof window !== 'undefined') {
-            const items: AdvanceEntry[] = [];
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key?.startsWith(STORAGE_PREFIX)) {
-                    const raw = localStorage.getItem(key);
-                    if (raw) {
-                      items.push(JSON.parse(raw));
-                    }
-                }
+        try {
+            const result = await getBusinessDocuments(ADVANCE_PREFIXES);
+            if (!result.success || !Array.isArray(result.data)) {
+                throw new Error(result.error || 'Could not load advances and payments.');
             }
-             setEntries(items.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+
+            const byId = new Map<string, AdvanceEntry>();
+            result.data
+                .filter(item => getDocumentDateYear(item.date) === BUSINESS_YEAR)
+                .forEach(item => {
+                    const id = String(item.id || item.key || '');
+                    if (!id) return;
+                    byId.set(id, {
+                        ...item,
+                        id,
+                        date: String(item.date || ''),
+                        partyName: String(item.partyName || ''),
+                        amount: Number(item.amount) || 0,
+                    } as AdvanceEntry);
+                });
+            setEntries(Array.from(byId.values()).sort((a,b) =>
+                (parseDocumentDate(b.date)?.getTime() ?? 0) -
+                (parseDocumentDate(a.date)?.getTime() ?? 0)
+            ));
+        } catch (error) {
+            console.error('Advance and payment load failed:', error);
+            setEntries([]);
+            toast({
+                variant: 'destructive',
+                title: 'Advances & Payments Failed',
+                description: error instanceof Error ? error.message : 'Could not load advances and payments.',
+            });
+        } finally {
+            setIsLoading(false);
         }
-        setIsLoading(false);
     };
 
     useEffect(() => {
-        fetchEntries();
+        void fetchEntries();
     }, []);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string, name: keyof typeof formState) => {
@@ -154,7 +177,7 @@ export default function AdvancesPage() {
             if (newEntry.type === 'Repayment Received' && fcmTokens.length > 0) {
                 await sendPushNotification({
                     title: 'Payment Received',
-                    body: `â‚¹${newEntry.amount.toLocaleString()} received from ${newEntry.partyName} â€“ Thank You!`,
+                    body: `₹${newEntry.amount.toLocaleString()} received from ${newEntry.partyName} – Thank You!`,
                     tokens: fcmTokens,
                 });
             }
@@ -167,7 +190,7 @@ export default function AdvancesPage() {
             });
         }
         
-        fetchEntries();
+        void fetchEntries();
         setFormState(emptyFormState); // Reset form
     };
     
@@ -187,7 +210,7 @@ export default function AdvancesPage() {
             toast({ variant: 'destructive', title: 'Cloud Delete Failed', description: 'Entry removed locally.'});
         }
         
-        fetchEntries();
+        void fetchEntries();
     };
 
     const totalAdvance = useMemo(() => {
@@ -294,7 +317,7 @@ export default function AdvancesPage() {
                 <TableBody>
                     {entries.map((entry) => (
                         <TableRow key={entry.id}>
-                            <TableCell>{new Date(entry.date).toLocaleDateString('en-GB')}</TableCell>
+                            <TableCell>{formatDocumentDate(entry.date)}</TableCell>
                             <TableCell className="font-medium">{entry.partyName}</TableCell>
                             <TableCell>
                                 <Badge variant={getBadgeVariant(entry.type)}>
@@ -304,7 +327,7 @@ export default function AdvancesPage() {
                             </TableCell>
                             <TableCell className="text-muted-foreground">{entry.notes}</TableCell>
                             <TableCell className={`text-right font-mono font-semibold ${entry.type === 'Advance Given' ? 'text-red-500' : 'text-green-500'}`}>
-                                {entry.type === 'Advance Given' ? '-' : '+'} â‚¹{entry.amount.toFixed(2)}
+                                {entry.type === 'Advance Given' ? '-' : '+'} ₹{entry.amount.toFixed(2)}
                             </TableCell>
                             {userRole === 'admin' && (
                                 <TableCell className="text-right">
@@ -319,7 +342,7 @@ export default function AdvancesPage() {
                 <TableFooter>
                     <TableRow className="font-bold text-lg bg-muted/50">
                         <TableCell colSpan={userRole === 'admin' ? 5 : 4} className="text-right">Net Outstanding Advance</TableCell>
-                        <TableCell className="text-right font-mono">â‚¹{totalAdvance.toFixed(2)}</TableCell>
+                        <TableCell className="text-right font-mono">₹{totalAdvance.toFixed(2)}</TableCell>
                         {userRole === 'admin' && <TableCell></TableCell>}
                     </TableRow>
                 </TableFooter>
@@ -335,6 +358,3 @@ export default function AdvancesPage() {
     </div>
   );
 }
-
-
-

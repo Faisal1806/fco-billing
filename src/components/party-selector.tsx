@@ -33,6 +33,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
+import { savePartyRecord } from '@/lib/party-sync';
 
 
 const PARTY_STORAGE_PREFIX = 'party-';
@@ -70,9 +71,9 @@ const defaultGrowers: { name: string, address: string }[] = [
     { name: 'Mohd. Arif Lone (Uffa)', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Subhan Parry', address: 'R/o Nadihal Bla.' },
     { name: 'GH. Mohiuddin Lone (Poltry)', address: 'R/o Nadihal Bla.' },
-    { name: 'Majoor Ahmad Lone Â®', address: 'R/o Nadihal Bla.' },
-    { name: 'Jaana Â® B/P', address: 'R/o Nadihal Bla.' },
-    { name: 'Rayees Rajab Â®', address: 'R/o Nadihal Bla.' },
+    { name: 'Majoor Ahmad Lone ®', address: 'R/o Nadihal Bla.' },
+    { name: 'Jaana ® B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Rayees Rajab ®', address: 'R/o Nadihal Bla.' },
     { name: 'Hilal Ahmad Wani', address: 'R/o Nadihal Bla.' },
     { name: 'Javid Ahmad Sheikh', address: 'R/o Shanoo, Mawer Handwara' },
     { name: 'Mohd. Ashraf wani', address: 'R/o Nadihal Bla.' },
@@ -132,11 +133,11 @@ const AddPartyDialog = ({ open, setOpen, onPartyAdded }: { open: boolean, setOpe
         }
 
         const id = `${PARTY_STORAGE_PREFIX}${getCanonicalName(formState.name)}`;
-        const newParty: Party = { id, ...formState };
+        const newParty: Party = { id, ...formState, name: getCanonicalName(formState.name) };
 
-        localStorage.setItem(id, JSON.stringify(newParty));
+        savePartyRecord(newParty);
         toast({ title: 'Party Added', description: `${newParty.name} has been saved.` });
-        
+
         onPartyAdded(newParty);
         setOpen(false);
         setFormState(emptyFormState);
@@ -196,9 +197,10 @@ interface PartySelectorProps {
     onChange: (value: string) => void;
     filter?: PartyTypeFilter;
     disabled?: boolean;
+    onPartySelect?: (party: Party) => void;
 }
 
-export function PartySelector({ value, onChange, filter = 'all', disabled = false }: PartySelectorProps) {
+export function PartySelector({ value, onChange, filter = 'all', disabled = false, onPartySelect }: PartySelectorProps) {
   const [open, setOpen] = React.useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false);
   const [parties, setParties] = React.useState<Party[]>([]);
@@ -249,11 +251,14 @@ export function PartySelector({ value, onChange, filter = 'all', disabled = fals
   const handlePartyAdded = (newParty: Party) => {
       fetchParties();
       onChange(newParty.name);
+      onPartySelect?.(newParty);
       trackRecentParty(newParty.name);
   };
 
   const handleSelect = (partyName: string) => {
       onChange(partyName);
+      const selectedParty = parties.find((party) => party.name === partyName);
+      if (selectedParty) onPartySelect?.(selectedParty);
       trackRecentParty(partyName);
       setOpen(false);
   }

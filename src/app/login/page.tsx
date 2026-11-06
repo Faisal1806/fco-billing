@@ -1,8 +1,8 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, KeyRound, Fingerprint, Lock, ChevronUp } from 'lucide-react';
+import { KeyRound, Fingerprint, Lock, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -27,31 +27,52 @@ export default function LoginScreen() {
       .catch(() => console.error("Could not load 3D logo animation."));
   }, []);
 
-  const handleLogin = () => {
-    const adminPass = 'fco';
-    if (password === adminPass) {
-        setIsLoggingIn(true);
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('userRole', 'admin');
-        }
-        
-        toast({ 
-            title: "ACCESS GRANTED", 
-            description: "SECURE SESSION ESTABLISHED", 
-            isSuccess: true 
-        });
-        
-        // Wait for the success animation and cinematic transition
-        setTimeout(() => {
-          router.push('/dashboard');
-        }, 2200);
-    } else {
-        toast({ 
-            variant: 'destructive', 
-            title: "AUTH FAILED", 
-            description: "INVALID SECURITY CREDENTIALS" 
-        });
-        setPassword('');
+  const handleLogin = async () => {
+    if (isLoggingIn) return;
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(
+          typeof result.error === 'string'
+            ? result.error
+            : 'Invalid security credentials.'
+        );
+      }
+
+      setIsLoggingIn(true);
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('userRole', 'admin');
+      }
+
+      toast({
+        title: "ACCESS GRANTED",
+        description: "SECURE SESSION ESTABLISHED"
+      });
+
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 2200);
+    } catch (error) {
+      setIsLoggingIn(false);
+
+      toast({
+        variant: 'destructive',
+        title: "AUTH FAILED",
+        description: error instanceof Error
+          ? error.message
+          : "Unable to complete login."
+      });
+
+      setPassword('');
     }
   };
 
@@ -208,10 +229,10 @@ export default function LoginScreen() {
                         transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                         className="h-24 w-24 border-[3px] border-accent/10 border-t-accent rounded-full" 
                     />
-                    <ShieldCheck className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-10 w-10 text-accent drop-shadow-[0_0_15px_rgba(34,197,94,0.5)]" />
+                    <div className="absolute top-1/2 left-1/2 h-10 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full border border-accent/30 bg-accent/10" />
                 </div>
                 <div className="text-center space-y-2">
-                    <p className="text-[11px] font-black uppercase tracking-[0.6em] text-accent animate-pulse">CREDENTIALS VERIFIED</p>
+                    <p className="text-[11px] font-black uppercase tracking-[0.6em] text-accent animate-pulse">AUTHENTICATING</p>
                     <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground">SYNCING MANDI LOGISTICS NODE...</p>
                 </div>
                 
@@ -230,6 +251,7 @@ export default function LoginScreen() {
     </div>
   )
 }
+
 
 
 

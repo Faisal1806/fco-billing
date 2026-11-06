@@ -13,7 +13,7 @@ export default function ThemeToggle() {
       className="bg-gray-700 px-3 py-1 rounded-md"
       onClick={() => setDark(!dark)}
     >
-      {dark ? "ðŸŒ™ Dark" : "â˜€ï¸ Light"}
+      {dark ? "🌙 Dark" : "☀️ Light"}
     </button>
   );
 }

@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { Loader2, FilePenLine, FilePlus, Globe, Percent, Minus, Package, ShoppingCart, Truck, FileText, Trash2, User, Repeat, ChevronsUpDown, Check, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { saveDocument, deleteDocument } from '@/lib/actions';
+import { getBusinessDocuments, saveDocument, deleteDocument } from '@/lib/actions';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PartySelector } from '@/components/party-selector';
 import { EntryTable, emptyRow, type EntryRow } from '@/components/outside-sales-entry-table';
@@ -32,8 +32,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import PageHeader from '@/components/PageHeader';
-import { useAppState } from '@/contexts/app-state-context';
 import { calculateCommissionDeductions } from '@/lib/commission';
+import { BUSINESS_YEAR, formatDocumentDate, getDocumentDateYear, parseDocumentDate } from '@/lib/document-utils';
 
 type BikriType = 'fcoStock' | 'growerForwarding';
 
@@ -42,7 +42,7 @@ const CS_STORAGE_PREFIX = 'cs-';
 export default function OutsideSalesPage() {
     const { toast } = useToast();
     const router = useRouter();
-    const { selectedYear, setSelectedYear } = useAppState();
+    const selectedYear = BUSINESS_YEAR;
 
     // Form State
     const [id, setId] = useState<string | null>(null); // To store the unique ID of the record being edited
@@ -72,7 +72,7 @@ export default function OutsideSalesPage() {
     const [userRole, setUserRole] = useState<string | null>(null);
     const [challanPopoverOpen, setChallanPopoverOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [availableYears, setAvailableYears] = React.useState<number[]>([]);
+    const availableYears = [BUSINESS_YEAR];
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -80,38 +80,44 @@ export default function OutsideSalesPage() {
         }
     }, []);
 
-    const fetchData = useCallback(() => {
+    const fetchData = useCallback(async () => {
         setIsLoading(true);
-        if (typeof window !== 'undefined') {
-            const allChallans = [];
-            const allBikris = [];
-            const years = new Set<number>([new Date().getFullYear()]);
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key?.startsWith('challan-')) {
-                    const challan = JSON.parse(localStorage.getItem(key)!);
-                    if (challan.date) years.add(new Date(challan.date).getFullYear());
-                    if (challan?.date ? Number(String(challan.date).split(/[-/]/).find(p => p.length === 4)) === selectedYear : false) {
-                      allChallans.push(challan);
-                    }
-                }
-                if (key?.startsWith('bikri-')) {
-                    const bikri = JSON.parse(localStorage.getItem(key)!);
-                    if (bikri.date) years.add(new Date(bikri.date).getFullYear());
-                     if (bikri?.date ? Number(String(bikri.date).split(/[-/]/).find(p => p.length === 4)) === selectedYear : false) {
-                      allBikris.push(bikri);
-                    }
-                }
+        try {
+            const [challanResult, bikriResult] = await Promise.all([
+                getBusinessDocuments('challan-'),
+                getBusinessDocuments('bikri-'),
+            ]);
+            if (!challanResult.success || !Array.isArray(challanResult.data)) {
+                throw new Error(challanResult.error || 'Could not load delivery notes.');
             }
-            setAvailableYears(Array.from(years).sort((a,b) => b-a));
-            setAvailableChallans(allChallans.sort((a,b) => (a.challanNo > b.challanNo) ? 1 : -1));
-            setSavedBikris(allBikris.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+            if (!bikriResult.success || !Array.isArray(bikriResult.data)) {
+                throw new Error(bikriResult.error || 'Could not load outside sales.');
+            }
+            const allChallans = challanResult.data
+                .filter(challan => getDocumentDateYear(challan.date) === selectedYear);
+            const allBikris = bikriResult.data
+                .filter(bikri => getDocumentDateYear(bikri.date) === selectedYear);
+            setAvailableChallans(allChallans.sort((a, b) => String(a.challanNo || '').localeCompare(String(b.challanNo || ''), undefined, { numeric: true })));
+            setSavedBikris(allBikris.sort((a, b) =>
+                (parseDocumentDate(b.date)?.getTime() ?? 0) -
+                (parseDocumentDate(a.date)?.getTime() ?? 0)
+            ));
+        } catch (error) {
+            console.error('Outside sales load failed:', error);
+            setAvailableChallans([]);
+            setSavedBikris([]);
+            toast({
+                variant: 'destructive',
+                title: 'Outside Sales Failed',
+                description: error instanceof Error ? error.message : 'Could not load outside sales.',
+            });
+        } finally {
+            setIsLoading(false);
         }
-        setIsLoading(false);
-    }, [selectedYear]);
+    }, [selectedYear, toast]);
     
     useEffect(() => {
-        fetchData();
+        void fetchData();
     }, [fetchData, selectedYear]);
 
     const handleClearAllBikris = () => {
@@ -129,7 +135,7 @@ export default function OutsideSalesPage() {
             });
             toast({ title: "Bikri Records Cleared", description: "You can now start fresh." });
         }
-        fetchData();
+        void fetchData();
         resetForm();
     };
 
@@ -137,11 +143,12 @@ export default function OutsideSalesPage() {
     const filteredBikris = useMemo(() => {
         if (!searchTerm) return savedBikris;
         const lowerCaseSearch = searchTerm.toLowerCase();
+        const normalize = (value: unknown) => String(value ?? '').trim().toLowerCase();
         return savedBikris.filter(bikri => 
-            bikri.market?.toLowerCase().includes(lowerCaseSearch) ||
-            bikri.growerName?.toLowerCase().includes(lowerCaseSearch) ||
-            bikri.challanNo?.toLowerCase().includes(lowerCaseSearch) ||
-            bikri.bikriNo?.toLowerCase().includes(lowerCaseSearch)
+            normalize(bikri.market).includes(lowerCaseSearch) ||
+            normalize(bikri.growerName).includes(lowerCaseSearch) ||
+            normalize(bikri.challanNo).includes(lowerCaseSearch) ||
+            normalize(bikri.bikriNo).includes(lowerCaseSearch)
         );
     }, [savedBikris, searchTerm]);
 
@@ -289,7 +296,7 @@ export default function OutsideSalesPage() {
         } catch (error) {
             toast({ variant: 'destructive', title: 'Sync Failed', description: 'Saved locally, but failed to sync to cloud.' });
         } finally {
-            fetchData();
+            void fetchData();
             setIsEditing(true);
             setIsSubmitting(false);
         }
@@ -339,7 +346,7 @@ export default function OutsideSalesPage() {
         } catch (error) {
             toast({variant: 'destructive', title: 'Cloud Delete Failed', description: 'Record removed locally.'});
         }
-        fetchData();
+        void fetchData();
          if (id === idToDelete) {
             resetForm();
         }
@@ -541,23 +548,23 @@ export default function OutsideSalesPage() {
                                 <h3 className="font-bold text-lg mb-2">{bikriType === 'fcoStock' ? 'Profit / Loss Calculation' : 'Net Sale Calculation'}</h3>
                                 {bikriType === 'fcoStock' ? (
                                     <div className="space-y-2 text-sm">
-                                        <div className="flex justify-between"><span>Gross Sale from Bikri:</span> <span className="font-medium">â‚¹{calculation.grossSale.toFixed(2)}</span></div>
-                                        <div className="flex justify-between text-destructive"><span>(-) Total Purchase Cost:</span> <span className="font-medium">â‚¹{calculation.totalPurchaseCost.toFixed(2)}</span></div>
-                                        <div className="flex justify-between text-destructive"><span>(-) Total Expenses:</span> <span className="font-medium">â‚¹{calculation.totalExpenses.toFixed(2)}</span></div>
+                                        <div className="flex justify-between"><span>Gross Sale from Bikri:</span> <span className="font-medium">₹{calculation.grossSale.toFixed(2)}</span></div>
+                                        <div className="flex justify-between text-destructive"><span>(-) Total Purchase Cost:</span> <span className="font-medium">₹{calculation.totalPurchaseCost.toFixed(2)}</span></div>
+                                        <div className="flex justify-between text-destructive"><span>(-) Total Expenses:</span> <span className="font-medium">₹{calculation.totalExpenses.toFixed(2)}</span></div>
                                         <Separator className="my-1"/>
                                         <div className={`flex justify-between font-bold text-lg ${calculation.netProfitOrLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                             <span>Net Profit / Loss:</span>
-                                            <span>â‚¹{calculation.netProfitOrLoss.toFixed(2)}</span>
+                                            <span>₹{calculation.netProfitOrLoss.toFixed(2)}</span>
                                         </div>
                                     </div>
                                 ) : (
                                     <div className="space-y-2 text-sm">
-                                        <div className="flex justify-between"><span>Gross Sale from Bikri:</span> <span className="font-medium">â‚¹{calculation.grossSale.toFixed(2)}</span></div>
-                                        <div className="flex justify-between text-destructive"><span>(-) Total Expenses:</span> <span className="font-medium">â‚¹{calculation.totalExpenses.toFixed(2)}</span></div>
+                                        <div className="flex justify-between"><span>Gross Sale from Bikri:</span> <span className="font-medium">₹{calculation.grossSale.toFixed(2)}</span></div>
+                                        <div className="flex justify-between text-destructive"><span>(-) Total Expenses:</span> <span className="font-medium">₹{calculation.totalExpenses.toFixed(2)}</span></div>
                                         <Separator className="my-1"/>
                                         <div className="flex justify-between font-bold text-lg text-green-600">
                                             <span>Net Sale Payable to Grower:</span>
-                                            <span>â‚¹{calculation.netSalePayableToGrower.toFixed(2)}</span>
+                                            <span>₹{calculation.netSalePayableToGrower.toFixed(2)}</span>
                                         </div>
                                     </div>
                                 )}
@@ -584,7 +591,7 @@ export default function OutsideSalesPage() {
                             <CardTitle className="flex items-center gap-2">
                                 Saved Bikris
                             </CardTitle>
-                             <Select onValueChange={(value) => setSelectedYear(Number(value))} defaultValue={String(selectedYear)}>
+                             <Select value={String(selectedYear)}>
                                 <SelectTrigger className="w-[180px]">
                                     <SelectValue placeholder="Select a year" />
                                 </SelectTrigger>
@@ -637,10 +644,10 @@ export default function OutsideSalesPage() {
                                                     <p className="font-semibold">{bikri.market || bikri.growerName}</p>
                                                     <p className="text-sm text-muted-foreground">Challan #{bikri.challanNo} &rarr; Bikri #{bikri.bikriNo}</p>
                                                     {bikri.bikriType === 'growerForwarding' ? (
-                                                        <p className="text-lg font-bold text-blue-600">Net Sale: â‚¹{bikri.calculation.netSalePayableToGrower.toFixed(2)}</p>
+                                                        <p className="text-lg font-bold text-blue-600">Net Sale: ₹{bikri.calculation.netSalePayableToGrower.toFixed(2)}</p>
                                                     ) : (
                                                         <p className={`text-lg font-bold ${bikri.calculation.netProfitOrLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                            {bikri.calculation.netProfitOrLoss >= 0 ? 'Profit' : 'Loss'}: â‚¹{Math.abs(bikri.calculation.netProfitOrLoss).toFixed(2)}
+                                                            {bikri.calculation.netProfitOrLoss >= 0 ? 'Profit' : 'Loss'}: ₹{Math.abs(bikri.calculation.netProfitOrLoss).toFixed(2)}
                                                         </p>
                                                     )}
                                                 </div>
@@ -649,7 +656,7 @@ export default function OutsideSalesPage() {
                                                         <Button variant="ghost" size="icon" onClick={() => loadBikriForEdit(bikri)}><FilePenLine className="h-4 w-4"/></Button>
                                                         {userRole === 'admin' && <Button variant="ghost" size="icon" onClick={() => handleDelete(bikri.id)}><Trash2 className="h-4 w-4 text-destructive"/></Button>}
                                                     </div>
-                                                    <p className="text-xs text-muted-foreground mt-2">{new Date(bikri.date).toLocaleDateString()}</p>
+                                                    <p className="text-xs text-muted-foreground mt-2">{formatDocumentDate(bikri.date)}</p>
                                                 </div>
                                             </div>
                                         </Card>
@@ -666,6 +673,4 @@ export default function OutsideSalesPage() {
 }
 
     
-
-
 

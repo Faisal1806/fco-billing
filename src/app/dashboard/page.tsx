@@ -9,10 +9,15 @@ import { TrendingUp, ShoppingCart, Users, DollarSign, Calendar, BarChart, FileTe
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SummaryCard } from '@/components/ui/summary-card';
-import { useAppState } from '@/contexts/app-state-context';
 import { Badge } from '@/components/ui/badge';
 import { MarketInsights } from '@/components/MarketInsights';
 import { Input } from '@/components/ui/input';
+import { getBusinessDocuments } from '@/lib/actions';
+import {
+  BUSINESS_YEAR,
+  getDocumentDateYear,
+  parseDocumentDate,
+} from '@/lib/document-utils';
 
 const toNumber = (value: unknown): number => {
     const parsed = Number(value);
@@ -20,7 +25,7 @@ const toNumber = (value: unknown): number => {
 };
 
 const formatINR = (value: unknown): string =>
-    `₹${toNumber(value).toLocaleString('en-IN', {
+    `${toNumber(value).toLocaleString('en-IN', {
         maximumFractionDigits: 0,
     })}`;
 
@@ -128,11 +133,11 @@ const containerVariants = {
 
 export default function DashboardPage() {
   const allNavItems = sidebarSections.flatMap(section => section.items);
-  const { selectedYear, setSelectedYear } = useAppState();
+  const selectedYear = BUSINESS_YEAR;
   const router = useRouter();
 
   const [isMounted, setIsMounted] = React.useState(false);
-  const [availableYears, setAvailableYears] = React.useState<number[]>([]);
+  const availableYears = [BUSINESS_YEAR];
   const [isSyncing, setIsSyncing] = React.useState(false);
   const [globalSearch, setGlobalSearch] = React.useState('');
   const [lastRefresh, setLastRefresh] = React.useState('—');
@@ -165,7 +170,7 @@ export default function DashboardPage() {
 
   const [topGrowers, setTopGrowers] = React.useState<{name: string, netSales: number}[]>([]);
 
-  const refreshDashboard = React.useCallback(() => {
+  const refreshDashboard = React.useCallback(async () => {
     if (typeof window === 'undefined') return;
 
     setIsSyncing(true);
@@ -199,39 +204,25 @@ export default function DashboardPage() {
     };
 
     const growerSales: Record<string, number> = {};
-    const years = new Set<number>([today.getFullYear()]);
-
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (!key) continue;
-
-      const rawValue = localStorage.getItem(key);
-      if (!rawValue) continue;
-
-      let data: any;
-      try {
-        data = JSON.parse(rawValue);
-      } catch {
-        continue;
+    try {
+      const result = await getBusinessDocuments(['invoice-', 'receipt-', 'challan-', 'advance-', 'advances/', 'expense-']);
+      if (!result.success || !Array.isArray(result.data)) {
+        throw new Error(result.error || 'Could not load dashboard records.');
       }
 
-      if (!data || typeof data !== 'object') continue;
+      for (const data of result.data) {
+        const key = String(data.key ?? data.id ?? '');
+        const dateObj = parseDocumentDate(data.date);
+        if (!key || !dateObj || getDocumentDateYear(data.date) !== selectedYear) {
+          continue;
+        }
 
-      const rawDate = data.date || data.createdAt || data.updatedAt;
-      if (!rawDate) continue;
+        const isToday =
+          dateObj.toISOString().slice(0, 10) ===
+          `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        const isCurrentMonthOfSelectedYear = dateObj.getUTCMonth() === currentMonth;
 
-      const dateObj = new Date(rawDate);
-      if (Number.isNaN(dateObj.getTime())) continue;
-
-      const dataYear = dateObj.getFullYear();
-      years.add(dataYear);
-
-      const isSelectedYear = dataYear === selectedYear;
-      const isToday = dateObj.toDateString() === today.toDateString();
-      const isCurrentMonthOfSelectedYear =
-        isSelectedYear && dateObj.getMonth() === currentMonth;
-
-      if (key.startsWith('invoice-')) {
+        if (key.startsWith('invoice-')) {
         const totals = data.totals || {};
 
         // IMPORTANT: force every stored value to Number().
@@ -250,10 +241,27 @@ export default function DashboardPage() {
           totals.totalExpenses ?? data.totalExpenses
         );
 
-        const pattiQty = toNumber(totals.pattiQty);
-        const dabbaQty = toNumber(totals.dabbaQty);
+        const invoiceEntries = Array.isArray(data.entries) ? data.entries : [];
 
-        if (isSelectedYear) {
+        const pattiQty = invoiceEntries.length > 0
+          ? invoiceEntries.reduce(
+              (sum: number, entry: any) =>
+                sum + (String(entry?.type ?? '').trim().toLowerCase() === 'patti'
+                  ? toNumber(entry?.qty)
+                  : 0),
+              0
+            )
+          : toNumber(totals.pattiQty ?? data.pattiQty);
+        const dabbaQty = invoiceEntries.length > 0
+          ? invoiceEntries.reduce(
+              (sum: number, entry: any) =>
+                sum + (String(entry?.type ?? '').trim().toLowerCase() === 'dabba'
+                  ? toNumber(entry?.qty)
+                  : 0),
+              0
+            )
+          : toNumber(totals.dabbaQty ?? data.dabbaQty);
+
           newStats.yearGrossSales += grossSale;
           newStats.yearNetSales += netSale;
           newStats.yearExpenses += expenses;
@@ -278,10 +286,9 @@ export default function DashboardPage() {
             growerSales[customerName] =
               (growerSales[customerName] || 0) + netSale;
           }
-        }
       }
 
-      if (key.startsWith('receipt-') && isSelectedYear) {
+        if (key.startsWith('receipt-')) {
         const entries = Array.isArray(data.entries) ? data.entries : [];
 
         const patti = entries.reduce(
@@ -298,33 +305,25 @@ export default function DashboardPage() {
         newStats.dabbaReceived += dabba;
       }
 
-      if (key.startsWith('challan-') && isSelectedYear) {
+        if (key.startsWith('challan-')) {
         newStats.pattiSent += toNumber(data.totalPetti ?? data.patti ?? data.totalPatti);
         newStats.dabbaSent += toNumber(data.totalDabba ?? data.dabba);
       }
 
-      if (key.startsWith('advance-') && isSelectedYear) {
+        if (key.startsWith('advance-') || key.startsWith('advances/')) {
         const amount = toNumber(data.amount);
         if (
           String(data.type || '').toLowerCase() === 'discount' &&
-          dateObj.getMonth() === currentMonth
+          dateObj.getUTCMonth() === currentMonth
         ) {
           newLoyaltyStats.redeemedMonth += amount;
         }
+        }
       }
-    }
-
-    const extractedYears = Array.from(years);
-    if (!extractedYears.includes(2025)) extractedYears.push(2025);
-    if (!extractedYears.includes(today.getFullYear())) {
-      extractedYears.push(today.getFullYear());
-    }
-
-    const sortedYears = extractedYears.sort((a, b) => b - a);
-    setAvailableYears(sortedYears);
-
-    if (!sortedYears.includes(selectedYear)) {
-      setSelectedYear(sortedYears[0] ?? today.getFullYear());
+    } catch (error) {
+      console.error('Dashboard record load failed:', error);
+      setIsSyncing(false);
+      return;
     }
 
     const totalNetSales = Object.values(growerSales).reduce(
@@ -363,7 +362,7 @@ export default function DashboardPage() {
     );
 
     window.setTimeout(() => setIsSyncing(false), 350);
-  }, [selectedYear, setSelectedYear]);
+  }, [selectedYear]);
 
   React.useEffect(() => {
     setIsMounted(true);
@@ -610,7 +609,7 @@ const outwardStock =
                 </div>
              </div>
              <div className="flex items-center gap-6">
-                <Select onValueChange={(value) => setSelectedYear(Number(value))} value={String(selectedYear)}>
+                <Select value={String(selectedYear)}>
                     <SelectTrigger className="w-[220px] h-16 bg-white/5 border-white/10 rounded-2xl font-black text-xs tracking-[0.2em] hover:bg-white/10 transition-all uppercase px-6">
                         <Calendar className="h-5 w-5 mr-4 text-accent" />
                         <SelectValue placeholder="YEAR" />
@@ -730,7 +729,7 @@ const outwardStock =
                                 </div>
                                 <p className="text-xl font-black text-white mb-3 group-hover:translate-x-3 transition-transform duration-700">{grower.name}</p>
                                 <h3 className="text-3xl font-black text-accent drop-shadow-[0_0_30px_rgba(34,197,94,0.5)]">
-                                    ₹{grower.netSales.toLocaleString()}
+                                    {grower.netSales.toLocaleString()}
                                 </h3>
                                 <div className="absolute bottom-0 left-0 h-1.5 w-0 bg-accent group-hover:w-full transition-all duration-1000" />
                             </motion.div>
@@ -742,5 +741,3 @@ const outwardStock =
     </motion.div>
   );
 }
-
-

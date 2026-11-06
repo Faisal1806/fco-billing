@@ -52,7 +52,7 @@ const InvoicePreview = ({ title, colors, children }: {
     </Card>
 );
 
-const MotionCard = motion(Card);
+const MotionCard = motion.create(Card);
 
 const accentColors = [
     { name: 'F.Co Emerald', value: '142 76% 45%', class: 'bg-[#22c55e]' },
@@ -93,6 +93,7 @@ export default function SettingsPage() {
 };
     const { toast } = useToast();
     const { theme, setTheme } = useTheme();
+    const [mounted, setMounted] = React.useState(false);
     const [invoiceStyle, setInvoiceStyle] = React.useState('classic');
     const [fcmTokens, setFcmTokens] = React.useState<any[]>([]);
     const [isSending, setIsSending] = React.useState(false);
@@ -101,7 +102,11 @@ export default function SettingsPage() {
     const [dailySummaryEnabled, setDailySummaryEnabled] = React.useState(true);
     const [activeAccent, setActiveAccent] = React.useState('142 76% 45%');
 
-   
+    React.useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    const safeThemeValue = mounted ? (theme ?? 'system') : 'system';
 
     React.useEffect(() => {
         const savedStyle = localStorage.getItem('invoiceStyle');
@@ -520,7 +525,7 @@ export default function SettingsPage() {
                     <CardContent className="p-8 pt-0 space-y-10">
                         <div className="space-y-4">
                             <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Interface Mode</Label>
-                            <Tabs value={theme} onValueChange={setTheme} className="w-full">
+                            <Tabs value={safeThemeValue} onValueChange={setTheme} className="w-full">
                                 <TabsList className="grid w-full grid-cols-3 bg-white/5 h-14 rounded-2xl p-1">
                                     <TabsTrigger value="light" className="rounded-xl font-black text-[10px] tracking-widest uppercase gap-2">
                                         <Sun className="h-3 w-3" /> LIGHT

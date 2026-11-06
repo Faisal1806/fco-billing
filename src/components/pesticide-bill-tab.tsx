@@ -18,6 +18,8 @@ import { FaWhatsapp } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
 import { PartySelector } from './party-selector';
+import { getBusinessDocuments } from '@/lib/actions';
+import { BUSINESS_YEAR, getDocumentDateYear } from '@/lib/document-utils';
 
 type ItemEntry = {
   particulars: string;
@@ -64,6 +66,7 @@ const ItemEntryRow = ({
 );
 
 export function PesticideBillTab() {
+  const selectedYear = BUSINESS_YEAR;
   const { toast } = useToast();
   const router = useRouter();
 
@@ -89,37 +92,59 @@ export function PesticideBillTab() {
     if (typeof window !== 'undefined') {
       setUserRole(localStorage.getItem('userRole'));
     }
-    fetchBills();
+    void fetchBills();
   }, []);
 
-  const fetchBills = () => {
-    let maxNo = 0;
-    const bills = [];
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('pesticide-invoice-')) {
-            const bill = JSON.parse(localStorage.getItem(key)!);
-            bills.push(bill);
-            const currentNo = parseInt(bill.no, 10);
-            if (!isNaN(currentNo) && currentNo > maxNo) {
-                maxNo = currentNo;
-            }
-        }
-    }
-    setSavedBills(bills.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-    if (!isEditing) {
-        setBillDetails(prev => ({...prev, no: (maxNo + 1).toString()}));
+  const fetchBills = async () => {
+    try {
+      const result = await getBusinessDocuments('pesticide-invoice-');
+      if (!result.success || !Array.isArray(result.data)) {
+        throw new Error(result.error || 'Could not load pesticide invoices.');
+      }
+
+      const bills = result.data.filter(
+        bill => getDocumentDateYear(bill.date) === selectedYear
+      );
+      const maxNo = bills.reduce((max, bill) => {
+        const currentNo = Number.parseInt(String(bill.no), 10);
+        return Number.isFinite(currentNo) ? Math.max(max, currentNo) : max;
+      }, 0);
+
+      setSavedBills(
+        bills.sort(
+          (a, b) =>
+            new Date(b.date).getTime() - new Date(a.date).getTime()
+        )
+      );
+      if (!isEditing) {
+        setBillDetails(prev => ({ ...prev, no: String(maxNo + 1) }));
+      }
+    } catch (error) {
+      console.error('Pesticide invoice load failed:', error);
+      setSavedBills([]);
+      toast({
+        variant: 'destructive',
+        title: 'Pesticide Invoices Failed',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Could not load pesticide invoices.',
+      });
     }
   };
   
   const filteredBills = React.useMemo(() => {
-    if (!searchTerm) return savedBills;
-    const lowerCaseSearch = searchTerm.toLowerCase();
-    return savedBills.filter(bill => 
-      bill.no?.toLowerCase().includes(lowerCaseSearch) ||
-      bill.customerName?.toLowerCase().includes(lowerCaseSearch)
+    const yearBills = savedBills.filter(
+      bill => getDocumentDateYear(bill?.date) === selectedYear
     );
-  }, [savedBills, searchTerm]);
+    if (!searchTerm) return yearBills;
+    const lowerCaseSearch = searchTerm.toLowerCase();
+    const normalize = (value: unknown) => String(value ?? '').trim().toLowerCase();
+    return yearBills.filter(bill =>
+      normalize(bill.no).includes(lowerCaseSearch) ||
+      normalize(bill.customerName).includes(lowerCaseSearch)
+    );
+  }, [savedBills, searchTerm, selectedYear]);
 
   const handleEntryUpdate = (
     index: number,
@@ -202,7 +227,7 @@ export function PesticideBillTab() {
     let msg = `*F.Co Billing System*\n`;
     msg += `Pesticide Bill No: ${billDetails.no}\n`;
     msg += `Customer: ${billDetails.customerName}\n`;
-    msg += `Grand Total: *â‚¹${grandTotal.toLocaleString()}*\n\n`;
+    msg += `Grand Total: *₹${grandTotal.toLocaleString()}*\n\n`;
     msg += `View Full Bill: ${pageUrl}\n\n`;
     msg += `Thank you for your business\n`;
     msg += `*Firdous Ahmad & Company*`;
@@ -319,7 +344,7 @@ export function PesticideBillTab() {
                     <div className="w-full max-w-xs space-y-2">
                         <div className="flex justify-between font-bold text-lg">
                             <span>G. Total</span>
-                            <span>â‚¹{grandTotal.toFixed(2)}</span>
+                            <span>₹{grandTotal.toFixed(2)}</span>
                         </div>
                     </div>
                 </div>
@@ -382,6 +407,5 @@ export function PesticideBillTab() {
     </div>
   );
 }
-
 
 

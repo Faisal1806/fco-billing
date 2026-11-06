@@ -46,8 +46,13 @@ import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
 import { ClassicA4Layout } from '@/components/invoice-templates/classic-a4';
 import html2canvas from 'html2canvas';
-import { useAppState } from '@/contexts/app-state-context';
 import { normalizeInvoiceData } from '@/lib/commission';
+import {
+  BUSINESS_YEAR,
+  getDocumentDateYear,
+  parseDocumentDate,
+} from '@/lib/document-utils';
+import { getBusinessDocuments } from '@/lib/actions';
 
 export interface WatakEntry {
     id: string;
@@ -73,9 +78,9 @@ export interface WatakEntry {
       dabbaQty: number;
       totalQty: number;
       subtotal: number;
-      cgst: number;
-      sgst: number;
-      totalTax: number;
+      cgst?: number;
+      sgst?: number;
+      totalTax?: number;
       grossSale: number;
       commissionAmount: number;
       securityCharges: number;
@@ -94,6 +99,71 @@ const getCanonicalName = (name: string): string => {
     if (!name) return '';
     return name.trim();
 };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isWatakEntry(value: unknown): value is WatakEntry {
+    if (!isRecord(value)) {
+        return false;
+    }
+
+    const totals = value.totals;
+    if (!isRecord(totals)) {
+        return false;
+    }
+
+    const numericTotalFields = [
+        'pattiQty',
+        'dabbaQty',
+        'totalQty',
+        'subtotal',
+        'grossSale',
+        'commissionAmount',
+        'securityCharges',
+        'labour',
+        'association',
+        'security',
+        'totalExpenses',
+        'netSale',
+    ];
+
+    return (
+        typeof value.id === 'string' &&
+        typeof value.sNo === 'string' &&
+        typeof value.date === 'string' &&
+        typeof value.watakNo === 'string' &&
+        typeof value.customerName === 'string' &&
+        typeof value.freight === 'number' &&
+        Array.isArray(value.entries) &&
+        value.entries.every(
+            entry =>
+                isRecord(entry) &&
+                typeof entry.variety === 'string' &&
+                typeof entry.rate === 'number' &&
+                (entry.type === 'Patti' || entry.type === 'Dabba') &&
+                typeof entry.qty === 'number' &&
+                typeof entry.total === 'number'
+        ) &&
+        numericTotalFields.every(
+            field => typeof totals[field] === 'number'
+        )
+    );
+}
+
+function normalizeWatakEntry(value: unknown): WatakEntry | null {
+    if (!isRecord(value)) {
+        return null;
+    }
+
+    const normalized = {
+        ...value,
+        ...normalizeInvoiceData(value),
+    };
+
+    return isWatakEntry(normalized) ? normalized : null;
+}
 
 
 const defaultGrowers: { name: string, address: string }[] = [
@@ -117,9 +187,9 @@ const defaultGrowers: { name: string, address: string }[] = [
     { name: 'Mohd. Arif Lone (Uffa)', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Subhan Parry', address: 'R/o Nadihal Bla.' },
     { name: 'GH. Mohiuddin Lone (Poltry)', address: 'R/o Nadihal Bla.' },
-    { name: 'Majoor Ahmad Lone Â®', address: 'R/o Nadihal Bla.' },
-    { name: 'Jaana Â® B/P', address: 'R/o Nadihal Bla.' },
-    { name: 'Rayees Rajab Â®', address: 'R/o Nadihal Bla.' },
+    { name: 'Majoor Ahmad Lone ®', address: 'R/o Nadihal Bla.' },
+    { name: 'Jaana ® B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Rayees Rajab ®', address: 'R/o Nadihal Bla.' },
     { name: 'Hilal Ahmad Wani', address: 'R/o Nadihal Bla.' },
     { name: 'Javid Ahmad Sheikh', address: 'R/o Shanoo, Mawer Handwara' },
     { name: 'Manzoor Ah. Lone B/P', address: 'R/o Nadihal Bla.' },
@@ -138,8 +208,7 @@ export default function SalesRegisterPage() {
   const { t } = useLanguage();
   const router = useRouter();
   const { toast } = useToast();
-  const years = new Set<number>();
-  const { selectedYear, setSelectedYear } = useAppState();
+  const selectedYear = BUSINESS_YEAR;
  
 
   const [wataks, setWataks] = React.useState<WatakEntry[]>([]);
@@ -151,7 +220,7 @@ export default function SalesRegisterPage() {
   const [viewMode, setViewMode] = React.useState<'table' | 'grid'>('grid');
   const [userRole, setUserRole] = React.useState<string | null>(null);
   const [partyNameMap, setPartyNameMap] = React.useState<Map<string, string>>(new Map());
-  const [availableYears, setAvailableYears] = React.useState<number[]>([]);
+  const availableYears = [BUSINESS_YEAR];
 
  const fetchWataks = React.useCallback(async () => {
     setIsLoading(true);
@@ -175,26 +244,17 @@ export default function SalesRegisterPage() {
             }
         };
 
-        const getInvoiceYear = (date: unknown): number | null => {
-            if (!date) return null;
-
-            const value = String(date);
-
-            // Handles YYYY-MM-DD, DD/MM/YYYY, ISO dates, etc.
-            const yearMatch = value.match(/\b(20\d{2})\b/);
-
-            return yearMatch ? Number(yearMatch[1]) : null;
-        };
-
-        const getInvoiceKey = (invoice: any, fallbackKey?: string) => {
-            return String(
+        const getInvoiceKey = (invoice: any, documentKey?: string) => {
+            const key =
+                documentKey ??
+                invoice?.key ??
                 invoice?.id ??
                 invoice?.sNo ??
                 invoice?.invoiceNo ??
                 invoice?.watakNo ??
-                fallbackKey ??
-                ''
-            );
+                '';
+
+            return String(key).replace(/^invoice[-/]/, '');
         };
 
         // ---------------------------------------------------------
@@ -202,147 +262,41 @@ export default function SalesRegisterPage() {
         // ---------------------------------------------------------
         defaultGrowers.forEach((p) => addPartyToMap(p.name));
 
-        // ---------------------------------------------------------
-        // LOCAL PARTIES
-        // ---------------------------------------------------------
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-
-            if (!key || !key.startsWith('party-')) continue;
-
-            try {
-                const party = JSON.parse(localStorage.getItem(key) || '');
-
-                if (party?.name) {
-                    addPartyToMap(party.name);
-                }
-            } catch (error) {
-                console.warn('Could not parse local party:', key, error);
-            }
+        const registerResult = await getBusinessDocuments(['party-', 'invoice-']);
+        if (!registerResult.success || !Array.isArray(registerResult.data)) {
+            throw new Error(registerResult.error || 'Could not load register documents.');
         }
 
-        // ---------------------------------------------------------
-        // MONGODB PARTIES
-        // ---------------------------------------------------------
-        try {
-            const partiesResponse = await fetch('/api/documents?prefix=party-');
-
-            if (partiesResponse.ok) {
-                const partiesResult = await partiesResponse.json();
-
-                if (partiesResult.success && Array.isArray(partiesResult.data)) {
-                    partiesResult.data.forEach((party: any) => {
-                        if (party?.name) {
-                            addPartyToMap(party.name);
-                        }
-                    });
-                }
-            }
-        } catch (error) {
-            console.warn('Could not fetch parties from cloud:', error);
-        }
+        registerResult.data
+            .filter(document => String(document.key).startsWith('party-'))
+            .forEach(party => {
+                if (party.name) addPartyToMap(String(party.name));
+            });
 
         // ---------------------------------------------------------
-        // 1. LOAD SAVED LOCAL INVOICES
+        // 1. LOAD NORMALIZED 2026 INVOICES
         // ---------------------------------------------------------
-        for (let i = 0; i < localStorage.length; i++) {
-            const storageKey = localStorage.key(i);
-
-            if (!storageKey || !storageKey.startsWith('invoice-')) {
+        for (const invoice of registerResult.data.filter(
+            document => String(document.key).startsWith('invoice-')
+        )) {
+            if (
+                !isRecord(invoice) ||
+                getDocumentDateYear(invoice.date) !== BUSINESS_YEAR
+            ) {
                 continue;
             }
 
-            try {
-                const raw = localStorage.getItem(storageKey);
+            const normalizedWatak = normalizeWatakEntry(invoice);
+            if (!normalizedWatak) continue;
 
-                if (!raw) continue;
+            const key = getInvoiceKey(normalizedWatak, String(invoice.key || ''));
+            if (!key) continue;
 
-                const invoice = JSON.parse(raw);
+            invoiceMap.set(key, normalizedWatak);
 
-                if (!invoice || !invoice.date) continue;
-
-                const invoiceYear = getInvoiceYear(invoice.date);
-
-                if (invoiceYear !== selectedYear) continue;
-
-                const normalizedWatak = normalizeInvoiceData(invoice);
-
-                if (!normalizedWatak) continue;
-
-                const key = getInvoiceKey(
-                    normalizedWatak,
-                    storageKey.replace(/^invoice-/, '')
-                );
-
-                if (!key) continue;
-
-                invoiceMap.set(key, normalizedWatak);
-
-                if (normalizedWatak.customerName) {
-                    addPartyToMap(normalizedWatak.customerName);
-                }
-            } catch (error) {
-                console.warn(
-                    'Could not parse local invoice:',
-                    storageKey,
-                    error
-                );
+            if (normalizedWatak.customerName) {
+                addPartyToMap(normalizedWatak.customerName);
             }
-        }
-
-        // ---------------------------------------------------------
-        // 2. LOAD CLOUD INVOICES
-        // ---------------------------------------------------------
-        try {
-            const invoicesResponse = await fetch(
-                '/api/documents?prefix=invoice-'
-            );
-
-            if (invoicesResponse.ok) {
-                const invoicesResult = await invoicesResponse.json();
-
-                if (
-                    invoicesResult.success &&
-                    Array.isArray(invoicesResult.data)
-                ) {
-                    invoicesResult.data.forEach((invoice: any) => {
-                        if (!invoice?.date) return;
-
-                        const invoiceYear = getInvoiceYear(invoice.date);
-
-                        if (invoiceYear !== selectedYear) return;
-
-                        const normalizedWatak =
-                            normalizeInvoiceData(invoice);
-
-                        if (!normalizedWatak) return;
-
-                        const key = getInvoiceKey(normalizedWatak);
-
-                        if (!key) return;
-
-                        /*
-                         * Cloud data is added only if the invoice
-                         * isn't already present locally.
-                         * This prevents double-counting the same invoice.
-                         */
-                        if (!invoiceMap.has(key)) {
-                            invoiceMap.set(key, normalizedWatak);
-                        }
-
-                        if (normalizedWatak.customerName) {
-                            addPartyToMap(
-                                normalizedWatak.customerName
-                            );
-                        }
-                    });
-                }
-            }
-        } catch (error) {
-            console.warn(
-                'Could not fetch invoices from cloud:',
-                error
-            );
         }
 
         // ---------------------------------------------------------
@@ -352,15 +306,14 @@ export default function SalesRegisterPage() {
 
         items.sort(
             (a, b) =>
-                new Date(b.date).getTime() -
-                new Date(a.date).getTime()
+                (parseDocumentDate(b.date)?.getTime() ?? 0) -
+                (parseDocumentDate(a.date)?.getTime() ?? 0)
         );
 
         // ---------------------------------------------------------
         // 4. UPDATE REGISTER
         // ---------------------------------------------------------
         setWataks(items);
-
         setPartyNameMap(growerMap);
 
         const uniqueGrowers = [
@@ -384,7 +337,7 @@ export default function SalesRegisterPage() {
     } finally {
         setIsLoading(false);
     }
-}, [selectedYear, toast]);
+}, [toast]);
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -394,12 +347,14 @@ export default function SalesRegisterPage() {
   }, [fetchWataks]);
 
   const yearlyCount = React.useMemo(() => {
-    if(!wataks) return 0;
-    return wataks.length;
-  }, [wataks]);
+    return wataks.filter(
+      watak => getDocumentDateYear(watak.date) === selectedYear
+    ).length;
+  }, [selectedYear, wataks]);
 
 
   const filteredWataks = wataks
+    .filter(w => getDocumentDateYear(w.date) === selectedYear)
     .filter(w => {
         if (selectedGrower === 'All Growers') return true;
         const canonicalName = partyNameMap.get(getCanonicalName(w.customerName)) || w.customerName;
@@ -408,10 +363,11 @@ export default function SalesRegisterPage() {
         if (!searchTerm) return true;
         const lowerCaseSearch = searchTerm.toLowerCase();
         const canonicalName = partyNameMap.get(getCanonicalName(w.customerName)) || w.customerName;
+        const safeText = (value: unknown) => String(value ?? '').trim().toLowerCase();
         return (
-            canonicalName.toLowerCase().includes(lowerCaseSearch) ||
-            w.sNo.toLowerCase().includes(lowerCaseSearch) ||
-            (w.watakNo && w.watakNo.toLowerCase().includes(lowerCaseSearch))
+            safeText(canonicalName).includes(lowerCaseSearch) ||
+            safeText(w.sNo).includes(lowerCaseSearch) ||
+            safeText(w.watakNo).includes(lowerCaseSearch)
         );
     });
 
@@ -601,7 +557,9 @@ export default function SalesRegisterPage() {
                   <CardTitle className="flex items-center gap-2">
                       Sales Register
                   </CardTitle>
-                  <Select onValueChange={(value) => setSelectedYear(Number(value))} defaultValue={String(selectedYear)}>
+                  <Select
+                    value={String(selectedYear)}
+                  >
                     <SelectTrigger className="w-[180px]">
                         <SelectValue placeholder="Select a year" />
                     </SelectTrigger>
@@ -703,7 +661,7 @@ export default function SalesRegisterPage() {
                               <p className="text-lg font-semibold">{canonicalName}</p>
                               {watak.customerUrdu && <p className="font-urdu text-xl mt-1">{watak.customerUrdu}</p>}
                               <p className="text-sm mt-2">Date: {new Date(watak.date).toLocaleDateString()}</p>
-                              <p className="text-2xl font-bold mt-4">â‚¹{watak.totals.netSale.toFixed(2)}</p>
+                              <p className="text-2xl font-bold mt-4">₹{watak.totals.netSale.toFixed(2)}</p>
                           </DocumentCard>
                       </motion.div>
                   )})}
@@ -739,9 +697,9 @@ export default function SalesRegisterPage() {
                   <TableCell className="font-medium">{canonicalName}</TableCell>
                   <TableCell>{watak.totals.pattiQty || 0}</TableCell>
                   <TableCell>{watak.totals.dabbaQty || 0}</TableCell>
-                  <TableCell className="text-right">â‚¹{watak.totals.grossSale.toFixed(2)}</TableCell>
-                  <TableCell className="text-right">â‚¹{watak.totals.totalExpenses.toFixed(2)}</TableCell>
-                  <TableCell className="text-right">â‚¹{watak.totals.netSale.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">₹{watak.totals.grossSale.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">₹{watak.totals.totalExpenses.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">₹{watak.totals.netSale.toFixed(2)}</TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="icon" onClick={() => navigateToBill(watak.sNo)}>
                       <FilePenLine className="h-4 w-4" />
@@ -758,9 +716,9 @@ export default function SalesRegisterPage() {
                   <TableCell colSpan={4} className="text-right">Total</TableCell>
                   <TableCell>{footerTotals.pattiQty}</TableCell>
                   <TableCell>{footerTotals.dabbaQty}</TableCell>
-                  <TableCell className="text-right">â‚¹{footerTotals.grossSale.toFixed(2)}</TableCell>
-                  <TableCell className="text-right">â‚¹{footerTotals.totalExpenses.toFixed(2)}</TableCell>
-                  <TableCell className="text-right">â‚¹{footerTotals.netSale.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">₹{footerTotals.grossSale.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">₹{footerTotals.totalExpenses.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">₹{footerTotals.netSale.toFixed(2)}</TableCell>
                   <TableCell></TableCell>
               </TableRow>
             </TableBody>
@@ -795,7 +753,7 @@ export default function SalesRegisterPage() {
                                 <TableCell className="font-medium">{watak.sNo}</TableCell>
                                 <TableCell>{watak.customerName}</TableCell>
                                 <TableCell>{new Date(watak.date).toLocaleDateString('en-GB')}</TableCell>
-                                <TableCell className="text-right font-mono">â‚¹{watak.totals.netSale.toFixed(2)}</TableCell>
+                                <TableCell className="text-right font-mono">₹{watak.totals.netSale.toFixed(2)}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
@@ -817,7 +775,3 @@ export default function SalesRegisterPage() {
     
 
     
-
-
-
-

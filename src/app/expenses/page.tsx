@@ -27,6 +27,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { PartySelector } from '@/components/party-selector';
 import PageHeader from '@/components/PageHeader';
+import { getBusinessDocuments } from '@/lib/actions';
+import { BUSINESS_YEAR, formatDocumentDate, getDocumentDateYear, parseDocumentDate } from '@/lib/document-utils';
 
 type ExpenseEntry = {
     id: string;
@@ -88,14 +90,14 @@ const ExpenseTable = ({ title, icon, description, expenses, total, children, sho
                     <TableBody>
                         {expenses.map((exp) => (
                             <TableRow key={exp.id}>
-                                <TableCell>{new Date(exp.date).toLocaleDateString('en-GB')}</TableCell>
+                                <TableCell>{formatDocumentDate(exp.date)}</TableCell>
                                 <TableCell className="font-medium">{exp.category}</TableCell>
                                 <TableCell>{exp.partyName}</TableCell>
                                 <TableCell>{exp.description}</TableCell>
                                 <TableCell>
                                     <Badge variant={exp.type === 'auto' ? 'secondary' : 'default'}>{exp.type}</Badge>
                                 </TableCell>
-                                <TableCell className="text-right font-mono">â‚¹{exp.amount.toFixed(2)}</TableCell>
+                                <TableCell className="text-right font-mono">₹{exp.amount.toFixed(2)}</TableCell>
                                 {showActions && onDelete && (
                                     <TableCell className="text-right">
                                         {exp.type === 'manual' && (
@@ -111,7 +113,7 @@ const ExpenseTable = ({ title, icon, description, expenses, total, children, sho
                         <TableFooter>
                         <TableRow className="font-bold text-lg">
                             <TableCell colSpan={showActions ? 6 : 5} className="text-right">Total</TableCell>
-                            <TableCell className="text-right font-mono">â‚¹{total.toFixed(2)}</TableCell>
+                            <TableCell className="text-right font-mono">₹{total.toFixed(2)}</TableCell>
                             {showActions && <TableCell></TableCell>}
                         </TableRow>
                     </TableFooter>
@@ -157,25 +159,29 @@ export default function ExpensesPage() {
     const [formState, setFormState] = useState(emptyFormState);
     const [userRole, setUserRole] = useState<string | null>(null);
 
-    const fetchExpenses = () => {
-        if (typeof window !== 'undefined') {
+    const fetchExpenses = async () => {
+        try {
             setUserRole(localStorage.getItem('userRole'));
-            
-            const manualExpensesData: any[] = [];
-            const invoicesData: any[] = [];
-
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key?.startsWith('expense-')) {
-                    manualExpensesData.push(JSON.parse(localStorage.getItem(key)!));
-                }
-                if (key?.startsWith('invoice-')) {
-                    invoicesData.push(JSON.parse(localStorage.getItem(key)!));
-                }
+            const result = await getBusinessDocuments(['expense-', 'invoice-']);
+            if (!result.success || !Array.isArray(result.data)) {
+                throw new Error(result.error || 'Could not load expenses and sales.');
             }
+            const yearDocuments = result.data.filter(
+                document => getDocumentDateYear(document.date) === BUSINESS_YEAR
+            );
+            const manualExpensesData = yearDocuments.filter(
+                document => String(document.key).startsWith('expense-')
+            );
+            const invoicesData = yearDocuments.filter(
+                document => String(document.key).startsWith('invoice-')
+            );
 
             const allLabourExpenses: ExpenseEntry[] = [];
-            const allCompanyExpenses: ExpenseEntry[] = (manualExpensesData || []).map((d: any) => ({ ...d, type: 'manual' }));
+            const allCompanyExpenses: ExpenseEntry[] = manualExpensesData.map((d: any) => ({
+                ...d,
+                amount: Number(d.amount) || 0,
+                type: 'manual',
+            }));
             const allCommissionIncome: ExpenseEntry[] = [];
             const allFreightExpenses: ExpenseEntry[] = [];
             
@@ -190,17 +196,17 @@ export default function ExpensesPage() {
 
             (invoicesData || []).forEach((sale: any) => {
                 if(sale.totals) {
-                    const pattiQty = sale.totals.pattiQty || 0;
-                    const dabbaQty = sale.totals.dabbaQty || 0;
+                    const pattiQty = Number(sale.totals.pattiQty) || 0;
+                    const dabbaQty = Number(sale.totals.dabbaQty) || 0;
                     const totalNugs = pattiQty + dabbaQty;
 
-                    if (sale.totals.labour > 0) {
+                    if (Number(sale.totals.labour) > 0) {
                         allLabourExpenses.push({
                             id: `auto-labour-${sale.sNo}`,
                             date: sale.date,
                             category: 'Sales Deduction',
                             description: `Labour charges for Bill #${sale.sNo}`,
-                            amount: sale.totals.labour,
+                            amount: Number(sale.totals.labour) || 0,
                             type: 'auto',
                         });
                         labourWataks.add(sale.sNo);
@@ -208,13 +214,13 @@ export default function ExpensesPage() {
                         newLabourStats.totalDabba += dabbaQty;
                         newLabourStats.totalNugs += totalNugs;
                     }
-                    if (sale.freight > 0) {
+                    if (Number(sale.freight) > 0) {
                          allFreightExpenses.push({
                             id: `auto-freight-${sale.sNo}`,
                             date: sale.date,
                             category: 'Sales Deduction',
                             description: `Freight charges for Bill #${sale.sNo}`,
-                            amount: sale.freight,
+                            amount: Number(sale.freight) || 0,
                             type: 'auto',
                         });
                         freightWataks.add(sale.sNo);
@@ -222,35 +228,35 @@ export default function ExpensesPage() {
                         newFreightStats.totalDabba += dabbaQty;
                         newFreightStats.totalNugs += totalNugs;
                     }
-                    if (sale.totals.association > 0) {
+                    if (Number(sale.totals.association) > 0) {
                         allCompanyExpenses.push({
                             id: `auto-assoc-${sale.sNo}`,
                             date: sale.date,
                             category: 'Sales Deduction',
                             description: `Association fee for Bill #${sale.sNo}`,
-                            amount: sale.totals.association,
+                            amount: Number(sale.totals.association) || 0,
                             type: 'auto',
                         });
                         companyWataks.add(sale.sNo);
                     }
-                    if (sale.totals.security > 0) {
+                    if (Number(sale.totals.security) > 0) {
                         allCompanyExpenses.push({
                             id: `auto-security-${sale.sNo}`,
                             date: sale.date,
                             category: 'Sales Deduction',
                             description: `Security fee for Bill #${sale.sNo}`,
-                            amount: sale.totals.security,
+                            amount: Number(sale.totals.security) || 0,
                             type: 'auto',
                         });
                         companyWataks.add(sale.sNo);
                     }
-                    if (sale.totals.commissionAmount > 0) {
+                    if (Number(sale.totals.commissionAmount) > 0) {
                         allCommissionIncome.push({
                             id: `auto-commission-${sale.sNo}`,
                             date: sale.date,
                             category: 'Sales Commission',
                             description: `Commission from Bill #${sale.sNo}`,
-                            amount: sale.totals.commissionAmount,
+                            amount: Number(sale.totals.commissionAmount) || 0,
                             type: 'auto',
                         });
                         newCommissionStats.totalWataks += 1;
@@ -266,8 +272,8 @@ export default function ExpensesPage() {
             companyWatakIds.forEach(sNo => {
                 const sale = invoicesData?.find(inv => inv.sNo === sNo);
                 if (sale) {
-                    const pattiQty = sale.totals.pattiQty || 0;
-                    const dabbaQty = sale.totals.dabbaQty || 0;
+                    const pattiQty = Number(sale.totals.pattiQty) || 0;
+                    const dabbaQty = Number(sale.totals.dabbaQty) || 0;
                     newCompanyStats.totalPatti += pattiQty;
                     newCompanyStats.totalDabba += dabbaQty;
                     newCompanyStats.totalNugs += pattiQty + dabbaQty;
@@ -277,17 +283,31 @@ export default function ExpensesPage() {
             newLabourStats.totalWataks = labourWataks.size;
             newFreightStats.totalWataks = freightWataks.size;
             
-            setLabourExpenses(allLabourExpenses.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-            setCompanyExpenses(allCompanyExpenses.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-            setCommissionIncome(allCommissionIncome.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-            setFreightExpenses(allFreightExpenses.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+            const newestFirst = (a: ExpenseEntry, b: ExpenseEntry) =>
+                (parseDocumentDate(b.date)?.getTime() ?? 0) -
+                (parseDocumentDate(a.date)?.getTime() ?? 0);
+            setLabourExpenses(allLabourExpenses.sort(newestFirst));
+            setCompanyExpenses(allCompanyExpenses.sort(newestFirst));
+            setCommissionIncome(allCommissionIncome.sort(newestFirst));
+            setFreightExpenses(allFreightExpenses.sort(newestFirst));
             
             setCommissionStats(newCommissionStats);
             setLabourStats(newLabourStats);
             setCompanyStats(newCompanyStats);
             setFreightStats(newFreightStats);
+        } catch (error) {
+            console.error('Expense data load failed:', error);
+            setLabourExpenses([]);
+            setCompanyExpenses([]);
+            setCommissionIncome([]);
+            setFreightExpenses([]);
+            toast({
+                variant: 'destructive',
+                title: 'Expenses Failed',
+                description: error instanceof Error ? error.message : 'Could not load expenses.',
+            });
         }
-    }
+    };
 
     useEffect(() => {
         fetchExpenses();
@@ -414,6 +434,3 @@ export default function ExpensesPage() {
         </div>
     );
 }
-
-
-

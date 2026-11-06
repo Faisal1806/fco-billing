@@ -123,7 +123,7 @@ export default function AutomaticRateList({ sourceType, title }: AutomaticRateLi
         rates.forEach(rate => {
             if (rate.name && rate.rates.size > 0) {
                 const rateString = Array.from(rate.rates).sort((a,b) => a-b).join(' / ');
-                shareText += `- ${rate.name}: *â‚¹${rateString}*\n`;
+                shareText += `- ${rate.name}: *₹${rateString}*\n`;
             }
         });
         
@@ -169,7 +169,7 @@ export default function AutomaticRateList({ sourceType, title }: AutomaticRateLi
                                     <TableRow key={rate.name}>
                                         <TableCell className="font-medium">{rate.name}</TableCell>
                                         <TableCell className="text-right font-semibold text-lg">
-                                            â‚¹{Array.from(rate.rates).sort((a, b) => a - b).join(' / ')}
+                                            ₹{Array.from(rate.rates).sort((a, b) => a - b).join(' / ')}
                                         </TableCell>
                                     </TableRow>
                                 ))}

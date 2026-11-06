@@ -24,6 +24,9 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { motion } from 'framer-motion';
 import PageHeader from '@/components/PageHeader';
+import { getBusinessDocuments } from '@/lib/actions';
+import { BUSINESS_YEAR, getDocumentDateYear, parseDocumentDate } from '@/lib/document-utils';
+import { useToast } from '@/hooks/use-toast';
 
 type TransactionType = 'Sale' | 'Purchase' | 'Advance' | 'Repayment' | 'Bikri' | 'Discount';
 
@@ -42,74 +45,70 @@ const getCanonicalName = (name: string): string => {
 
 export default function KhataDirectoryPage() {
     const router = useRouter();
+    const { toast } = useToast();
     const [ledgers, setLedgers] = React.useState<Ledger>({});
     const [searchTerm, setSearchTerm] = React.useState('');
     const [isLoading, setIsLoading] = React.useState(true);
     const [loaderAnimation, setLoaderAnimation] = React.useState(null);
 
     React.useEffect(() => {
-        function fetchLedgerData() {
+        async function fetchLedgerData() {
             if (typeof window === 'undefined') return;
             setIsLoading(true);
             
-            fetch('/animations/forms/fco_loader.json').then(res => res.json()).then(setLoaderAnimation);
+            fetch('/animations/forms/fco_loader.json')
+                .then(async (res) => {
+                    if (!res.ok) throw new Error(`Loader fetch failed: ${res.status}`);
+                    return res.json();
+                })
+                .then(setLoaderAnimation)
+                .catch(() => setLoaderAnimation(null));
 
             const allTransactions: any[] = [];
             const partyTypes = new Map<string, Set<TransactionType>>();
             const partyNames = new Set<string>();
 
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (!key) continue;
+            const result = await getBusinessDocuments([
+                'party-', 'invoice-', 'purchase-', 'supplier-purchase-', 'own-purchase-',
+                'advance-', 'advances/', 'bikri-',
+            ]);
+            if (!result.success || !Array.isArray(result.data)) {
+                throw new Error(result.error || 'Could not load ledger transactions.');
+            }
 
-                try {
-                    let doc;
-                    let partyName;
-                    let activity: TransactionType | null = null;
-                    if (key.startsWith('party-')) {
-                        doc = JSON.parse(localStorage.getItem(key)!);
-                        partyName = doc.name;
-                    } else if (key.startsWith('invoice-')) {
-                        doc = JSON.parse(localStorage.getItem(key)!);
-                        partyName = doc.customerName;
-                        activity = 'Sale';
-                    } else if (key.startsWith('purchase-')) {
-                        doc = JSON.parse(localStorage.getItem(key)!);
-                        partyName = doc.growerName;
-                        activity = 'Purchase';
-                    } else if (key.startsWith('advance-')) {
-                        doc = JSON.parse(localStorage.getItem(key)!);
-                        partyName = doc.partyName;
-                        activity = doc.type === 'Advance Given' ? 'Advance' : (doc.type === 'Discount' ? 'Discount' : 'Repayment');
-                    } else if (key.startsWith('bikri-')) {
-                        doc = JSON.parse(localStorage.getItem(key)!);
-                        partyName = doc.bikriType === 'growerForwarding' ? doc.growerName : doc.market;
-                        activity = 'Bikri';
-                    } else {
-                        continue;
-                    }
-                    
-                    if (partyName) {
-                        partyNames.add(partyName);
-                        if (activity) {
-                            const canonical = getCanonicalName(partyName);
-                            if(!partyTypes.has(canonical)) {
-                                partyTypes.set(canonical, new Set());
-                            }
-                            partyTypes.get(canonical)!.add(activity);
-                        }
-                    }
+            for (const doc of result.data) {
+                const key = String(doc.key || '');
+                if (key.startsWith('party-')) {
+                    if (doc.name) partyNames.add(String(doc.name));
+                    continue;
+                }
+                if (getDocumentDateYear(doc.date) !== BUSINESS_YEAR) continue;
 
-                    if(!key.startsWith('party-')) {
-                        allTransactions.push(doc);
+                const activity: TransactionType | null =
+                    key.startsWith('invoice-') ? 'Sale' :
+                    key.startsWith('purchase-') || key.startsWith('supplier-purchase-') || key.startsWith('own-purchase-') ? 'Purchase' :
+                    key.startsWith('advance-') || key.startsWith('advances/')
+                        ? doc.type === 'Advance Given' ? 'Advance' : doc.type === 'Discount' ? 'Discount' : 'Repayment'
+                        : key.startsWith('bikri-') ? 'Bikri' : null;
+                const partyName = doc.customerName || doc.growerName || doc.supplierName ||
+                    doc.partyName || (doc.market && doc.bikriType !== 'growerForwarding' ? doc.market : '');
+                if (partyName) {
+                    partyNames.add(String(partyName));
+                    if (activity) {
+                        const canonical = getCanonicalName(String(partyName));
+                        if (!partyTypes.has(canonical)) partyTypes.set(canonical, new Set());
+                        partyTypes.get(canonical)!.add(activity);
                     }
-
-                } catch (e) {
-                    console.error("Failed to parse ledger data from local storage for key:", key, e);
+                }
+                if (activity) {
+                    allTransactions.push({ ...doc, id: doc.id || key });
                 }
             }
 
-            allTransactions.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            allTransactions.sort((a,b) =>
+                (parseDocumentDate(a.date)?.getTime() ?? 0) -
+                (parseDocumentDate(b.date)?.getTime() ?? 0)
+            );
             
             const calculatedLedgers: Ledger = {};
             
@@ -157,7 +156,7 @@ export default function KhataDirectoryPage() {
                  partyTransactions.forEach(tx => {
                     if (tx.totals) {
                         if (tx.totals.netSale !== undefined) balance += tx.totals.netSale; // Sale
-                        if (tx.totals.grandTotal !== undefined) balance -= tx.totals.grandTotal; // Purchase
+                        if (tx.totals.grandTotal !== undefined || tx.totals.totalAmount !== undefined) balance -= tx.totals.grandTotal ?? tx.totals.totalAmount; // Purchase
                     } else if (tx.amount) {
                          if (tx.type === 'Advance Given') balance -= tx.amount;
                          else balance += tx.amount; // Repayment or Discount
@@ -172,12 +171,24 @@ export default function KhataDirectoryPage() {
             setLedgers(calculatedLedgers);
             setIsLoading(false);
         }
-        fetchLedgerData();
-    }, []);
+        void fetchLedgerData().catch(error => {
+            console.error('Khata ledger load failed:', error);
+            setLedgers({});
+            setIsLoading(false);
+            toast({
+                variant: 'destructive',
+                title: 'Khata Ledger Failed',
+                description: error instanceof Error ? error.message : 'Could not load the 2026 ledger.',
+            });
+        });
+    }, [toast]);
 
     const filteredParties = React.useMemo(() => {
+        const normalize = (value: unknown) => String(value ?? '').trim().toLowerCase();
+        const query = normalize(searchTerm);
+
         return Object.entries(ledgers)
-            .filter(([name]) => name.toLowerCase().includes(searchTerm.toLowerCase()))
+            .filter(([name]) => normalize(name).includes(query))
             .filter(([name, data]) => data.partyType === 'supplier' || data.partyType === 'both') // Only show growers
             .sort(([nameA], [nameB]) => nameA.localeCompare(nameB));
     }, [ledgers, searchTerm]);
@@ -237,7 +248,7 @@ export default function KhataDirectoryPage() {
                                                 {data.lastActivity ? new Date(data.lastActivity).toLocaleDateString('en-GB') : 'N/A'}
                                             </TableCell>
                                             <TableCell className={`text-right font-mono font-semibold ${balanceColor}`}>
-                                                â‚¹{Math.abs(data.balance).toFixed(2)}
+                                                ₹{Math.abs(data.balance).toFixed(2)}
                                                 <Badge variant="outline" className="ml-2">{balanceText}</Badge>
                                             </TableCell>
                                             <TableCell className="text-right">
@@ -263,6 +274,3 @@ export default function KhataDirectoryPage() {
         </div>
     );
 }
-
-
-

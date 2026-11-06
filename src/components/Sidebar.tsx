@@ -1,4 +1,4 @@
-
+﻿
 "use client";
 
 import * as React from "react";
@@ -134,11 +134,21 @@ export function AppMenubar() {
     return () => document.removeEventListener("keydown", down);
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+      try {
+          await fetch('/api/auth/logout', { method: 'POST' });
+      } catch (error) {
+          console.error('Server logout request failed:', error);
+      }
+
       if (typeof window !== 'undefined') {
           localStorage.removeItem('userRole');
       }
-      toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
+
+      toast({
+          title: 'Logged Out',
+          description: 'You have been successfully logged out.'
+      });
       router.push('/login');
   };
 
@@ -213,7 +223,7 @@ export function AppMenubar() {
                     <span className="text-xs font-bold uppercase tracking-widest">Search Index...</span>
                 </div>
                 <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
-                    <span className="text-xs">âŒ˜</span>K
+                    <span className="text-xs">Ã¢Å’Ëœ</span>K
                 </kbd>
             </Button>
         </div>
@@ -285,6 +295,7 @@ export function AppMenubar() {
 }
 
 export default AppMenubar;
+
 
 
 

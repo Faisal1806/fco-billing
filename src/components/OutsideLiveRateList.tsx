@@ -59,7 +59,7 @@ export default function OutsideLiveRateList() {
         rates.forEach(rate => {
             if (rate.market && rate.variety && rate.rate) {
                 const name = `${rate.market} - ${rate.variety}`;
-                shareText += `- ${name}: *â‚¹${rate.rate}*\n`;
+                shareText += `- ${name}: *₹${rate.rate}*\n`;
             }
         });
         
@@ -107,7 +107,7 @@ export default function OutsideLiveRateList() {
                                         <TableCell className="font-medium">{rate.market}</TableCell>
                                         <TableCell>{rate.variety}</TableCell>
                                         <TableCell className="text-right font-semibold text-lg">
-                                            â‚¹{rate.rate}
+                                            ₹{rate.rate}
                                         </TableCell>
                                     </TableRow>
                                 ))}

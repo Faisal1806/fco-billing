@@ -13,8 +13,9 @@ import { useRouter } from 'next/navigation';
 import {
   saveDocument,
   deleteDocument,
-  getDocuments,
+  getBusinessDocuments,
 } from '@/lib/actions';
+import { BUSINESS_YEAR, getDocumentDateYear, parseDocumentDate } from '@/lib/document-utils';
 
 import {
   Card,
@@ -90,6 +91,21 @@ type Purchase = {
     totalQty: number;
     grandTotal: number;
   };
+  purchaseType?: string;
+  partyId?: string;
+  partyName?: string;
+  companyName?: string;
+  items?: Array<{
+    type: 'Patti' | 'Dabba';
+    variety: string;
+    quantity: number;
+    rate: number;
+    total: number;
+  }>;
+  totalQuantity?: number;
+  grandTotal?: number;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 type SupplierPurchaseRow = {
@@ -169,25 +185,162 @@ const createSupplierRows = (): SupplierPurchaseRow[] => [
    HELPERS
 ========================================================= */
 
-function getYearFromDate(date: unknown): number | null {
-  if (!date) return null;
+function formatPurchaseAmount(value: unknown): string {
+  const amount = Number(value);
 
-  const value = String(date);
-
-  const match = value.match(/\b(20\d{2})\b/);
-
-  if (match) {
-    return Number(match[1]);
+  if (!Number.isFinite(amount)) {
+    return '₹0.00';
   }
 
-  const parsed = new Date(value);
-
-  if (!Number.isNaN(parsed.getTime())) {
-    return parsed.getFullYear();
-  }
-
-  return null;
+  return `₹${Math.round(amount).toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
+function getYearFromDate(date: unknown): number | null {
+  return getDocumentDateYear(date);
+}
+
+const toNumber = (
+  value: unknown,
+  fallback = 0
+): number => {
+  const n = Number(value);
+  return Number.isFinite(n)
+    ? n
+    : fallback;
+};
+
+const normalizePurchaseDocument = (
+  raw: any,
+  fallbackKey?: string
+): Purchase | null => {
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+
+  const value =
+    raw?.value && typeof raw.value === 'object'
+      ? raw.value
+      : raw;
+
+  const billNo = String(
+    value?.billNo || ''
+  ).trim();
+
+  if (!billNo) {
+    return null;
+  }
+
+  const itemsSource = Array.isArray(value?.items)
+    ? value.items
+    : Array.isArray(value?.entries)
+      ? value.entries
+      : [];
+
+  const items = itemsSource.map((entry: any) => {
+    const quantity = toNumber(
+      entry?.quantity ?? entry?.qty,
+      0
+    );
+    const rate = toNumber(entry?.rate, 0);
+    const total = toNumber(
+      entry?.total ?? entry?.amount ?? quantity * rate,
+      0
+    );
+
+    return {
+      type:
+        entry?.type === 'Dabba'
+          ? 'Dabba'
+          : 'Patti',
+      variety: String(
+        entry?.variety || entry?.description || ''
+      ),
+      quantity,
+      rate,
+      total,
+    };
+  });
+
+  const totalQuantity = toNumber(
+    value?.totalQuantity ??
+      value?.totals?.totalQty ??
+      items.reduce(
+        (sum: number, item: { quantity: number }) => sum + item.quantity,
+        0
+      ),
+    0
+  );
+
+  const grandTotal = toNumber(
+    value?.grandTotal ??
+      value?.totals?.grandTotal ??
+      items.reduce(
+        (sum: number, item: { total: number }) => sum + item.total,
+        0
+      ),
+    0
+  );
+
+  const partyName = String(
+    value?.partyName ||
+      value?.growerName ||
+      value?.customerName ||
+      ''
+  );
+
+  const purchaseFor =
+    value?.purchaseFor ||
+    (partyName === 'F.Co (Own Stock)'
+      ? 'Own Stock (F.Co)'
+      : 'Customer');
+
+  return {
+    id:
+      String(
+        value?.id ||
+          fallbackKey ||
+          `purchase-${billNo}`
+      ),
+    documentType:
+      value?.documentType ||
+      'customer-purchase',
+    billNo,
+    date: String(value?.date || ''),
+    growerName:
+      partyName === 'F.Co (Own Stock)'
+        ? 'F.Co (Own Stock)'
+        : partyName,
+    purchaseFor,
+    entries: items.map((item: { type: 'Patti' | 'Dabba'; variety: string; quantity: number; rate: number; total: number }) => ({
+      type: item.type,
+      variety: item.variety,
+      qty: item.quantity,
+      rate: item.rate,
+      total: item.total,
+    })),
+    totals: {
+      totalQty: totalQuantity,
+      grandTotal,
+    },
+    purchaseType:
+      value?.purchaseType ||
+      'Customer Purchase',
+    partyId: String(value?.partyId || ''),
+    partyName,
+    companyName:
+      String(
+        value?.companyName ||
+          'Firdous Ahmad & Company'
+      ),
+    items,
+    totalQuantity,
+    grandTotal,
+    createdAt: value?.createdAt,
+    updatedAt: value?.updatedAt,
+  };
+};
 
 /* =========================================================
    PAGE
@@ -197,7 +350,7 @@ export default function PurchasesPage() {
   const { toast } = useToast();
   const router = useRouter();
 
-  const currentYear = new Date().getFullYear();
+  const currentYear = BUSINESS_YEAR;
 
   /* =======================================================
      COMMON STATE
@@ -222,11 +375,8 @@ export default function PurchasesPage() {
   const [searchTerm, setSearchTerm] =
     useState('');
 
-  const [selectedYear, setSelectedYear] =
-    useState<number>(currentYear);
-
-  const [availableYears, setAvailableYears] =
-    useState<number[]>([currentYear]);
+  const selectedYear = BUSINESS_YEAR;
+  const availableYears = [BUSINESS_YEAR];
 
   /* =======================================================
      CUSTOMER PURCHASE STATE
@@ -237,6 +387,8 @@ export default function PurchasesPage() {
 
   const [growerName, setGrowerName] =
     useState('');
+
+  const [partyId, setPartyId] = useState('');
 
   const [date, setDate] =
     useState('');
@@ -315,104 +467,30 @@ export default function PurchasesPage() {
   /* =======================================================
      LOAD CUSTOMER PURCHASES
   ======================================================= */
-const readLocalCustomerPurchases = (): Purchase[] => {
-  if (typeof window === 'undefined') return [];
-  const purchases: Purchase[] = [];
-  for (let i = 0; i < window.localStorage.length; i++) {
-    const key = window.localStorage.key(i);
-    if (!key || !key.startsWith('purchase-') || key.startsWith('supplier-purchase-')) continue;
-    try {
-      const raw = JSON.parse(window.localStorage.getItem(key) || 'null');
-      if (!raw || typeof raw !== 'object') continue;
-      purchases.push({ ...raw, id: raw.id || key, documentType: raw.documentType || 'customer-purchase', billNo: String(raw.billNo || ''), date: String(raw.date || ''), growerName: String(raw.growerName || ''), purchaseFor: raw.purchaseFor || (raw.growerName === 'F.Co (Own Stock)' ? 'Own Stock (F.Co)' : 'Customer'), entries: Array.isArray(raw.entries) ? raw.entries.map((e: any) => ({ ...e, qty: Math.round(Number(e?.qty) || 0), rate: Math.round(Number(e?.rate) || 0), total: Math.round(Number(e?.total) || ((Number(e?.qty) || 0) * (Number(e?.rate) || 0))) })) : [], totals: { totalQty: Math.round(Number(raw.totals?.totalQty) || 0), grandTotal: Math.round(Number(raw.totals?.grandTotal) || 0) } } as Purchase);
-    } catch (error) { console.error('Invalid local purchase:', key, error); }
-  }
-  return purchases.sort((a,b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
-};
-
 const fetchCustomerPurchases = useCallback(async () => {
   try {
-    const result = await getDocuments('purchase-');
+    const result = await getBusinessDocuments('purchase-');
 
     if (!result.success || !Array.isArray(result.data)) {
-      console.error(
-        'Failed to load customer purchases:',
-        result.error
-      );
-
-      setSavedPurchases(readLocalCustomerPurchases());
-      return;
+      throw new Error(result.error || 'Failed to load customer purchases.');
     }
 
     const purchases: Purchase[] = result.data
-      .map((item: any) => {
-        // getDocuments() returns:
-        // { key, value }
-        // The actual purchase is inside value.
-        const value =
-          item?.value &&
-          typeof item.value === 'object'
-            ? item.value
-            : item;
-
-        const key =
-          typeof item?.key === 'string'
-            ? item.key
-            : value?.id ||
-              `purchase-${value?.billNo || ''}`;
-
-        return {
-          ...value,
-
-          id:
-            value?.id ||
-            key ||
-            `purchase-${value?.billNo || ''}`,
-
-          documentType:
-            value?.documentType ||
-            'customer-purchase',
-
-          billNo:
-            value?.billNo || '',
-
-          date:
-            value?.date || '',
-
-          growerName:
-            value?.growerName || '',
-
-          purchaseFor:
-            value?.purchaseFor || 'Customer',
-
-          entries:
-            Array.isArray(value?.entries)
-              ? value.entries.map((entry: any) => ({ ...entry, qty: Math.round(Number(entry?.qty) || 0), rate: Math.round(Number(entry?.rate) || 0), total: Math.round(Number(entry?.total) || ((Number(entry?.qty) || 0) * (Number(entry?.rate) || 0))) }))
-              : [],
-
-          totals: {
-            totalQty: Math.round(Number(value?.totals?.totalQty) || 0),
-            grandTotal: Math.round(Number(value?.totals?.grandTotal) || 0),
-          },
-        } as Purchase;
-      })
+      .map(item => normalizePurchaseDocument(item, item.key))
       .filter(
-        (purchase) =>
-          purchase.id &&
-          !String(purchase.id).startsWith(
-            'supplier-purchase-'
+        (purchase): purchase is Purchase =>
+          Boolean(
+            purchase &&
+              !String(purchase.id).startsWith(
+                'supplier-purchase-'
+              )
           )
       );
 
     purchases.sort(
       (a, b) =>
-        new Date(b.date || 0).getTime() -
-        new Date(a.date || 0).getTime()
-    );
-
-    console.log(
-      'CUSTOMER PURCHASES LOADED:',
-      purchases
+        (parseDocumentDate(b.date)?.getTime() ?? 0) -
+        (parseDocumentDate(a.date)?.getTime() ?? 0)
     );
 
     setSavedPurchases(purchases);
@@ -421,70 +499,37 @@ const fetchCustomerPurchases = useCallback(async () => {
       'Failed to load customer purchases:',
       error
     );
-
-    setSavedPurchases(readLocalCustomerPurchases());
+    setSavedPurchases([]);
+    toast({
+      variant: 'destructive',
+      title: 'Customer Purchases Failed',
+      description: error instanceof Error ? error.message : 'Could not load customer purchases.',
+    });
   }
-}, []);
+}, [toast]);
   /* =======================================================
      LOAD SUPPLIER PURCHASES
   ======================================================= */
-const readLocalSupplierPurchases = (): SupplierPurchase[] => {
-  if (typeof window === 'undefined') return [];
-  const purchases: SupplierPurchase[] = [];
-  for (let i = 0; i < window.localStorage.length; i++) {
-    const key = window.localStorage.key(i);
-    if (!key || !key.startsWith('supplier-purchase-')) continue;
-    try {
-      const raw = JSON.parse(window.localStorage.getItem(key) || 'null');
-      if (!raw || typeof raw !== 'object') continue;
-      purchases.push({ ...raw, id: raw.id || key, documentType: raw.documentType || 'supplier-purchase', purchaseNo: String(raw.purchaseNo || ''), date: String(raw.date || ''), supplierName: String(raw.supplierName || ''), khata: String(raw.khata || ''), entries: Array.isArray(raw.entries) ? raw.entries.map((e: any) => ({ ...e, qty: Math.round(Number(e?.qty) || 0), rate: Math.round(Number(e?.rate) || 0), amount: Math.round(Number(e?.amount) || ((Number(e?.qty) || 0) * (Number(e?.rate) || 0))) })) : [], totalPurchase: Math.round(Number(raw.totalPurchase) || 0), paid: Math.round(Number(raw.paid) || 0), balance: Math.round(Number(raw.balance) || 0), notes: String(raw.notes || '') } as SupplierPurchase);
-    } catch (error) { console.error('Invalid local supplier purchase:', key, error); }
-  }
-  return purchases.sort((a,b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
-};
 
 const fetchSupplierPurchases = useCallback(async () => {
   try {
-    const result = await getDocuments(
-      'supplier-purchase-'
-    );
+    const result = await getBusinessDocuments('supplier-purchase-');
 
     if (
       !result.success ||
       !Array.isArray(result.data)
     ) {
-      console.error(
-        'Failed to load supplier purchases:',
-        result.error
-      );
-
-      setSavedSupplierPurchases(readLocalSupplierPurchases());
-      return;
+      throw new Error(result.error || 'Failed to load supplier purchases.');
     }
 
     const purchases: SupplierPurchase[] =
       result.data
-        .map((item: any) => {
-          const value =
-            item?.value &&
-            typeof item.value === 'object'
-              ? item.value
-              : item;
-
-          const key =
-            typeof item?.key === 'string'
-              ? item.key
-              : value?.id ||
-                `supplier-purchase-${
-                  value?.purchaseNo || ''
-                }`;
-
+        .map(value => {
           return {
             ...value,
 
             id:
-              value?.id ||
-              key ||
+              value.id ||
               `supplier-purchase-${
                 value?.purchaseNo || ''
               }`,
@@ -506,7 +551,7 @@ const fetchSupplierPurchases = useCallback(async () => {
               value?.khata || '',
 
             entries:
-              Array.isArray(value?.entries)
+              Array.isArray(value.entries)
                 ? value.entries
                 : [],
 
@@ -529,18 +574,11 @@ const fetchSupplierPurchases = useCallback(async () => {
 
     purchases.sort(
       (a, b) =>
-        new Date(b.date || 0).getTime() -
-        new Date(a.date || 0).getTime()
+        (parseDocumentDate(b.date)?.getTime() ?? 0) -
+        (parseDocumentDate(a.date)?.getTime() ?? 0)
     );
 
-    console.log(
-      'SUPPLIER PURCHASES LOADED:',
-      purchases
-    );
-
-    setSavedSupplierPurchases(
-      purchases
-    );
+    setSavedSupplierPurchases(purchases);
   } catch (error) {
     console.error(
       'Failed to load supplier purchases:',
@@ -548,8 +586,13 @@ const fetchSupplierPurchases = useCallback(async () => {
     );
 
     setSavedSupplierPurchases([]);
+    toast({
+      variant: 'destructive',
+      title: 'Supplier Purchases Failed',
+      description: error instanceof Error ? error.message : 'Could not load supplier purchases.',
+    });
   }
-}, []);
+}, [toast]);
 
   /* =======================================================
      LOAD EVERYTHING
@@ -579,40 +622,6 @@ const fetchSupplierPurchases = useCallback(async () => {
   /* =======================================================
      AVAILABLE YEARS
   ======================================================= */
-
-  useEffect(() => {
-    const years = new Set<number>();
-
-    years.add(currentYear);
-
-    savedPurchases.forEach((purchase) => {
-      const year = getYearFromDate(
-        purchase.date
-      );
-
-      if (year) years.add(year);
-    });
-
-    savedSupplierPurchases.forEach(
-      (purchase) => {
-        const year = getYearFromDate(
-          purchase.date
-        );
-
-        if (year) years.add(year);
-      }
-    );
-
-    setAvailableYears(
-      Array.from(years).sort(
-        (a, b) => b - a
-      )
-    );
-  }, [
-    savedPurchases,
-    savedSupplierPurchases,
-    currentYear,
-  ]);
 
   /* =======================================================
      CUSTOMER TOTALS
@@ -718,17 +727,15 @@ const fetchSupplierPurchases = useCallback(async () => {
           .toLowerCase()
           .trim();
 
+      const normalize = (value: unknown) => String(value ?? '').trim().toLowerCase();
+
       return yearlyPurchases.filter(
         (purchase) => {
           if (!search) return true;
 
           return (
-            purchase.billNo
-              ?.toLowerCase()
-              .includes(search) ||
-            purchase.growerName
-              ?.toLowerCase()
-              .includes(search)
+            normalize(purchase.billNo).includes(search) ||
+            normalize(purchase.growerName).includes(search)
           );
         }
       );
@@ -748,20 +755,16 @@ const fetchSupplierPurchases = useCallback(async () => {
           .toLowerCase()
           .trim();
 
+      const normalize = (value: unknown) => String(value ?? '').trim().toLowerCase();
+
       return yearlySupplierPurchases.filter(
         (purchase) => {
           if (!search) return true;
 
           return (
-            purchase.purchaseNo
-              ?.toLowerCase()
-              .includes(search) ||
-            purchase.supplierName
-              ?.toLowerCase()
-              .includes(search) ||
-            purchase.khata
-              ?.toLowerCase()
-              .includes(search)
+            normalize(purchase.purchaseNo).includes(search) ||
+            normalize(purchase.supplierName).includes(search) ||
+            normalize(purchase.khata).includes(search)
           );
         }
       );
@@ -919,6 +922,7 @@ const fetchSupplierPurchases = useCallback(async () => {
   const resetForm = () => {
     setBillNo('');
     setGrowerName('');
+    setPartyId('');
     setDate('');
     setPurchaseFor('Customer');
 
@@ -977,47 +981,37 @@ const fetchSupplierPurchases = useCallback(async () => {
           ? 'F.Co (Own Stock)'
           : growerName.trim();
 
-      const entries =
-        rows
-          .filter(
-            (row) =>
-              Number(row.qty) > 0 &&
-              Number(row.rate) > 0
-          )
-          .map((row) => ({
-            ...row,
-            qty:
-              Number(row.qty) || 0,
-            rate:
-              Number(row.rate) || 0,
-            total:
-              Math.round((Number(row.qty) || 0) * (Number(row.rate) || 0)),
-          }));
+      const items = rows
+        .filter(
+          (row) =>
+            Number(row.qty) > 0 &&
+            Number(row.rate) > 0
+        )
+        .map((row) => ({
+          type: row.type,
+          variety: String(row.variety || ''),
+          quantity: Number(row.qty) || 0,
+          rate: Number(row.rate) || 0,
+          total: Math.round(
+            (Number(row.qty) || 0) * (Number(row.rate) || 0)
+          ),
+        }));
 
-      const purchaseData: Purchase = {
+      const purchaseData = {
         id: documentKey,
-        documentType:
-          'customer-purchase',
-
-        billNo:
-          billNo.trim(),
-
+        billNo: billNo.trim(),
         date,
-
-        growerName:
-          finalGrowerName,
-
+        purchaseType: 'Customer Purchase',
         purchaseFor,
-
-        entries,
-
-        totals: {
-          totalQty:
-            customerTotals.totalQty,
-
-          grandTotal:
-            Math.round(customerTotals.grandTotal),
-        },
+        partyId: purchaseFor === 'Customer' ? partyId : '',
+        partyName: finalGrowerName,
+        growerName: finalGrowerName,
+        companyName: 'Firdous Ahmad & Company',
+        items,
+        totalQuantity: Number(customerTotals.totalQty) || 0,
+        grandTotal: Math.round(Number(customerTotals.grandTotal) || 0),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
 
       try {
@@ -1034,25 +1028,13 @@ const fetchSupplierPurchases = useCallback(async () => {
           );
         }
 
-        if (
-          typeof window !==
-          'undefined'
-        ) {
-          localStorage.setItem(
-            documentKey,
-            JSON.stringify(
-              purchaseData
-            )
-          );
-        }
-
         toast({
           title: isEditing
             ? 'Purchase Updated'
             : 'Purchase Saved',
 
           description:
-            `Customer purchase #${billNo} has been saved successfully.`,
+            `Customer purchase #${billNo} has been saved locally and synced when MongoDB is available.`,
         });
 
         await fetchAllPurchases();
@@ -1197,7 +1179,7 @@ const fetchSupplierPurchases = useCallback(async () => {
             : 'Supplier Purchase Saved',
 
           description:
-            `Supplier purchase #${supplierPurchaseNo} has been saved successfully.`,
+            `Supplier purchase #${supplierPurchaseNo} has been saved locally and synced when MongoDB is available.`,
         });
 
         await fetchAllPurchases();
@@ -1258,6 +1240,8 @@ const fetchSupplierPurchases = useCallback(async () => {
         : purchase.growerName ||
             ''
     );
+
+    setPartyId(purchase.partyId || '');
 
     setDate(
       purchase.date || ''
@@ -1415,13 +1399,8 @@ const fetchSupplierPurchases = useCallback(async () => {
           );
         }
 
-        if (
-          typeof window !==
-          'undefined'
-        ) {
-          localStorage.removeItem(
-            key
-          );
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem(key);
         }
 
         toast({
@@ -1662,9 +1641,11 @@ const fetchSupplierPurchases = useCallback(async () => {
           'Customer' ? (
             <PartySelector
               value={growerName}
-              onChange={
-                setGrowerName
-              }
+              onChange={(name) => {
+                setGrowerName(name);
+                setPartyId('');
+              }}
+              onPartySelect={(party) => setPartyId(party.id)}
               filter="customer"
             />
           ) : (
@@ -1832,7 +1813,7 @@ const fetchSupplierPurchases = useCallback(async () => {
                   </TableCell>
 
                   <TableCell className="text-right font-medium">
-                    â‚¹
+                    
                     {Math.round(Number(
                       customerTotals
                         .rowTotals[
@@ -1902,14 +1883,8 @@ const fetchSupplierPurchases = useCallback(async () => {
             </p>
 
             <p className="text-3xl font-bold">
-              â‚¹
-              {customerTotals.grandTotal.toLocaleString(
-                'en-IN',
-                {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                }
-              )}
+              
+              {formatPurchaseAmount(customerTotals.grandTotal)}
             </p>
           </CardContent>
         </Card>
@@ -2159,13 +2134,8 @@ const fetchSupplierPurchases = useCallback(async () => {
                   </TableCell>
 
                   <TableCell className="text-right font-medium">
-                    â‚¹
-                    {Number(
-                      row.amount ||
-                        0
-                    ).toLocaleString(
-                      'en-IN'
-                    )}
+                    
+                    {formatPurchaseAmount(row.amount)}
                   </TableCell>
 
                   <TableCell>
@@ -2219,10 +2189,8 @@ const fetchSupplierPurchases = useCallback(async () => {
             </p>
 
             <p className="text-3xl font-bold">
-              â‚¹
-              {supplierTotals.totalPurchase.toLocaleString(
-                'en-IN'
-              )}
+              
+              {formatPurchaseAmount(supplierTotals.totalPurchase)}
             </p>
           </CardContent>
         </Card>
@@ -2269,10 +2237,8 @@ const fetchSupplierPurchases = useCallback(async () => {
                   : 'text-green-600'
               }`}
             >
-              â‚¹
-              {supplierTotals.balance.toLocaleString(
-                'en-IN'
-              )}
+              
+              {formatPurchaseAmount(supplierTotals.balance)}
             </p>
           </CardContent>
         </Card>
@@ -2398,11 +2364,11 @@ const fetchSupplierPurchases = useCallback(async () => {
 
                 <SelectContent>
                   <SelectItem value="customer">
-                    ðŸ›’ Customer Purchase
+                    Customer Purchase
                   </SelectItem>
 
                   <SelectItem value="supplier">
-                    ðŸ¢ Supplier Purchase
+                    Supplier Purchase
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -2450,7 +2416,7 @@ const fetchSupplierPurchases = useCallback(async () => {
                 variant="secondary"
                 className="w-full md:max-w-xs gap-2"
                 disabled={
-                  !isEditing
+                  !isEditing || isSubmitting
                 }
               >
                 <FileText className="h-4 w-4" />
@@ -2494,13 +2460,6 @@ const fetchSupplierPurchases = useCallback(async () => {
                 value={String(
                   selectedYear
                 )}
-                onValueChange={(
-                  value
-                ) =>
-                  setSelectedYear(
-                    Number(value)
-                  )
-                }
               >
                 <SelectTrigger className="w-[100px]">
                   <SelectValue />
@@ -2561,10 +2520,8 @@ const fetchSupplierPurchases = useCallback(async () => {
                 </p>
 
                 <p className="font-bold">
-                  â‚¹
-                  {yearlySupplierTotal.toLocaleString(
-                    'en-IN'
-                  )}
+                  
+                  {formatPurchaseAmount(yearlySupplierTotal)}
                 </p>
               </div>
             </div>
@@ -2639,17 +2596,10 @@ const fetchSupplierPurchases = useCallback(async () => {
                                       ).toLocaleString()}
                                     </strong>
 
-                                    {' â€¢ '}
+                                    {' • '}
 
-                                    â‚¹
-                                    {Number(
-                                      purchase
-                                        .totals
-                                        ?.grandTotal ||
-                                        0
-                                    ).toLocaleString(
-                                      'en-IN'
-                                    )}
+                                    
+                                    {formatPurchaseAmount(purchase.totals?.grandTotal)}
                                   </p>
                                 </div>
 
@@ -2745,26 +2695,16 @@ const fetchSupplierPurchases = useCallback(async () => {
                                     <p>
                                       Total:{' '}
                                       <strong>
-                                        â‚¹
-                                        {Number(
-                                          purchase.totalPurchase ||
-                                            0
-                                        ).toLocaleString(
-                                          'en-IN'
-                                        )}
+                                        
+                                        {formatPurchaseAmount(purchase.totalPurchase)}
                                       </strong>
                                     </p>
 
                                     <p>
                                       Paid:{' '}
                                       <strong>
-                                        â‚¹
-                                        {Number(
-                                          purchase.paid ||
-                                            0
-                                        ).toLocaleString(
-                                          'en-IN'
-                                        )}
+                                        
+                                        {formatPurchaseAmount(purchase.paid)}
                                       </strong>
                                     </p>
 
@@ -2781,13 +2721,8 @@ const fetchSupplierPurchases = useCallback(async () => {
                                             : 'text-green-600'
                                         }
                                       >
-                                        â‚¹
-                                        {Number(
-                                          purchase.balance ||
-                                            0
-                                        ).toLocaleString(
-                                          'en-IN'
-                                        )}
+                                        
+                                        {formatPurchaseAmount(purchase.balance)}
                                       </strong>
                                     </p>
                                   </div>
@@ -2853,4 +2788,3 @@ const fetchSupplierPurchases = useCallback(async () => {
     </div>
   );
 }
-

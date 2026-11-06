@@ -41,11 +41,17 @@ export async function loadDataStore(
   try {
     const result = await getDocuments();
 
-    if (result.success) {
-      store.data = result.data || [];
-      store.loaded = true;
+    if (!result.success) {
+      throw new Error(
+        result.error || 'Failed to load cloud data'
+      );
     }
+
+    store.data = (result.data as DataItem[]) || [];
+    store.loaded = true;
   } catch (error) {
+    store.data = [];
+    store.loaded = false;
     console.error(
       'Failed to load central MongoDB data:',
       error

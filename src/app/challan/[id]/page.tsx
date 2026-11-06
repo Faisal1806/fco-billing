@@ -209,13 +209,13 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
     const A4Layout = () => (
          <div className="w-[146mm] h-[208mm] bg-[#FDFEE2] text-black shadow-lg print:shadow-none p-[6mm] border border-green-700 flex flex-col relative font-serif overflow-hidden">
                 <header className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white p-4 rounded-t-xl text-center flex justify-between items-center">
-                    <div className="text-sm font-bold">ðŸŽ F.Co</div>
+                    <div className="text-sm font-bold">🏛️ F.Co</div>
                     <div>
                         <h2 className="text-xl font-bold">FIRDOUS AHMAD & COMPANY</h2>
                         <p className="text-xs">Fruit Merchants & Commission Agents, Sopore</p>
                         <h1 className="text-2xl font-bold mt-2">DELIVERY NOTE</h1>
                     </div>
-                    <div className="text-sm font-bold">ðŸŽ F.Co</div>
+                    <div className="text-sm font-bold">🏛️ F.Co</div>
                 </header>
 
                  <main className="flex-grow bg-white dark:bg-gray-800 p-4 -mt-2 rounded-b-xl shadow-lg">
@@ -272,8 +272,8 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
                     </div>
 
                      <div className="text-xs mt-2 space-y-1">
-                        <p>All toll tax paid in cash Rs: {tollTax > 0 ? `â‚¹${tollTax.toFixed(2)}` : '________________'}</p>
-                        <p>Pay only Freight Rs: {payOnlyFreight > 0 ? `â‚¹${payOnlyFreight.toFixed(2)}` : '________________'}</p>
+                        <p>All toll tax paid in cash Rs: {tollTax > 0 ? `₹${tollTax.toFixed(2)}` : '________________'}</p>
+                        <p>Pay only Freight Rs: {payOnlyFreight > 0 ? `₹${payOnlyFreight.toFixed(2)}` : '________________'}</p>
                         <p className="italic text-gray-500">Driver will be responsible for any damage or delay of goods.</p>
                     </div>
                 </main>
@@ -327,7 +327,7 @@ export default function DeliveryNotePage({ params }: { params: { id: string } })
                 <div className="flex justify-between"><span>Total Nugs:</span><span>{totalNugs}</span></div>
             </div>
              <div className="text-xs mt-2 space-y-1 border-t border-dashed pt-2">
-                <p>Freight to pay: {payOnlyFreight > 0 ? `â‚¹${payOnlyFreight.toFixed(2)}` : 'N/A'}</p>
+                <p>Freight to pay: {payOnlyFreight > 0 ? `₹${payOnlyFreight.toFixed(2)}` : 'N/A'}</p>
                 <p className="italic">Driver responsible for goods.</p>
             </div>
             <footer className="text-center pt-4">

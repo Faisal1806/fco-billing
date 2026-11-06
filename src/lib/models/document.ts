@@ -9,14 +9,27 @@ export interface IDocument {
 
 const DocumentSchema = new Schema<IDocument>(
   {
-    key: { type: String, required: true, unique: true, index: true },
-    value: { type: Schema.Types.Mixed, required: true },
+    key: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+    },
+    value: {
+      type: Schema.Types.Mixed,
+      required: true,
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
 const FcoDocument: Model<IDocument> =
   mongoose.models.FcoDocument ||
-  mongoose.model<IDocument>('FcoDocument', DocumentSchema);
+  mongoose.model<IDocument>(
+    'FcoDocument',
+    DocumentSchema
+  );
 
 export default FcoDocument;

@@ -182,13 +182,13 @@ export default function CustomerDashboardPage() {
                 new Date(tx.date).toLocaleDateString('en-GB'),
                 (tx.type === 'Sale' || tx.type === 'Purchase') ? `#${tx.docId}` : tx.notes || tx.type,
                 tx.type,
-                 (tx.type === 'Advance') ? `â‚¹${tx.amount.toFixed(2)}` : '-',
-                (tx.type === 'Sale' || tx.type === 'Purchase' || tx.type === 'Repayment') ? `â‚¹${tx.amount.toFixed(2)}` : '-',
-                `â‚¹${tx.runningBalance.toFixed(2)}`
+                 (tx.type === 'Advance') ? `₹${tx.amount.toFixed(2)}` : '-',
+                (tx.type === 'Sale' || tx.type === 'Purchase' || tx.type === 'Repayment') ? `₹${tx.amount.toFixed(2)}` : '-',
+                `₹${tx.runningBalance.toFixed(2)}`
             ]),
             foot: [
                 [{ content: 'Final Balance', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, 
-                 { content: `â‚¹${balance.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold' } }]
+                 { content: `₹${balance.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold' } }]
             ],
             theme: 'striped',
             headStyles: { fillColor: [22, 163, 74] }
@@ -296,12 +296,12 @@ export default function CustomerDashboardPage() {
                                    <Badge variant={getBadgeVariant(tx.type)}>{tx.type}</Badge>
                                 </TableCell>
                                 <TableCell className="text-right font-mono text-red-500">
-                                    {(tx.type === 'Advance') ? `â‚¹${tx.amount.toFixed(2)}` : '-'}
+                                    {(tx.type === 'Advance') ? `₹${tx.amount.toFixed(2)}` : '-'}
                                 </TableCell>
                                 <TableCell className="text-right font-mono text-green-600">
-                                    {(tx.type === 'Sale' || tx.type === 'Purchase' || tx.type === 'Repayment') ? `â‚¹${tx.amount.toFixed(2)}` : '-'}
+                                    {(tx.type === 'Sale' || tx.type === 'Purchase' || tx.type === 'Repayment') ? `₹${tx.amount.toFixed(2)}` : '-'}
                                 </TableCell>
-                                <TableCell className="text-right font-mono">â‚¹{tx.runningBalance.toFixed(2)}</TableCell>
+                                <TableCell className="text-right font-mono">₹{tx.runningBalance.toFixed(2)}</TableCell>
                             </TableRow>
                             ))}
                         </TableBody>
@@ -309,7 +309,7 @@ export default function CustomerDashboardPage() {
                              <TableRow className="font-bold text-lg bg-muted">
                                 <TableCell colSpan={5} className="text-right">Final Balance</TableCell>
                                 <TableCell className={`text-right ${balance >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                                    â‚¹{Math.abs(balance).toFixed(2)}
+                                    ₹{Math.abs(balance).toFixed(2)}
                                     <span className="text-xs text-muted-foreground ml-1">
                                         {balance >= 0 ? '(Receivable)' : '(Payable)'}
                                     </span>

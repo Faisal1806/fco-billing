@@ -87,8 +87,8 @@ export default function ProductsPage() {
     }
     const fetchTokens = async () => {
         const { success, data } = await getDocuments('fcm-tokens', true);
-        if (success && data) {
-            setFcmTokens(data.map(t => t.token));
+        if (success && Array.isArray(data)) {
+            setFcmTokens(data.map((t: any) => t.token));
         }
     };
     fetchTokens();
@@ -113,14 +113,15 @@ export default function ProductsPage() {
   }, [isClient]);
 
   const filteredProducts = useMemo(() => {
+    const normalize = (value: unknown) => String(value ?? '').trim().toLowerCase();
     return products
         .filter(p => {
             const lowerCaseSearch = searchTerm.toLowerCase();
-            return p.name.toLowerCase().includes(lowerCaseSearch) || (p.supplier && p.supplier.toLowerCase().includes(lowerCaseSearch));
+            return normalize(p.name).includes(lowerCaseSearch) || normalize(p.supplier).includes(lowerCaseSearch);
         })
         .filter(p => {
             if (categoryFilter === 'all') return true;
-            const isFruit = ['fruit', 'apple', 'pear', 'nakh', 'gosha', 'red delicious', 'american', 'gala mast', 'shimla'].includes(p.category.toLowerCase());
+            const isFruit = ['fruit', 'apple', 'pear', 'nakh', 'gosha', 'red delicious', 'american', 'gala mast', 'shimla'].includes(normalize(p.category));
             if (categoryFilter === 'fruits') return isFruit;
             if (categoryFilter === 'accessories') return !isFruit;
             return true;

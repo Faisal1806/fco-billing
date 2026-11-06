@@ -112,7 +112,7 @@ const EntryTableComponent = ({ title, rows, icon, onUpdate, onAdd, onRemove, sho
                 />
               </TableCell>
               <TableCell className="text-right font-medium">
-                 {r.isStored ? <Badge variant="secondary">Stored</Badge> : `â‚¹${((r.qty || 0) * (r.rate || 0)).toFixed(2)}`}
+                 {r.isStored ? <Badge variant="secondary">Stored</Badge> : `₹${((r.qty || 0) * (r.rate || 0)).toFixed(2)}`}
               </TableCell>
               <TableCell>
                 <Button variant="ghost" size="icon" onClick={() => onRemove(i)}>

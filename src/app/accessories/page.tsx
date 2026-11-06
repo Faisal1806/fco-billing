@@ -77,7 +77,13 @@ export default function SuppliesPage() {
         if (typeof window !== 'undefined') {
             setUserRole(localStorage.getItem('userRole'));
         }
-        fetch('/animations/forms/fco_loader.json').then(res => res.json()).then(setLoaderAnimation);
+        fetch('/animations/forms/fco_loader.json')
+            .then(async (res) => {
+                if (!res.ok) throw new Error(`Loader fetch failed: ${res.status}`);
+                return res.json();
+            })
+            .then(setLoaderAnimation)
+            .catch(() => setLoaderAnimation(null));
     }, []);
 
     const fetchEntries = () => {
@@ -178,11 +184,11 @@ export default function SuppliesPage() {
                 e.category,
                 e.item,
                 e.qty,
-                `â‚¹${e.rate.toFixed(2)}`,
+                `₹${e.rate.toFixed(2)}`,
                 e.paymentMode,
-                `â‚¹${(e.qty * e.rate).toFixed(2)}`
+                `₹${(e.qty * e.rate).toFixed(2)}`
             ]),
-            foot: [[{ content: 'Total', colSpan: 7, styles: { halign: 'right' } }, `â‚¹${overallTotal.toFixed(2)}`]],
+            foot: [[{ content: 'Total', colSpan: 7, styles: { halign: 'right' } }, `₹${overallTotal.toFixed(2)}`]],
         });
         doc.save("supplies-ledger.pdf");
     };
@@ -305,9 +311,9 @@ export default function SuppliesPage() {
                             <TableCell>{entry.category}</TableCell>
                             <TableCell className="font-medium">{entry.item}</TableCell>
                             <TableCell>{entry.qty}</TableCell>
-                            <TableCell>â‚¹{entry.rate.toFixed(2)}</TableCell>
+                            <TableCell>₹{entry.rate.toFixed(2)}</TableCell>
                             <TableCell>{entry.paymentMode}</TableCell>
-                            <TableCell className="text-right font-mono">â‚¹{(entry.qty * entry.rate).toFixed(2)}</TableCell>
+                            <TableCell className="text-right font-mono">₹{(entry.qty * entry.rate).toFixed(2)}</TableCell>
                             {userRole === 'admin' && (
                                 <TableCell className="text-right print-hidden">
                                     <Button variant="outline" size="sm" className="mr-2" disabled>
@@ -324,12 +330,12 @@ export default function SuppliesPage() {
                 <TableFooter>
                     <TableRow className="font-bold text-lg">
                         <TableCell colSpan={userRole === 'admin' ? 8 : 7} className="text-right">Today's Total</TableCell>
-                        <TableCell className="text-right font-mono">â‚¹{dailyTotal.toFixed(2)}</TableCell>
+                        <TableCell className="text-right font-mono">₹{dailyTotal.toFixed(2)}</TableCell>
                         {userRole === 'admin' && <TableCell className="print-hidden"></TableCell>}
                     </TableRow>
                      <TableRow className="font-bold text-xl bg-muted/50">
                         <TableCell colSpan={userRole === 'admin' ? 8 : 7} className="text-right">Overall Total</TableCell>
-                        <TableCell className="text-right font-mono">â‚¹{overallTotal.toFixed(2)}</TableCell>
+                        <TableCell className="text-right font-mono">₹{overallTotal.toFixed(2)}</TableCell>
                         {userRole === 'admin' && <TableCell className="print-hidden"></TableCell>}
                     </TableRow>
                 </TableFooter>

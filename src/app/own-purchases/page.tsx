@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
-import { saveDocument } from '@/lib/actions';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { getBusinessDocuments, saveDocument } from '@/lib/actions';
+import { BUSINESS_YEAR, formatDocumentDate, getDocumentDateYear, parseDocumentDate } from '@/lib/document-utils';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
@@ -91,6 +92,51 @@ export default function OwnPurchasesPage() {
     useState<OwnPurchaseRow[]>(initialRows);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [savedPurchases, setSavedPurchases] = useState<OwnPurchase[]>([]);
+
+  const loadSavedPurchases = useCallback(async () => {
+    const result = await getBusinessDocuments('own-purchase-');
+    if (!result.success || !Array.isArray(result.data)) {
+      throw new Error(result.error || 'Could not load F.Co purchases.');
+    }
+
+    const purchases = result.data
+      .filter(purchase => getDocumentDateYear(purchase.date) === BUSINESS_YEAR)
+      .map(purchase => ({
+        ...purchase,
+        id: String(purchase.id || purchase.key),
+        purchaseNo: String(purchase.purchaseNo || ''),
+        date: String(purchase.date || ''),
+        supplierName: String(purchase.supplierName || ''),
+        khata: String(purchase.khata || ''),
+        notes: String(purchase.notes || ''),
+        entries: Array.isArray(purchase.entries) ? purchase.entries : [],
+        totals: {
+          totalQty: Number(purchase.totals?.totalQty) || 0,
+          totalAmount: Number(purchase.totals?.totalAmount) || 0,
+          paid: Number(purchase.totals?.paid) || 0,
+          balance: Number(purchase.totals?.balance) || 0,
+        },
+        purchaseType: 'Own Purchase' as const,
+      }))
+      .sort((a, b) =>
+        (parseDocumentDate(b.date)?.getTime() ?? 0) -
+        (parseDocumentDate(a.date)?.getTime() ?? 0)
+      );
+
+    setSavedPurchases(purchases);
+  }, []);
+
+  useEffect(() => {
+    void loadSavedPurchases().catch(error => {
+      console.error('F.Co purchase history load failed:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Purchase History Failed',
+        description: error instanceof Error ? error.message : 'Could not load F.Co purchases.',
+      });
+    });
+  }, [loadSavedPurchases, toast]);
 
   const totals = useMemo(() => {
     const rowTotals = rows.map(
@@ -256,6 +302,14 @@ export default function OwnPurchasesPage() {
           `Purchase #${purchaseNo} has been saved successfully.`,
       });
 
+      void loadSavedPurchases().catch(error => {
+        console.error('F.Co purchase history refresh failed:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Purchase History Failed',
+          description: error instanceof Error ? error.message : 'Could not refresh F.Co purchases.',
+        });
+      });
       resetForm();
     } catch (error) {
       console.error(
@@ -462,7 +516,7 @@ export default function OwnPurchasesPage() {
                   </TableCell>
 
                   <TableCell className="text-right font-medium">
-                    â‚¹
+                    ₹
                     {Math.round(
                       totals.rowTotals[index] || 0
                     ).toLocaleString('en-IN')}
@@ -556,7 +610,7 @@ export default function OwnPurchasesPage() {
                 </span>
 
                 <strong>
-                  â‚¹
+                  ₹
                   {Math.round(
                     totals.totalAmount
                   ).toLocaleString('en-IN')}
@@ -569,7 +623,7 @@ export default function OwnPurchasesPage() {
                 </span>
 
                 <strong>
-                  â‚¹
+                  ₹
                   {Math.round(
                     totals.balance
                   ).toLocaleString('en-IN')}
@@ -609,6 +663,46 @@ export default function OwnPurchasesPage() {
             Purchase Register
           </Button>
         </CardFooter>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>F.Co Purchase History ({BUSINESS_YEAR})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {savedPurchases.length ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Purchase No.</TableHead>
+                  <TableHead>Supplier / Seller</TableHead>
+                  <TableHead className="text-right">Quantity</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead className="text-right">Paid</TableHead>
+                  <TableHead className="text-right">Balance</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {savedPurchases.map(purchase => (
+                  <TableRow key={purchase.id}>
+                    <TableCell>{formatDocumentDate(purchase.date)}</TableCell>
+                    <TableCell>{purchase.purchaseNo}</TableCell>
+                    <TableCell>{purchase.supplierName}</TableCell>
+                    <TableCell className="text-right">{purchase.totals.totalQty.toLocaleString('en-IN')}</TableCell>
+                    <TableCell className="text-right">₹{purchase.totals.totalAmount.toLocaleString('en-IN')}</TableCell>
+                    <TableCell className="text-right">₹{purchase.totals.paid.toLocaleString('en-IN')}</TableCell>
+                    <TableCell className="text-right">₹{purchase.totals.balance.toLocaleString('en-IN')}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <p className="py-8 text-center text-muted-foreground">
+              No F.Co purchases have been recorded for {BUSINESS_YEAR}.
+            </p>
+          )}
+        </CardContent>
       </Card>
     </div>
   );

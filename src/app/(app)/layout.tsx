@@ -26,32 +26,35 @@ const BackgroundMesh = () => (
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [synced, setSynced] = useState(false);
+  const [synced, setSynced] = useState(true);
   const [syncKey, setSyncKey] = useState(0);
 
   useEffect(() => {
     const doSync = async () => {
       setSynced(false);
-      await loadDataStore();
-      setSynced(true);
-      setSyncKey(prev => prev + 1);
+
+      try {
+        await Promise.race([
+          loadDataStore(),
+          new Promise(resolve => setTimeout(resolve, 1500))
+        ]);
+      } finally {
+        setSynced(true);
+        setSyncKey(prev => prev + 1);
+      }
     };
 
-    doSync();
-    window.addEventListener('focus', doSync);
-    return () => window.removeEventListener('focus', doSync);
-  }, []);
+    const handleFocus = () => {
+      void doSync();
+    };
 
-  if (!synced) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-[#020205]">
-        <div className="text-white text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-sm opacity-60">Syncing data...</p>
-        </div>
-      </div>
-    );
-  }
+    void doSync();
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
 
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden bg-[#020205]">

@@ -1,9 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
+import connectDB, {
+  getMongoConfigurationDiagnostics,
+} from '@/lib/mongodb';
 import FcoDocument from '@/lib/models/document';
+
 
 function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function getSafeDatabaseError(error: unknown): string {
+  const errorName =
+    error instanceof Error ? error.name : '';
+  const errorMessage =
+    error instanceof Error ? error.message : '';
+
+  if (
+    errorName === 'MongoParseError' &&
+    /Invalid scheme|Invalid connection string/i.test(errorMessage)
+  ) {
+    return 'MongoDB connection string is invalid. Check the server MONGODB_URI configuration.';
+  }
+
+  if (
+    errorName === 'MongoServerSelectionError' ||
+    errorName === 'MongoNetworkError'
+  ) {
+    return 'MongoDB connection failed. Check the server connection and database access.';
+  }
+
+  return 'MongoDB request failed. Check the server configuration and logs.';
 }
 
 /**
@@ -14,12 +40,26 @@ function escapeRegex(value: string): string {
  */
 export async function GET(req: NextRequest) {
   try {
-    await connectDB();
+    const db = await connectDB();
+
+    if (!db) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Cloud sync is not configured: MONGODB_URI is missing.',
+        },
+        { status: 503 }
+      );
+    }
 
     const { searchParams } = new URL(req.url);
 
     const key = searchParams.get('key');
-    const prefix = searchParams.get('prefix');
+    const prefixes = [...new Set(
+      searchParams.getAll('prefix')
+        .map(value => value.trim())
+        .filter(Boolean)
+    )];
 
     // Get one document
     if (key) {
@@ -41,14 +81,19 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Get documents by prefix
-    const query = prefix
-      ? {
-          key: {
-            $regex: `^${escapeRegex(prefix)}`,
-          },
-        }
-      : {};
+    // Get documents matching one or more requested prefixes.
+    // No prefix means the caller explicitly requested the full collection.
+    const prefixConditions = prefixes.map(prefix => ({
+      key: {
+        $regex: `^${escapeRegex(prefix)}`,
+      },
+    }));
+
+    const query = prefixConditions.length === 1
+      ? prefixConditions[0]
+      : prefixConditions.length > 1
+        ? { $or: prefixConditions }
+        : {};
 
     const documents = await FcoDocument.find(query)
       .sort({ updatedAt: -1 })
@@ -59,15 +104,28 @@ export async function GET(req: NextRequest) {
       data: documents.map((document: any) => ({ ...document.value, id: document.key, key: document.key, value: document.value })),
     });
   } catch (error) {
-    console.error('GET /api/documents failed:', error);
+    const isPreviewParseError =
+      process.env.VERCEL_ENV === 'preview' &&
+      error instanceof Error &&
+      error.name === 'MongoParseError' &&
+      /Invalid scheme|Invalid connection string/i.test(
+        error.message
+      );
+
+    console.error(
+      'GET /api/documents failed:',
+      error instanceof Error ? error.name : 'Unknown error'
+    );
 
     return NextResponse.json(
       {
         success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : String(error),
+        error: getSafeDatabaseError(error),
+        ...(isPreviewParseError
+          ? {
+              diagnostics: getMongoConfigurationDiagnostics(),
+            }
+          : {}),
       },
       { status: 500 }
     );
@@ -81,7 +139,17 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    await connectDB();
+    const db = await connectDB();
+
+    if (!db) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Cloud sync is not configured: MONGODB_URI is missing.',
+        },
+        { status: 503 }
+      );
+    }
 
     const body = await req.json();
 
@@ -114,7 +182,7 @@ export async function POST(req: NextRequest) {
       },
       {
         upsert: true,
-        new: true,
+        returnDocument: 'after',
         setDefaultsOnInsert: true,
       }
     ).lean();
@@ -124,15 +192,15 @@ export async function POST(req: NextRequest) {
       data: document?.value,
     });
   } catch (error) {
-    console.error('POST /api/documents failed:', error);
+    console.error(
+      'POST /api/documents failed:',
+      error instanceof Error ? error.name : 'Unknown error'
+    );
 
     return NextResponse.json(
       {
         success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : String(error),
+        error: getSafeDatabaseError(error),
       },
       { status: 500 }
     );
@@ -146,7 +214,17 @@ export async function POST(req: NextRequest) {
  */
 export async function DELETE(req: NextRequest) {
   try {
-    await connectDB();
+    const db = await connectDB();
+
+    if (!db) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Cloud sync is not configured: MONGODB_URI is missing.',
+        },
+        { status: 503 }
+      );
+    }
 
     const { searchParams } = new URL(req.url);
 
@@ -171,19 +249,17 @@ export async function DELETE(req: NextRequest) {
       deleted: result.deletedCount > 0,
     });
   } catch (error) {
-    console.error('DELETE /api/documents failed:', error);
+    console.error(
+      'DELETE /api/documents failed:',
+      error instanceof Error ? error.name : 'Unknown error'
+    );
 
     return NextResponse.json(
       {
         success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : String(error),
+        error: getSafeDatabaseError(error),
       },
       { status: 500 }
     );
   }
 }
-
-

@@ -41,7 +41,7 @@ import { useToast } from '@/hooks/use-toast';
 
 import PageHeader from '@/components/PageHeader';
 
-import { getDocument, saveDocument } from '@/lib/actions';
+import { getDocuments, saveDocument } from '@/lib/actions';
 
 export default function ActivityLogPage() {
   const [logs, setLogs] =
@@ -94,7 +94,7 @@ export default function ActivityLogPage() {
 
     try {
       const existingResult =
-        await getDocument('activityLogs');
+        await getDocuments('activityLogs');
 
       if (!existingResult.success) {
         throw new Error(

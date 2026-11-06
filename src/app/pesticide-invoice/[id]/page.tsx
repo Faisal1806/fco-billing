@@ -194,8 +194,8 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
                                 <TableCell>{index + 1}</TableCell>
                                 <TableCell>{entry.particulars}</TableCell>
                                 <TableCell className="text-right">{entry.qty}</TableCell>
-                                <TableCell className="text-right">â‚¹{entry.rate.toFixed(2)}</TableCell>
-                                <TableCell className="text-right font-medium">â‚¹{entry.amount.toFixed(2)}</TableCell>
+                                <TableCell className="text-right">₹{entry.rate.toFixed(2)}</TableCell>
+                                <TableCell className="text-right font-medium">₹{entry.amount.toFixed(2)}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
@@ -206,7 +206,7 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
                        <Separator />
                        <div className="flex justify-between font-bold text-lg pt-1">
                          <span>Grand Total:</span>
-                         <span>â‚¹{grandTotal.toFixed(2)}</span>
+                         <span>₹{grandTotal.toFixed(2)}</span>
                        </div>
                        <Separator />
                     </div>
@@ -252,7 +252,7 @@ export default function PesticideInvoicePage({ params }: { params: { id: string 
                 </tbody>
             </table>
              <div className="my-2 border-t-2 border-black pt-1 space-y-1 text-sm font-bold">
-                <div className="flex justify-between"><span>GRAND TOTAL:</span><span>â‚¹{grandTotal.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span>GRAND TOTAL:</span><span>₹{grandTotal.toFixed(2)}</span></div>
             </div>
             <footer className="text-center pt-2 border-t border-dashed border-black">
                 <p>Thank you!</p>

@@ -54,8 +54,8 @@ export default function LoyaltyPage() {
     useEffect(() => {
         const fetchTokens = async () => {
             const { success, data } = await getDocuments('fcm-tokens', true);
-            if (success && data) {
-                setFcmTokens(data.map(t => t.token));
+            if (success && Array.isArray(data)) {
+                setFcmTokens(data.map((t: any) => t.token));
             }
         };
         fetchTokens();
@@ -138,7 +138,7 @@ export default function LoyaltyPage() {
 
         return {
             totalEarned: totalEarned.toLocaleString(),
-            totalRedeemed: `â‚¹${totalRedeemed.toLocaleString()}`,
+            totalRedeemed: `₹${totalRedeemed.toLocaleString()}`,
             available: (totalEarned - totalRedeemed).toLocaleString(),
         }
     }, [loyaltyData]);
@@ -203,7 +203,7 @@ export default function LoyaltyPage() {
             if (fcmTokens.length > 0) {
                  await sendPushNotification({
                     title: 'Loyalty Points Redeemed',
-                    body: `${redemptionAmount} points redeemed for ${selectedPartyData.name} as a â‚¹${redemptionAmount} discount.`,
+                    body: `${redemptionAmount} points redeemed for ${selectedPartyData.name} as a ₹${redemptionAmount} discount.`,
                     tokens: fcmTokens,
                 });
             }
@@ -225,7 +225,7 @@ export default function LoyaltyPage() {
         <div className="space-y-6">
             <PageHeader
                 title="F.Co Loyalty & Rewards"
-                description="Earn points for sales and trade activities. (1 Point = â‚¹1)"
+                description="Earn points for sales and trade activities. (1 Point = ₹1)"
                 icon={<Award className="h-8 w-8" />}
                 imageUrl="/assets/3d/loyalty.png"
             />
@@ -235,7 +235,7 @@ export default function LoyaltyPage() {
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <StatCard title="Total Points Earned" value={globalStats.totalEarned} icon={TrendingUp} />
-                    <StatCard title="Points Redeemed (â‚¹)" value={globalStats.totalRedeemed} icon={DollarSign} />
+                    <StatCard title="Points Redeemed (₹)" value={globalStats.totalRedeemed} icon={DollarSign} />
                     <StatCard title="Available Points" value={globalStats.available} icon={Gift} color="text-green-500" />
                 </CardContent>
             </Card>
@@ -253,7 +253,7 @@ export default function LoyaltyPage() {
                                     <TableHead>Rank</TableHead>
                                     <TableHead>Grower Name</TableHead>
                                     <TableHead className="text-right">Points Earned</TableHead>
-                                    <TableHead className="text-right">Total Sale (â‚¹)</TableHead>
+                                    <TableHead className="text-right">Total Sale (₹)</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -264,7 +264,7 @@ export default function LoyaltyPage() {
                                             <TableCell className="font-bold text-lg">{rankIcon}</TableCell>
                                             <TableCell>{grower.name}</TableCell>
                                             <TableCell className="text-right font-mono text-green-500">{grower.points}</TableCell>
-                                            <TableCell className="text-right font-mono">â‚¹{grower.netSales.toLocaleString('en-IN')}</TableCell>
+                                            <TableCell className="text-right font-mono">₹{grower.netSales.toLocaleString('en-IN')}</TableCell>
                                         </TableRow>
                                     );
                                 })}
@@ -288,10 +288,10 @@ export default function LoyaltyPage() {
                                 <div className='grid grid-cols-2 gap-4 mb-4'>
                                     <div className="p-4 bg-muted/50 rounded-lg">
                                         <p className="text-sm text-muted-foreground">Total Sales (This Year)</p>
-                                        <p className="text-2xl font-bold">â‚¹{selectedPartyData.netSales.toLocaleString('en-IN')}</p>
+                                        <p className="text-2xl font-bold">₹{selectedPartyData.netSales.toLocaleString('en-IN')}</p>
                                     </div>
                                     <div className="p-4 bg-muted/50 rounded-lg">
-                                        <p className="text-sm text-muted-foreground">Available Points (â‚¹)</p>
+                                        <p className="text-sm text-muted-foreground">Available Points (₹)</p>
                                         <p className="text-2xl font-bold text-yellow-400 flex items-center gap-2">
                                             <Star className="h-6 w-6"/> {selectedPartyPoints.toLocaleString('en-IN')}
                                         </p>

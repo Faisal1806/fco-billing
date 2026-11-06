@@ -1,7 +1,6 @@
-'use client';
+﻿'use client';
 
 import * as React from 'react';
-import { useAppState } from '@/contexts/app-state-context';
 import { useMemo, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -20,11 +19,22 @@ import { PartySelector } from './party-selector';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
 import { cn } from '@/lib/utils';
-import { saveDocument, deleteDocument, getDocuments } from '@/lib/actions';
+import {
+  saveDocument,
+  deleteDocument,
+  getBusinessDocuments,
+  getDocuments,
+} from '@/lib/actions';
 import { Checkbox } from './ui/checkbox';
 import { Progress } from './ui/progress';
 import { Alert, AlertDescription } from './ui/alert';
 import { calculateInvoiceTotals } from '@/lib/commission';
+import {
+  formatDocumentDate,
+  getDocumentDateYear,
+  parseDocumentDate,
+  unwrapSharedStorageValue,
+} from '@/lib/document-utils';
 
 
 
@@ -43,7 +53,7 @@ const initialRows: Row[] = Array.from({ length: 5 }, () => ({ ...emptyRow }));
 const SUCCESS_SOUND_URL = 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3';
 
 export function BillMakingTab() {
-  const { selectedYear } = useAppState();
+  const selectedYear = 2026;
   const [sNo, setSNo] = useState('');
   const [ms, setMs] = useState('');                 
   const [khata, setKhata] = useState('');           
@@ -82,48 +92,132 @@ export function BillMakingTab() {
     setIsMounted(true);
   }, []);
 
-  const fetchBillsAndReceipts = () => {
-      const bills = [];
-      const receipts = [];
-      const usedNos = new Map<string, string>();
+    const fetchBillsAndReceipts = async () => {
+      try {
+          const [invoiceResult, receiptResult] = await Promise.all([
+              getBusinessDocuments('invoice-'),
+              getBusinessDocuments('receipt-'),
+          ]);
 
-      let maxSNo = 0;
+          if (!invoiceResult.success) {
+              throw new Error(
+                  invoiceResult.error ||
+                  'Failed to load invoices from MongoDB'
+              );
+          }
 
-      for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && key.startsWith('invoice-')) {
-              try {
-                  const bill = JSON.parse(localStorage.getItem(key)!);
-                  bills.push(bill);
-                  if (bill.linkedReceiptNo) {
-                      usedNos.set(bill.linkedReceiptNo, bill.sNo);
-                  }
-                  const currentSNo = parseInt(bill.sNo, 10);
-                  if (!isNaN(currentSNo) && currentSNo > maxSNo) {
-                      maxSNo = currentSNo;
-                  }
-              } catch(e) {
-                  console.error("Failed to parse bill from local storage", e);
+          if (!receiptResult.success) {
+              throw new Error(
+                  receiptResult.error ||
+                  'Failed to load receipts from MongoDB'
+              );
+          }
+
+          const bills: any[] = Array.isArray(invoiceResult.data)
+              ? invoiceResult.data
+              : [];
+
+          const receipts: any[] = Array.isArray(receiptResult.data)
+              ? receiptResult.data
+              : [];
+          const unwrapDocuments = (
+              documents: any[]
+          ): Record<string, any>[] =>
+              documents.flatMap((item: any) => {
+                      if (!item || typeof item !== 'object') {
+                          return [];
+                      }
+
+                      const storedValue =
+                          item.value && typeof item.value === 'object'
+                              ? item.value
+                              : item;
+                      const value =
+                          unwrapSharedStorageValue(storedValue);
+
+                      if (
+                          !value ||
+                          typeof value !== 'object' ||
+                          Array.isArray(value)
+                      ) {
+                          return [];
+                      }
+
+                      return [{
+                          ...value,
+                          id: item.id ?? (value as any).id,
+                          key: item.key ?? (value as any).key,
+                      }];
+                  });
+          const normalizedBills = unwrapDocuments(bills);
+          const normalizedReceipts = unwrapDocuments(receipts);
+
+          const usedNos = new Map<string, string>();
+          let maxSNo = 0;
+
+          for (const bill of normalizedBills) {
+              if (bill?.linkedReceiptNo) {
+                  usedNos.set(
+                      String(bill.linkedReceiptNo),
+                      String(bill.sNo ?? '')
+                  );
+              }
+
+              const currentSNo = parseInt(
+                  String(bill?.sNo ?? ''),
+                  10
+              );
+
+              if (!isNaN(currentSNo) && currentSNo > maxSNo) {
+                  maxSNo = currentSNo;
               }
           }
-          if (key && key.startsWith('receipt-')) {
-               try {
-                  const receipt = JSON.parse(localStorage.getItem(key)!);
-                  receipts.push(receipt);
-              } catch(e) {
-                  console.error("Failed to parse receipt from local storage", e);
-              }
-          }
-      }
-      setSavedWataks(bills.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-      setAvailableReceipts(receipts.sort((a,b) => (a.no > b.no) ? 1 : -1));
-      setUsedReceiptsMap(usedNos);
-      
-      if (!isEditing) {
-          setSNo((maxSNo + 1).toString());
-      }
-    };
 
+          const sortedBills = [...normalizedBills].sort(
+              (a: any, b: any) =>
+                  (parseDocumentDate(b?.date)?.getTime() ?? 0) -
+                  (parseDocumentDate(a?.date)?.getTime() ?? 0)
+          );
+
+          const sortedReceipts = [...normalizedReceipts].sort(
+              (a: any, b: any) =>
+                  String(a?.no ?? '').localeCompare(
+                      String(b?.no ?? ''),
+                      undefined,
+                      { numeric: true }
+                  )
+          );
+
+          setSavedWataks(sortedBills);
+          setAvailableReceipts(sortedReceipts);
+          setUsedReceiptsMap(usedNos);
+
+          if (!isEditing) {
+              setSNo((maxSNo + 1).toString());
+          }
+
+          console.log(
+              `[F.CO] Cloud invoice load successful: ${normalizedBills.length} invoices, ${normalizedReceipts.length} receipts`
+          );
+      } catch (error) {
+          setSavedWataks([]);
+          setAvailableReceipts([]);
+          setUsedReceiptsMap(new Map());
+          console.error(
+              '[F.CO] Invoice/receipt cloud load failed:',
+              error
+          );
+
+          toast({
+              variant: 'destructive',
+              title: 'Cloud Data Load Failed',
+              description:
+                  error instanceof Error
+                      ? error.message
+                      : 'Could not load invoices and receipts from MongoDB.',
+          });
+      }
+  };
     const fetchPartyCreditInfo = (partyName: string) => {
         if (!partyName) {
             setPartyCredit(null);
@@ -166,18 +260,24 @@ export function BillMakingTab() {
 
 
   const yearlyCount = useMemo(() => {
-    if(!savedWataks) return 0;
-    const currentYear = new Date().getFullYear();
-    return savedWataks.filter(w => w?.date ? Number(String(w.date).split(/[-/]/).find(p => p.length === 4)) === selectedYear : false).length;
+    return savedWataks.filter(
+      watak => getDocumentDateYear(watak?.date) === selectedYear
+    ).length;
   }, [savedWataks]);
-  
+
+  const availableYears = [selectedYear];
+
   const filteredWataks = useMemo(() => {
-      if (!searchTerm) return savedWataks;
+      const yearWataks = savedWataks.filter(
+          watak => getDocumentDateYear(watak?.date) === selectedYear
+      );
+      if (!searchTerm) return yearWataks;
       const lowerCaseSearch = searchTerm.toLowerCase();
-      return savedWataks.filter(watak => 
-        watak.sNo?.toLowerCase().includes(lowerCaseSearch) ||
-        watak.watakNo?.toLowerCase().includes(lowerCaseSearch) ||
-        watak.customerName?.toLowerCase().includes(lowerCaseSearch)
+      const normalize = (value: unknown) => String(value ?? '').trim().toLowerCase();
+      return yearWataks.filter(watak =>
+        normalize(watak.sNo).includes(lowerCaseSearch) ||
+        normalize(watak.watakNo).includes(lowerCaseSearch) ||
+        normalize(watak.customerName).includes(lowerCaseSearch)
       );
   }, [savedWataks, searchTerm]);
 
@@ -196,8 +296,12 @@ export function BillMakingTab() {
         fetchTokens();
 
         fetch('/animations/forms/fco_loader.json')
-            .then(res => res.json())
-            .then(data => setLoaderAnimation(data));
+            .then(async (res) => {
+                if (!res.ok) throw new Error(`Loader fetch failed: ${res.status}`);
+                return res.json();
+            })
+            .then(data => setLoaderAnimation(data))
+            .catch(() => setLoaderAnimation(null));
 
         fetchBillsAndReceipts();
     }
@@ -268,7 +372,7 @@ export function BillMakingTab() {
     setRows(newRows);
     
     setQuickEntry('');
-    toast({ title: 'Quick Entry Applied', description: `Grower: ${name}, Variety: ${variety}, Qty: ${qty}, Rate: â‚¹${rate}` });
+    toast({ title: 'Quick Entry Applied', description: `Grower: ${name}, Variety: ${variety}, Qty: ${qty}, Rate: ₹${rate}` });
   };
 
   const selectedReceipt = useMemo(() => {
@@ -421,12 +525,22 @@ export function BillMakingTab() {
     }
     if (!window.confirm(`Are you sure you want to delete Invoice #${deletedSNo}? This cannot be undone.`)) return;
     
-    localStorage.removeItem(`invoice-${deletedSNo}`);
+    
     try {
-        await deleteDocument('bills', deletedSNo);
-        toast({ title: "Invoice Deleted", description: `Invoice #${deletedSNo} has been deleted locally and from cloud.`});
+        const result = await deleteDocument(`invoice-${deletedSNo}`);
+        if (!result.success) {
+          throw new Error(result.error || 'MongoDB deletion failed');
+        }
+        if (!result.deleted) {
+          throw new Error('Invoice was not found in MongoDB.');
+        }
+        toast({ title: "Invoice Deleted", description: `Invoice #${deletedSNo} has been deleted from MongoDB.`});
     } catch (e) {
-        toast({ title: "Invoice Deleted Locally", description: `Bill removed from device but cloud sync failed.`});
+        toast({
+          variant: 'destructive',
+          title: "Invoice Delete Failed",
+          description: e instanceof Error ? e.message : 'The invoice could not be deleted from MongoDB.',
+        });
     }
     fetchBillsAndReceipts();
     if (deletedSNo === sNo) resetForm();
@@ -474,12 +588,12 @@ export function BillMakingTab() {
         total: r.isForwarded ? 0 : ((Number(r.qty) || 0) * (Number(r.rate) || 0)),
       })),
       totals: {
-        subtotal: Number(totals.subtotal.toFixed(2)),
-        grossSale: Number(totals.totalGrossSale.toFixed(2)),
-        labour: Number(totals.labour.toFixed(2)),
-        association: Number(totals.association.toFixed(2)),
-        security: Number(totals.security.toFixed(2)),
-        commissionAmount: Number(totals.commissionAmount.toFixed(2)),
+        subtotal: Number((totals.subtotal ?? 0).toFixed(2)),
+        grossSale: Number((totals.totalGrossSale ?? 0).toFixed(2)),
+        labour: Number((totals.labour ?? 0).toFixed(2)),
+        association: Number((totals.association ?? 0).toFixed(2)),
+        security: Number((totals.security ?? 0).toFixed(2)),
+        commissionAmount: Number((totals.commissionAmount ?? 0).toFixed(2)),
         securityCharges: Number((totals.securityCharges ?? 0).toFixed(2)),
         postage: Math.round(Math.min(10, Math.max(0, totals.postage ?? 8))),
         serviceCharges: Number((totals.serviceCharges ?? 0).toFixed(2)),
@@ -490,16 +604,19 @@ export function BillMakingTab() {
       },
       linkedReceiptNo: selectedReceiptNo,
     };
-    
-    localStorage.setItem(`invoice-${billId}`, JSON.stringify(billData));
 
     try {
-        await saveDocument('bills', billData);
+        const result = await saveDocument(`invoice-${billId}`, billData);
+
+        if (!result.success) {
+            throw new Error(result.error || 'MongoDB save failed');
+        }
+
         playSuccessSound();
 
         toast({
             title: isEditing ? 'Invoice Updated' : 'Invoice Saved',
-            description: 'The invoice has been successfully saved to the cloud.',
+            description: 'The invoice has been saved to MongoDB.',
             isSuccess: true,
         });
 
@@ -525,11 +642,13 @@ export function BillMakingTab() {
         toast({
             variant: 'destructive',
             title: 'Cloud Sync Failed',
-            description: 'Could not save the invoice to the cloud. It is saved locally.',
+            description: 'The invoice was NOT saved. MongoDB could not confirm the save.',
         });
+        setIsSubmitting(false);
+        return;
     }
     
-    fetchBillsAndReceipts();
+    await fetchBillsAndReceipts();
     setIsEditing(true); 
     setIsSubmitting(false);
   };
@@ -546,7 +665,7 @@ export function BillMakingTab() {
     msg += `Grower: ${ms}\n`;
     msg += `Fruit: ${varieties}\n`;
     msg += `Boxes: ${totals.totalQty}\n`;
-    msg += `Net Sale: *â‚¹${totals.netSale.toLocaleString()}*\n\n`;
+    msg += `Net Sale: *₹${totals.netSale.toLocaleString()}*\n\n`;
     msg += `View Full Bill: ${pageUrl}\n\n`;
     msg += `Thank you for your business\n`;
     msg += `*Firdous Ahmad & Company*`;
@@ -561,12 +680,12 @@ export function BillMakingTab() {
     <Card className="glass-panel rounded-[3rem] border-white/5 shadow-2xl overflow-hidden">
         <CardHeader className="bg-white/[0.03] border-b border-white/5 p-10">
             <div className="flex justify-between items-center">
-                <div className="text-[10px] font-black uppercase tracking-[0.4em] text-accent">ðŸŽ F.Co TERMINAL</div>
+                <div className="text-[10px] font-black uppercase tracking-[0.4em] text-accent">ðŸ›ï¸ F.Co TERMINAL</div>
                 <div className="text-center flex-1">
                     <h2 className="text-2xl font-black tracking-tighter">FIRDOUS AHMAD & COMPANY</h2>
                     <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] mt-1">Operational Mandi Node Node-13 Sopore</p>
                 </div>
-                <div className="text-[10px] font-black uppercase tracking-[0.4em] text-accent">F.Co TERMINAL ðŸŽ</div>
+                <div className="text-[10px] font-black uppercase tracking-[0.4em] text-accent">F.Co TERMINAL ðŸ›ï¸</div>
             </div>
         </CardHeader>
         <CardContent className="p-10 space-y-10">
@@ -700,7 +819,7 @@ export function BillMakingTab() {
                     <div className="col-span-2 md:col-span-2 bg-white/[0.03] p-6 rounded-[2rem] border border-white/5 space-y-4">
                         <div className="flex justify-between items-center">
                             <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Credit Security Index</Label>
-                            <span className="text-[10px] font-black font-mono">â‚¹{partyCredit.used.toLocaleString()}/â‚¹{partyCredit.limit.toLocaleString()}</span>
+                            <span className="text-[10px] font-black font-mono">₹{partyCredit.used.toLocaleString('en-IN')}/₹{partyCredit.limit.toLocaleString('en-IN')}</span>
                         </div>
                         <Progress value={(partyCredit.used / partyCredit.limit) * 100} className="h-2 bg-white/10" />
                          {creditLimitExceeded && !isEditing &&
@@ -824,9 +943,9 @@ export function BillMakingTab() {
                         <div className="h-1 w-4 bg-accent rounded-full" /> MANDATED EXPENSES
                     </h3>
                     <div className="space-y-2 text-sm font-bold">
-                        <div className="flex justify-between items-center opacity-60"><span>LABOUR (QÃ—3)</span> <span>â‚¹{totals.labour.toLocaleString()}</span></div>
-                        <div className="flex justify-between items-center opacity-60"><span>COMMISSION (6%)</span> <span>â‚¹{totals.commission.toLocaleString()}</span></div>
-                        <div className="flex justify-between items-center opacity-60"><span>S. CHARGES (6%)</span><span>â‚¹{totals.securityCharges.toLocaleString()}</span></div>
+                        <div className="flex justify-between items-center opacity-60"><span>LABOUR (QÃ—3)</span> <span>₹{totals.labour.toLocaleString('en-IN')}</span></div>
+                        <div className="flex justify-between items-center opacity-60"><span>COMMISSION (6%)</span> <span>₹{totals.commission.toLocaleString('en-IN')}</span></div>
+                        <div className="flex justify-between items-center opacity-60"><span>S. CHARGES (6%)</span><span>₹{totals.securityCharges.toLocaleString('en-IN')}</span></div>
                         <div className="flex justify-between items-center text-lg pt-2 border-t border-white/5">
                             <span className="opacity-60 text-xs uppercase">FREIGHT CHARGE</span>
                             <Input
@@ -859,13 +978,13 @@ export function BillMakingTab() {
                         <div className="h-1 w-4 bg-accent rounded-full" /> SETTLEMENT FINAL
                     </h3>
                     <div className="space-y-3">
-                        <div className="flex justify-between items-center text-xs opacity-60 font-black"><span>GROSS SALES</span> <span>â‚¹{totals.totalGrossSale.toLocaleString()}</span></div>
-                        <div className="flex justify-between items-center text-xs opacity-60 font-black"><span>TOTAL DEDUCTIONS</span> <span className="text-rose-400">- â‚¹{totals.totalExp.toLocaleString()}</span></div>
+                        <div className="flex justify-between items-center text-xs opacity-60 font-black"><span>GROSS SALES</span> <span>₹{totals.totalGrossSale.toLocaleString('en-IN')}</span></div>
+                        <div className="flex justify-between items-center text-xs opacity-60 font-black"><span>TOTAL DEDUCTIONS</span> <span className="text-rose-400">- ₹{totals.totalExp.toLocaleString('en-IN')}</span></div>
                         <Separator className="bg-accent/20" />
                         <div className="flex justify-between items-end pt-2">
                             <div className="space-y-1">
                                 <p className="text-[9px] font-black text-accent uppercase tracking-widest">NET PAYABLE YIELD</p>
-                                <p className="text-4xl font-black text-white tracking-tighter">â‚¹{totals.netSale.toLocaleString()}</p>
+                                <p className="text-4xl font-black text-white tracking-tighter">₹{totals.netSale.toLocaleString('en-IN')}</p>
                             </div>
                         </div>
                     </div>
@@ -898,9 +1017,27 @@ export function BillMakingTab() {
                 <div className="h-10 w-1 bg-accent rounded-full" />
                 <div>
                     <CardTitle className="text-xl font-black tracking-tight">TERMINAL TRANSACTION LOG</CardTitle>
-                    <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1">Status: {yearlyCount} Records Indexed In {new Date().getFullYear()}</p>
+                    <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1">Status: {yearlyCount} Records Indexed In {selectedYear}</p>
                 </div>
                </div>
+               <div className="flex items-center gap-3">
+                 <Select
+                    value={String(selectedYear)}
+                 >
+                    <SelectTrigger
+                        aria-label="Invoice year"
+                        className="w-28 h-14 rounded-2xl bg-white/5 border-white/10 font-bold text-xs"
+                    >
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {availableYears.map(year => (
+                            <SelectItem key={year} value={String(year)}>
+                                {year}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                 </Select>
                <div className="relative w-full max-w-md">
                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
                  <Input 
@@ -909,6 +1046,7 @@ export function BillMakingTab() {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
+               </div>
                </div>
             </div>
         </CardHeader>
@@ -927,14 +1065,14 @@ export function BillMakingTab() {
                                         <div className="flex items-center gap-4 mt-1">
                                             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">WATAK: {watak.watakNo || 'UNSET'}</p>
                                             <div className="h-1 w-1 bg-white/20 rounded-full" />
-                                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{new Date(watak.date).toLocaleDateString()}</p>
+                                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{formatDocumentDate(watak.date)}</p>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-10">
                                     <div className="text-right">
                                         <p className="text-[9px] font-black text-accent uppercase tracking-widest mb-1">NET SETTLEMENT</p>
-                                        <p className="text-2xl font-black text-white tracking-tighter">â‚¹{watak.totals?.netSale?.toLocaleString() || '0'}</p>
+                                        <p className="text-2xl font-black text-white tracking-tighter">₹{watak.totals?.netSale?.toLocaleString('en-IN') || '0'}</p>
                                     </div>
                                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
                                         <Button variant="ghost" size="icon" onClick={() => loadWatakForEdit(watak)} className="h-12 w-12 rounded-xl hover:bg-white/10">
@@ -962,9 +1100,5 @@ export function BillMakingTab() {
     </>
   );
 }
-
-
-
-
 
 

@@ -65,7 +65,7 @@ export default function LiveRateList() {
         rates.forEach(rate => {
             if (rate.variety && rate.rate) {
                 const name = `${rate.variety} (${rate.type})`;
-                shareText += `- ${name}: *â‚¹${rate.rate}*\n`;
+                shareText += `- ${name}: *₹${rate.rate}*\n`;
             }
         });
         
@@ -111,7 +111,7 @@ export default function LiveRateList() {
                                     <TableRow key={`${rate.variety}-${rate.type}`}>
                                         <TableCell className="font-medium">{rate.variety} ({rate.type})</TableCell>
                                         <TableCell className="text-right font-semibold text-lg">
-                                            â‚¹{rate.rate}
+                                            ₹{rate.rate}
                                         </TableCell>
                                     </TableRow>
                                 ))}

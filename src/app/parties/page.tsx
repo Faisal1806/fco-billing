@@ -30,11 +30,14 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveDocument, deleteDocument } from '@/lib/actions';
+import { savePartyRecord } from '@/lib/party-sync';
 import { Progress } from '@/components/ui/progress';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PageHeader from '@/components/PageHeader';
+import { getBusinessDocuments } from '@/lib/actions';
+import { BUSINESS_YEAR, getDocumentDateYear, parseDocumentDate } from '@/lib/document-utils';
 
 
 const PARTY_STORAGE_PREFIX = 'party-';
@@ -78,10 +81,10 @@ const defaultGrowers: { name: string, address: string }[] = [
     { name: 'Mohd. Arif Lone (Uffa)', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Subhan Parray', address: 'R/o Nadihal Bla.' },
     { name: 'GH. Mohiuddin Lone (Poltry)', address: 'R/o Nadihal Bla.' },
-    { name: 'Majoor Ahmad Lone Â®', address: 'R/o Nadihal Bla.' },
+    { name: 'Majoor Ahmad Lone ®', address: 'R/o Nadihal Bla.' },
     { name: 'Mohd. Akbar Lone (Lama)', address: 'R/o Nadihal Bla.' },
-    { name: 'Jaana Â® B/P', address: 'R/o Nadihal Bla.' },
-    { name: 'Rayees Rajab Â®', address: 'R/o Nadihal Bla.' },
+    { name: 'Jaana ® B/P', address: 'R/o Nadihal Bla.' },
+    { name: 'Rayees Rajab ®', address: 'R/o Nadihal Bla.' },
     { name: 'Hilal Ahmad Wani', address: 'R/o Nadihal Bla.' },
     { name: 'Javid Ahmad Sheikh', address: 'R/o Shanoo, Mawer Handwara' },
     { name: 'Manzoor Ah. Lone B/P', address: 'R/o Nadihal Bla.' },
@@ -132,7 +135,7 @@ export default function PartiesPage() {
     setIsMounted(true);
   }, []);
 
-  const fetchPartiesAndTransactions = () => {
+  const fetchPartiesAndTransactions = async () => {
     setIsLoading(true);
     const partiesMap = new Map<string, Party>();
     const localPartyStats = new Map<string, any>();
@@ -165,22 +168,26 @@ export default function PartiesPage() {
         }
     }
     
-    const allTransactions: any[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (!key) continue;
-
-        const prefixes = ['invoice-', 'purchase-', 'advance-', 'bikri-'];
-        const matchingPrefix = prefixes.find(p => key.startsWith(p));
-
-        if (matchingPrefix) {
-             try {
-                const tx = JSON.parse(localStorage.getItem(key)!);
-                if (!tx.id) tx.id = key;
-                allTransactions.push(tx);
-             } catch(e) { console.error("Failed to parse transaction:", key, e)}
-        }
+    const result = await getBusinessDocuments([
+        'party-',
+        'invoice-',
+        'purchase-',
+        'supplier-purchase-',
+        'own-purchase-',
+        'advance-',
+        'advances/',
+        'bikri-',
+    ]);
+    if (!result.success || !Array.isArray(result.data)) {
+        throw new Error(result.error || 'Could not load parties and transactions.');
     }
+    const allTransactions = result.data.filter(tx =>
+        !String(tx.key).startsWith(PARTY_STORAGE_PREFIX) &&
+        getDocumentDateYear(tx.date) === BUSINESS_YEAR
+    );
+    result.data
+        .filter(tx => String(tx.key).startsWith(PARTY_STORAGE_PREFIX))
+        .forEach(party => addOrUpdateParty(String(party.name || ''), party));
     
     allTransactions.forEach(tx => {
         if(!tx.id && !tx.billNo && !tx.sNo) return;
@@ -209,7 +216,10 @@ export default function PartiesPage() {
                 return partyName && getCanonicalName(partyName) === canonical;
             });
         
-        partyTransactions.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        partyTransactions.sort((a,b) =>
+            (parseDocumentDate(a.date)?.getTime() ?? 0) -
+            (parseDocumentDate(b.date)?.getTime() ?? 0)
+        );
 
         if (partyTransactions.length > 0) {
             stats.lastActivityDate = partyTransactions[partyTransactions.length - 1].date;
@@ -223,8 +233,8 @@ export default function PartiesPage() {
                 const sale = tx.totals?.netSale || 0;
                 stats.balance += sale;
                 saleAmount = sale;
-            } else if (txId.startsWith('purchase-')) {
-                stats.balance -= tx.totals?.grandTotal || 0;
+            } else if (txId.startsWith('purchase-') || txId.startsWith('supplier-purchase-') || txId.startsWith('own-purchase-')) {
+                stats.balance -= tx.totals?.grandTotal ?? tx.totals?.totalAmount ?? tx.totalPurchase ?? 0;
             } else if (txId.startsWith('advance-')) {
                 if (tx.type === 'Advance Given') {
                     stats.balance -= tx.amount || 0;
@@ -275,11 +285,23 @@ export default function PartiesPage() {
   useEffect(() => {
     if (isMounted) {
         setUserRole(localStorage.getItem('userRole'));
-        fetchPartiesAndTransactions();
+        void fetchPartiesAndTransactions().catch(error => {
+            console.error('Party transaction load failed:', error);
+            setParties([]);
+            setPartyStats({});
+            setIsLoading(false);
+            toast({
+                variant: 'destructive',
+                title: 'Party Data Failed',
+                description: error instanceof Error ? error.message : 'Could not load party data.',
+            });
+        });
     }
-  }, [isMounted]);
+  }, [isMounted, toast]);
 
   const filteredParties = useMemo(() => {
+    const normalizeText = (value: unknown) => String(value ?? '').trim().toLowerCase();
+
     return parties
         .filter(p => {
             if (activeTab === 'all') return true;
@@ -290,7 +312,7 @@ export default function PartiesPage() {
         })
         .filter(p => {
             const lowerCaseSearch = searchTerm.toLowerCase();
-            return p.name.toLowerCase().includes(lowerCaseSearch) || (p.phone && p.phone.includes(lowerCaseSearch));
+            return normalizeText(p.name).includes(lowerCaseSearch) || normalizeText(p.phone).includes(lowerCaseSearch);
         });
   }, [parties, searchTerm, activeTab]);
 
@@ -312,14 +334,21 @@ export default function PartiesPage() {
       return;
     }
 
-    const id = 'id' in formState ? formState.id : `${PARTY_STORAGE_PREFIX}${getCanonicalName(formState.name)}`;
-    const newParty: Party = { id, ...(formState as Omit<Party, 'id'>) };
+    const previousName = selectedParty?.name;
+    const canonicalName = getCanonicalName(formState.name);
+    const id = 'id' in formState ? formState.id : `${PARTY_STORAGE_PREFIX}${canonicalName}`;
+    const newParty: Party = {
+      id,
+      ...(formState as Omit<Party, 'id'>),
+      name: canonicalName,
+    };
 
-    localStorage.setItem(id, JSON.stringify(newParty));
-    toast({ title: 'id' in formState ? 'Party Updated' : 'Party Added' });
-    
+    savePartyRecord(newParty, previousName);
+    toast({ title: previousName ? 'Party Updated' : 'Party Added' });
+
     fetchPartiesAndTransactions();
     resetForm();
+    setSelectedParty(null);
     setIsFormDialogOpen(false);
   };
   
@@ -428,12 +457,12 @@ export default function PartiesPage() {
                     <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">{balanceText}</p>
                         <p className={`text-2xl font-bold font-mono ${balanceColor}`}>
-                            {balance >= 0 ? 'â‚¹' : '-â‚¹'}{Math.abs(balance).toLocaleString('en-IN', {maximumFractionDigits: 0})}
+                            {balance >= 0 ? '₹' : '-₹'}{Math.abs(balance).toLocaleString('en-IN', {maximumFractionDigits: 0})}
                         </p>
                     </div>
                      <div className="mt-2 space-y-1">
                         <p className="text-xs text-muted-foreground">YTD Net Sales</p>
-                        <p className="font-semibold font-mono text-primary-foreground">â‚¹{netSales.toLocaleString('en-IN', {maximumFractionDigits: 0})}</p>
+                        <p className="font-semibold font-mono text-primary-foreground">₹{netSales.toLocaleString('en-IN', {maximumFractionDigits: 0})}</p>
                     </div>
                 </div>
             </motion.div>
@@ -583,13 +612,13 @@ export default function PartiesPage() {
                                 <CardContent className="space-y-4">
                                     <div className="flex justify-between items-center">
                                         <span className="text-muted-foreground">Total Life-time Sales</span>
-                                        <span className="text-xl font-bold font-mono">â‚¹{partyStats[getCanonicalName(selectedParty.name)]?.netSales?.toLocaleString()}</span>
+                                        <span className="text-xl font-bold font-mono">₹{partyStats[getCanonicalName(selectedParty.name)]?.netSales?.toLocaleString()}</span>
                                     </div>
                                     <Separator className="bg-white/5" />
                                     <div className="flex justify-between items-center">
                                         <span className="text-muted-foreground">Current Outstanding</span>
                                         <span className={`text-2xl font-black font-mono ${partyStats[getCanonicalName(selectedParty.name)]?.balance >= 0 ? 'text-red-400' : 'text-green-400'}`}>
-                                            â‚¹{Math.abs(partyStats[getCanonicalName(selectedParty.name)]?.balance || 0).toLocaleString()}
+                                            ₹{Math.abs(partyStats[getCanonicalName(selectedParty.name)]?.balance || 0).toLocaleString()}
                                         </span>
                                     </div>
                                     <p className="text-[10px] text-right uppercase tracking-widest text-muted-foreground opacity-50">
@@ -635,7 +664,3 @@ export default function PartiesPage() {
     </div>
   );
 }
-
-
-
-

@@ -52,8 +52,8 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { FaWhatsapp } from 'react-icons/fa';
 import { Badge } from '@/components/ui/badge';
-import { deleteDocument, getDocuments } from '@/lib/actions';
-import { useAppState } from '@/contexts/app-state-context';
+import { deleteDocument, getBusinessDocuments } from '@/lib/actions';
+import { BUSINESS_YEAR, formatDocumentDate, getDocumentDateYear, parseDocumentDate } from '@/lib/document-utils';
 import { motion } from 'framer-motion';
 
 type PurchaseEntry = {
@@ -80,66 +80,63 @@ const whole = (value: unknown) => Math.round(Number(value) || 0);
 const normalizePurchase = (item: any, key?: string): PurchaseEntry | null => {
   const value = item?.value && typeof item.value === 'object' ? item.value : item;
   if (!value || typeof value !== 'object') return null;
-  const billNo = String(value.billNo || '');
+
+  const billNo = String(value.billNo || value.purchaseNo || '').trim();
   if (!billNo) return null;
 
-  const entries = Array.isArray(value.entries)
-    ? value.entries.map((entry: any) => ({
-        type: entry?.type === 'Dabba' ? 'Dabba' : 'Patti',
-        variety: String(entry?.variety || entry?.description || ''),
-        qty: whole(entry?.qty),
-        rate: whole(entry?.rate),
-        total: whole(entry?.total ?? ((Number(entry?.qty) || 0) * (Number(entry?.rate) || 0))),
-      }))
-    : [];
+  const itemsSource = Array.isArray(value.items)
+    ? value.items
+    : Array.isArray(value.entries)
+      ? value.entries
+      : [];
+
+  const entries = itemsSource.map((entry: any) => {
+    const qty = whole(entry?.quantity ?? entry?.qty);
+    const rate = whole(entry?.rate);
+    const total = whole(entry?.total ?? entry?.amount ?? (qty * rate));
+
+    return {
+      type: entry?.type === 'Dabba' ? 'Dabba' : 'Patti',
+      variety: String(entry?.variety || entry?.description || ''),
+      qty,
+      rate,
+      total,
+    };
+  });
 
   const totalQty = whole(
-    value?.totals?.totalQty ?? entries.reduce((sum: number, e: any) => sum + e.qty, 0),
+    value?.totalQuantity ?? value?.totals?.totalQty ?? entries.reduce((sum: number, e: { qty: number }) => sum + e.qty, 0)
   );
+
   const grandTotal = whole(
-    value?.totals?.grandTotal ?? entries.reduce((sum: number, e: any) => sum + e.total, 0),
+    value?.grandTotal ??
+      value?.totals?.grandTotal ??
+      value?.totals?.totalAmount ??
+      entries.reduce((sum: number, e: { total: number }) => sum + e.total, 0)
   );
+
+  const isOwnStock = value.purchaseType === 'Own Purchase' ||
+    value.purchaseFor === 'Own Stock (F.Co)' ||
+    value.partyName === 'F.Co (Own Stock)';
+  const partyName = String(value?.partyName || value?.growerName || value?.customerName || value?.supplierName || (isOwnStock ? 'F.Co (Own Stock)' : 'Unknown'));
 
   return {
     id: String(value.id || key || `purchase-${billNo}`),
     billNo,
     date: String(value.date || ''),
-    growerName: String(value.growerName || value.customerName || 'Unknown'),
-    purchaseFor: value.purchaseFor,
+    growerName: partyName,
+    purchaseFor: value.purchaseFor || (isOwnStock ? 'Own Stock (F.Co)' : 'Customer'),
     entries,
     totals: { totalQty, grandTotal },
   };
 };
 
-function getYear(date: unknown): number | null {
-  if (!date) return null;
-  const text = String(date);
-  const match = text.match(/\b(20\d{2})\b/);
-  if (match) return Number(match[1]);
-  const parsed = new Date(text);
-  return Number.isNaN(parsed.getTime()) ? null : parsed.getFullYear();
-}
-
-function readLocalPurchases(): PurchaseEntry[] {
-  if (typeof window === 'undefined') return [];
-  const result: PurchaseEntry[] = [];
-  for (let i = 0; i < localStorage.length; i += 1) {
-    const key = localStorage.key(i);
-    if (!key || !key.startsWith('purchase-') || key.startsWith('supplier-purchase-')) continue;
-    try {
-      const purchase = normalizePurchase(JSON.parse(localStorage.getItem(key) || 'null'), key);
-      if (purchase) result.push(purchase);
-    } catch (error) {
-      console.error('Could not parse local purchase:', key, error);
-    }
-  }
-  return result;
-}
+const getYear = getDocumentDateYear;
 
 export default function PurchaseRegisterPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { selectedYear, setSelectedYear } = useAppState();
+  const selectedYear = BUSINESS_YEAR;
 
   const [purchases, setPurchases] = React.useState<PurchaseEntry[]>([]);
   const [customers, setCustomers] = React.useState<string[]>(['All Customers']);
@@ -149,49 +146,47 @@ export default function PurchaseRegisterPage() {
   const [isDownloading, setIsDownloading] = React.useState(false);
   const [viewMode, setViewMode] = React.useState<'grid' | 'table'>('table');
   const [userRole, setUserRole] = React.useState<string | null>(null);
-  const [availableYears, setAvailableYears] = React.useState<number[]>([]);
+  const availableYears = [BUSINESS_YEAR];
 
   const fetchPurchases = React.useCallback(async () => {
     setIsLoading(true);
-    let loaded: PurchaseEntry[] = [];
 
     try {
-      const result = await getDocuments('purchase-');
-      if (result.success && Array.isArray(result.data)) {
-        loaded = result.data
-          .map((item: any) => normalizePurchase(item, item?.key))
-          .filter(Boolean) as PurchaseEntry[];
+      const result = await getBusinessDocuments(['purchase-', 'own-purchase-']);
+
+      if (!result.success || !Array.isArray(result.data)) {
+        throw new Error(result.error || 'Failed to load purchases');
       }
+
+      const loaded = result.data
+        .map((item: any) => normalizePurchase(item, item?.key))
+        .filter(Boolean) as PurchaseEntry[];
+
+      const merged = loaded.sort(
+        (a, b) =>
+          (parseDocumentDate(b.date)?.getTime() ?? 0) -
+          (parseDocumentDate(a.date)?.getTime() ?? 0),
+      );
+
+      setPurchases(merged);
+      setCustomers([
+        'All Customers',
+        ...Array.from(new Set(merged.map((p) => p.growerName).filter(Boolean))).sort(),
+      ]);
     } catch (error) {
       console.error('Cloud purchase register load failed:', error);
+
+      setPurchases([]);
+      setCustomers(['All Customers']);
+      toast({
+        variant: 'destructive',
+        title: 'Purchase Register Error',
+        description: error instanceof Error ? error.message : 'Could not load purchase records.',
+      });
+    } finally {
+      setIsLoading(false);
     }
-
-    // Always merge local cache. This prevents the register from becoming empty
-    // when the API is temporarily unavailable and avoids duplicate bills.
-    const local = readLocalPurchases();
-    const byId = new Map<string, PurchaseEntry>();
-    [...loaded, ...local].forEach((purchase) => {
-      byId.set(purchase.id || `purchase-${purchase.billNo}`, purchase);
-    });
-
-    const merged = Array.from(byId.values()).sort(
-      (a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime(),
-    );
-
-    const years = new Set<number>([new Date().getFullYear()]);
-    merged.forEach((purchase) => {
-      const year = getYear(purchase.date);
-      if (year) years.add(year);
-    });
-
-    setAvailableYears(Array.from(years).sort((a, b) => b - a));
-    setPurchases(merged);
-    setCustomers([
-      'All Customers',
-      ...Array.from(new Set(merged.map((p) => p.growerName).filter(Boolean))).sort(),
-    ]);
-    setIsLoading(false);
-  }, []);
+  }, [toast]);
 
   React.useEffect(() => {
     setUserRole(localStorage.getItem('userRole'));
@@ -201,10 +196,8 @@ export default function PurchaseRegisterPage() {
   React.useEffect(() => {
     const handler = () => void fetchPurchases();
     window.addEventListener('mongodb-synced', handler);
-    window.addEventListener('storage', handler);
     return () => {
       window.removeEventListener('mongodb-synced', handler);
-      window.removeEventListener('storage', handler);
     };
   }, [fetchPurchases]);
 
@@ -215,14 +208,15 @@ export default function PurchaseRegisterPage() {
 
   const filteredPurchases = React.useMemo(() => {
     const search = searchTerm.toLowerCase().trim();
+    const normalize = (value: unknown) => String(value ?? '').trim().toLowerCase();
     return yearlyPurchases
       .filter((p) => selectedCustomer === 'All Customers' || p.growerName === selectedCustomer)
       .filter((p) => {
         if (!search) return true;
         return (
-          p.billNo.toLowerCase().includes(search) ||
-          p.growerName.toLowerCase().includes(search) ||
-          (p.purchaseFor || '').toLowerCase().includes(search)
+          normalize(p.billNo).includes(search) ||
+          normalize(p.growerName).includes(search) ||
+          normalize(p.purchaseFor).includes(search)
         );
       });
   }, [yearlyPurchases, selectedCustomer, searchTerm]);
@@ -255,15 +249,23 @@ export default function PurchaseRegisterPage() {
     const key = purchase.id || `purchase-${purchase.billNo}`;
     try {
       const result = await deleteDocument(key);
-      if (!result.success) throw new Error(result.error || 'Delete failed');
+      if (!result.success) {
+        throw new Error(result.error || 'Delete failed');
+      }
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(key);
+      }
+
+      await fetchPurchases();
+      toast({ title: 'Purchase Bill Deleted', description: `Bill #${purchase.billNo} has been deleted.` });
     } catch (error) {
       console.error('Cloud delete failed:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Delete Failed',
+        description: 'Purchase could not be deleted from MongoDB.',
+      });
     }
-
-    localStorage.removeItem(key);
-    localStorage.removeItem(`purchase-${purchase.billNo}`);
-    await fetchPurchases();
-    toast({ title: 'Purchase Bill Deleted', description: `Bill #${purchase.billNo} has been deleted.` });
   };
 
   const exportToPDF = () => {
@@ -275,7 +277,7 @@ export default function PurchaseRegisterPage() {
     autoTable(doc, {
       head: [['Date', 'Bill No.', 'Customer', 'Patti', 'Dabba', 'Grand Total']],
       body: filteredPurchases.map((p) => [
-        new Date(p.date).toLocaleDateString('en-GB'),
+        formatDocumentDate(p.date),
         p.billNo,
         p.growerName,
         p.entries.filter((e) => e.type === 'Patti').reduce((s, e) => s + whole(e.qty), 0),
@@ -291,7 +293,7 @@ export default function PurchaseRegisterPage() {
 
   const exportToExcel = () => {
     const data = filteredPurchases.map((p) => ({
-      Date: new Date(p.date).toLocaleDateString('en-GB'),
+      Date: formatDocumentDate(p.date),
       'Bill No.': p.billNo,
       Customer: p.growerName,
       Patti: p.entries.filter((e) => e.type === 'Patti').reduce((s, e) => s + whole(e.qty), 0),
@@ -329,11 +331,11 @@ export default function PurchaseRegisterPage() {
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
           <div>
             <CardTitle className="flex items-center gap-2">Purchase Register</CardTitle>
-            <CardDescription>All customer purchase bills, loaded from MongoDB with local-cache fallback.</CardDescription>
+            <CardDescription>All customer purchase bills loaded from MongoDB.</CardDescription>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
+            <Select value={String(selectedYear)}>
               <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
               <SelectContent>{availableYears.map((year) => <SelectItem key={year} value={String(year)}>{year}</SelectItem>)}</SelectContent>
             </Select>
@@ -378,9 +380,9 @@ export default function PurchaseRegisterPage() {
                 <DocumentCard type="bill" title={`Purchase #${purchase.billNo}`}>
                   <button className="w-full text-left" onClick={() => navigateToBill(purchase.billNo)}>
                     <p className="text-lg font-semibold">{purchase.growerName}</p>
-                    <p className="text-sm mt-2">Date: {new Date(purchase.date).toLocaleDateString('en-GB')}</p>
+                    <p className="text-sm mt-2">Date: {formatDocumentDate(purchase.date)}</p>
                     <p className="text-sm mt-1">Qty: {whole(purchase.totals.totalQty).toLocaleString('en-IN')}</p>
-                    <p className="text-2xl font-bold mt-3">â‚¹{whole(purchase.totals.grandTotal).toLocaleString('en-IN')}</p>
+                    <p className="text-2xl font-bold mt-3">₹{whole(purchase.totals.grandTotal).toLocaleString('en-IN')}</p>
                   </button>
                   <div className="flex justify-end mt-2">
                     {userRole === 'admin' && <Button variant="ghost" size="icon" onClick={() => void handleDelete(purchase)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
@@ -400,11 +402,11 @@ export default function PurchaseRegisterPage() {
                   const patti = purchase.entries.filter((e) => e.type === 'Patti').reduce((s, e) => s + whole(e.qty), 0);
                   const dabba = purchase.entries.filter((e) => e.type === 'Dabba').reduce((s, e) => s + whole(e.qty), 0);
                   return <TableRow key={purchase.id || purchase.billNo}>
-                    <TableCell>{new Date(purchase.date).toLocaleDateString('en-GB')}</TableCell>
+                    <TableCell>{formatDocumentDate(purchase.date)}</TableCell>
                     <TableCell className="font-medium">{purchase.billNo}</TableCell>
                     <TableCell>{purchase.growerName}</TableCell>
                     <TableCell>{patti}</TableCell><TableCell>{dabba}</TableCell>
-                    <TableCell className="text-right font-semibold">â‚¹{whole(purchase.totals.grandTotal).toLocaleString('en-IN')}</TableCell>
+                    <TableCell className="text-right font-semibold">₹{whole(purchase.totals.grandTotal).toLocaleString('en-IN')}</TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="icon" title="Open bill" onClick={() => navigateToBill(purchase.billNo)}><FilePenLine className="h-4 w-4" /></Button>
                       {userRole === 'admin' && <Button variant="ghost" size="icon" title="Delete" onClick={() => void handleDelete(purchase)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
@@ -414,7 +416,7 @@ export default function PurchaseRegisterPage() {
                 <TableRow className="font-bold bg-muted">
                   <TableCell colSpan={3} className="text-right">Total</TableCell>
                   <TableCell>{footerTotals.patti}</TableCell><TableCell>{footerTotals.dabba}</TableCell>
-                  <TableCell className="text-right">â‚¹{footerTotals.grandTotal.toLocaleString('en-IN')}</TableCell><TableCell />
+                  <TableCell className="text-right">₹{footerTotals.grandTotal.toLocaleString('en-IN')}</TableCell><TableCell />
                 </TableRow>
               </TableBody>
             </Table>
@@ -424,4 +426,3 @@ export default function PurchaseRegisterPage() {
     </Card>
   );
 }
-

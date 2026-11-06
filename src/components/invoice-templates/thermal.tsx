@@ -72,7 +72,7 @@ export const ThermalLayout = ({ billData, pageUrl }: { billData: any, pageUrl: s
                 <div className="flex justify-between font-semibold"><span>Total Exp:</span><span>- {(totals?.totalExpenses || 0).toFixed(2)}</span></div>
             </div>
              <div className="my-2 border-t-2 border-black pt-1 space-y-1 text-sm font-bold">
-                <div className="flex justify-between"><span>NET SALE:</span><span>₹{(totals?.netSale || 0).toFixed(2)}</span></div>
+                <div className="flex justify-between"><span>NET SALE:</span><span>{(totals?.netSale || 0).toFixed(2)}</span></div>
             </div>
             <footer className="text-center pt-2 border-t border-dashed border-black text-[10px]">
                 <p>Thank you for your business!</p>

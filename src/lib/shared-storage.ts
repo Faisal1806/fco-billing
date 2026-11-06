@@ -1,3 +1,4 @@
+import { unwrapSharedStorageValue } from '@/lib/document-utils';
 import {
   deleteDocument,
   getDocument,
@@ -13,10 +14,34 @@ type SharedStorageEnvelope = {
 
 let initialized = false;
 let hydrationPromise: Promise<void> | null = null;
+let lastHydrationCompletedAt = 0;
+const HYDRATION_INTERVAL_MS = 60_000;
 
 // Prevent our own remote synchronization from triggering another
 // localStorage synchronization cycle.
 let syncInProgress = false;
+
+export type SyncStatus = 'online' | 'syncing' | 'offline';
+
+function emitSyncStatus(status: SyncStatus): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.dispatchEvent(
+    new CustomEvent('fco-sync-status', {
+      detail: status,
+    })
+  );
+}
+
+function setSyncStatusFromState(): void {
+  emitSyncStatus(
+    typeof navigator !== 'undefined' && navigator.onLine
+      ? 'online'
+      : 'offline'
+  );
+}
 
 function isBrowser(): boolean {
   return (
@@ -41,21 +66,41 @@ function createEnvelope(value: string): SharedStorageEnvelope {
   };
 }
 
-function unwrapValue(value: unknown): string | null {
-  if (typeof value === 'string') {
-    return value;
+function normalizeRemoteValue(value: unknown): string | null {
+  let current = value;
+
+  // MongoDB contains both current shared-storage envelopes and older plain
+  // objects. Normalize both to the business value before writing local cache.
+  for (let depth = 0; depth < 8; depth += 1) {
+    try {
+      current = unwrapSharedStorageValue(current);
+    } catch {
+      return null;
+    }
+
+    if (typeof current === 'string') {
+      try {
+        current = JSON.parse(current) as unknown;
+        continue;
+      } catch {
+        return typeof current === 'string' ? current : null;
+      }
+    }
+
+    try {
+      const serialized = JSON.stringify(current);
+      return typeof serialized === 'string' ? serialized : null;
+    } catch {
+      return null;
+    }
   }
 
-  if (
-    value &&
-    typeof value === 'object' &&
-    (value as Record<string, unknown>).__fcoSharedStorage === true &&
-    typeof (value as Record<string, unknown>).value === 'string'
-  ) {
-    return (value as Record<string, unknown>).value as string;
+  try {
+    const serialized = JSON.stringify(current);
+    return typeof serialized === 'string' ? serialized : null;
+  } catch {
+    return null;
   }
-
-  return null;
 }
 
 /**
@@ -69,22 +114,33 @@ async function persistRemoteValue(
   key: string,
   value: string
 ): Promise<void> {
-  if (!key || syncInProgress) {
+  if (
+    !key ||
+    syncInProgress ||
+    key.startsWith('fco-document:')
+  ) {
     return;
   }
 
   try {
     syncInProgress = true;
+    emitSyncStatus('syncing');
 
-    await saveDocument(
+    const result = await saveDocument(
       key,
       createEnvelope(value)
     );
-  } catch (error) {
-    console.warn(
-      'Shared storage sync save failed:',
-      error
-    );
+
+    if (!result.success) {
+      emitSyncStatus('offline');
+      console.warn('Shared storage sync save failed.');
+      return;
+    }
+
+    setSyncStatusFromState();
+  } catch {
+    console.warn('Shared storage sync save failed.');
+    emitSyncStatus('offline');
   } finally {
     syncInProgress = false;
   }
@@ -98,19 +154,24 @@ async function persistRemoteValue(
 async function removeRemoteValue(
   key: string
 ): Promise<void> {
-  if (!key || syncInProgress) {
+  if (
+    !key ||
+    syncInProgress ||
+    key.startsWith('fco-document:')
+  ) {
     return;
   }
 
   try {
     syncInProgress = true;
 
-    await deleteDocument(key);
-  } catch (error) {
-    console.warn(
-      'Shared storage sync delete failed:',
-      error
-    );
+    const result = await deleteDocument(key);
+    if (!result.success) {
+      emitSyncStatus('offline');
+      console.warn('Shared storage sync delete failed.');
+    }
+  } catch {
+    console.warn('Shared storage sync delete failed.');
   } finally {
     syncInProgress = false;
   }
@@ -129,16 +190,21 @@ async function hydrateFromServer(): Promise<void> {
     return;
   }
 
+  let cloudAvailable = false;
+
   try {
+    emitSyncStatus('syncing');
     const result = await getDocuments();
 
     if (
       !result.success ||
       !Array.isArray(result.data)
     ) {
+      emitSyncStatus('offline');
       return;
     }
 
+    cloudAvailable = true;
     const storageProto =
       Object.getPrototypeOf(storage) as Storage & {
         __fcoOriginalSetItem?: Storage['setItem'];
@@ -147,6 +213,9 @@ async function hydrateFromServer(): Promise<void> {
     const originalSetItem =
       storageProto.__fcoOriginalSetItem ||
       Storage.prototype.setItem;
+    const originalGetItem =
+      storageProto.__fcoOriginalGetItem ||
+      Storage.prototype.getItem;
 
     for (const item of result.data) {
       if (
@@ -168,29 +237,39 @@ async function hydrateFromServer(): Promise<void> {
         continue;
       }
 
-      const remoteValue = unwrapValue(record.value);
+      // fco-document:* is a legacy duplicate-cache namespace. Do not hydrate
+      // it again; business loaders read MongoDB directly and local raw keys.
+      if (key.startsWith('fco-document:')) {
+        continue;
+      }
 
-      if (
-        remoteValue !== null &&
-        storage.getItem(key) !== remoteValue
-      ) {
-        try {
-          syncInProgress = true;
+      // Never overwrite an existing browser record during cloud hydration.
+      // Local 2026 records may be the only newer copy of a transaction.
+      const existingLocalValue = originalGetItem.call(storage, key);
+      if (existingLocalValue !== null && existingLocalValue !== '') {
+        continue;
+      }
 
-          originalSetItem.call(
-            storage,
-            key,
-            remoteValue
-          );
-        } catch (error) {
-          console.warn(
-            'Failed to hydrate local value:',
-            key,
-            error
-          );
-        } finally {
-          syncInProgress = false;
-        }
+      const remoteValue = normalizeRemoteValue(record.value);
+
+      if (remoteValue === null) {
+        continue;
+      }
+
+      try {
+        syncInProgress = true;
+
+        // Hydration fills missing local keys only. It must never replace
+        // an existing local record with an older cloud copy.
+        originalSetItem.call(storage, key, remoteValue);
+      } catch (error) {
+        console.warn(
+          'Failed to hydrate local value:',
+          key,
+          error
+        );
+      } finally {
+        syncInProgress = false;
       }
     }
   } catch (error) {
@@ -198,7 +277,33 @@ async function hydrateFromServer(): Promise<void> {
       'Shared storage hydration failed:',
       error
     );
+    emitSyncStatus('offline');
+  } finally {
+    emitSyncStatus(
+      cloudAvailable &&
+        typeof navigator !== 'undefined' &&
+        navigator.onLine
+        ? 'online'
+        : 'offline'
+    );
   }
+}
+
+function requestHydration(): Promise<void> {
+  if (hydrationPromise) {
+    return hydrationPromise;
+  }
+
+  if (Date.now() - lastHydrationCompletedAt < HYDRATION_INTERVAL_MS) {
+    return Promise.resolve();
+  }
+
+  hydrationPromise = hydrateFromServer().finally(() => {
+    lastHydrationCompletedAt = Date.now();
+    hydrationPromise = null;
+  });
+
+  return hydrationPromise;
 }
 
 /**
@@ -222,7 +327,7 @@ async function hydrateSingleValue(
     }
 
     const remoteValue =
-      unwrapValue(result.data);
+      normalizeRemoteValue(result.data);
 
     if (
       remoteValue !== null &&
@@ -338,7 +443,8 @@ export function initializeSharedStorage(): void {
       // written internally during hydration.
       if (
         key &&
-        !syncInProgress
+        !syncInProgress &&
+        !key.startsWith('fco-document:')
       ) {
         void persistRemoteValue(
           key,
@@ -355,19 +461,18 @@ export function initializeSharedStorage(): void {
       const localValue =
         originalGetItem(key);
 
-      // If it exists locally, return immediately.
-      if (
-        localValue !== null
-      ) {
-        return localValue;
-      }
-
-      // Otherwise try to hydrate it from the server.
+      // Only hydrate when a key is missing or empty. This keeps the app fast and
+      // avoids firing a cloud refresh on every local read.
       if (
         key &&
-        !syncInProgress
+        !syncInProgress &&
+        (localValue === null || localValue === '')
       ) {
         void hydrateSingleValue(key);
+      }
+
+      if (localValue !== null) {
+        return localValue;
       }
 
       return null;
@@ -382,7 +487,8 @@ export function initializeSharedStorage(): void {
 
       if (
         key &&
-        !syncInProgress
+        !syncInProgress &&
+        !key.startsWith('fco-document:')
       ) {
         void removeRemoteValue(
           key
@@ -424,11 +530,13 @@ export function initializeSharedStorage(): void {
     true;
 
   // Initial synchronization.
-  hydrationPromise =
-    hydrateFromServer();
+  void requestHydration();
 
-  // Periodically check for remote changes.
-  window.setInterval(() => { void ensureSharedStorageHydrated(); }, 2000);
+  // Periodically check for remote changes so cloud data stays in sync across
+  // laptop/mobile clients without waiting for an explicit page reload.
+  window.setInterval(() => {
+    void ensureSharedStorageHydrated();
+  }, HYDRATION_INTERVAL_MS);
 
   window.addEventListener(
     'focus',
@@ -436,6 +544,31 @@ export function initializeSharedStorage(): void {
       void ensureSharedStorageHydrated();
     }
   );
+
+  window.addEventListener(
+    'online',
+    () => {
+      setSyncStatusFromState();
+      lastHydrationCompletedAt = 0;
+      void ensureSharedStorageHydrated();
+    }
+  );
+
+  window.addEventListener(
+    'offline',
+    () => {
+      emitSyncStatus('offline');
+    }
+  );
+
+  window.addEventListener(
+    'storage',
+    () => {
+      void ensureSharedStorageHydrated();
+    }
+  );
+
+  setSyncStatusFromState();
 }
 
 /**
@@ -447,7 +580,5 @@ export function ensureSharedStorageHydrated(): Promise<void> {
     return Promise.resolve();
   }
 
-  hydrationPromise = hydrateFromServer();
-
-  return hydrationPromise;
+  return requestHydration();
 }

@@ -92,7 +92,7 @@ export default function RateList() {
                             <TableCell className="font-medium">{watak.sNo}</TableCell>
                             <TableCell>{watak.customerName}</TableCell>
                             <TableCell>{new Date(watak.date).toLocaleDateString('en-GB')}</TableCell>
-                            <TableCell className="text-right font-mono">â‚¹{watak.totals.netSale.toFixed(2)}</TableCell>
+                            <TableCell className="text-right font-mono">₹{watak.totals.netSale.toFixed(2)}</TableCell>
                         </TableRow>
                     ))}
                 </TableBody>

@@ -55,9 +55,15 @@
   * {
     @apply border-border;
   }
+
+  html {
+    color-scheme: dark;
+  }
+
   body {
-    @apply bg-background text-foreground antialiased selection:bg-primary/30;
+    @apply min-h-screen bg-background text-foreground antialiased selection:bg-primary/30;
     font-family: 'Poppins', sans-serif;
+    background-image: radial-gradient(circle at top, rgba(30, 127, 79, 0.14), transparent 38%), linear-gradient(180deg, #050b08 0%, #0b1017 100%);
     background-attachment: fixed;
   }
   .font-urdu {

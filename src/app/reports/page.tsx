@@ -7,6 +7,9 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Loader2, TrendingUp, DollarSign, ShoppingCart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import PageHeader from '@/components/PageHeader';
+import { getBusinessDocuments } from '@/lib/actions';
+import { BUSINESS_YEAR, getDocumentDateYear, parseDocumentDate } from '@/lib/document-utils';
+import { useToast } from '@/hooks/use-toast';
 
 const cardVariants = {
     initial: { opacity: 0, y: 50, scale: 0.9 },
@@ -16,48 +19,66 @@ const cardVariants = {
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F'];
 
 export default function ReportsPage() {
+    const { toast } = useToast();
     const [monthlyData, setMonthlyData] = useState<any[]>([]);
     const [expenseData, setExpenseData] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        setIsLoading(true);
-        if (typeof window !== 'undefined') {
-            const sales: any[] = [];
-            const purchases: any[] = [];
-            const expenses: any[] = [];
-
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key?.startsWith('invoice-')) sales.push(JSON.parse(localStorage.getItem(key)!));
-                if (key?.startsWith('purchase-')) purchases.push(JSON.parse(localStorage.getItem(key)!));
-                if (key?.startsWith('expense-')) expenses.push(JSON.parse(localStorage.getItem(key)!));
+        let cancelled = false;
+        const generateReports = async () => {
+          setIsLoading(true);
+          try {
+            const result = await getBusinessDocuments([
+                'invoice-', 'purchase-', 'supplier-purchase-',
+                'own-purchase-', 'expense-',
+            ]);
+            if (!result.success || !Array.isArray(result.data)) {
+                throw new Error(result.error || 'Could not load report records.');
             }
+            const yearDocuments = result.data.filter(
+                item => getDocumentDateYear(item.date) === BUSINESS_YEAR
+            );
+            const sales = yearDocuments.filter(item => String(item.key).startsWith('invoice-'));
+            const purchases = yearDocuments.filter(item =>
+                ['purchase-', 'supplier-purchase-', 'own-purchase-'].some(prefix => String(item.key).startsWith(prefix))
+            );
+            const expenses = yearDocuments.filter(item => String(item.key).startsWith('expense-'));
 
             // Process Monthly Sales and Purchases
             const monthlyAgg: { [key: string]: { sales: number; purchases: number } } = {};
             const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
             sales.forEach(sale => {
-                const month = new Date(sale.date).getMonth();
-                const year = new Date(sale.date).getFullYear();
+                const date = parseDocumentDate(sale.date);
+                if (!date) return;
+                const month = date.getUTCMonth();
+                const year = date.getUTCFullYear();
                 const key = `${year}-${monthNames[month]}`;
                 if (!monthlyAgg[key]) monthlyAgg[key] = { sales: 0, purchases: 0 };
-                monthlyAgg[key].sales += sale.totals.netSale || 0;
+                monthlyAgg[key].sales += Number(sale.totals?.netSale ?? sale.netSale) || 0;
             });
 
             purchases.forEach(purchase => {
-                const month = new Date(purchase.date).getMonth();
-                const year = new Date(purchase.date).getFullYear();
+                const date = parseDocumentDate(purchase.date);
+                if (!date) return;
+                const month = date.getUTCMonth();
+                const year = date.getUTCFullYear();
                 const key = `${year}-${monthNames[month]}`;
                 if (!monthlyAgg[key]) monthlyAgg[key] = { sales: 0, purchases: 0 };
-                monthlyAgg[key].purchases += purchase.totals.grandTotal || 0;
+                monthlyAgg[key].purchases += Number(
+                    purchase.totals?.grandTotal ??
+                    purchase.totals?.totalAmount ??
+                    purchase.grandTotal ??
+                    purchase.totalPurchase
+                ) || 0;
             });
             
             const sortedMonthlyData = Object.entries(monthlyAgg)
                 .map(([name, values]) => ({ name, ...values }))
                 .sort((a, b) => new Date(`01 ${a.name.split('-')[1]} ${a.name.split('-')[0]}`).getTime() - new Date(`01 ${b.name.split('-')[1]} ${b.name.split('-')[0]}`).getTime());
 
+            if (cancelled) return;
             setMonthlyData(sortedMonthlyData);
 
             // Process Expense Categories
@@ -70,10 +91,23 @@ export default function ReportsPage() {
 
             const expenseChartData = Object.entries(expenseAgg).map(([name, value]) => ({ name, value }));
             setExpenseData(expenseChartData);
-
-            setIsLoading(false);
-        }
-    }, []);
+          } catch (error) {
+            if (cancelled) return;
+            console.error('Report data load failed:', error);
+            setMonthlyData([]);
+            setExpenseData([]);
+            toast({
+                variant: 'destructive',
+                title: 'Reports Failed',
+                description: error instanceof Error ? error.message : 'Could not load reports.',
+            });
+          } finally {
+            if (!cancelled) setIsLoading(false);
+          }
+        };
+        void generateReports();
+        return () => { cancelled = true; };
+    }, [toast]);
 
     if (isLoading) {
         return (
@@ -113,7 +147,7 @@ export default function ReportsPage() {
                             <BarChart data={monthlyData}>
                                 <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
                                 <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                                <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `â‚¹${value/1000}k`} />
+                                <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `₹${value/1000}k`} />
                                 <Tooltip
                                     contentStyle={{
                                         background: "rgba(30, 41, 59, 0.9)",
@@ -186,6 +220,5 @@ export default function ReportsPage() {
         </div>
     );
 }
-
 
 
